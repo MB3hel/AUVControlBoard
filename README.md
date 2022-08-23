@@ -1,10 +1,13 @@
 # AquaPack Robotics Control Board
 
-TODO: goal and purpose
+The control board is a replacement for the Cube Orange / Pixhawk running ArduSub that was originally used on SeaWolf VIII. The control board was developed to address continuous issues with both control and sensors when using either off the shelf autopilot.
+
+The control board is designed using development boards and breakout boards to reduce development time and simplify maintenance / modifications later. This is not a size-optimized solution (and does not need to be).
+
+The control board generates ESC control signals (PWM), acquires and processes sensor data (using onboard IMU / IMUs, depth sensor, and sensor fusion / filtering algorithms) as well as running control loops for system motion and stability control. Additionally, an interface to the computer (Jetson) is provided to acquire sensor data and allow control of motors using high or low level methods (vectored motion or direct control of each motor’s speed)/
+
 
 ## Components
-
-*Note: Development boards and breakout boards were selected to minimize development time.*
 
 - Adafruit ItsyBitsy M4 Express Development Board
     - Cortex M4 CPU capable of 32-bit integer math and includes hardware multiplier and divider
@@ -25,29 +28,58 @@ TODO: goal and purpose
 
 Prototype is assembled on protoboard. Final assembled prototype is shown below.
 
-![](./prototype_assembled.png)
+![](./img/prototype_assembled.png)
 
 
 ### Assembly Instructions
 
-1. Solder female header strips in the positions shown below. This avoids soldering breakouts / dev boards directly to protoboard which allows easily replacing components if needed (or reusing them for other purposes later).
+1. Solder header strips in the positions shown below. The female headers avoid soldering breakouts / dev boards directly to protoboard which allows easily replacing components if needed (or reusing them for other purposes later). After soldering, breakouts can be populated to make identifying pins easier.
 
-TODO: Picture
+![](./img/fritzing_header_pos.png)
 
-2. Wire SDA and SCL wires from MCU board to each sensor as shown below
+![](./img/prototype_headers.png)
 
-TODO: Table
+2. Wire SDA and SCL wires from MCU board to each sensor as shown below (connect the two pins shown in each row).
 
-TODO: Picture
+| Pin 1                      | Pin 2                    |
+| -------------------------- | ------------------------ |
+| ItsyBitsy SDA              | BNO055 SDA               |
+| ItsyBitsy SDA              | BMP280 SDI               |
+| ItsyBitsy SDA              | Depth SDA                |
+| ItsyBitsy SCL              | BNO055 SCL               |
+| ItsyBitsy SCL              | BMP280 SCK               |
+| ItsyBitsy SCL              | Depth SCL                |
+
+![](./img/prototype_i2c.png)
 
 3. Wire power and ground to each sensor as shown below. Power comes from USB on MCU dev board through builtin regulator.
 
-TODO: Table
+| Pin 1                      | Pin 2                    |
+| -------------------------- | ------------------------ |
+| ItsyBitsy 3V               | BNO055 VIN               |
+| ItsyBitsy 3V               | BMP280 VIN               |
+| ItsyBitsy 3V               | Depth VCC                |
+| ItsyBitsy GND              | BNO055 GND               |
+| ItsyBitsy GND              | BMP280 GND               |
+| ItsyBitsy GND              | Depth GND                |
 
-TODO: Picture
+![](./img/prototype_power1.png)
+
+![](./img/prototype_power2.png)
 
 4. Wire PWM signal header pins to GPIO pins on the dev board
 
-TODO: Table
+| Pin 1                      | Pin 2                    |
+| -------------------------- | ------------------------ |
+| ItsyBitsy 12               | PWM Signal 1             |
+| ItsyBitsy 11               | PWM Signal 2             |
+| ItsyBitsy 10               | PWM Signal 3             |
+| ItsyBitsy 9                | PWM Signal 4             |
+| ItsyBitsy 7                | PWM Signal 5             |
+| ItsyBitsy 5                | PWM Signal 6             |
+| ItsyBitsy A5               | PWM Signal 7             |
+| ItsyBitsy A4               | PWM Signal 8             |
 
-TODO: Picture
+![](./img/prototype_pwm1.png)
+
+![](./img/prototype_pwm2.png)
