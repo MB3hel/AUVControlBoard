@@ -3,11 +3,29 @@
 import numpy as np
 
 
-class MotorManager:
-    def __init__(self, motor_matrix, level_gravity_vector):
-        # Store for later use
-        self.level_gravity_vector = level_gravity_vector
 
+def skew(vector):
+    """
+    this function returns a numpy array with the skew symmetric cross product matrix for vector.
+    the skew symmetric cross product matrix is defined such that
+    np.cross(a, b) = np.dot(skew(a), b)
+
+    :param vector: An array like vector to create the skew symmetric cross product matrix for
+    :return: A numpy array of the skew symmetric cross product vector
+    """
+    if isinstance(vector, np.ndarray):
+        return np.array([[0, -vector.item(2), vector.item(1)],
+                         [vector.item(2), 0, -vector.item(0)],
+                         [-vector.item(1), vector.item(0), 0]])
+    else:
+        return np.array([[0, -vector[2], vector[1]], 
+                         [vector[2], 0, -vector[0]], 
+                         [-vector[1], vector[0], 0]])
+
+
+
+class MotorManager:
+    def __init__(self, motor_matrix):
         # Split and store motor matrix
         # dof matrix excludes motor numbers so it can be multiplied with target motion vector
         # dof_matrix = motor_matrix without first column
@@ -43,29 +61,41 @@ class MotorManager:
         return motor_out
 
     def localize_translation(self, gravity_vector, world_translation_vec):
-        # Gravity vector is in form [x, y, z] and is a unit vector
+        # Gravity vector is in form [x, y, z] (not unit vector)
         # [0, 0, -1] is "normal" orientation with gravity
+        # Note: IMU used on control board allows axis remapping so firmware should
+        #       always consider gravity to be -z when level
+        # IMU axes can be remapped so x, y, and z axes are robot x, y, z not IMU board x, y, z
+        # IMU also supports remapping axis signs as needed
         # World translation vec is [x, y, z] speeds (NOT UNIT VECTOR)
 
-        # Create rotation matrix from level gravity vector onto current gravity vector
-        a = self.level_gravity_vector
-        b = gravity_vector
-        s = np.matrix((a + b).reshape(3, 1))
-        st = s.transpose()
-        R = (2 * np.matmul(s, st) / np.matmul(st, s)) - np.identity(3)
-        print(R)
-        
+        # Reference: https://mwrona.com/posts/accel-roll-pitch/
+        unit_gravity = gravity_vector / np.linalg.norm(gravity_vector)
+        pitch = np.arcsin(unit_gravity[0])
+        roll = np.arctan(unit_gravity[1] / unit_gravity[2])
 
-        # TODO: Calculate euler angles from rotation matrix (maybe not required)
-        # TODO: Multiply by rotation matrix to rotate to be relative to robot and return vector
+        # Pitch rotation matrix (rotation about x axis)
+        Rx = np.matrix([
+            [1, 0, 0],
+            [0, np.cos(pitch), -np.sin(pitch)],
+            [0, np.sin(pitch), np.cos(pitch)]
+        ])
+
+        # Roll rotation matrix (rotation about y axis)
+        Ry = np.matrix([
+            [np.cos(roll), 0, np.sin(roll)],
+            [0, 1, 0],
+            [-np.sin(roll), 0, np.cos(roll)]
+        ])
+
+        # Ignoring heading (yaw) so rotation about z is zero so Rz = I
+        # R = Rz*Ry*Rx = Ry*Rx
+        R = np.matmul(Ry, Rx)
+
+        return np.matmul(R, world_translation_vec)
         
 
 if __name__ == "__main__":
-    # Defines how control board is oriented in the robot
-    # This is what is measured as the gravity vector when the robot is level
-    # This is a "world gravity vector"
-    level_gravity_vector = np.array([0, 0, -1])
-
     # Matrix can be read as a table where each column is motor speeds to cause motion ONLY
     # in the specified DOF for the column (positive direction, full speed). 
     # X, Y, Z are translation and PITCH, ROLL, YAW are rotation
@@ -81,7 +111,7 @@ if __name__ == "__main__":
         [   7,      0,      0,     -1,     +1,     -1,     0    ],
         [   8,      0,      0,     -1,     +1,     +1,     0    ]
     ], dtype=np.double)
-    manager = MotorManager(motor_matrix, level_gravity_vector)
+    manager = MotorManager(motor_matrix)
 
     # Target DOF motions (as column vector)
     # Relative to ROBOT not WORLD
@@ -92,6 +122,7 @@ if __name__ == "__main__":
     # )
     # target = target.reshape(len(target), 1)
 
-    manager.localize_translation(level_gravity_vector, np.array([0, 0, 0]))
+    # TODO: Change gravity vector and make sure this is correct
+    print(manager.localize_translation(np.array([0, 0, -1]), np.array([0.5, 0.25, 0.36]).reshape(3, 1)))
 
     # print(manager.calculate_speeds(target))
