@@ -72,7 +72,13 @@ class MotorManager:
         # Reference: https://mwrona.com/posts/accel-roll-pitch/
         unit_gravity = gravity_vector / np.linalg.norm(gravity_vector)
         pitch = np.arcsin(unit_gravity[0])
-        roll = np.arctan(unit_gravity[1] / unit_gravity[2])
+
+        if unit_gravity[2] == 0:
+            # Special case where division would yield inf
+            # arctan(inf) should indicate a 90 degree angle
+            roll = np.pi / 2.0
+        else:
+            roll = np.arctan(unit_gravity[1] / unit_gravity[2])
 
         # Pitch rotation matrix (rotation about x axis)
         Rx = np.matrix([
@@ -125,17 +131,18 @@ if __name__ == "__main__":
     # Relative to ROBOT not WORLD
     target = np.array(
         #   +X         +Y           +Z         +PITCH       +ROLL        +YAW
-        [  0.15,     -0.26,       -0.36,          0,          0,           0   ],
+        [   0,          0,           0,          0,          0,           0   ],
         dtype=np.double,
     )
     target = target.reshape(len(target), 1)
     target_is_global = True
 
     # Current gravity vector ([0, 0, -1] is level robot). Only matters if target is global
-    gravity_vector = np.array([0, 0, -1])
+    gravity_vector = np.array([-1, 0, 0])
 
     if target_is_global:
         # TODO: Change gravity vector and make sure this is correct
         target = manager.localize(gravity_vector, target)
+        print(target)
 
     print(manager.calculate_speeds(target))
