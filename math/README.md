@@ -39,9 +39,13 @@
 
 ## Robot Thruster Arrangement
 
-TODO: Make sure this matches actual thruster configuration of SW8 (note: arrows in direction thruster moves water when given positive power).
+- The arrows on the diagrams below are the direction the thrusters push water when given a positive speed (meaning the force excreted on the robot is in the opposite direction).
+- Note: Thruster numbers may not match SW8 exactly. This can be addressed later by adjusting motor numbers in the motor matrix (will be explained later).
+- Note: Directions of arrows may be incorrect for positive speed on some thrusters. Inverting sign of speed per motor as needed in software can correct this.
 
-Note: Directions don't actually have to match robot as long as thrusters can be individually inverted to match expected diagram.
+<p align="center">
+    <img height="400" src="./img/thruster_config.png">
+</p>
 
 
 ## 6DOF Motor Math
