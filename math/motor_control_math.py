@@ -60,7 +60,7 @@ class MotorManager:
         # Matrix where first column is motor numbers and second column is motor speeds
         return motor_out
 
-    def localize_translation(self, gravity_vector, world_translation_vec):
+    def localize(self, gravity_vector, world_target):
         # Gravity vector is in form [x, y, z] (not unit vector)
         # [0, 0, -1] is "normal" orientation with gravity
         # Note: IMU used on control board allows axis remapping so firmware should
@@ -92,7 +92,15 @@ class MotorManager:
         # R = Rz*Ry*Rx = Ry*Rx
         R = np.matmul(Ry, Rx)
 
-        return np.matmul(R, world_translation_vec)
+        orig_shape = np.shape(world_target)
+        world_target = world_target.flatten()
+        translation = world_target[0:3].reshape(3, 1)
+        rotation = world_target[3:6].reshape(3, 1)
+
+        ltranslation = np.matmul(R, translation)
+        lrotation = np.matmul(R, rotation)
+
+        return np.concatenate((ltranslation.A1, lrotation.A1)).reshape(orig_shape)
         
 
 if __name__ == "__main__":
@@ -115,14 +123,19 @@ if __name__ == "__main__":
 
     # Target DOF motions (as column vector)
     # Relative to ROBOT not WORLD
-    # target = np.array(
-    #     #   +X      +Y      +Z    +PITCH   +ROLL   +YAW
-    #     [   1,      0,      0,      1,      1,      1   ],
-    #     dtype=np.double,
-    # )
-    # target = target.reshape(len(target), 1)
+    target = np.array(
+        #   +X         +Y           +Z         +PITCH       +ROLL        +YAW
+        [  0.15,     -0.26,       -0.36,          0,          0,           0   ],
+        dtype=np.double,
+    )
+    target = target.reshape(len(target), 1)
+    target_is_global = True
 
-    # TODO: Change gravity vector and make sure this is correct
-    print(manager.localize_translation(np.array([0, 0, -1]), np.array([0.5, 0.25, 0.36]).reshape(3, 1)))
+    # Current gravity vector ([0, 0, -1] is level robot). Only matters if target is global
+    gravity_vector = np.array([0, 0, -1])
 
-    # print(manager.calculate_speeds(target))
+    if target_is_global:
+        # TODO: Change gravity vector and make sure this is correct
+        target = manager.localize(gravity_vector, target)
+
+    print(manager.calculate_speeds(target))
