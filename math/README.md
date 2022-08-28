@@ -7,7 +7,7 @@
 
 ## Coordinate System Definition
 
-- The coordinate system defined by the image below is used to define axis relations (axis arrows in positive directions)
+- The coordinate system is defined by the images below
 - Pitch is defined as rotation about the x-axis
 - Roll is defined as rotation about the y-axis
 - Yaw is defined as rotation about the z-axis
@@ -17,15 +17,11 @@
     - Positive roll is defined as counter-clockwise rotation in the xz plan when view from the +y side
     - Positive yaw is defined as counter-clockwise rotation in the xy plane when viewed from the +z side
 
-<div style="text-align: center;">
-
-![](./img/coord_system_1.png)
-
-![](./img/coord_system_2.png)
-
-![](./img/coord_system_rotations.png)
-
-</div>
+<p align="center">
+    <img height="250" src="./img/coord_system_1.png">
+    <img height="250" src="./img/coord_system_2.png">
+    <img height="250" src="./img/coord_system_rotations.png">
+</p>
 
 
 ## Robot Local Coordinate System
@@ -36,11 +32,9 @@
     - +roll raises left of the robot
     - +yaw moves the front to the left
 
-<div style="text-align: center;">
-
-![](./img/robot_local_coord.png)
-
-</div>
+<p align="center">
+    <img height="400" src="./img/robot_local_coord.png">
+</p>
 
 
 ## Robot Thruster Arrangement
