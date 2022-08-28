@@ -3,27 +3,6 @@
 import numpy as np
 
 
-
-def skew(vector):
-    """
-    this function returns a numpy array with the skew symmetric cross product matrix for vector.
-    the skew symmetric cross product matrix is defined such that
-    np.cross(a, b) = np.dot(skew(a), b)
-
-    :param vector: An array like vector to create the skew symmetric cross product matrix for
-    :return: A numpy array of the skew symmetric cross product vector
-    """
-    if isinstance(vector, np.ndarray):
-        return np.array([[0, -vector.item(2), vector.item(1)],
-                         [vector.item(2), 0, -vector.item(0)],
-                         [-vector.item(1), vector.item(0), 0]])
-    else:
-        return np.array([[0, -vector[2], vector[1]], 
-                         [vector[2], 0, -vector[0]], 
-                         [-vector[1], vector[0], 0]])
-
-
-
 class MotorManager:
     def __init__(self, motor_matrix):
         # Split and store motor matrix
@@ -74,25 +53,19 @@ class MotorManager:
         # Matrix where first column is motor numbers and second column is motor speeds
         return motor_out
 
-    def localize(self, gravity_vector, world_target):
+    def localize_target(self, gravity_vector, world_target):
         # Gravity vector is in form [x, y, z] (not unit vector)
-        # [0, 0, -1] is "normal" orientation with gravity
+        # [0, 0, -1] is "normal" orientation with gravity (may be scaled by "g")
         # Note: IMU used on control board allows axis remapping so firmware should
         #       always consider gravity to be -z when level
         # IMU axes can be remapped so x, y, and z axes are robot x, y, z not IMU board x, y, z
         # IMU also supports remapping axis signs as needed
-        # World translation vec is [x, y, z] speeds (NOT UNIT VECTOR)
 
-        # Reference: https://mwrona.com/posts/accel-roll-pitch/
-        unit_gravity = gravity_vector / np.linalg.norm(gravity_vector)
-        pitch = np.arcsin(unit_gravity[0])
+        pitch = np.arctan2(-gravity_vector[1], gravity_vector[2])
+        roll = np.arctan2(gravity_vector[0], np.sqrt(np.power(gravity_vector[1], 2) + np.power(gravity_vector[2], 2)))
 
-        if unit_gravity[2] == 0:
-            # Special case where division would yield inf
-            # arctan(inf) should indicate a 90 degree angle
-            roll = np.pi / 2.0
-        else:
-            roll = np.arctan(unit_gravity[1] / unit_gravity[2])
+        print(pitch)
+        print(roll)
 
         # Pitch rotation matrix (rotation about x axis)
         Rx = np.matrix([
@@ -109,7 +82,7 @@ class MotorManager:
         ])
 
         # Ignoring heading (yaw) so rotation about z is zero so Rz = I
-        # R = Rz*Ry*Rx = Ry*Rx
+        # R = Rz*Ry*Rx = Ry*Rx   (net rotation matrix)
         R = np.matmul(Ry, Rx)
 
         orig_shape = np.shape(world_target)
@@ -145,16 +118,18 @@ if __name__ == "__main__":
     # Relative to ROBOT not WORLD
     target = np.array(
         #   +X         +Y           +Z         +PITCH       +ROLL        +YAW
-        [   -1,          0,           0,          0,          0,           0   ],
+        [   0,          0,           -1,          0,          0,           0   ],
         dtype=np.double,
     )
     target = target.reshape(len(target), 1)
     target_is_global = True
 
     # Current gravity vector ([0, 0, -1] is level robot). Only matters if target is global
-    gravity_vector = np.array([-1, 0, 0])
+    gravity_vector = np.array([0, 0, -1])
 
     if target_is_global:
-        target = manager.localize(gravity_vector, target)
+        # TODO: Make sure this actually works right by varying gravity vector (3d space is hard...)
+        # TODO: Some negative signs may be wrong. Need to actually wrap my head around coord system...
+        target = manager.localize_target(gravity_vector, target)
 
     print(manager.calculate_speeds(target))
