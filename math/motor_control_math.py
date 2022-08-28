@@ -40,7 +40,10 @@ class MotorManager:
         for i in range(len(mask_rows)):
             self.motor_groups.append((mask_vector == i).astype(int))
     
-    def calculate_speeds(self, local_target_vec):
+    def calculate_speeds(self, local_target_vec, deadband=1e-6):
+        # Not allowed to be negative
+        deadband = np.abs(deadband)
+
         # Multiply to get motor output powers
         motor_speeds = np.matmul(self.dof_matrix, local_target_vec)
 
@@ -53,6 +56,17 @@ class MotorManager:
                 scaled_motor_speeds += gp_speeds / m
             else:
                 scaled_motor_speeds += gp_speeds
+        
+        # Post math processing (limits need to be applied due to roundoff / truncation errors)
+        for i in range(np.size(scaled_motor_speeds, axis=0)):
+            # Apply deadband (min allowed motor speed output)
+            if np.abs(scaled_motor_speeds[i, 0]) < deadband:
+                scaled_motor_speeds[i, 0] = 0
+            # Apply max output magnitude limit
+            if np.abs(scaled_motor_speeds[i, 0]) > 1.0:
+                scaled_motor_speeds[i, 0] = np.copysign(1.0, scaled_motor_speeds[i, 0])
+                
+            
 
         # Combine into nx2 matrix where n is number of motors
         motor_out = np.concatenate((self.motor_nums, scaled_motor_speeds), axis=1)
@@ -131,7 +145,7 @@ if __name__ == "__main__":
     # Relative to ROBOT not WORLD
     target = np.array(
         #   +X         +Y           +Z         +PITCH       +ROLL        +YAW
-        [   0,          0,           0,          0,          0,           0   ],
+        [   -1,          0,           0,          0,          0,           0   ],
         dtype=np.double,
     )
     target = target.reshape(len(target), 1)
@@ -141,8 +155,6 @@ if __name__ == "__main__":
     gravity_vector = np.array([-1, 0, 0])
 
     if target_is_global:
-        # TODO: Change gravity vector and make sure this is correct
         target = manager.localize(gravity_vector, target)
-        print(target)
 
     print(manager.calculate_speeds(target))
