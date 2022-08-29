@@ -110,8 +110,6 @@ Notice that the resultant motor speed vector has motor speeds that exceed 100% s
 
 TODO
 
-Note: the method currently implemented in the python code is "valid" for the specific configuration, but likely not generally applicable. This needs to be reconsidered.
-
 
 ### Global Targets
 

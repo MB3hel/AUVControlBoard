@@ -11,13 +11,13 @@ class MotorManager:
         self.dof_matrix = np.delete(motor_matrix, 0, axis=1)
         self.motor_nums = motor_matrix[:,0]
 
-        # Find groups of motors that affect the same DOFs
-        mask_matrix = (self.dof_matrix != 0).astype(int)
-        mask_rows, indices = np.unique(mask_matrix, return_inverse=True, axis=0)
-        mask_vector = indices.reshape(len(indices), 1)
-        self.motor_groups = []
-        for i in range(len(mask_rows)):
-            self.motor_groups.append((mask_vector == i).astype(int))
+        # Find overlap in motors (used for scaling motor speeds)
+        self.mask_vectors = []
+        for r in range(np.size(self.dof_matrix, axis=0)):
+            row = self.dof_matrix[r,:]
+            v = np.transpose(row)
+            overlap_vec = np.matmul(self.dof_matrix, v)
+            self.mask_vectors.append((overlap_vec != 0).astype(int))
     
     def calculate_speeds(self, local_target_vec, deadband=1e-6):
         # Not allowed to be negative
@@ -26,29 +26,23 @@ class MotorManager:
         # Multiply to get motor output powers
         motor_speeds = np.matmul(self.dof_matrix, local_target_vec)
 
-        # Scale down motor speeds within groups if needed
-        scaled_motor_speeds = np.zeros(np.size(motor_speeds)).reshape(np.size(motor_speeds), 1)
-        for i in range(len(self.motor_groups)):
-            gp_speeds = np.multiply(motor_speeds, self.motor_groups[i])
-            m = np.abs(gp_speeds).max()
-            if m > 1:
-                scaled_motor_speeds += gp_speeds / m
-            else:
-                scaled_motor_speeds += gp_speeds
+        # Scale down motor speeds as needed
+        for r in range(np.size(motor_speeds, axis=0)):
+            m = np.abs(motor_speeds[r][0]).item()
+            if m > 1.0:
+                scale_vec = m * self.mask_vectors[r]
+                for i in range(np.size(scale_vec, axis=0)):
+                    if scale_vec[i][0] == 0:
+                        scale_vec[i][0] = 1
+                motor_speeds = np.divide(motor_speeds, scale_vec)
         
-        # Post math processing (limits need to be applied due to roundoff / truncation errors)
-        for i in range(np.size(scaled_motor_speeds, axis=0)):
-            # Apply deadband (min allowed motor speed output)
-            if np.abs(scaled_motor_speeds[i, 0]) < deadband:
-                scaled_motor_speeds[i, 0] = 0
-            # Apply max output magnitude limit
-            if np.abs(scaled_motor_speeds[i, 0]) > 1.0:
-                scaled_motor_speeds[i, 0] = np.copysign(1.0, scaled_motor_speeds[i, 0])
+        # Apply deadband
+        for i in range(np.size(motor_speeds, axis=0)):
+            if np.abs(motor_speeds[i, 0]) < deadband:
+                motor_speeds[i, 0] = 0
                 
-            
-
         # Combine into nx2 matrix where n is number of motors
-        motor_out = np.concatenate((self.motor_nums, scaled_motor_speeds), axis=1)
+        motor_out = np.concatenate((self.motor_nums, motor_speeds), axis=1)
 
         # Matrix where first column is motor numbers and second column is motor speeds
         return motor_out
@@ -118,11 +112,11 @@ if __name__ == "__main__":
     # Relative to ROBOT not WORLD
     target = np.array(
         #   +X         +Y           +Z         +PITCH       +ROLL        +YAW
-        [   0,          0,           -1,          0,          0,           0   ],
+        [   0,          1,           1,          1,          1,           1   ],
         dtype=np.double,
     )
     target = target.reshape(len(target), 1)
-    target_is_global = True
+    target_is_global = False
 
     # Current gravity vector ([0, 0, -1] is level robot). Only matters if target is global
     gravity_vector = np.array([0, 0, -1])
