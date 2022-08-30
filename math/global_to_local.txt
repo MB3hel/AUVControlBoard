@@ -1,0 +1,41 @@
+def localize_target(self, gravity_vector, world_target):
+    # Gravity vector is in form [x, y, z] (not unit vector)
+    # [0, 0, -1] is "normal" orientation with gravity (may be scaled by "g")
+    # Note: IMU used on control board allows axis remapping so firmware should
+    #       always consider gravity to be -z when level
+    # IMU axes can be remapped so x, y, and z axes are robot x, y, z not IMU board x, y, z
+    # IMU also supports remapping axis signs as needed
+
+    pitch = np.arctan2(-gravity_vector[1], gravity_vector[2])
+    roll = np.arctan2(gravity_vector[0], np.sqrt(np.power(gravity_vector[1], 2) + np.power(gravity_vector[2], 2)))
+
+    print(pitch)
+    print(roll)
+
+    # Pitch rotation matrix (rotation about x axis)
+    Rx = np.matrix([
+        [1, 0, 0],
+        [0, np.cos(pitch), -np.sin(pitch)],
+        [0, np.sin(pitch), np.cos(pitch)]
+    ])
+
+    # Roll rotation matrix (rotation about y axis)
+    Ry = np.matrix([
+        [np.cos(roll), 0, np.sin(roll)],
+        [0, 1, 0],
+        [-np.sin(roll), 0, np.cos(roll)]
+    ])
+
+    # Ignoring heading (yaw) so rotation about z is zero so Rz = I
+    # R = Rz*Ry*Rx = Ry*Rx   (net rotation matrix)
+    R = np.matmul(Ry, Rx)
+
+    orig_shape = np.shape(world_target)
+    world_target = world_target.flatten()
+    translation = world_target[0:3].reshape(3, 1)
+    rotation = world_target[3:6].reshape(3, 1)
+
+    ltranslation = np.matmul(R, translation)
+    lrotation = np.matmul(R, rotation)
+
+    return np.concatenate((ltranslation.A1, lrotation.A1)).reshape(orig_shape)
