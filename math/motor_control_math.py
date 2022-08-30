@@ -12,12 +12,12 @@ class MotorManager:
         self.motor_nums = motor_matrix[:,0]
 
         # Find overlap in motors (used for scaling motor speeds)
-        self.mask_vectors = []
+        self.overlap_vectors = []
         for r in range(np.size(self.dof_matrix, axis=0)):
             row = self.dof_matrix[r,:]
             v = np.transpose(row)
-            overlap_vec = np.matmul(self.dof_matrix, v)
-            self.mask_vectors.append((overlap_vec != 0).astype(int))
+            vec = np.matmul(self.dof_matrix, v)
+            self.overlap_vectors.append((vec != 0).astype(int))
     
     def calculate_speeds(self, local_target_vec, deadband=1e-6):
         # Not allowed to be negative
@@ -27,14 +27,14 @@ class MotorManager:
         motor_speeds = np.matmul(self.dof_matrix, local_target_vec)
 
         # Scale down motor speeds as needed
-        for r in range(np.size(motor_speeds, axis=0)):
-            m = np.abs(motor_speeds[r][0]).item()
-            if m > 1.0:
-                scale_vec = m * self.mask_vectors[r]
-                for i in range(np.size(scale_vec, axis=0)):
-                    if scale_vec[i][0] == 0:
-                        scale_vec[i][0] = 1
-                motor_speeds = np.divide(motor_speeds, scale_vec)
+        while True:
+            index = np.argmax(np.abs(motor_speeds))
+            m = np.abs(motor_speeds[index].item())
+            if m <= 1:
+                break
+            for i in range(np.size(self.overlap_vectors[index])):
+                if self.overlap_vectors[index][i]:
+                    motor_speeds[i] /= m
         
         # Apply deadband
         for i in range(np.size(motor_speeds, axis=0)):

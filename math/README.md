@@ -91,7 +91,7 @@ A motion target is a column vector where each row corresponds to a DoF (order ma
     <img height="250" src="./img/target_vector.png">
 </p>
 
-This target motion vector can then be used to calculate individual motor speeds by multiplying it by the DoF matrix. The result of this multiplication is a column vector with as many entries as there are motors. Each entry is a motor speed. The motor speeds are in the same order as the motor number column vector (first column of motor matrix).
+This target motion vector can then be used to calculate individual motor speeds by multiplying it by the DoF matrix. The result of this multiplication is a column vector with as many entries as there are motors. Each entry is a motor speed. The motor speeds are in the same order as the motor number column vector (first column of motor matrix). This vector is the speed vector.
 
 <p align="center">
     <img height="250" src="./img/motor_speed_calc.png">
@@ -108,7 +108,67 @@ Notice that the resultant motor speed vector has motor speeds that exceed 100% s
 
 ### Scaling Motor Outputs
 
-TODO
+The above example illustrates the need to scale down motor speeds. However, doing so is less trivial than it may initially appear.
+
+The most intuitive option would be to divide all motor speeds by the largest magnitude (`m = max(abs(speed_vector))`) if `m` is larger than 1.0 (no need to divide if no value is larger than 1 because the motion is already possible). This solution works in the above example resulting in the following scaled speed vector
+
+<p align="center">
+    <img height="250" src="./img/scaled_speed_vec_all.png">
+</p>
+
+While this is the correct result for the above example, consider the following more complex example (where motion in more DoFs is added).
+
+<p align="center">
+    <img height="250" src="./img/many_dof_speed_calc.png">
+</p>
+
+If the previously described algorithm is applied `m = 3` which results in the following scaled speed vector
+
+<p align="center">
+    <img height="225" src="./img/scaled_all_many_dof.png">
+</p>
+
+However, this speed vector is scaled non-optimally. Notice that the maximum speed occurred at motor 5. However, motors 1, 2, 3, and 4 do not affect any of the same directions as motor 5. As such, it is not necessary to divide motor 1, 2, 3, 4 speeds by 3. Instead they should only be divided by 2 otherwise some DoF motions are slowed more than required (artificially reducing max speed).
+
+In reality, it is only necessary to divide the speeds of some motors depending on where the max speed is located. If the max speed occurs at motor *i*, it is only necessary to divide the speed of any motors that "overlap" with motor *i*. Overlap is defined as sharing a contribution in any DoF. In terms of the DoF matrix, two motors *i* and *j* overlap if the row for motor *i* and the row for motor *j* have a non-zero entry in the same column for at least one column. Mathematically, this means that the dot product of the two rows is non-zero.
+
+To simplify later calculations an overlap vector will be generated for each motor in the dof matrix. The overlap vector is a vector of 1's and 0's indicating whether overlap occurs with the corresponding index motor in the speed vector. For motor i the overlap vector (`overlap_vec[i]`) is defined as "the product of the DoF Matrix and the transpose of row `i` of the DoF Matrix is not equal to zero". For example `overlap_vec[0]` is defined as follows
+
+<p align="center">
+    <img height="425" src="./img/overlap_vec_calc.png">
+</p>
+
+One overlap vector must be calculated for *each* motor. These are calculated ahead of time to reduce the number of operations that must be performed to calculate motor speeds (important when this is implemented on a microcontroller).
+
+Finally, the following algorithm (described in pseudocode) is used to properly scale each motor. The scaling is done when no speed in the vector has a magnitude greater than 1.
+
+```
+while true
+    // index is index in speed_vector at which m occurs
+    m, index = max(abs(speed_vector))
+    if m <= 1
+        // No speeds exceed max magnitude, so done scaling
+        break
+    endif
+
+    // Scale speed_vector as needed
+    for i = 0; i < length(overlap_vector[index]); ++i
+        if overlap_vector[index][i] == 1
+            speed_vector[i] /= m;
+        endif
+    endfor
+endfor
+```
+
+Using this algorithm the earlier example results in the following scaled speed vector (which is optimal for the requested motions).
+
+<p align="center">
+    <img height="250" src="./img/proper_scaling.png">
+    <br />
+    <i>Motor 1, 2, 3, 4 speeds divided by 2 and motor 5, 6, 7, 8 speeds divided by 3. This results in the fastest motor within each group being at 100% speed, thus this is optimal scaling.</i>
+</p>
+
+
 
 
 ### Global Targets
