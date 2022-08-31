@@ -167,10 +167,3 @@ Using this algorithm the earlier example results in the following scaled speed v
     <br />
     <i>Motor 1, 2, 3, 4 speeds divided by 2 and motor 5, 6, 7, 8 speeds divided by 3. This results in the fastest motor within each group being at 100% speed, thus this is optimal scaling.</i>
 </p>
-
-
-
-
-### Global Targets
-
-TODO

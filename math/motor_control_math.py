@@ -49,19 +49,11 @@ target = np.transpose(np.matrix([
     [     0,      1,     1,      1,      1,       1    ]
 ], dtype=np.double))
 
-# True if target vector above is relative to world (global target)
-target_is_global = False
-
 
 ################################################################################
 # Motor speed calculations
 ################################################################################
 # In practice this would be repeated each time target changes
-# If target is global this is also repeated each time gravity vector changes
-
-if target_is_global:
-    # TODO: Localize target
-    raise Exception("Global targets not yet implemented.")
 
 # Base speed calculation
 speed_vec = np.matmul(dof_matrix, target)
