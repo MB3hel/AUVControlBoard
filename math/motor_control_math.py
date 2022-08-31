@@ -25,10 +25,11 @@ dof_matrix = np.delete(motor_matrix, 0, axis=1)
 motor_num_vec = motor_matrix[:,0]
 
 # Construct overlap vectors for each motor
+contribution_matrix = (dof_matrix != 0).astype(int)
 overlap_vectors = []
-for r in range(np.size(dof_matrix, axis=0)):
-    v = np.transpose(dof_matrix[r,:])
-    overlap_vectors.append((np.matmul(dof_matrix, v) != 0).astype(int))
+for r in range(np.size(contribution_matrix, axis=0)):
+    v = np.transpose(contribution_matrix[r,:])
+    overlap_vectors.append((np.matmul(contribution_matrix, v) != 0).astype(int))
 
 
 ################################################################################
