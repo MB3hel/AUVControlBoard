@@ -173,3 +173,10 @@ Using this algorithm the earlier example results in the following scaled speed v
     <br />
     <i>Motor 1, 2, 3, 4 speeds divided by 2 and motor 5, 6, 7, 8 speeds divided by 3. This results in the fastest motor within each group being at 100% speed, thus this is optimal scaling.</i>
 </p>
+
+
+### Global Targets
+
+Instead of providing desired motion relative to the robot's orientation, it is often easier to specify motion relative to the world. This requires knowing information about the robot's orientation in 3D space. This can be provided by a combination of the accelerometer and gyroscope on the control board.
+
+TODO: Finish describing this math
