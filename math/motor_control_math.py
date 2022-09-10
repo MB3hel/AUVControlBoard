@@ -2,6 +2,7 @@
 
 import numpy as np
 
+
 ################################################################################
 # Thruster Configuration Information
 ################################################################################
@@ -35,24 +36,12 @@ for r in range(np.size(contribution_matrix, axis=0)):
 # Robot Orientation Information
 ################################################################################
 
-# Orientation information ([pitch, roll, yaw]])
-orientation_pry = np.array([0, 0, 90], dtype=np.double) * np.pi / 180.0
-
-# Orientation information (quaternion [w, x, y, z]) used in calculations
-# Note: Imu provides this directly
-orientation = np.array([0, 0, 0, 0], dtype=np.double)
-
-# See https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
-cy = np.cos(orientation_pry[2] * 0.5)
-sy = np.sin(orientation_pry[2] * 0.5)
-cp = np.cos(orientation_pry[0] * 0.5)
-sp = np.sin(orientation_pry[0] * 0.5)
-cr = np.cos(orientation_pry[1] * 0.5)
-sr = np.sin(orientation_pry[1] * 0.5)
-orientation[0] = cr * cp * cy + sr * sp * sy
-orientation[1] = sr * cp * cy - cr * sp * sy
-orientation[2] = cr * sp * cy + sr * cp * sy
-orientation[3] = cr * cp * sy - sr * sp * cy
+# Gravity vector (from accelerometer data)
+# Used to determine robot pitch and roll
+# [x, y, z] components
+gravity_vector = np.array([0, 1, 0])
+gravity_vector = gravity_vector / np.linalg.norm(gravity_vector)
+gravity_vector *= 9.81
 
 
 ################################################################################
@@ -84,30 +73,27 @@ def quaternion_multiply(q1, q2):
     return res
 
 if target_is_global:
-    # Translation vector is a vector of speeds in each axis
-    # However, it can be interpreted as a point vector where the distance
-    # from each point to the origin is the speed in the corresponding axis
-    # Note: the "w" element is populated with  zero
-    translation_vec = np.array([0, target[0].item(), target[1].item(), target[2].item()])
-
-    # Similar idea for rotation vector
-    rotation_vec = np.array([0, target[3].item(), target[4].item(), target[5].item()])
-
-    # Conjugate of orientation quaternion
-    orientation_conj = np.array([
-         orientation[0], 
-        -orientation[1], 
-        -orientation[2], 
-        -orientation[3]
-    ])
-
-    # Convert to local target
-    translation_vec = quaternion_multiply(quaternion_multiply(orientation, translation_vec), orientation_conj)
-    rotation_vec = quaternion_multiply(quaternion_multiply(orientation, rotation_vec), orientation_conj)
-
-    # Combine target info into one vector again
-    target = np.concatenate((translation_vec[1:4], rotation_vec[1:4]), axis=0).reshape(6, 1)
+    def skew(v):
+        return np.matrix([
+            [0, -v[2], v[1]],
+            [v[2], 0, -v[0]],
+            [-v[1], v[0], 0]
+        ])
+    b = (gravity_vector / np.linalg.norm(gravity_vector)).reshape(3, 1)
+    a = np.array([0, 0, -1], dtype=np.double).reshape(3, 1)
+    v = np.cross(a.flatten(), b.flatten()).reshape(3, 1)
+    c = np.dot(a.flatten(), b.flatten())
+    sk = skew(v.flatten())
+    R = np.identity(3) + sk + np.matmul(sk, sk) / (1 + c)
+    
+    target_1d = target.flatten().A1
+    translation = target_1d[0:3].reshape(3, 1)
+    rotation = target_1d[3:6].reshape(3, 1)
+    translation = np.matmul(R, translation).flatten().A1
+    rotation = np.matmul(R, rotation).flatten().A1
+    target = np.concatenate((translation, rotation)).reshape(6, 1)
     print(target)
+
 
 ################################################################################
 # Motor speed calculations
