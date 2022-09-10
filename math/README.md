@@ -177,6 +177,40 @@ Using this algorithm the earlier example results in the following scaled speed v
 
 ### Global Targets
 
-Instead of providing desired motion relative to the robot's orientation, it is often easier to specify motion relative to the world. This requires knowing information about the robot's orientation in 3D space. This can be provided by a combination of the accelerometer and gyroscope on the control board.
+Instead of providing desired motion relative to the robot's orientation, it is often easier to specify motion relative to the world (at least partially). This requires knowing information about the robot's orientation in 3D space. However, for this application the robot's heading will be ignored (meaning x and y are relative to the robot's orientation, but z is world-relative). 
 
-TODO: Finish describing this math
+This effectively turns the target vector previously provided into a pseudo world-relative motion target (DoFs are world coordinate system DoFs not robot coordinate system DoFs). *However, y still means forward relative to robot heading **not** relative to the world coordinate system (same idea for x too).*
+
+This method is used instead of a true global target for two reasons
+- The method described above does not require knowing the robot's heading in 3D space. As such, the required information can be entirely obtained using an accelerometer. No use of gyroscope or magnetometer is required. This is beneficial as gyroscopes drift and magnetometers become unreliable in close proximity to motors.
+- Missing code's knowledge of the robot's position relative to objects of interest often has no knowledge of a world coordinate system. As such, keeping x and y translations robot-relative simplifies mission code and reduces errors for closed loop control in mission code.
+
+The target vector can be split into two parts: a translation vector and a rotation vector.
+
+<p align="center">
+    <img height="250" src="./img/target_vector_split.png">
+</p>
+
+Both vectors are in an [x, y, z] order.
+- Translations are along the given axes
+- Rotations are about the given axes
+
+The idea is to determine a rotation matrix to translate the world gravity vector to the robot's measured gravity vector. This is the same rotation that should then be applied to each of the vectors described above (translation and rotation).
+
+It is assumed that when the robot's coordinate frame matches the world's coordinate frame, the measured gravity vector will be [0, 0, -g] (meaning in the negative z direction). This must be configured to be the case (IMU supports axis remapping internally to allow this regardless of how the IMU is mounted). Then, given a world gravity vector (`g_w`) and a measured gravity vector `g_r` a rotation matrix (`R`) to rotate vectors from the world coordinate system into the robot's coordinate system can be calculated as shown below
+
+<p align="center">
+    <img height="100" src="./img/rotation_matrix_calc.png">
+</p>
+
+Where `[v_c]_x` is the skew symmetric cross product matrix of `v_c` defined as follows
+
+<p align="center">
+    <img height="100" src="./img/skew_symmetric.png">
+</p>
+
+Then each of the translation and rotation targets can be rotated by multiplication by the rotation matrix (`R`). The translation and rotation vectors are then concatenated to create the full local target vector.
+
+<p align="center">
+    <img height="100" src="./img/apply_rotation.png">
+</p>
