@@ -1,0 +1,7 @@
+{
+    "name": "cmsis-samd51",
+    "version": "1.0.0",
+    "description": "CMSIS libraries for SAMD51 chip",
+    "frameworks": "*",
+    "platforms": "*"
+  }
