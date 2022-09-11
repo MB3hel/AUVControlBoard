@@ -3,6 +3,7 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
 #include <Adafruit_BMP280.h>
+#include <Adafruit_DotStar.h>
 #include <MS5837.h>
 
 #define LED_PIN 13
@@ -11,8 +12,11 @@
 Adafruit_BNO055 cb_imu = Adafruit_BNO055(-1, 0x28);
 Adafruit_BMP280 cb_prs;
 MS5837 cb_depth;
+Adafruit_DotStar dotstar(1, 8, 6, DOTSTAR_BRG);
+
 
 void error(){
+    Serial.println("Test failed. Hardware tests aborted.");
     while(1){
         digitalWrite(LED_PIN, !digitalRead(LED_PIN));
         delay(500);
@@ -22,6 +26,8 @@ void error(){
 void setup(){
     pinMode(LED_PIN, OUTPUT);
     digitalWrite(LED_PIN, HIGH);
+    dotstar.begin();
+    dotstar.show();
     Serial.begin(115200);
     
     // Comment out this line to avoid waiting for serial 
@@ -29,7 +35,7 @@ void setup(){
     while(!Serial);
 
 
-    Serial.println("SW8E Control Board Hardware Test");
+    Serial.println("Starting SW8 control board hardware tests");
 
     // Internal IMU
     Serial.print("    BNO055 IMU..........................");
@@ -58,7 +64,7 @@ void setup(){
         error();
     }
 
-    Serial.println("Hardware Tests Completed Successfully.");
+    Serial.println("Hardware tests completed successfully.");
     digitalWrite(LED_PIN, LOW);
 }
 
