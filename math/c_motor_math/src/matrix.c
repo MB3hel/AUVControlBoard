@@ -43,6 +43,36 @@ int matrix_copy(matrix *dest, matrix *src){
     return MAT_ERR_NONE;
 }
 
+int matrix_zeros(matrix *m){
+    for(size_t row = 0; row < m->rows; ++row){
+        for(size_t col = 0; col < m->cols; ++col){
+            m->data[MAT_IDX(m, row, col)] = 0;
+        }
+    }
+    return MAT_ERR_NONE;
+}
+
+int matrix_ones(matrix *m){
+    for(size_t row = 0; row < m->rows; ++row){
+        for(size_t col = 0; col < m->cols; ++col){
+            m->data[MAT_IDX(m, row, col)] = 1;
+        }
+    }
+    return MAT_ERR_NONE;
+}
+
+int matrix_ident(matrix *m){
+    for(size_t row = 0; row < m->rows; ++row){
+        for(size_t col = 0; col < m->cols; ++col){
+            if(row == col)
+                m->data[MAT_IDX(m, row, col)] = 1;
+            else
+                m->data[MAT_IDX(m, row, col)] = 0;
+        }
+    }
+    return MAT_ERR_NONE;
+}
+
 void matrix_print(matrix *m){
 #ifdef MAT_EN_PRINT
     for(size_t row = 0; row < m->rows; ++row){
@@ -177,6 +207,24 @@ int matrix_sc_div(matrix *dest, matrix *src, float scalar){
     for(size_t row = 0; row < dest->rows; ++row){
         for(size_t col = 0; col < dest->cols; ++col){
             dest->data[MAT_IDX(dest, row, col)] = src->data[MAT_IDX(src, row, col)] / scalar;
+        }
+    }
+    return MAT_ERR_NONE;
+}
+
+int matrix_mul(matrix *dest, matrix *op1, matrix *op2){
+    if(dest->rows != op1->rows)
+        return MAT_ERR_SIZE;
+    if(dest->cols != op2->cols)
+        return MAT_ERR_SIZE;
+    if(op1->cols != op2->rows)
+        return MAT_ERR_SIZE;
+    matrix_zeros(dest);
+    for(size_t i = 0; i < op1->rows; ++i){
+        for(size_t j = 0; j < op2->cols; ++j){
+            for(size_t k = 0; k < op1->cols; ++k){
+                dest->data[MAT_IDX(dest, i, j)] += op1->data[MAT_IDX(op1, i, k)] * op2->data[MAT_IDX(op2, k, j)];
+            }
         }
     }
     return MAT_ERR_NONE;

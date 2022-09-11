@@ -55,6 +55,27 @@ void matrix_free(matrix *m);
 int matrix_copy(matrix *dest, matrix *src);
 
 /**
+ * Fill matrix with zeros
+ * @param m Pointer to matrix to zero
+ * @return Error code
+ */
+int matrix_zeros(matrix *m);
+
+/**
+ * Fill matrix with ones
+ * @param m Pointer to matrix to zero
+ * @return Error code
+ */
+int matrix_ones(matrix *m);
+
+/**
+ * Make into identity matrix
+ * @param m Pointer to matrix to zero
+ * @return Error code
+ */
+int matrix_ident(matrix *m);
+
+/**
  * Print the given matrix
  * @param m Pointer to the matrix to print
  */
@@ -187,7 +208,15 @@ int matrix_sc_mul(matrix *dest, matrix *src, float scalar);
  */
 int matrix_sc_div(matrix *dest, matrix *src, float scalar);
 
-// TODO: Matrix multiply
+/**
+ * Multiply two matrices and store the result in another
+ * dest = op1 * op2
+ * @param dest Pointer to destination matrix
+ * @param op1 Pointer to operand 1
+ * @param op2 Pointer to operand 2
+ * @return Error code
+ */
+int matrix_mul(matrix *dest, matrix *op1, matrix *op2);
 
 /**
  * Transpose the input matrix and store it in the output matrix
@@ -196,8 +225,6 @@ int matrix_sc_div(matrix *dest, matrix *src, float scalar);
  * @return Error code
  */
 int matrix_transpose(matrix *dest, matrix *src);
-
-// TODO: Cofactor, Determinant, and Inverse
 
 /**
  * Calculate the determinant of a matrix

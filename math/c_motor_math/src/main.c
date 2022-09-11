@@ -5,22 +5,26 @@
 
 
 int main(void){
-    matrix mat;
-    matrix_init(&mat, 4, 4);
+    matrix res, op1, op2;
+    matrix_init(&res, 3, 2);
+    matrix_init(&op1, 3, 3);
+    matrix_init(&op2, 3, 2);
 
-    matrix_set_row(&mat, 0, (float[]){5, 7, 9, 1});
-    matrix_set_row(&mat, 1, (float[]){0, 1, 0, 0});
-    matrix_set_row(&mat, 2, (float[]){0, 0, 5, 0});
-    matrix_set_row(&mat, 3, (float[]){0, 0, 0, 6});
+    matrix_set_row(&op1, 0, (float[]){1, 2, 3});
+    matrix_set_row(&op1, 1, (float[]){5, 7, 4});
+    matrix_set_row(&op1, 2, (float[]){1, -1, 2});
+
+    matrix_set_row(&op2, 0, (float[]){7, 5});
+    matrix_set_row(&op2, 1, (float[]){6, -5});
+    matrix_set_row(&op2, 2, (float[]){4, -7});
+
+    matrix_mul(&res, &op1, &op2);
     
-    matrix_print(&mat);
+    matrix_print(&op1);
     printf("\n");
-
-    matrix mat_inv;;
-    matrix_init(&mat_inv, 4, 4);
-
-    matrix_inv(&mat_inv, &mat);
-    matrix_print(&mat_inv);
+    matrix_print(&op2);
+    printf("\n");
+    matrix_print(&res);
 
     return 0;
 }
