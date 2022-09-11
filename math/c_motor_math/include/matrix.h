@@ -7,6 +7,10 @@
 /// Macros
 ////////////////////////////////////////////////////////////////////////////////
 
+// Settings
+#define MAT_EN_PRINT                    // Uncomment to enable matrix_print func
+
+// Error Codes
 #define MAT_ERR_NONE                0   // No error
 #define MAT_ERR_SIZE                -1  // Invalid size(s)
 #define MAT_ERR_INDX                -2  // Invalid index
@@ -41,6 +45,14 @@ int matrix_init(matrix *m, size_t rows, size_t cols);
  * @param m Pointer to the matrix to free
  */
 void matrix_free(matrix *m);
+
+/**
+ * Copy one matrix into another
+ * @param dest Pointer to destination matrix
+ * @param src Pointer to source matrix
+ * @return Error code
+ */
+int matrix_copy(matrix *dest, matrix *src);
 
 /**
  * Print the given matrix
@@ -78,31 +90,31 @@ int matrix_set_col(matrix *m, size_t col, float *data);
 
 /**
  * Get an item in a matrix
+ * @param item Pointer to float to store item in
  * @param m Pointer to the matrix to set an item in
  * @param row Row to set item in
  * @param col Column to set item in
- * @param item Pointer to float to store item in
  * @return Error code
  */
-int matrix_get_item(matrix *m, size_t row, size_t col, float *item);
+int matrix_get_item(float *item, matrix *m, size_t row, size_t col);
 
 /**
  * Get a row in a matrix
+ * @param data Pointer to location to read matrix row into (must be same size as a row)
  * @param m Pointer to the matrix to get a row in
  * @param row Row to get
- * @param data Pointer to location to read matrix row into (must be same size as a row)
  * @return Error code
  */
-int matrix_get_row(matrix *m, size_t row, float *data);
+int matrix_get_row(float *data, matrix *m, size_t row);
 
 /**
  * Get a column in a matrix
+ * @param data Pointer to location to read matrix column into (must be same size as a column)
  * @param m Pointer to the matrix to get a column in
  * @param col Column to get
- * @param data Pointer to location to read matrix column into (must be same size as a column)
  * @return Error code
  */
-int matrix_get_col(matrix *m, size_t col, float *data);
+int matrix_get_col(float *data, matrix *m, size_t col);
 
 /**
  * Add two matrices and store the result in a third matrix
@@ -157,16 +169,60 @@ int matrix_ew_mul(matrix *dest, matrix *src1, matrix *src2);
  */
 int matrix_ew_div(matrix *dest, matrix *src1, matrix *src2);
 
-// TODO: Elementwise multiply and divide
+/**
+ * Multiply a matrix by a scalar
+ * @param dest Pointer to destination matrix
+ * @param src Pointer to source matrix
+ * @param scalar Scalar to multiply matrix by
+ * @return Error code
+ */
+int matrix_sc_mul(matrix *dest, matrix *src, float scalar);
 
-// TODO: Transpose
+/**
+ * Divide a matrix by a scalar
+ * @param dest Pointer to destination matrix
+ * @param src Pointer to source matrix
+ * @param scalar Scalar to divide matrix by
+ * @return Error code
+ */
+int matrix_sc_div(matrix *dest, matrix *src, float scalar);
 
 // TODO: Matrix multiply
 
-// TODO: Inverse
+/**
+ * Transpose the input matrix and store it in the output matrix
+ * @param dest Pointer to destination matrix
+ * @param src Pointer to input matrix
+ * @return Error code
+ */
+int matrix_transpose(matrix *dest, matrix *src);
+
+// TODO: Cofactor, Determinant, and Inverse
+
+/**
+ * Calculate the determinant of a matrix
+ * @param det Pointer to location to store determinant
+ * @param m Matrix to calculate determinant of
+ * @return Error code
+ */
+int matrix_det(float *det, matrix *m);
+
+/**
+ * Calculate a cofactor matrix
+ * @param dest Destination to store cofactor matrix
+ * @param m Matrix to calculate cofactor matrix of
+ * @return Error code
+ */
+int matrix_cofactor(matrix *dest, matrix *m);
+
+/**
+ * Calculate an inverse matrix
+ * @param dest Destination to store inverse matrix
+ * @param src Matrix to calculate inverse of
+ * @return Error code
+ */
+int matrix_inv(matrix *dest, matrix *src);
 
 // TODO: Vector dot
 
 // TODO: Vector cross
-
-// TODO: Scalar multiply and divide
