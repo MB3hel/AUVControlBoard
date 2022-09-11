@@ -318,3 +318,42 @@ int matrix_inv(matrix *dest, matrix *src){
     matrix_free(&cof);
     return MAT_ERR_NONE;
 }
+
+int matrix_vdot(float *dest, matrix *src1, matrix *src2){
+    *dest = 0;
+    if(src1->rows == 1 && src2->rows == 1){
+        // Row vector
+        if(src1->cols != src2->cols)
+            return MAT_ERR_SIZE;
+        for(size_t i = 0; i < src1->cols; ++i){
+            *dest += src1->data[MAT_IDX(src1, 0, i)] * src2->data[MAT_IDX(src2, 0, i)];
+        }
+        return MAT_ERR_NONE;
+    }else if(src1->cols == 1 && src2->cols == 1){
+        // Column vector
+        if(src1->rows != src2->rows)
+            return MAT_ERR_SIZE;
+        for(size_t i = 0; i < src1->rows; ++i){
+            *dest += src1->data[MAT_IDX(src1, i, 0)] * src2->data[MAT_IDX(src2, i, 0)];
+        }
+        return MAT_ERR_NONE;
+    }else{
+        return MAT_ERR_SIZE;
+    }
+}
+
+int matrix_vcross(matrix *dest, matrix *src1, matrix *src2){
+    if(dest->cols == 1 && dest->rows == 3 && src1->cols == 1 && src1->rows == 3 && src2->cols == 1 && src2->rows == 3){
+        dest->data[MAT_IDX(dest, 0, 0)] = src1->data[MAT_IDX(src1, 1, 0)] * src2->data[MAT_IDX(src2, 2, 0)] - src1->data[MAT_IDX(src1, 2, 0)] * src2->data[MAT_IDX(src2, 1, 0)];
+        dest->data[MAT_IDX(dest, 1, 0)] = src1->data[MAT_IDX(src1, 2, 0)] * src2->data[MAT_IDX(src2, 0, 0)] - src1->data[MAT_IDX(src1, 0, 0)] * src2->data[MAT_IDX(src2, 2, 0)];
+        dest->data[MAT_IDX(dest, 2, 0)] = src1->data[MAT_IDX(src1, 0, 0)] * src2->data[MAT_IDX(src2, 1, 0)] - src1->data[MAT_IDX(src1, 1, 0)] * src2->data[MAT_IDX(src2, 0, 0)];
+        return MAT_ERR_NONE;
+    }else if(dest->rows == 1 && dest->cols == 3 && src1->rows == 1 && src1->cols == 3 && src2->rows == 1 && src2->cols == 3){
+        dest->data[MAT_IDX(dest, 0, 0)] = src1->data[MAT_IDX(src1, 0, 1)] * src2->data[MAT_IDX(src2, 0, 2)] - src1->data[MAT_IDX(src1, 0, 2)] * src2->data[MAT_IDX(src2, 0, 1)];
+        dest->data[MAT_IDX(dest, 0, 1)] = src1->data[MAT_IDX(src1, 0, 2)] * src2->data[MAT_IDX(src2, 0, 0)] - src1->data[MAT_IDX(src1, 0, 0)] * src2->data[MAT_IDX(src2, 0, 2)];
+        dest->data[MAT_IDX(dest, 0, 2)] = src1->data[MAT_IDX(src1, 0, 0)] * src2->data[MAT_IDX(src2, 0, 1)] - src1->data[MAT_IDX(src1, 0, 1)] * src2->data[MAT_IDX(src2, 0, 0)];
+        return MAT_ERR_NONE;
+    }else{
+        return MAT_ERR_SIZE;
+    }
+}

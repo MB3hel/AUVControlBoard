@@ -250,6 +250,22 @@ int matrix_cofactor(matrix *dest, matrix *m);
  */
 int matrix_inv(matrix *dest, matrix *src);
 
-// TODO: Vector dot
+/**
+ * Vector dot product. Input matrices must either both be
+ * 1xN or Nx1
+ * @param dest Pointer to destination
+ * @param src1 Pointer to source matrix 1
+ * @param src2 Pointer to source matrix 2
+ * @return Error code
+ */
+int matrix_vdot(float *dest, matrix *src1, matrix *src2);
 
-// TODO: Vector cross
+/**
+ * Vector cross product. Input matrices must either both be
+ * 1x3 or 3x1 (output must be same too)
+ * @param dest Pointer to destination matrix
+ * @param src1 Pointer to source matrix 1
+ * @param src2 Pointer to source matrix 2
+ * @return Error code
+ */
+int matrix_vcross(matrix *dest, matrix *src1, matrix *src2);
