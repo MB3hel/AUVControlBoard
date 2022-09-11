@@ -37,7 +37,41 @@ int main(void){
     matrix_set_col(&motor_num_vec, 0, &data[0]);
 
     // Construct overlap vectors for each motor
-    // TODO: Implement this
+    matrix contribution_matrix;
+    matrix_init(&contribution_matrix, 8, 6);
+    for(size_t row = 0; row < contribution_matrix.rows; ++row){
+        for(size_t col = 0; col < contribution_matrix.cols; ++col){
+            float dof_item;
+            matrix_get_item(&dof_item, &dof_matrix, row, col);
+            matrix_set_item(&contribution_matrix, row, col, (dof_item != 0) ? 1 : 0);
+        }
+    }
+    matrix **overlap_vectors = calloc(contribution_matrix.rows, sizeof(matrix*));
+    for(size_t r = 0; r < contribution_matrix.rows; ++r){
+        overlap_vectors[r] = malloc(sizeof(matrix));
+
+        // v = contribution_matrix row r transposed
+        float *rowdata = calloc(contribution_matrix.rows, sizeof(float));
+        matrix_get_row(rowdata, &contribution_matrix, r);
+        matrix v;
+        matrix_init(&v, 6, 1);
+        matrix_set_col(&v, 0, rowdata);
+
+        matrix_mul(&overlap_vectors[r], &contribution_matrix, &v);
+
+        for(size_t row = 0; row < overlap_vectors[r]->rows; ++row){
+            for(size_t col = 0; col < overlap_vectors[r]->cols; ++col){
+                float item;
+                matrix_get_item(&item, &overlap_vectors[r], row, col);
+                matrix_set_item(&overlap_vectors[r], row, col, (item != 0) ? 1 : 0);
+            }
+        }
+
+        matrix_free(&v);
+        free(rowdata);
+    }
+
+    // TODO: Print overlap vectors to make sure they are correct
 
     ////////////////////////////////////////////////////////////////////////////
     /// Robot Orientation Information
@@ -62,7 +96,7 @@ int main(void){
     matrix target;
     matrix_init(&target, 6, 1);
                                         //  x       y       z     pitch    roll    yaw
-    matrix_set_col(&target, 0, (float[]){   0,      1,      0,      0,      0,      0   });
+    matrix_set_col(&target, 0, (float[]){   1,      0,      1,      1,      1,      1   });
     bool target_is_global = false;
 
 
