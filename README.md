@@ -8,3 +8,11 @@ The control board generates ESC control signals (PWM), acquires and processes se
 
 
 TODO: Documentation on interfacing with control board (communication protocol, available PIDs, control modes, etc)
+
+
+## Flashing a New Board
+
+- *Note: to enter bootloader mode pres the reset button twice quickly. This is required before programming the board.*
+- [Update U2F Bootloader](https://learn.adafruit.com/introducing-adafruit-itsybitsy-m4/update-the-uf2-bootloader)
+- Upload the test program
+- Upload the firmware
