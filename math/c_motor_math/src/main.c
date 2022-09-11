@@ -1,24 +1,104 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
 #include <matrix.h>
 
 
 int main(void){
-    float dot;
-    matrix cross, va, vb;
-    matrix_init(&va, 1, 3);
-    matrix_init(&vb, 1, 3);
-    matrix_init(&cross, 1, 3);
+    ////////////////////////////////////////////////////////////////////////////
+    /// Thruster Configuration Information
+    ////////////////////////////////////////////////////////////////////////////
+    // Motor Matrix Definition
+    matrix motor_matrix;
+    matrix_init(&motor_matrix, 8, 7);
+                                              // MotorNum    x       y      z     pitch    roll     yaw
+    matrix_set_row(&motor_matrix, 0, (float[]){     1,      -1,     -1,     0,      0,      0,      +1  });
+    matrix_set_row(&motor_matrix, 1, (float[]){     2,      +1,     -1,     0,      0,      0,      -1  });
+    matrix_set_row(&motor_matrix, 2, (float[]){     3,      -1,     +1,     0,      0,      0,      -1  });
+    matrix_set_row(&motor_matrix, 3, (float[]){     4,      +1,     +1,     0,      0,      0,      +1  });
+    matrix_set_row(&motor_matrix, 4, (float[]){     5,       0,      0,    -1,     -1,     -1,       0  });
+    matrix_set_row(&motor_matrix, 5, (float[]){     6,       0,      0,    -1,     -1,     +1,       0  });
+    matrix_set_row(&motor_matrix, 6, (float[]){     7,       0,      0,    -1,     +1,     -1,       0  });
+    matrix_set_row(&motor_matrix, 7, (float[]){     8,       0,      0,    -1,     +1,     +1,       0  });
 
-    matrix_set_row(&va, 0, (float[]){1, 2, 3});
-    matrix_set_row(&vb, 0, (float[]){2, 2, 3});
+    // Construct DoF Matrix and Motor Number Vector
+    matrix dof_matrix;
+    float data[8];
+    matrix_init(&dof_matrix, 8, 6);
+    for(size_t col = 0; col < 6; ++col){
+        matrix_get_col(&data[0], &motor_matrix, col + 1);
+        matrix_set_col(&dof_matrix, col, &data[0]);
+    }
+    matrix motor_num_vec;
+    matrix_init(&motor_num_vec, 8, 1);
+    matrix_get_col(&data[0], &motor_matrix, 0);
+    matrix_set_col(&motor_num_vec, 0, &data[0]);
 
-    matrix_vdot(&dot, &va, &vb);
-    matrix_vcross(&cross, &va, &vb);
+    // Construct overlap vectors for each motor
+    // TODO: Implement this
 
-    printf("dot = %.2f\n\n", dot);
-    matrix_print(&cross);
+    ////////////////////////////////////////////////////////////////////////////
+    /// Robot Orientation Information
+    ////////////////////////////////////////////////////////////////////////////
+    // Gravity vector (from accelerometer data)
+    // Used to determine robot pitch and roll
+    // [x, y, z] components
+    matrix gravity_vector;
+    float grav_x = 0;
+    float grav_y = 1;
+    float grav_z = -1;
+    matrix_init(&gravity_vector, 1, 3);                                             
+    matrix_set_row(&gravity_vector, 0, (float[]){grav_x, grav_y, grav_z});
+    float grav_l2norm = sqrtf(powf(grav_x, 2) + powf(grav_y, 2) + powf(grav_z, 2));
+    matrix_sc_div(&gravity_vector, &gravity_vector, grav_l2norm);
+    matrix_sc_mul(&gravity_vector, &gravity_vector, 9.81);
 
-    return 0;
+    ////////////////////////////////////////////////////////////////////////////
+    /// Target Motion Information
+    ////////////////////////////////////////////////////////////////////////////
+    // Target motion in all 6 DoFs
+    matrix target;
+    matrix_init(&target, 6, 1);
+                                        //  x       y       z     pitch    roll    yaw
+    matrix_set_col(&target, 0, (float[]){   0,      1,      0,      0,      0,      0   });
+    bool target_is_global = false;
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    /// Target localization
+    ////////////////////////////////////////////////////////////////////////////
+    if(target_is_global){
+        // TODO: Implement this
+        printf("NYI");
+        return EXIT_FAILURE;
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    /// Motor speed calculations
+    ////////////////////////////////////////////////////////////////////////////
+    // In practice this would be repeated each time target changes
+
+    // Base speed calculation
+    matrix speed_vec;
+    matrix_init(&speed_vec, 8, 1);
+    matrix_mul(&speed_vec, &dof_matrix, &target);
+
+    // Scale motor speeds down as needed
+    // TODO
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    /// Print Motor Speeds
+    ////////////////////////////////////////////////////////////////////////////
+    for(size_t i = 0; i < motor_num_vec.rows; ++i){
+        float num, speed;
+        matrix_get_item(&num, &motor_num_vec, i, 0);
+        matrix_get_item(&speed, &speed_vec, i, 0);
+        printf("Motor %d: %4d%%\n", (int)num, (int)(speed * 100));
+    }
+
+    return EXIT_SUCCESS;
 }
