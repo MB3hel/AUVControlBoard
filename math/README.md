@@ -2,7 +2,7 @@
 
 `motor_control_math.py` is an implementation of the motor control math using numpy. It is used for prototyping / testing.
 
-`motor_control_math.c` is a C implementation of the required math (can be used directly in embedded firmware later). *DOES NOT EXIST YET*
+`c_math` is a C implementation of the required math (can be used directly in embedded firmware later).
 
 
 ## Coordinate System Definition
