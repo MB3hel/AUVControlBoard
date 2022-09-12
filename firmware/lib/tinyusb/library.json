@@ -1,7 +1,0 @@
-{
-    "name": "tinyusb",
-    "version": "0.14.0",
-    "description": "TinyUSB library",
-    "frameworks": "*",
-    "platforms": "*"
-  }
