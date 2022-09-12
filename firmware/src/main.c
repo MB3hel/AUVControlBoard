@@ -1,6 +1,7 @@
 
 #include <sam.h>
 #include <stdbool.h>
+#include <tusb.h>
 
 
 int main(void){
