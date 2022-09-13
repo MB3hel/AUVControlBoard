@@ -46,9 +46,11 @@ int main(void){
             matrix_set_item(&contribution_matrix, row, col, (dof_item != 0) ? 1 : 0);
         }
     }
+
     matrix **overlap_vectors = calloc(contribution_matrix.rows, sizeof(matrix*));
     for(size_t r = 0; r < contribution_matrix.rows; ++r){
         overlap_vectors[r] = malloc(sizeof(matrix));
+        matrix_init(overlap_vectors[r], contribution_matrix.rows, 1);
 
         // v = contribution_matrix row r transposed
         float *rowdata = calloc(contribution_matrix.rows, sizeof(float));
@@ -57,21 +59,19 @@ int main(void){
         matrix_init(&v, 6, 1);
         matrix_set_col(&v, 0, rowdata);
 
-        matrix_mul(&overlap_vectors[r], &contribution_matrix, &v);
+        matrix_mul(overlap_vectors[r], &contribution_matrix, &v);
 
         for(size_t row = 0; row < overlap_vectors[r]->rows; ++row){
             for(size_t col = 0; col < overlap_vectors[r]->cols; ++col){
                 float item;
-                matrix_get_item(&item, &overlap_vectors[r], row, col);
-                matrix_set_item(&overlap_vectors[r], row, col, (item != 0) ? 1 : 0);
+                matrix_get_item(&item, overlap_vectors[r], row, col);
+                matrix_set_item(overlap_vectors[r], row, col, (item != 0) ? 1 : 0);
             }
         }
 
         matrix_free(&v);
         free(rowdata);
     }
-
-    // TODO: Print overlap vectors to make sure they are correct
 
     ////////////////////////////////////////////////////////////////////////////
     /// Robot Orientation Information
@@ -80,12 +80,10 @@ int main(void){
     // Used to determine robot pitch and roll
     // [x, y, z] components
     matrix gravity_vector;
-    float grav_x = 0;
-    float grav_y = 1;
-    float grav_z = -1;
     matrix_init(&gravity_vector, 1, 3);                                             
-    matrix_set_row(&gravity_vector, 0, (float[]){grav_x, grav_y, grav_z});
-    float grav_l2norm = sqrtf(powf(grav_x, 2) + powf(grav_y, 2) + powf(grav_z, 2));
+    matrix_set_row(&gravity_vector, 0, (float[]){0, 1, -1});
+    float grav_l2norm;
+    matrix_l2vnorm(&grav_l2norm, &gravity_vector);
     matrix_sc_div(&gravity_vector, &gravity_vector, grav_l2norm);
     matrix_sc_mul(&gravity_vector, &gravity_vector, 9.81);
 
@@ -121,7 +119,22 @@ int main(void){
     matrix_mul(&speed_vec, &dof_matrix, &target);
 
     // Scale motor speeds down as needed
-    // TODO
+    while(true){
+        size_t idxrow, idxcol;
+        float mval;
+        matrix_absmax(&mval, &idxrow, &idxcol, &speed_vec);
+        if(mval <= 1)
+            break;
+        for(size_t i = 0; i < overlap_vectors[idxrow]->rows; ++i){
+            float cval;
+            matrix_get_item(&cval, overlap_vectors[idxrow], i, 0);
+            if(cval == 1){
+                matrix_get_item(&cval, &speed_vec, i, 0);
+                cval /= mval;
+                matrix_set_item(&speed_vec, i, 0, cval);
+            }
+        }
+    }
 
 
     ////////////////////////////////////////////////////////////////////////////

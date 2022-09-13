@@ -269,3 +269,21 @@ int matrix_vdot(float *dest, matrix *src1, matrix *src2);
  * @return Error code
  */
 int matrix_vcross(matrix *dest, matrix *src1, matrix *src2);
+
+/**
+ * L2 Vector norm of a vector. Must be 1xN or Nx1 vector
+ * @param dest Pointer to destination float
+ * @param src Pointer to source vector
+ * @return Error code
+ */
+int matrix_l2vnorm(float *dest, matrix *src);
+
+/**
+ * Get maximum magnitude value of a matrix
+ * @param value Where to store value
+ * @param row Where to store index row
+ * @param col Where to store index col
+ * @param src Matrix to find max magnitude value from
+ * @return Error code
+ */
+int matrix_absmax(float *value, size_t *row, size_t *col, matrix *src);

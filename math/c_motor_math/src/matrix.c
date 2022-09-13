@@ -357,3 +357,40 @@ int matrix_vcross(matrix *dest, matrix *src1, matrix *src2){
         return MAT_ERR_SIZE;
     }
 }
+
+int matrix_l2vnorm(float *dest, matrix *src){
+    *dest = 0;
+    if(src->cols == 1){
+        for(size_t row = 0; row < src->rows; ++row){
+            *dest += powf(src->data[MAT_IDX(src, row, 0)], 2.0f);
+        }
+        *dest = sqrtf(*dest);
+        return MAT_ERR_NONE;
+    }else if(src->rows == 1){
+        for(size_t col = 0; col < src->cols; ++col){
+            *dest += powf(src->data[MAT_IDX(src, 0, col)], 2.0f);
+        }
+        *dest = sqrtf(*dest);
+        return MAT_ERR_NONE;
+    }else{
+        return MAT_ERR_SIZE;
+    }
+}
+
+int matrix_absmax(float *value, size_t *destrow, size_t *destcol, matrix *src){
+    float tmp;
+    *value = src->data[MAT_IDX(src, 0, 0)];
+    *destrow = 0;
+    *destcol = 0;
+    for(size_t row = 0; row < src->rows; ++row){
+        for(size_t col = 0; col < src->cols; ++col){
+            tmp = fabsf(src->data[MAT_IDX(src, row, col)]);
+            if(tmp > *value){
+                *value = tmp;
+                *destrow = row;
+                *destcol = col;
+            }
+        }
+    }
+    return MAT_ERR_NONE;
+}
