@@ -51,9 +51,9 @@ gravity_vector *= 9.81
 # Target motion in all 6 DoFs
 target = np.transpose(np.matrix([
     #     x       y      z     pitch    roll     yaw
-    [     1,      0,     1,      1,      1,       1    ]
+    [     0,      1,     0,      0,      0,       0    ]
 ], dtype=np.double))
-target_is_global = False
+target_is_global = True
 
 
 ################################################################################

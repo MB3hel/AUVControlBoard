@@ -6,6 +6,27 @@
 #include <matrix.h>
 
 
+int skew3(matrix *outmat, matrix *invec){
+    if(outmat->rows != 3 || outmat->cols != 3)
+        return MAT_ERR_SIZE;
+    float v[3];
+    if(invec->rows == 1){
+        if(invec->cols != 3)
+            return MAT_ERR_SIZE;
+        matrix_get_row(&v[0], invec, 0);
+    }else if(invec->cols == 1){
+        if(invec->rows != 3)
+            return MAT_ERR_SIZE;
+        matrix_get_col(&v[0], invec, 0);
+    }else{
+        return MAT_ERR_SIZE;
+    }
+    matrix_set_row(outmat, 0, (float[]){0, -v[2], v[1]});
+    matrix_set_row(outmat, 1, (float[]){v[2], 0, -v[0]});
+    matrix_set_row(outmat, 2, (float[]){-v[1], v[0], 0});
+    return MAT_ERR_NONE;
+}
+
 int main(void){
     ////////////////////////////////////////////////////////////////////////////
     /// Thruster Configuration Information
@@ -80,12 +101,13 @@ int main(void){
     // Used to determine robot pitch and roll
     // [x, y, z] components
     matrix gravity_vector;
-    matrix_init(&gravity_vector, 1, 3);                                             
-    matrix_set_row(&gravity_vector, 0, (float[]){0, 1, -1});
+    matrix_init(&gravity_vector, 3, 1);                                             
+    matrix_set_col(&gravity_vector, 0, (float[]){0, 1, 0});
     float grav_l2norm;
     matrix_l2vnorm(&grav_l2norm, &gravity_vector);
     matrix_sc_div(&gravity_vector, &gravity_vector, grav_l2norm);
     matrix_sc_mul(&gravity_vector, &gravity_vector, 9.81);
+
 
     ////////////////////////////////////////////////////////////////////////////
     /// Target Motion Information
@@ -94,17 +116,75 @@ int main(void){
     matrix target;
     matrix_init(&target, 6, 1);
                                         //  x       y       z     pitch    roll    yaw
-    matrix_set_col(&target, 0, (float[]){   1,      0,      1,      1,      1,      1   });
-    bool target_is_global = false;
+    matrix_set_col(&target, 0, (float[]){   0,      1,      0,      0,      0,      0   });
+    bool target_is_global = true;
 
 
     ////////////////////////////////////////////////////////////////////////////
     /// Target localization
     ////////////////////////////////////////////////////////////////////////////
     if(target_is_global){
-        // TODO: Implement this
-        printf("NYI");
-        return EXIT_FAILURE;
+        matrix b;
+        matrix_init(&b, 3, 1);
+        float gravl2norm;
+        matrix_l2vnorm(&gravl2norm, &gravity_vector);
+        matrix_sc_div(&b, &gravity_vector, gravl2norm);
+
+        matrix a;
+        matrix_init(&a, 3, 1);
+        matrix_set_col(&a, 0, (float[]){0, 0, -1});
+
+        matrix v;
+        matrix_init(&v, 3, 1);
+        matrix_vcross(&v, &a, &b);
+
+        float c;
+        matrix_vdot(&c, &a, &b);
+
+        matrix sk;
+        matrix_init(&sk, 3, 3);
+        skew3(&sk, &v);
+
+        matrix I;
+        matrix_init(&I, 3, 3);
+        matrix_ident(&I);
+
+        matrix R;
+        matrix_init(&R, 3, 3);
+        matrix_mul(&R, &sk, &sk);
+        matrix_sc_div(&R, &R, 1 + c);
+        matrix_add(&R, &R, &sk);
+        matrix_add(&R, &R, &I);
+
+        matrix_free(&I);
+        matrix_free(&sk);
+        matrix_free(&v);
+        matrix_free(&a);
+        matrix_free(&b);
+
+        float tmp[6];
+        matrix tltarget, rltarget, tgtarget, rgtarget;
+        matrix_init(&tltarget, 3, 1);
+        matrix_init(&rltarget, 3, 1);
+        matrix_init(&tgtarget, 3, 1);
+        matrix_init(&rgtarget, 3, 1);
+        matrix_get_col(&tmp[0], &target, 0);
+        matrix_set_col(&tltarget, 0, &tmp[0]);
+        matrix_set_col(&rltarget, 0, &tmp[3]);
+
+        matrix_mul(&tgtarget, &R, &tltarget);
+        matrix_mul(&rgtarget, &R, &rltarget);
+
+        matrix_get_col(&tmp[0], &tgtarget, 0);
+        matrix_get_col(&tmp[3], &rgtarget, 0);
+
+        matrix_free(&rgtarget);
+        matrix_free(&tgtarget);
+        matrix_free(&rltarget);
+        matrix_free(&tltarget);
+        matrix_free(&R);
+
+        matrix_set_col(&target, 0, &tmp[0]);
     }
 
 

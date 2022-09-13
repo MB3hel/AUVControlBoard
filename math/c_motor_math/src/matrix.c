@@ -141,7 +141,7 @@ int matrix_add(matrix *dest, matrix *src1, matrix *src2){
         return MAT_ERR_SIZE;
     for(size_t row = 0; row < dest->rows; ++row){
         for(size_t col = 0; col < dest->cols; ++col){
-            dest->data[MAT_IDX(dest, row, col)] = src1->data[MAT_IDX(src1, row, col)] + src1->data[MAT_IDX(src2, row, col)];
+            dest->data[MAT_IDX(dest, row, col)] = src1->data[MAT_IDX(src1, row, col)] + src2->data[MAT_IDX(src2, row, col)];
         }
     }
     return MAT_ERR_NONE;
@@ -154,7 +154,7 @@ int matrix_sub(matrix *dest, matrix *src1, matrix *src2){
         return MAT_ERR_SIZE;
     for(size_t row = 0; row < dest->rows; ++row){
         for(size_t col = 0; col < dest->cols; ++col){
-            dest->data[MAT_IDX(dest, row, col)] = src1->data[MAT_IDX(src1, row, col)] - src1->data[MAT_IDX(src2, row, col)];
+            dest->data[MAT_IDX(dest, row, col)] = src1->data[MAT_IDX(src1, row, col)] - src2->data[MAT_IDX(src2, row, col)];
         }
     }
     return MAT_ERR_NONE;
@@ -167,7 +167,7 @@ int matrix_ew_mul(matrix *dest, matrix *src1, matrix *src2){
         return MAT_ERR_SIZE;
     for(size_t row = 0; row < dest->rows; ++row){
         for(size_t col = 0; col < dest->cols; ++col){
-            dest->data[MAT_IDX(dest, row, col)] = src1->data[MAT_IDX(src1, row, col)] * src1->data[MAT_IDX(src2, row, col)];
+            dest->data[MAT_IDX(dest, row, col)] = src1->data[MAT_IDX(src1, row, col)] * src2->data[MAT_IDX(src2, row, col)];
         }
     }
     return MAT_ERR_NONE;
@@ -180,7 +180,7 @@ int matrix_ew_div(matrix *dest, matrix *src1, matrix *src2){
         return MAT_ERR_SIZE;
     for(size_t row = 0; row < dest->rows; ++row){
         for(size_t col = 0; col < dest->cols; ++col){
-            dest->data[MAT_IDX(dest, row, col)] = src1->data[MAT_IDX(src1, row, col)] / src1->data[MAT_IDX(src2, row, col)];
+            dest->data[MAT_IDX(dest, row, col)] = src1->data[MAT_IDX(src1, row, col)] / src2->data[MAT_IDX(src2, row, col)];
         }
     }
     return MAT_ERR_NONE;
