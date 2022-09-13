@@ -60,18 +60,6 @@ target_is_global = True
 # Target localization
 ################################################################################
 
-# See https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
-# See https://en.wikipedia.org/wiki/Quaternion#Multiplication_of_basis_elements
-# See https://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/code/index.htm
-def quaternion_multiply(q1, q2):
-    # res, q1, and q2 in order [w, x, y, z]
-    res = np.array([0, 0, 0, 0], dtype=np.double)
-    res[0] = -q1[1] * q2[1] - q1[2] * q2[2] - q1[3] * q2[3] + q1[0] * q2[0]
-    res[1] =  q1[1] * q2[0] + q1[2] * q2[3] - q1[3] * q2[2] + q1[0] * q2[1]
-    res[2] = -q1[1] * q2[3] + q1[2] * q2[0] + q1[3] * q2[1] + q1[0] * q2[2]
-    res[3] =  q1[1] * q2[2] - q1[2] * q2[1] + q1[3] * q2[0] + q1[0] * q2[3]
-    return res
-
 if target_is_global:
     def skew(v):
         return np.matrix([
@@ -92,7 +80,6 @@ if target_is_global:
     translation = np.matmul(R, translation).flatten().A1
     rotation = np.matmul(R, rotation).flatten().A1
     target = np.concatenate((translation, rotation)).reshape(6, 1)
-    print(target)
 
 
 ################################################################################
