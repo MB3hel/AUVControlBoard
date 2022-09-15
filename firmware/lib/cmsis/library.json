@@ -1,0 +1,7 @@
+{
+    "name": "cmsis",
+    "version": "1.0.0",
+    "description": "Common Microcontroller Software Interface Standard",
+    "frameworks": "*",
+    "platforms": "*"
+}

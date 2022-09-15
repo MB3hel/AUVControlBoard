@@ -1,0 +1,7 @@
+{
+    "name": "samd51a",
+    "version": "1.0.0",
+    "description": "SAMD51A Device Framework Package",
+    "frameworks": "*",
+    "platforms": "*"
+}
