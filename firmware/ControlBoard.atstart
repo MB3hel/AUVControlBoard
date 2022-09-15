@@ -802,8 +802,8 @@ drivers:
       _$freq_output_Digital Frequency Locked Loop (DFLL48M): 48000000
       _$freq_output_Digital Phase Locked Loop (DPLL0): 48000000
       _$freq_output_Digital Phase Locked Loop (DPLL1): 120000512
-      _$freq_output_External Crystal Oscillator 8-48MHz (XOSC0): '12000000'
-      _$freq_output_External Crystal Oscillator 8-48MHz (XOSC1): '12000000'
+      _$freq_output_External Crystal Oscillator 8-48MHz (XOSC0): 12000000
+      _$freq_output_External Crystal Oscillator 8-48MHz (XOSC1): 12000000
       dfll_arch_bplckc: false
       dfll_arch_calibration: false
       dfll_arch_ccdis: false
@@ -957,7 +957,7 @@ drivers:
       domain_group:
         nodes:
         - name: Core
-          input: Generic clock generator 0
+          input: Generic clock generator 1
           external: false
           external_frequency: 0
         - name: Slow
@@ -965,7 +965,7 @@ drivers:
           external: false
           external_frequency: 0
         configuration:
-          core_gclk_selection: Generic clock generator 0
+          core_gclk_selection: Generic clock generator 1
           slow_gclk_selection: Generic clock generator 3
   SPI_0:
     user_label: SPI_0
