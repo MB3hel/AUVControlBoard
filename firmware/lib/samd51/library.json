@@ -1,7 +1,0 @@
-{
-    "name": "samd51",
-    "version": "1.0.0",
-    "description": "Libraries for SAMD51 chip",
-    "frameworks": "*",
-    "platforms": "*"
-  }

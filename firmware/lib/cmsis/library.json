@@ -1,7 +1,0 @@
-{
-    "name": "cmsis_cortex_m",
-    "version": "1.0.0",
-    "description": "CMSIS libraries for Cortex M chips",
-    "frameworks": "*",
-    "platforms": "*"
-  }

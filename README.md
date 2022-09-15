@@ -11,8 +11,6 @@ The control board generates ESC control signals (PWM), acquires and processes se
 
 Both the [control board firmware](./firmware/) and the [hardware test](./hwtest/) program are developed using [PlatformIO](https://platformio.org/). PlatformIO is installed as an extension to [VSCode](https://code.visualstudio.com/).
 
-The libraries for the SAMD51 and the Arm CMSIS libraries are included in this project (`lib/samd51` and `lib/cmsis`). Both of these libraries have been copied from the Atmel Studio files (`C:\Program Files (x86)\Atmel\Studio\7.0\packs\`).
-
 
 ## Flashing a New Board
 
