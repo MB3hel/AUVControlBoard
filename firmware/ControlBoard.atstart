@@ -18,7 +18,75 @@ board:
   device: SAMD51G19A-MF
 details: null
 application: null
-middlewares: {}
+middlewares:
+  USB_CHAPTER_9:
+    user_label: USB_CHAPTER_9
+    configuration: {}
+    definition: Atmel:USB:0.0.1::USB_Chapter_9
+    functionality: USB_Chapter_9
+    api: USB:Protocol:Core
+    dependencies: {}
+  USB_CLASS_CDC:
+    user_label: USB_CLASS_CDC
+    configuration: {}
+    definition: Atmel:USB:0.0.1::USB_Class_CDC
+    functionality: USB_Class_CDC
+    api: USB:Protocol:CDC
+    dependencies:
+      USB Chapter 9: USB_CHAPTER_9
+  USB_DEVICE_STACK_CORE_INSTANCE:
+    user_label: USB_DEVICE_STACK_CORE_INSTANCE
+    configuration:
+      usbd_hs_sp: false
+    definition: Atmel:USB:0.0.1::USB_Device_Core
+    functionality: USB_Device_Core
+    api: USB:Device:Core
+    dependencies:
+      USB Chapter 9: USB_CHAPTER_9
+      USB Device instance: USB_DEVICE_INSTANCE
+  USB_DEVICE_CDC_ACM_0:
+    user_label: USB_DEVICE_CDC_ACM_0
+    configuration:
+      usb_cdcd_acm_bcddevice: 256
+      usb_cdcd_acm_bcdusb: USB 2.0 version
+      usb_cdcd_acm_bconfigval: 1
+      usb_cdcd_acm_bmattri: Bus power supply, not support for remote wakeup
+      usb_cdcd_acm_bmaxpksz0: 64 bytes
+      usb_cdcd_acm_bmaxpower: 50
+      usb_cdcd_acm_bnumconfig: 1
+      usb_cdcd_acm_comm_baltset: 0
+      usb_cdcd_acm_comm_bifcnum: 0
+      usb_cdcd_acm_comm_iifc: 0
+      usb_cdcd_acm_comm_int_interval: 10
+      usb_cdcd_acm_comm_int_maxpksz: 64 bytes
+      usb_cdcd_acm_data_baltset: 0
+      usb_cdcd_acm_data_bifcnum: 1
+      usb_cdcd_acm_data_buckout_maxpksz: 64 bytes
+      usb_cdcd_acm_data_buckout_maxpksz_hs: 512 bytes
+      usb_cdcd_acm_data_builin_maxpksz: 64 bytes
+      usb_cdcd_acm_data_builin_maxpksz_hs: 512 bytes
+      usb_cdcd_acm_data_bulkin_epaddr: EndpointAddress = 0x81
+      usb_cdcd_acm_data_bulkout_epaddr: EndpointAddress = 0x01
+      usb_cdcd_acm_data_iifc: 0
+      usb_cdcd_acm_epaddr: EndpointAddress = 0x82
+      usb_cdcd_acm_iconfig_en: false
+      usb_cdcd_acm_iconfig_str: ''
+      usb_cdcd_acm_idproduct: 9220
+      usb_cdcd_acm_idvender: 1003
+      usb_cdcd_acm_imanufact_en: false
+      usb_cdcd_acm_imanufact_str: Atmel
+      usb_cdcd_acm_iproduct_en: false
+      usb_cdcd_acm_iproduct_str: CDC ACM Serial Bridge Demo
+      usb_cdcd_acm_iserialnum_en: false
+      usb_cdcd_acm_iserialnum_str: 123456789ABCDEF
+      usb_cdcd_acm_langid: '0x0409'
+      usb_cdcd_acm_str_en: false
+    definition: Atmel:USB:0.0.1::USB_Device_CDC_ACM
+    functionality: USB_Device_CDC_ACM
+    api: USB:Device:CDC_ACM
+    dependencies:
+      USB Device Stack Core Instance: USB_DEVICE_STACK_CORE_INSTANCE
+      USB Class CDC: USB_CLASS_CDC
 drivers:
   CMCC:
     user_label: CMCC
@@ -995,7 +1063,7 @@ drivers:
         pad: PB03
         label: SCK
       - name: SERCOM5/PAD/2
-        pad: PA24
+        pad: PB22
         label: MISO
     clocks:
       domain_group:
@@ -1011,121 +1079,49 @@ drivers:
         configuration:
           core_gclk_selection: Generic clock generator 0
           slow_gclk_selection: Generic clock generator 3
-  PWM_0:
-    user_label: PWM_0
-    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::TCC1::driver_config_definition::PWM::HAL:Driver:PWM
-    functionality: PWM
-    api: HAL:Driver:PWM
+  USB_DEVICE_INSTANCE:
+    user_label: USB_DEVICE_INSTANCE
+    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::USB::driver_config_definition::USB.Device::HAL:Driver:USB.Device
+    functionality: USB
+    api: HAL:Driver:USB_Device
     configuration:
-      tcc_arch_alock: false
-      tcc_arch_cc0: 0
-      tcc_arch_cc1: 0
-      tcc_arch_cc2: 0
-      tcc_arch_cc3: 0
-      tcc_arch_cnteo: false
-      tcc_arch_cntsel: An interrupt/event is generated when a new counter cycle starts
-      tcc_arch_cpten0: false
-      tcc_arch_cpten1: false
-      tcc_arch_cpten2: false
-      tcc_arch_cpten3: false
-      tcc_arch_cpten4: false
-      tcc_arch_cpten5: false
-      tcc_arch_cpten6: false
-      tcc_arch_cpten7: false
-      tcc_arch_dbgrun: false
-      tcc_arch_evact0: Event action disabled
-      tcc_arch_evact1: Event action disabled
-      tcc_arch_lupd: true
-      tcc_arch_mcei0: false
-      tcc_arch_mcei1: false
-      tcc_arch_mcei2: false
-      tcc_arch_mcei3: false
-      tcc_arch_mceo0: false
-      tcc_arch_mceo1: false
-      tcc_arch_mceo2: false
-      tcc_arch_mceo3: false
-      tcc_arch_ovfeo: false
-      tcc_arch_prescsync: Reload or reset counter on next GCLK
-      tcc_arch_runstdby: false
-      tcc_arch_sel_ch: 1
-      tcc_arch_tcei0: false
-      tcc_arch_tcei1: false
-      tcc_arch_tceinv0: false
-      tcc_arch_tceinv1: false
-      tcc_arch_trgeo: false
-      tcc_arch_wave_duty_val: 500
-      tcc_arch_wave_per_val: 1000
-      tcc_arch_wavegen: Single-slope PWM
-      tcc_per: 10000
-      tcc_prescaler: Divide by 8
-      timer_event_control: false
-    optional_signals:
-    - identifier: PWM_0:WO/0
-      pad: PA16
-      mode: PWM output
-      configuration: null
-      definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::optional_signal_definition::TCC1.WO.0
-      name: TCC1/WO/0
-      label: WO/0
-    - identifier: PWM_0:WO/1
-      pad: PA17
-      mode: PWM output
-      configuration: null
-      definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::optional_signal_definition::TCC1.WO.1
-      name: TCC1/WO/1
-      label: WO/1
-    - identifier: PWM_0:WO/2
-      pad: PA18
-      mode: PWM output
-      configuration: null
-      definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::optional_signal_definition::TCC1.WO.2
-      name: TCC1/WO/2
-      label: WO/2
-    - identifier: PWM_0:WO/3
-      pad: PA19
-      mode: PWM output
-      configuration: null
-      definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::optional_signal_definition::TCC1.WO.3
-      name: TCC1/WO/3
-      label: WO/3
-    - identifier: PWM_0:WO/4
-      pad: PA20
-      mode: PWM output
-      configuration: null
-      definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::optional_signal_definition::TCC1.WO.4
-      name: TCC1/WO/4
-      label: WO/4
-    - identifier: PWM_0:WO/5
-      pad: PA21
-      mode: PWM output
-      configuration: null
-      definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::optional_signal_definition::TCC1.WO.5
-      name: TCC1/WO/5
-      label: WO/5
-    - identifier: PWM_0:WO/6
-      pad: PA22
-      mode: PWM output
-      configuration: null
-      definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::optional_signal_definition::TCC1.WO.6
-      name: TCC1/WO/6
-      label: WO/6
-    - identifier: PWM_0:WO/7
-      pad: PA23
-      mode: PWM output
-      configuration: null
-      definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::optional_signal_definition::TCC1.WO.7
-      name: TCC1/WO/7
-      label: WO/7
-    variant: null
+      usb_arch_ep0_cache: Cached by 64 bytes buffer
+      usb_arch_ep1_cache: Cached by 64 bytes buffer
+      usb_arch_ep2_cache: Cached by 64 bytes buffer
+      usb_arch_ep3_cache: Cached by 64 bytes buffer
+      usb_arch_ep4_cache: Cached by 64 bytes buffer
+      usb_arch_ep5_cache: Cached by 64 bytes buffer
+      usb_arch_ep6_cache: Cached by 64 bytes buffer
+      usb_arch_ep7_cache: Cached by 64 bytes buffer
+      usb_ep1_I_CACHE: No cache
+      usb_ep2_I_CACHE: No cache
+      usb_ep3_I_CACHE: No cache
+      usb_ep4_I_CACHE: No cache
+      usb_ep5_I_CACHE: No cache
+      usb_ep6_I_CACHE: No cache
+      usb_ep7_I_CACHE: No cache
+      usbd_arch_max_ep_n: 2 (EP 0x82 or 0x02)
+      usbd_arch_speed: Full speed
+      usbd_num_ep_sp: 4 (EP0 + 3 endpoints)
+    optional_signals: []
+    variant:
+      specification: default
+      required_signals:
+      - name: USB/DM
+        pad: PA24
+        label: Data-
+      - name: USB/DP
+        pad: PA25
+        label: Data+
     clocks:
       domain_group:
         nodes:
-        - name: TCC
-          input: Generic clock generator 0
+        - name: USB
+          input: Generic clock generator 1
           external: false
           external_frequency: 0
         configuration:
-          tcc_gclk_selection: Generic clock generator 0
+          usb_gclk_selection: Generic clock generator 1
 pads:
   SENS_SCL:
     name: PA12
@@ -1139,59 +1135,23 @@ pads:
     mode: I2C
     user_label: SENS_SDA
     configuration: null
-  THR8:
-    name: PA16
-    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA16
-    mode: Peripheral IO
-    user_label: THR8
-    configuration: null
-  THR7:
-    name: PA17
-    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA17
-    mode: Peripheral IO
-    user_label: THR7
-    configuration: null
-  THR6:
-    name: PA18
-    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA18
-    mode: Peripheral IO
-    user_label: THR6
-    configuration: null
-  THR5:
-    name: PA19
-    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA19
-    mode: Peripheral IO
-    user_label: THR5
-    configuration: null
-  THR4:
-    name: PA20
-    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA20
-    mode: Peripheral IO
-    user_label: THR4
-    configuration: null
-  THR3:
-    name: PA21
-    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA21
-    mode: Peripheral IO
-    user_label: THR3
-    configuration: null
-  THR2:
-    name: PA22
-    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA22
-    mode: Peripheral IO
-    user_label: THR2
-    configuration: null
-  THR1:
-    name: PA23
-    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA23
-    mode: Peripheral IO
-    user_label: THR1
-    configuration: null
   DS_MISO:
     name: PA24
     definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA24
-    mode: Digital input
+    mode: Advanced
     user_label: DS_MISO
+    configuration: null
+  PA25:
+    name: PA25
+    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA25
+    mode: Advanced
+    user_label: PA25
+    configuration: null
+  PB22:
+    name: PB22
+    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PB22
+    mode: Digital input
+    user_label: PB22
     configuration: null
   DS_MOSI:
     name: PB02

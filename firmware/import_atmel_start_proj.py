@@ -85,4 +85,11 @@ if __name__ == "__main__":
         copyreplacefile("{}/atmel_start.c".format(tempdirname), "{}/src/atmel_start.c".format(script_dir))
         copyreplacefile("{}/driver_init.c".format(tempdirname), "{}/src/driver_init.c".format(script_dir))
 
+        # Copy usb files
+        print("Copying ASF4 usb files...")
+        copyglob("{}/usb/**/*.h".format(tempdirname), "{}/lib/asf4/include".format(script_dir))
+        copyglob("{}/usb/**/*.c".format(tempdirname), "{}/lib/asf4/src".format(script_dir))
+        copyreplacefile("{}/usb_start.c".format(tempdirname), "{}/src/usb_start.c".format(script_dir))
+        copyreplacefile("{}/usb_start.h".format(tempdirname), "{}/include/usb_start.h".format(script_dir))
+
     exit(0)
