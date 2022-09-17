@@ -234,7 +234,7 @@
 // <i> Indicates whether configuration for DFLL is enabled or not
 // <id> enable_dfll
 #ifndef CONF_DFLL_CONFIG
-#define CONF_DFLL_CONFIG 0
+#define CONF_DFLL_CONFIG 1
 #endif
 
 // <y> Reference Clock Source
@@ -261,7 +261,7 @@
 // <i> Indicates whether DFLL is enabled or not
 // <id> dfll_arch_enable
 #ifndef CONF_DFLL_ENABLE
-#define CONF_DFLL_ENABLE 0
+#define CONF_DFLL_ENABLE 1
 #endif
 
 // <q> On Demand Control
@@ -412,7 +412,7 @@
 // <i> Indicates whether Digital Phase Locked Loop is enabled or not
 // <id> fdpll0_arch_enable
 #ifndef CONF_FDPLL0_ENABLE
-#define CONF_FDPLL0_ENABLE 0
+#define CONF_FDPLL0_ENABLE 1
 #endif
 
 // <q> On Demand Control
@@ -433,14 +433,14 @@
 // <i> Value of LDRFRAC is calculated using Fclk_dpll=Fckr*(LDR+1+LDRFRAC/32) formula as given in datasheet. This value is directly written in to DPLLRATIO register
 // <id> fdpll0_ldrfrac
 #ifndef CONF_FDPLL0_LDRFRAC
-#define CONF_FDPLL0_LDRFRAC 0x1b
+#define CONF_FDPLL0_LDRFRAC 0x4
 #endif
 
 // <o> Loop Divider Ratio Integer Part <0x0-0x1FFF>
 // <i> Value of LDR is calculated using Fclk_dpll=Fckr*(LDR+1+LDRFRAC/32) formula as given in datasheet. This value is directly written in to DPLLRATIO register
 // <id> fdpll0_ldr
 #ifndef CONF_FDPLL0_LDR
-#define CONF_FDPLL0_LDR 0x5b7
+#define CONF_FDPLL0_LDR 0xe4d
 #endif
 
 // <o> Clock Divider <0x0-0x7FF>
@@ -510,7 +510,7 @@
 // <i> Indicates whether configuration for FDPLL1 is enabled or not
 // <id> enable_fdpll1
 #ifndef CONF_FDPLL1_CONFIG
-#define CONF_FDPLL1_CONFIG 1
+#define CONF_FDPLL1_CONFIG 0
 #endif
 
 // <y> Reference Clock Source
@@ -540,7 +540,7 @@
 // <i> Indicates whether Digital Phase Locked Loop is enabled or not
 // <id> fdpll1_arch_enable
 #ifndef CONF_FDPLL1_ENABLE
-#define CONF_FDPLL1_ENABLE 1
+#define CONF_FDPLL1_ENABLE 0
 #endif
 
 // <q> On Demand Control

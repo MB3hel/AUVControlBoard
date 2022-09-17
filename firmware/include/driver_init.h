@@ -21,25 +21,7 @@ extern "C" {
 #include <hal_io.h>
 #include <hal_sleep.h>
 
-#include <hal_crc_sync.h>
-
-#include <hal_i2c_m_async.h>
-#include <hal_spi_m_sync.h>
-
 #include "hal_usb_device.h"
-
-extern struct crc_sync_descriptor CRC_0;
-
-extern struct i2c_m_async_desc      I2C_0;
-extern struct spi_m_sync_descriptor SPI_0;
-
-void I2C_0_PORT_init(void);
-void I2C_0_CLOCK_init(void);
-void I2C_0_init(void);
-
-void SPI_0_PORT_init(void);
-void SPI_0_CLOCK_init(void);
-void SPI_0_init(void);
 
 void USB_DEVICE_INSTANCE_CLOCK_init(void);
 void USB_DEVICE_INSTANCE_init(void);
