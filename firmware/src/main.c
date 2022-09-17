@@ -1,4 +1,5 @@
 #include <atmel_start.h>
+#include <usbuart.h>
 
 
 uint8_t *high_msg = (uint8_t[]){'H', 'I', 'G', 'H', '\n'};
@@ -13,14 +14,17 @@ int main(void){
 	atmel_start_init();					// Initialize ASF4 drivers & middleware
 
 
+	gpio_set_pin_level(RED_LED, false);
+
+	while(!usbuart_init()){
+		delay_ms(100);
+	}
+
 	////////////////////////////////////////////////////////////////////////////
 	/// Main loop
 	////////////////////////////////////////////////////////////////////////////
 
 	while (1) {
-		gpio_set_pin_level(RED_LED, true);
-		delay_ms(1000);
-		gpio_set_pin_level(RED_LED, false);
-		delay_ms(1000);
+		
 	}
 }
