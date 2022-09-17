@@ -35,6 +35,7 @@ SEARCH_DIR(.)
 /* Memory Spaces Definitions */
 MEMORY
 {
+  /* UF2 bootloader takes first 16kB, so rom is offset and smaller */
   rom      (rx)  : ORIGIN = 0x00004000, LENGTH = 0x0007C000
   ram      (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00030000
   bkupram  (rwx) : ORIGIN = 0x47000000, LENGTH = 0x00002000
