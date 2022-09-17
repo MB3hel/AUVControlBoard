@@ -1,11 +1,9 @@
-#include <atmel_start.h>
 
-int main(void)
-{
-	/* Initializes MCU, drivers and middleware */
-	atmel_start_init();
+#include <sam.h>
 
-	/* Replace with your application code */
-	while (1) {
-	}
+
+int main(void){
+	while(1){
+		
+	}	
 }
