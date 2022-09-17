@@ -21,6 +21,8 @@ def copyglob(glb: str, dest: str):
 def copyreplacefile(src: str, dest: str):
     if os.path.exists(dest):
         os.remove(dest)
+    if not os.path.exists(os.path.dirname(dest)):
+        os.makedirs(os.path.dirname(dest))
     shutil.copy2(src, dest)
 
 
@@ -45,6 +47,8 @@ if __name__ == "__main__":
         shutil.rmtree("{}/src/samd51a".format(script_dir), ignore_errors=True)
         shutil.rmtree("{}/include/asf4".format(script_dir), ignore_errors=True)
         shutil.rmtree("{}/src/asf4".format(script_dir), ignore_errors=True)
+        shutil.rmtree("{}/include/ast".format(script_dir), ignore_errors=True)
+        shutil.rmtree("{}/src/ast".format(script_dir), ignore_errors=True)
 
         # Copy CMSIS library
         print("Copying CMSIS...")
@@ -79,18 +83,18 @@ if __name__ == "__main__":
 
         # Copy src files
         print("Copying ASF4 init files...")
-        copyreplacefile("{}/atmel_start.h".format(tempdirname), "{}/include/atmel_start.h".format(script_dir))
-        copyreplacefile("{}/atmel_start_pins.h".format(tempdirname), "{}/include/atmel_start_pins.h".format(script_dir))
-        copyreplacefile("{}/driver_init.h".format(tempdirname), "{}/include/driver_init.h".format(script_dir))
-        copyreplacefile("{}/atmel_start.c".format(tempdirname), "{}/src/atmel_start.c".format(script_dir))
-        copyreplacefile("{}/driver_init.c".format(tempdirname), "{}/src/driver_init.c".format(script_dir))
+        copyreplacefile("{}/atmel_start.h".format(tempdirname), "{}/include/ats/atmel_start.h".format(script_dir))
+        copyreplacefile("{}/atmel_start_pins.h".format(tempdirname), "{}/include/ats/atmel_start_pins.h".format(script_dir))
+        copyreplacefile("{}/driver_init.h".format(tempdirname), "{}/include/ats/driver_init.h".format(script_dir))
+        copyreplacefile("{}/atmel_start.c".format(tempdirname), "{}/src/ats/atmel_start.c".format(script_dir))
+        copyreplacefile("{}/driver_init.c".format(tempdirname), "{}/src/ats/driver_init.c".format(script_dir))
 
         # Copy usb files
         if os.path.exists("{}/usb".format(tempdirname)):
             print("Copying ASF4 usb files...")
             copyglob("{}/usb/**/*.h".format(tempdirname), "{}/include/asf4/usb".format(script_dir))
             copyglob("{}/usb/**/*.c".format(tempdirname), "{}/src/asf4/usb".format(script_dir))
-            copyreplacefile("{}/usb_start.c".format(tempdirname), "{}/src/usb_start.c".format(script_dir))
-            copyreplacefile("{}/usb_start.h".format(tempdirname), "{}/include/usb_start.h".format(script_dir))
+            copyreplacefile("{}/usb_start.c".format(tempdirname), "{}/src/ats/usb_start.c".format(script_dir))
+            copyreplacefile("{}/usb_start.h".format(tempdirname), "{}/include/ats/usb_start.h".format(script_dir))
 
     exit(0)
