@@ -30,3 +30,12 @@ unsigned int usbuart_write(uint8_t *data, unsigned int len);
  * @return Number of bytes read
  */
 unsigned int usbuart_read(uint8_t *data, unsigned int len);
+
+/**
+ * Read one byte from the device on the other end (reads from buffer)
+ * 
+ * @param data Where to store read byte
+ * @return true On success
+ * @return false On failure (no data to read)
+ */
+bool usbuart_readone(uint8_t *data);

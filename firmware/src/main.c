@@ -21,10 +21,14 @@ int main(void){
 	/// Main loop
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+	uint8_t data;
+
 	while (1) {
-		gpio_set_pin_level(RED_LED, true);
-		delay_ms(1000);
-		gpio_set_pin_level(RED_LED, false);
-		delay_ms(1000);
+		usbuart_readone(&data);
+		if(data == 'h'){
+			gpio_set_pin_level(RED_LED, true);
+		}else if(data == 'l'){
+			gpio_set_pin_level(RED_LED, false);
+		}
 	}
 }
