@@ -24,11 +24,8 @@ int main(void){
 	uint8_t data;
 
 	while (1) {
-		usbuart_readone(&data);
-		if(data == 'h'){
-			gpio_set_pin_level(RED_LED, true);
-		}else if(data == 'l'){
-			gpio_set_pin_level(RED_LED, false);
-		}
+		usbuart_writeone('A');
+		gpio_toggle_pin_level(RED_LED);
+		delay_ms(1000);
 	}
 }

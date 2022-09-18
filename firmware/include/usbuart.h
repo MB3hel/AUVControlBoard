@@ -24,6 +24,14 @@ bool usbuart_init(void);
 unsigned int usbuart_write(uint8_t *data, unsigned int len);
 
 /**
+ * Write one byte to the device on the other end (buffers, does not write yet)
+ * @param data Value to write
+ * @return true On success
+ * @return false On failure (write buffer full)
+ */
+bool usbuart_writeone(uint8_t data);
+
+/**
  * Read data from the device on the other end (reads from buffer)
  * @param data Buffer to read data into
  * @param len Size of the read buffer (max number of bytes to read)
@@ -33,7 +41,6 @@ unsigned int usbuart_read(uint8_t *data, unsigned int len);
 
 /**
  * Read one byte from the device on the other end (reads from buffer)
- * 
  * @param data Where to store read byte
  * @return true On success
  * @return false On failure (no data to read)

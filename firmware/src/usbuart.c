@@ -27,6 +27,7 @@ bool usbuart_write_callback(const uint8_t ep, const enum usb_xfer_code rc, const
 
 bool usbuart_initialized = false;                               // Tracks if usb is attached
 bool usbuart_buffers_inited = false;                            // Tracks if buffers are initialzied
+volatile bool usbuart_in_tx = false;                            // Tracks if currently transmitting
 volatile uint8_t usbuart_curr_tx[USBUART_CURR_TX_BUF_SZ];       // Array to hold data currently being written
 volatile uint8_t usbuart_curr_rx[USBUART_CURR_RX_BUF_SZ];       // Array to hold data currently being read
 volatile uint8_t usbuart_tx_array[USBUART_TX_MSG_BUF_SZ];       // Backing array for TX buffer
@@ -51,11 +52,13 @@ bool usbuart_init(void){
             usbuart_initialized = true;
         }
     }
-    // TODO: Anything needed to handle reconnect?
     return usbuart_initialized;
 }
 
 unsigned int usbuart_write(uint8_t *data, unsigned int len){
+    if(!usbuart_initialized)
+        return 0;
+
     unsigned int i;
     
     // Add data into write buffer
@@ -65,11 +68,32 @@ unsigned int usbuart_write(uint8_t *data, unsigned int len){
         cb_write(&usbuart_tx_buf, data[i]);
     }
 
+    // Triggers a write callback if not currently transmitting
+    // If currently transmitting, returns an error code (ignored)
+    cdcdf_acm_write((uint8_t *)usbuart_curr_tx, 0);
+
     // Number of bytes actually writeen (buffer may have become full)
     return i;
 }
 
+bool usbuart_writeone(uint8_t data){
+    if(!usbuart_initialized)
+        return false;
+    if(CB_FULL(&usbuart_tx_buf))
+        return false;
+    cb_write(&usbuart_tx_buf, data);
+
+    // Triggers a write callback if not currently transmitting
+    // If currently transmitting, returns an error code (ignored)
+    cdcdf_acm_write((uint8_t *)usbuart_curr_tx, 0);
+
+    return true;
+}
+
 unsigned int usbuart_read(uint8_t *data, unsigned int len){
+    if(!usbuart_initialized)
+        return 0;
+
     unsigned int i = 0;
 
     // Remove data from read buffer
@@ -84,6 +108,8 @@ unsigned int usbuart_read(uint8_t *data, unsigned int len){
 }
 
 bool usbuart_readone(uint8_t *data){
+    if(!usbuart_initialized)
+        return false;
     if(CB_EMPTY(&usbuart_rx_buf))
         return false;
     cb_read(&usbuart_rx_buf, data);
@@ -101,12 +127,6 @@ bool usbuart_state_callback(usb_cdc_control_signal_t state){
         cdcdf_acm_register_callback(CDCDF_ACM_CB_READ, (FUNC_PTR)usbuart_read_callback);
         cdcdf_acm_register_callback(CDCDF_ACM_CB_WRITE, (FUNC_PTR)usbuart_write_callback);
 
-        // Initial write
-        // Nothing is actually written, but the write callback is invoked when done
-        // So next write should occur in the write callback
-        usbuart_curr_tx_len = 0;
-        cdcdf_acm_write((uint8_t *)usbuart_curr_tx, 0);
-
         // Initial read
         // Any data read will be available in the read callback
         // The next read should occur in the read callback
@@ -118,12 +138,15 @@ bool usbuart_state_callback(usb_cdc_control_signal_t state){
 // Called when read completes. "count" is number of bytes that were read
 bool usbuart_read_callback(const uint8_t ep, const enum usb_xfer_code rc, const uint32_t count){
     // Move previously read data into read buffer
-    for(uint32_t i = 0; i < count; ++i){
+    uint32_t i;
+    for(i = 0; i < count; ++i){
+        if(CB_FULL(&usbuart_rx_buf))
+            break;  // Data will be lost
         cb_write(&usbuart_rx_buf, usbuart_curr_rx[i]);
     }
 
     // Start next read
-    cdcdf_acm_read((uint8_t *)usbuart_curr_rx, USBUART_CURR_RX_BUF_SZ);
+    cdcdf_acm_read((uint8_t*)usbuart_curr_rx, USBUART_CURR_RX_BUF_SZ);
 
     // No error
     return false;
@@ -131,7 +154,23 @@ bool usbuart_read_callback(const uint8_t ep, const enum usb_xfer_code rc, const 
 
 // Called when write complets. "count" is number of bytes that were written
 bool usbuart_write_callback(const uint8_t ep, const enum usb_xfer_code rc, const uint32_t count){        
-    // TODO
+    // TODO: Handle the case where too few bytes were previously written
+
+    // Move data from write buffer into current write array
+    uint32_t i;
+    for(i = 0; i < USBUART_CURR_TX_BUF_SZ; ++i){
+        if(CB_EMPTY(&usbuart_tx_buf))
+            break;  // Nothing else to transmit
+        cb_read(&usbuart_tx_buf, &usbuart_curr_tx[i]);
+    }
+
+    // Start next write
+    if(i != 0){
+        usbuart_in_tx = true;
+        cdcdf_acm_write((uint8_t*)usbuart_curr_tx, i);
+    }else{
+        usbuart_in_tx = false;
+    }
 
     // No error
     return false;
