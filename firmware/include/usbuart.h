@@ -32,6 +32,13 @@ unsigned int usbuart_write(uint8_t *data, unsigned int len);
 bool usbuart_writeone(uint8_t data);
 
 /**
+ * Write a string to the device on the other end (buffers, does not write yet)
+ * @param str String (null terminated) to write
+ * @return unsigned int Number of characters written
+ */
+unsigned int usbuart_writestr(const char *str);
+
+/**
  * Read data from the device on the other end (reads from buffer)
  * @param data Buffer to read data into
  * @param len Size of the read buffer (max number of bytes to read)

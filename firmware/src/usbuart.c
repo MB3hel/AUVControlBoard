@@ -90,6 +90,30 @@ bool usbuart_writeone(uint8_t data){
     return true;
 }
 
+unsigned int usbuart_writestr(const char *str){
+    if(!usbuart_initialized)
+        return 0;
+
+    unsigned int i = 0;
+    
+    // Add data into write buffer
+    while(1){
+        if(CB_FULL(&usbuart_tx_buf))
+            break;
+        if(str[i] == '\0')
+            break;
+        cb_write(&usbuart_tx_buf, str[i]);
+        ++i;
+    }
+
+    // Triggers a write callback if not currently transmitting
+    // If currently transmitting, returns an error code (ignored)
+    cdcdf_acm_write((uint8_t *)usbuart_curr_tx, 0);
+
+    // Number of bytes actually writeen (buffer may have become full)
+    return i;
+}
+
 unsigned int usbuart_read(uint8_t *data, unsigned int len){
     if(!usbuart_initialized)
         return 0;
