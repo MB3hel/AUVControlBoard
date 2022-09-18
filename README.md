@@ -32,7 +32,7 @@ Both the [control board firmware](./firmware/) and the [hardware test](./hwtest/
 
 ## Control Board Usage
 
-### Communication Protocol
+### General Configuration
 
 TODO
 
@@ -42,7 +42,47 @@ TODO
 TODO
 
 
+### Communication Protocol
+
+Communication with the control board is defined by three layers
+- Hardware communication layer: How bytes are sent at a hardware level and how this is abstracted by a PC
+- Message format and construction: How arbitrary data is composed into an identifyable message
+- Command / message set: What the data of a message should actually be to perform different tasks
+
+
+#### Hardware Communication Layer
+
+Messages are sent to the control board over the ItsyBitsy M4's builtin USB port. The control board acts as a USB ACM CDC device. In practice, this means that it shows up as a serial (UART) port on the computer it is connected to. However, baud rate settings are irrelevant (and changing baud rates has no effect). As such, messages are sent to / received from the control board using "UART" with an undefined baud rate (most software stacks require selecting any baud rate; it will not be applied lower level).
+
+
+#### Message Format and Construction
+
+The messages sent to / received from the control board have a specific format. Each message is a raw set of bytes (unsigned byte array). This set of bytes is the "payload data" of the message. The "payload data" is the data that is contained within a single message.
+
+To be able to identify what data is part of a single message, it is necessary to add some additional information around the payload. The control board uses a special byte to indicate the start of a message (`START_BYTE`) and another one to identify the end of a message (`END_BYTE`). 
+
+Since the payload could itself contain a start or end byte, there is also an escape byte (`ESCAPE_BYTE`) used to escape a `START_BYTE`, `END_BYTE`, or an `ESCAPE_BYTE` in the payload. 
+- `START_BYTE` becomes `ESCAPE_BYTE`, `START_BYTE`
+- `END_BYTE` becomes `ESCAPE_BYTE`, `END_BYTE`
+- `ESCAPE_BYTE` becomes `ESCAPE_BYTE`, `ESCAPE_BYTE`
+
+This is similar to escaping a quote in a string using a backslash.
+
+For the control board:
+- `START_BYTE` = 253 (unsigned 8-bit) = -3 (signed 8-bit)
+- `END_BYTE` = 254 (unsigned 8-bit) = -2 (signed 8-bit)
+- `ESCAPE_BYTE` = 255 (unsigned 8-bit) = -1 (signed 8-bit)
+
+Additionally, each message contains a 16-bit CRC for the payload data (CCITT algorithm). This CRC is calculated on the original (unescaped) payload data (no start byte, end byte, etc). The CRC is appended (big endian) to the message just after the payload (just before `END_BYTE`). When the other side receives the message it can calculate the CRC of the received payload and compare it to the received crc. If the crc values match, the message is not corrupt.
+
+<p align="center">
+    <img height="175" src="./img/cb_msg_construction.png">
+</p>
+
+
 ### Commands and Messages
+
+The following are the messages sent to the control board or received from the control board and what they mean / do. These messages are the *payload* in the message format described above.
 
 TODO
 
