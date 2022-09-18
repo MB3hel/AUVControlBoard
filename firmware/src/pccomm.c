@@ -30,6 +30,8 @@ uint16_t pccomm_recv_msg_pos;
 bool pccomm_parse_escaped;
 bool pccomm_parse_started;
 
+const uint8_t PCCOMM_MSG_LED_PREFIX[] = {'R', 'L', 'E', 'D'};
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Callback forward declarations
@@ -44,6 +46,44 @@ bool pccomm_cb_usb_write(const uint8_t ep, const enum usb_xfer_code rc, const ui
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Check if two byte arrays are identical
+ * @param a First byte array
+ * @param len_a Length of first array
+ * @param b Second byte array
+ * @param len_b Length of second array
+ * @return true If arrays match
+ * @return false If arrays do not match
+ */
+bool pccomm_matches(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_t len_b){
+    if(len_a != len_b)
+        return false;
+    for(uint32_t i = 0; i < len_a; ++i){
+        if(a[i] != b[i])
+            return false;
+    }
+    return true;
+}
+
+/**
+ * Check if one array starts with the data in another array
+ * @param a The array to search in ("full" data)
+ * @param len_a Length of array a
+ * @param b The array to search for ("sub" / "prefix" data)
+ * @param len_b Length of array b
+ * @return true If array a starts with array b
+ * @return false If array a does not start with array b
+ */
+bool pccomm_startswith(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_t len_b){
+    if(len_a < len_b)
+        return false;
+    for(uint32_t i = 0; i < len_b; ++i){
+        if(a[i] != b[i])
+            return false;
+    }
+    return true;
+}
+
 void pccomm_init(void){
     pccomm_recv_msg_pos = 0;
     pccomm_parse_escaped = false;
@@ -52,6 +92,32 @@ void pccomm_init(void){
         delay_ms(100);
     }
     cdcdf_acm_register_callback(CDCDF_ACM_CB_STATE_C, (FUNC_PTR)pccomm_cb_usb_state);
+}
+
+void pccomm_handle_received_msg(void){
+    // Called by the read callback when a complete message is received
+    // Message will be in the pccomm_recv_msg buffer with length pccomm_recv_msg_pos
+    // The last two bytes of the message will be the CRC
+    // The message will not be escaped (meaning it is the original payload)
+
+    // Ignore CRC for now
+    // TODO: Verify CRC instead of ignoring
+    pccomm_recv_msg_pos -= 2;
+
+    if(pccomm_startswith(pccomm_recv_msg, pccomm_recv_msg_pos, PCCOMM_MSG_LED_PREFIX, sizeof(PCCOMM_MSG_LED_PREFIX))){
+        switch(pccomm_recv_msg[sizeof(PCCOMM_MSG_LED_PREFIX)]){
+        case 'H':
+        case 'h':
+        case '1':
+            gpio_set_pin_level(RED_LED, true);
+            break;
+        case 'L':
+        case 'l':
+        case '0':
+            gpio_set_pin_level(RED_LED, false);
+            break;
+        }
+    }
 }
 
 
@@ -96,7 +162,8 @@ bool pccomm_cb_usb_read(const uint8_t ep, const enum usb_xfer_code rc, const uin
                 pccomm_parse_started = true;
             }else if(pccomm_rx_buf[i] == PCCOMM_END_BYTE && pccomm_parse_started){
                 pccomm_parse_started = false;
-                // TODO: Handle the complete message
+                pccomm_handle_received_msg();
+                pccomm_recv_msg_pos = 0;
             }else if(pccomm_rx_buf[i] == PCCOMM_ESCAPE_BYTE && pccomm_parse_started){
                 pccomm_parse_escaped = true;
             }else if(pccomm_parse_started){

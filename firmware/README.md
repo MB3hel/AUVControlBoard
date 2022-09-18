@@ -17,6 +17,7 @@ Firmware uses Microchip's Advanced Software Framework 4 (ASF4)
     - `*.c`: Firmware sources
 - `ControlBoard.atstart`: Atmel Start configuration file (can be loaded in Atmel Start)
 - `import_atmel_start_proj.py`: Script to import Atmel Start project (`atzip` file). *Note: Adding more features to project may require modifications to this script. Inspect the downloaded zip file.*
+- `pccomm_test.py`: Python script to send messages to / receive messages from the control board using the USB comm protocol. Used for development testing only.
 - `samd51g19a_flash_wbld.ld`: Linker script modified for ItsyBitsy M4 with UF2 bootloader
 
 

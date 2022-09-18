@@ -1,5 +1,5 @@
 #include <atmel_start.h>
-#include <usbuart.h>
+#include <pccomm.h>
 
 
 int main(void){
@@ -8,20 +8,13 @@ int main(void){
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     atmel_start_init();                             // Initialize ASF4 drivers & middleware
-    while(!usbuart_init()){                         // Initialize UART via USB (blocking until ready)
-        delay_ms(100);
-    }
+    pccomm_init();                                  // Initialize USB communications with PC
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Main loop
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     while (1) {
-        gpio_set_pin_level(RED_LED, true);
-        usbuart_writestr("LED = High\r\n");
-        delay_ms(1000);
-        gpio_set_pin_level(RED_LED, false);
-        usbuart_writestr("LED = Low\r\n");
-        delay_ms(1000);
+        // Nothing to do here for now...
     }
 }
