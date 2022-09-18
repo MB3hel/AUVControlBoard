@@ -32,9 +32,23 @@
 
 #pragma once
 
+#include <stdint.h>
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Initialize communications with PC via USB
+ * Will block until ready
+ */
 void pccomm_init(void);
+
+/**
+ * Write a complete message to the PC via USB
+ * Does NOT block until transmitted
+ * @param data Data to transmit (array)
+ * @param len Length of data to transmit
+ */
+void pccomm_write_msg(uint8_t *data, uint32_t len);
