@@ -10,7 +10,7 @@ void motor_pwm_init(void){
     // TODO: Configure pinmux so timer outputs on GPIO pins
 }
 
-void motor_pwm_set(float speeds){
+void motor_pwm_set(float *speeds){
     // TODO: Convert speeds to timings in us
     // TODO: Convert us to CC values
     // TODO: Setting CC registers as needed

@@ -28,4 +28,4 @@ void motor_pwm_init(void);
  * Set motor speeds for all thrusters (updates pwm waves)
  * @param speeds Array of speeds for all 8 trhusters (thruster # = index + 1)
  */
-void motor_pwm_set(float speeds);
+void motor_pwm_set(float *speeds);
