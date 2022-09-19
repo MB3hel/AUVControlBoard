@@ -1,5 +1,5 @@
 /**
- * @file circular_buffer.c
+ * @file motor_pwm.c
  * @author Marcus Behel (mgbehel@ncsu.edu)
  */
 
