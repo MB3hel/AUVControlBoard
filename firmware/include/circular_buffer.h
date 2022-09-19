@@ -4,7 +4,6 @@
  * Implemented to be ISR safe (uses volatile)
  * Read and write functions are inlinable
  * @author Marcus Behel (mgbehel@ncsu.edu)
- * @version 1.0.0
  */
 
 /*

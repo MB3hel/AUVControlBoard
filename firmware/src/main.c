@@ -1,3 +1,9 @@
+/**
+ * Program entry point, main tree, and ISRs
+ * @file main.c
+ * @author Marcus Behel (mgbehel@ncsu.edu)
+ */
+
 #include <atmel_start.h>
 #include <pccomm.h>
 
