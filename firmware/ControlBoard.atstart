@@ -1,5 +1,5 @@
 format_version: '2'
-name: My Project
+name: ControlBoard
 versions:
   api: '1.0'
   backend: 1.8.580
