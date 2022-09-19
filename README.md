@@ -73,7 +73,7 @@ For the control board:
 - `END_BYTE` = 254 (unsigned 8-bit) = -2 (signed 8-bit)
 - `ESCAPE_BYTE` = 255 (unsigned 8-bit) = -1 (signed 8-bit)
 
-Additionally, each message contains a 16-bit CRC for the payload data (CCITT algorithm). This CRC is calculated on the original (unescaped) payload data (no start byte, end byte, etc). The CRC is appended (big endian) to the message just after the payload (just before `END_BYTE`). When the other side receives the message it can calculate the CRC of the received payload and compare it to the received crc. If the crc values match, the message is not corrupt.
+Additionally, each message contains a 16-bit CRC for the payload data (CCITT-FALSE algorithm). This CRC is calculated on the original (unescaped) payload data (no start byte, end byte, etc). The CRC is appended (big endian) to the message just after the payload (just before `END_BYTE`). When the other side receives the message it can calculate the CRC of the received payload and compare it to the received crc. If the crc values match, the message is not corrupt.
 
 <p align="center">
     <img height="175" src="./img/cb_msg_construction.png">

@@ -7,6 +7,8 @@
 #include <pccomm.h>
 #include <atmel_start.h>
 #include <circular_buffer.h>
+#include <stdlib.h>
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -94,6 +96,31 @@ bool pccomm_startswith(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint3
     return true;
 }
 
+/**
+ * Calculate 16-bit CRC (CCITT) of the given data
+ * Uses hardware crc block
+ * @param data Data to calculate crc of
+ * @param len Length of data
+ * @return uint16_t Calculated crc
+ */
+uint16_t pccomm_crc16(uint8_t *data, uint32_t len){
+    uint16_t crc = 0xFFFF;
+    int pos = 0;
+    while(pos < len){
+        uint8_t b = data[pos];
+        for(int i = 0; i < 8; ++i){
+            uint8_t bit = ((b >> (7 - i) & 1) == 1);
+            uint8_t c15 = ((crc >> 15 & 1) == 1);
+            crc <<= 1;
+            if(c15 ^ bit){
+                crc ^= 0x1021;
+            }
+        }
+        pos++;
+    }
+    return crc;
+}
+
 void pccomm_init(void){
     cb_init(&pccomm_tx_queue, pccomm_tx_queue_arr, PCCOMM_TX_QUEUE_SZ);
     pccomm_recv_msg_pos = 0;
@@ -113,10 +140,10 @@ void pccomm_write_msg(uint8_t *data, uint32_t len){
         cb_write(&pccomm_tx_queue, data[i]);
     }
 
-    // Ignore CRC for now
-    // TODO: Calculate CRC instead of ignoring
-    cb_write(&pccomm_tx_queue, 0x00);
-    cb_write(&pccomm_tx_queue, 0x00);
+    // Calculate and add crc
+    uint16_t crc = pccomm_crc16(data, len);
+    cb_write(&pccomm_tx_queue, (crc >> 8) & 0xFF);
+    cb_write(&pccomm_tx_queue, crc & 0xFF);
 
     cb_write(&pccomm_tx_queue, PCCOMM_END_BYTE);
 
@@ -133,8 +160,13 @@ void pccomm_handle_received_msg(void){
     // The last two bytes of the message will be the CRC
     // The message will not be escaped (meaning it is the original payload)
 
-    // Ignore CRC for now
-    // TODO: Verify CRC instead of ignoring
+    // Verify crc
+    uint16_t read_crc = (pccomm_recv_msg[pccomm_recv_msg_pos - 2] << 8) | pccomm_recv_msg[pccomm_recv_msg_pos - 1];
+    uint16_t calc_crc = pccomm_crc16(pccomm_recv_msg, pccomm_recv_msg_pos - 2);
+    if(read_crc != calc_crc)
+        return;
+
+    // Done with crc now
     pccomm_recv_msg_pos -= 2;
 
     if(pccomm_startswith(pccomm_recv_msg, pccomm_recv_msg_pos, PCCOMM_MSG_LED_PREFIX, sizeof(PCCOMM_MSG_LED_PREFIX))){

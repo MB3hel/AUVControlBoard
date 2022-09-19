@@ -3,7 +3,7 @@
 import serial
 import threading
 import time
-from crccheck.crc import Crc16Ccitt
+from crccheck.crc import Crc16CcittFalse as Crc16
 
 
 START_BYTE = b'\xfd'
@@ -14,8 +14,15 @@ ESCAPE_BYTE = b'\xff'
 def handle_read_message(msg: bytes):
     # Last two bytes of msg are crc
 
-    # Ignore CRC for now
-    # TODO: Verify CRC instead of ignoring
+    # Verify CRC
+    read_crc = int.from_bytes(msg[-2:], byteorder='big', signed=False)
+    calc_crc = int.from_bytes(Crc16.calcbytes(msg[:-2], byteorder='big'), byteorder='big', signed=False)
+
+    if read_crc != calc_crc:
+        print("WARNING: Invalid CRC!")
+        return
+
+    # Done with crc data
     msg = msg[:-2]
 
     print(msg)
@@ -55,7 +62,7 @@ def write_msg(ser: serial.Serial, msg: bytes):
         if c == START_BYTE or c == END_BYTE or c == ESCAPE_BYTE:
             ser.write(ESCAPE_BYTE)
         ser.write(c)
-    crc = Crc16Ccitt.calcbytes(msg, byteorder='big')
+    crc = Crc16.calcbytes(msg, byteorder='big')
     ser.write(crc)
     ser.write(END_BYTE)
 
