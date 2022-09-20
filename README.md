@@ -39,6 +39,12 @@ TODO
 
 ### Modes of Operation
 
+#### RAW Mode
+
+TODO
+
+#### LOCAL Mode
+
 TODO
 
 
@@ -82,7 +88,42 @@ Additionally, each message contains a 16-bit CRC for the payload data (CCITT-FAL
 
 ### Commands and Messages
 
-The following are the messages sent to the control board or received from the control board and what they mean / do. These messages are the *payload* in the message format described above.
+The following are the messages sent to the control board or received from the control board and what they mean / do. These messages are the *payload* in the message format described above. Note that all characters are ASCII encoded unless enclosed within square brackets. A literal square bracket is escaped with a backslash. A litteral backslash is also escaped with a backslash. Toekns inside square brackets are described per message below.
 
-TODO
+**Set MODE**
+
+```
+MODE[mode_val]
+```
+
+where `mode_val` is one of the following
+
+- `R`: RAW mode
+- `L`: LOCAL mode
+
+
+**Get MODE**
+
+```
+?MODE
+```
+
+Response will be in the format
+
+```
+MODE[mode_val]
+```
+
+where `mode_val` is one of the following
+
+- `R`: RAW mode
+- `L`: LOCAL mode
+
+**Set RAW Speeds**
+
+```
+RAW[speed1][speed2][speed3][speed4][speed5][speed6][speed7][speed8]
+```
+
+where `speedx` (for `x` = 1, 2, ..., 8) is a little endian encoded 32-bit integer between -1.0 and 1.0 indicating the speed of thruster `x`.
 
