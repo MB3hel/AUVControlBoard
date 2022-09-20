@@ -6,6 +6,7 @@
 
 #include <atmel_start.h>
 #include <pccomm.h>
+#include <motor_pwm.h>
 
 
 int main(void){
@@ -15,14 +16,17 @@ int main(void){
     
     atmel_start_init();                             // Initialize ASF4 drivers & middleware
     pccomm_init();                                  // Initialize USB communications with PC
+    motor_pwm_init();                               // Initialize motor PWM subsystem
+    
 
+    float speeds[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+    motor_pwm_set(speeds);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Main loop
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     while (1) {
-        pccomm_write_msg((uint8_t[]){'H', 'e', 'l', 'l', 'o'}, 5);
-        delay_ms(1000);
+        
     }
 }

@@ -132,17 +132,17 @@ void system_init(void)
 
 	// GPIO on PA22
 
-	gpio_set_pin_level(RED_LED,
-	                   // <y> Initial level
-	                   // <id> pad_initial_level
-	                   // <false"> Low
-	                   // <true"> High
-	                   false);
+	// gpio_set_pin_level(RED_LED,
+	//                    // <y> Initial level
+	//                    // <id> pad_initial_level
+	//                    // <false"> Low
+	//                    // <true"> High
+	//                    false);
 
-	// Set pin direction to output
-	gpio_set_pin_direction(RED_LED, GPIO_DIRECTION_OUT);
+	// // Set pin direction to output
+	// gpio_set_pin_direction(RED_LED, GPIO_DIRECTION_OUT);
 
-	gpio_set_pin_function(RED_LED, GPIO_PIN_FUNCTION_OFF);
+	// gpio_set_pin_function(RED_LED, GPIO_PIN_FUNCTION_OFF);
 
 	USB_DEVICE_INSTANCE_init();
 }
