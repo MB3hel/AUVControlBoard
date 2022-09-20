@@ -57,6 +57,12 @@ extern "C" {
  */
 int8_t PWM_0_init();
 
+/**
+ * \brief Initialize tcc interface
+ * \return Initialization status.
+ */
+int8_t PWM_1_init();
+
 #ifdef __cplusplus
 }
 #endif

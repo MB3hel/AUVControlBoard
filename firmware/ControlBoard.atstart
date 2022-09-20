@@ -985,6 +985,390 @@ drivers:
     variant: null
     clocks:
       domain_group: null
+  PWM_0:
+    user_label: PWM_0
+    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::TCC0::driver_config_definition::PWM.Mode::Lite:TCC:PWM
+    functionality: PWM
+    api: Lite:TCC:PWM
+    configuration:
+      cc_cc0: 4500
+      cc_cc1: 4500
+      cc_cc2: 4500
+      cc_cc3: 4500
+      cc_cc4: 0
+      cc_cc5: 0
+      cc_control: true
+      ctrla_alock: false
+      ctrla_control: true
+      ctrla_enable: true
+      ctrla_prescaler: DIV16
+      ctrla_prescsync: GCLK
+      ctrla_runstdby: false
+      ctrlbset_cmd: NONE
+      ctrlbset_control: false
+      ctrlbset_dir: false
+      ctrlbset_idxcmd: DISABLE
+      ctrlbset_lupd: false
+      ctrlbset_oneshot: false
+      dbgctrl_control: false
+      dbgctrl_dbgrun: false
+      dbgctrl_fddbd: false
+      drvctrl_control: false
+      drvctrl_filterval0: 0
+      drvctrl_filterval1: 0
+      drvctrl_inven0: false
+      drvctrl_inven1: false
+      drvctrl_inven2: false
+      drvctrl_inven3: false
+      drvctrl_inven4: false
+      drvctrl_inven5: false
+      drvctrl_inven6: false
+      drvctrl_inven7: false
+      drvctrl_nre0: false
+      drvctrl_nre1: false
+      drvctrl_nre2: false
+      drvctrl_nre3: false
+      drvctrl_nre4: false
+      drvctrl_nre5: false
+      drvctrl_nre6: false
+      drvctrl_nre7: false
+      drvctrl_nrv0: false
+      drvctrl_nrv1: false
+      drvctrl_nrv2: false
+      drvctrl_nrv3: false
+      drvctrl_nrv4: false
+      drvctrl_nrv5: false
+      drvctrl_nrv6: false
+      drvctrl_nrv7: false
+      evctrl_cnteo: false
+      evctrl_cntsel: START
+      evctrl_control: false
+      evctrl_evact0: 'OFF'
+      evctrl_evact1: 'OFF'
+      evctrl_mcei0: false
+      evctrl_mcei1: false
+      evctrl_mcei2: false
+      evctrl_mcei3: false
+      evctrl_mcei4: false
+      evctrl_mcei5: false
+      evctrl_mceo0: false
+      evctrl_mceo1: false
+      evctrl_mceo2: false
+      evctrl_mceo3: false
+      evctrl_mceo4: false
+      evctrl_mceo5: false
+      evctrl_ovfeo: false
+      evctrl_tcei0: false
+      evctrl_tcei1: false
+      evctrl_tcinv0: false
+      evctrl_tcinv1: false
+      evctrl_trgeo: false
+      fctrla_blank: NONE
+      fctrla_blankpresc: false
+      fctrla_blankval: 0
+      fctrla_chsel: CC0
+      fctrla_control: false
+      fctrla_filterval: 0
+      fctrla_halt: DISABLE
+      fctrla_keep: false
+      fctrla_qual: false
+      fctrla_restart: false
+      fctrla_src: DISABLE
+      fctrlb_blank: NONE
+      fctrlb_blankpresc: false
+      fctrlb_blankval: 0
+      fctrlb_chsel: CC0
+      fctrlb_control: false
+      fctrlb_filterval: 0
+      fctrlb_halt: DISABLE
+      fctrlb_keep: false
+      fctrlb_qual: false
+      fctrlb_restart: false
+      fctrlb_src: DISABLE
+      intenset_cnt: false
+      intenset_control: false
+      intenset_dfs: false
+      intenset_err: false
+      intenset_fault0: false
+      intenset_fault1: false
+      intenset_faulta: false
+      intenset_faultb: false
+      intenset_mc0: false
+      intenset_mc1: false
+      intenset_mc2: false
+      intenset_mc3: false
+      intenset_mc4: false
+      intenset_mc5: false
+      intenset_ovf: false
+      intenset_trg: false
+      patt_control: false
+      patt_pge0: false
+      patt_pge1: false
+      patt_pge2: false
+      patt_pge3: false
+      patt_pgv0: false
+      patt_pgv1: false
+      patt_pgv2: false
+      patt_pgv3: false
+      per_control: true
+      per_per: 5703
+      wave_ciccen0: false
+      wave_ciccen1: false
+      wave_ciccen2: false
+      wave_ciccen3: false
+      wave_ciperen: false
+      wave_control: true
+      wave_pol0: false
+      wave_pol1: false
+      wave_pol2: false
+      wave_pol3: false
+      wave_pol4: false
+      wave_pol5: false
+      wave_ramp: RAMP1
+      wave_swap0: false
+      wave_swap1: false
+      wave_swap2: false
+      wave_swap3: false
+      wave_wavegen: NPWM
+      wexctrl_control: false
+      wexctrl_dths: 0
+      wexctrl_dtien0: false
+      wexctrl_dtien1: false
+      wexctrl_dtien2: false
+      wexctrl_dtien3: false
+      wexctrl_dtls: 0
+      wexctrl_otmx: 0
+    optional_signals:
+    - identifier: PWM_0:WO/0
+      pad: PA20
+      mode: PWM output
+      configuration: null
+      definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::optional_signal_definition::TCC0.WO.0
+      name: TCC0/WO/0
+      label: WO/0
+    - identifier: PWM_0:WO/1
+      pad: PA21
+      mode: PWM output
+      configuration: null
+      definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::optional_signal_definition::TCC0.WO.1
+      name: TCC0/WO/1
+      label: WO/1
+    - identifier: PWM_0:WO/2
+      pad: PA22
+      mode: PWM output
+      configuration: null
+      definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::optional_signal_definition::TCC0.WO.2
+      name: TCC0/WO/2
+      label: WO/2
+    - identifier: PWM_0:WO/3
+      pad: PA23
+      mode: PWM output
+      configuration: null
+      definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::optional_signal_definition::TCC0.WO.3
+      name: TCC0/WO/3
+      label: WO/3
+    variant: null
+    clocks:
+      domain_group:
+        nodes:
+        - name: TCC
+          input: Generic clock generator 1
+          external: false
+          external_frequency: 0
+        configuration:
+          tcc_gclk_selection: Generic clock generator 1
+  PWM_1:
+    user_label: PWM_1
+    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::TCC1::driver_config_definition::PWM.Mode::Lite:TCC:PWM
+    functionality: PWM
+    api: Lite:TCC:PWM
+    configuration:
+      cc_cc0: 4500
+      cc_cc1: 4500
+      cc_cc2: 4500
+      cc_cc3: 4500
+      cc_cc4: 0
+      cc_cc5: 0
+      cc_control: true
+      ctrla_alock: false
+      ctrla_control: true
+      ctrla_enable: true
+      ctrla_prescaler: DIV16
+      ctrla_prescsync: GCLK
+      ctrla_runstdby: false
+      ctrlbset_cmd: NONE
+      ctrlbset_control: false
+      ctrlbset_dir: false
+      ctrlbset_idxcmd: DISABLE
+      ctrlbset_lupd: false
+      ctrlbset_oneshot: false
+      dbgctrl_control: false
+      dbgctrl_dbgrun: false
+      dbgctrl_fddbd: false
+      drvctrl_control: false
+      drvctrl_filterval0: 0
+      drvctrl_filterval1: 0
+      drvctrl_inven0: false
+      drvctrl_inven1: false
+      drvctrl_inven2: false
+      drvctrl_inven3: false
+      drvctrl_inven4: false
+      drvctrl_inven5: false
+      drvctrl_inven6: false
+      drvctrl_inven7: false
+      drvctrl_nre0: false
+      drvctrl_nre1: false
+      drvctrl_nre2: false
+      drvctrl_nre3: false
+      drvctrl_nre4: false
+      drvctrl_nre5: false
+      drvctrl_nre6: false
+      drvctrl_nre7: false
+      drvctrl_nrv0: false
+      drvctrl_nrv1: false
+      drvctrl_nrv2: false
+      drvctrl_nrv3: false
+      drvctrl_nrv4: false
+      drvctrl_nrv5: false
+      drvctrl_nrv6: false
+      drvctrl_nrv7: false
+      evctrl_cnteo: false
+      evctrl_cntsel: START
+      evctrl_control: false
+      evctrl_evact0: 'OFF'
+      evctrl_evact1: 'OFF'
+      evctrl_mcei0: false
+      evctrl_mcei1: false
+      evctrl_mcei2: false
+      evctrl_mcei3: false
+      evctrl_mcei4: false
+      evctrl_mcei5: false
+      evctrl_mceo0: false
+      evctrl_mceo1: false
+      evctrl_mceo2: false
+      evctrl_mceo3: false
+      evctrl_mceo4: false
+      evctrl_mceo5: false
+      evctrl_ovfeo: false
+      evctrl_tcei0: false
+      evctrl_tcei1: false
+      evctrl_tcinv0: false
+      evctrl_tcinv1: false
+      evctrl_trgeo: false
+      fctrla_blank: NONE
+      fctrla_blankpresc: false
+      fctrla_blankval: 0
+      fctrla_chsel: CC0
+      fctrla_control: false
+      fctrla_filterval: 0
+      fctrla_halt: DISABLE
+      fctrla_keep: false
+      fctrla_qual: false
+      fctrla_restart: false
+      fctrla_src: DISABLE
+      fctrlb_blank: NONE
+      fctrlb_blankpresc: false
+      fctrlb_blankval: 0
+      fctrlb_chsel: CC0
+      fctrlb_control: false
+      fctrlb_filterval: 0
+      fctrlb_halt: DISABLE
+      fctrlb_keep: false
+      fctrlb_qual: false
+      fctrlb_restart: false
+      fctrlb_src: DISABLE
+      intenset_cnt: false
+      intenset_control: false
+      intenset_dfs: false
+      intenset_err: false
+      intenset_fault0: false
+      intenset_fault1: false
+      intenset_faulta: false
+      intenset_faultb: false
+      intenset_mc0: false
+      intenset_mc1: false
+      intenset_mc2: false
+      intenset_mc3: false
+      intenset_mc4: false
+      intenset_mc5: false
+      intenset_ovf: false
+      intenset_trg: false
+      patt_control: false
+      patt_pge0: false
+      patt_pge1: false
+      patt_pge2: false
+      patt_pge3: false
+      patt_pgv0: false
+      patt_pgv1: false
+      patt_pgv2: false
+      patt_pgv3: false
+      per_control: true
+      per_per: 5703
+      wave_ciccen0: false
+      wave_ciccen1: false
+      wave_ciccen2: false
+      wave_ciccen3: false
+      wave_ciperen: false
+      wave_control: true
+      wave_pol0: false
+      wave_pol1: false
+      wave_pol2: false
+      wave_pol3: false
+      wave_pol4: false
+      wave_pol5: false
+      wave_ramp: RAMP1
+      wave_swap0: false
+      wave_swap1: false
+      wave_swap2: false
+      wave_swap3: false
+      wave_wavegen: NPWM
+      wexctrl_control: false
+      wexctrl_dths: 0
+      wexctrl_dtien0: false
+      wexctrl_dtien1: false
+      wexctrl_dtien2: false
+      wexctrl_dtien3: false
+      wexctrl_dtls: 0
+      wexctrl_otmx: 0
+    optional_signals:
+    - identifier: PWM_1:WO/0
+      pad: PA16
+      mode: PWM output
+      configuration: null
+      definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::optional_signal_definition::TCC1.WO.0
+      name: TCC1/WO/0
+      label: WO/0
+    - identifier: PWM_1:WO/1
+      pad: PA17
+      mode: PWM output
+      configuration: null
+      definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::optional_signal_definition::TCC1.WO.1
+      name: TCC1/WO/1
+      label: WO/1
+    - identifier: PWM_1:WO/2
+      pad: PA18
+      mode: PWM output
+      configuration: null
+      definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::optional_signal_definition::TCC1.WO.2
+      name: TCC1/WO/2
+      label: WO/2
+    - identifier: PWM_1:WO/3
+      pad: PA19
+      mode: PWM output
+      configuration: null
+      definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::optional_signal_definition::TCC1.WO.3
+      name: TCC1/WO/3
+      label: WO/3
+    variant: null
+    clocks:
+      domain_group:
+        nodes:
+        - name: TCC
+          input: Generic clock generator 1
+          external: false
+          external_frequency: 0
+        configuration:
+          tcc_gclk_selection: Generic clock generator 1
   USB_DEVICE_INSTANCE:
     user_label: USB_DEVICE_INSTANCE
     definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::USB::driver_config_definition::USB.Device::HAL:Driver:USB.Device
@@ -1029,11 +1413,53 @@ drivers:
         configuration:
           usb_gclk_selection: Generic clock generator 1
 pads:
+  PA16:
+    name: PA16
+    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA16
+    mode: Peripheral IO
+    user_label: PA16
+    configuration: null
+  PA17:
+    name: PA17
+    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA17
+    mode: Peripheral IO
+    user_label: PA17
+    configuration: null
+  PA18:
+    name: PA18
+    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA18
+    mode: Peripheral IO
+    user_label: PA18
+    configuration: null
+  PA19:
+    name: PA19
+    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA19
+    mode: Peripheral IO
+    user_label: PA19
+    configuration: null
+  PA20:
+    name: PA20
+    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA20
+    mode: Peripheral IO
+    user_label: PA20
+    configuration: null
+  PA21:
+    name: PA21
+    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA21
+    mode: Peripheral IO
+    user_label: PA21
+    configuration: null
   RED_LED:
     name: PA22
     definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA22
-    mode: Digital output
+    mode: Peripheral IO
     user_label: RED_LED
+    configuration: null
+  PA23:
+    name: PA23
+    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA23
+    mode: Peripheral IO
+    user_label: PA23
     configuration: null
   PA24:
     name: PA24

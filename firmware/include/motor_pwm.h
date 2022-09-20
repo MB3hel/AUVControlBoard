@@ -13,6 +13,8 @@
  * Thruster 7: DIO  1 = PA17 = TCC1[1]
  * Thruster 8: DIO  0 = PA16 = TCC1[0]
  * 
+ * TODO: Clock configuration / calculation information
+ * 
  * @author Marcus Behel (mgbehel@ncsu.edu)
  */
 

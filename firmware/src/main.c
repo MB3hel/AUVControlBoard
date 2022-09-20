@@ -18,12 +18,13 @@ int main(void){
     pccomm_init();                                  // Initialize USB communications with PC
     motor_pwm_init();                               // Initialize motor pwm configuration
     
-
+    motor_pwm_set((float[]){ 0, 0, 0, 1, 0, 0, 0, 0 });
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Main loop
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     while (1) {
-        
+        gpio_toggle_pin_level(RED_LED);
+        delay_ms(1000);
     }
 }
