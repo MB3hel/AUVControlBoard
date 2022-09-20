@@ -125,5 +125,5 @@ where `mode_val` is one of the following
 RAW[speed1][speed2][speed3][speed4][speed5][speed6][speed7][speed8]
 ```
 
-where `speedx` (for `x` = 1, 2, ..., 8) is a little endian encoded 32-bit integer between -1.0 and 1.0 indicating the speed of thruster `x`.
+where `speedx` (for `x` = 1, 2, ..., 8) is a little endian encoded 32-bit float between -1.0 and 1.0 indicating the speed of thruster `x`.
 
