@@ -32,3 +32,8 @@ void cmdctrl_init(void);
  * Handle a message from the pc
  */
 void cmdctrl_handle_msg(uint8_t *msg, uint32_t len);
+
+/**
+ * Call when motors are killed by watchdog
+ */
+void cmdctrl_motors_killed(void);

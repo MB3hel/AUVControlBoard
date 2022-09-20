@@ -26,6 +26,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("")
         print("Interrupted by user")
+        exit(1)
 
     # Setup and run dry run thruster tests
     try:
@@ -82,4 +83,6 @@ if __name__ == "__main__":
         cb.set_raw(0, 0, 0, 0, 0, 0, 0, 0)
         print("")
         print("Interrupted by user")
+        exit(1)
+    exit(0)
     

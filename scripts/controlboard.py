@@ -21,9 +21,18 @@ class ControlBoard:
 
     def __init__(self, port: str):
         self.__ser: serial.Serial = serial.Serial(port)
+
+        # Read any "old" data from the port
+        # This could include old messages such as watchdog kills, sensor data, etc
+        # From when control board was connected, but not in use
+        # Thus messages just sat in buffer
+        self.__ser.read_all()
+
         self.__mode: ControlBoard.Mode = ControlBoard.Mode.UNKNOWN
         self.__read_thread = threading.Thread(target=self.__read_thread, daemon=True)
         self.__read_thread.start()
+        self.__feed_thread = threading.Thread(target=self.__feed_thread, daemon=True)
+        self.__feed_thread.start()
 
         self.set_mode(ControlBoard.Mode.RAW)
 
@@ -92,6 +101,8 @@ class ControlBoard:
                 self.__mode = ControlBoard.Mode.RAW
             elif msg[4:5] == b'L':
                 self.__mode = ControlBoard.Mode.LOCAL
+        elif msg == b'WDGK':
+            print("WARNING: Control Board Watchdog killed thrusters!")
 
     def __read_thread(self):
         parse_escaped = False
@@ -128,3 +139,10 @@ class ControlBoard:
         self.__ser.write(crc)
         self.__ser.write(ControlBoard.END_BYTE)
 
+    def __feed_thread(self):
+        # Feed watchdog every 500ms
+        # Watchdog on control board kills thrusters if not fed for 1500ms
+        # to ensure motors do not continue running if the computer looses connection
+        while True:
+            self.__write_msg(b'WDGF')
+            time.sleep(0.5)

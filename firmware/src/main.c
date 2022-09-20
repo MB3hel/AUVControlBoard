@@ -9,8 +9,12 @@
 #include <motor_pwm.h>
 #include <conversions.h>
 #include <cmdctrl.h>
+#include <stdbool.h>
 
 
+/**
+ * Program entry point
+ */
 int main(void){
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Initialization
@@ -21,13 +25,14 @@ int main(void){
     motor_pwm_init();                               // Initialize motor pwm configuration
     conversions_init();                             // Initilize conversions helper
     cmdctrl_init();                                 // Initilize cmd & ctrl system
-    
+
+    timer_start(&TIMER_0);                          // Start TIMER_0 = 1ms timer
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Main loop
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    while (1) {
+    while (true) {
         
     }
 }

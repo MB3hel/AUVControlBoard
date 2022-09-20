@@ -3,42 +3,47 @@
  * @author Marcus Behel
  */
 
+#include <atmel_start.h>
 #include <motor_control.h>
 #include <motor_pwm.h>
 #include <matrix.h>
 #include <stdbool.h>
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// Macros
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// globals are prefixed with motor_control and have long variable names
-// These "rename" the globals within this source file only
-#define dof_matrix          motor_control_dof_matrix
-#define overlap_vectors     motor_control_overlap_vecs
+#include <cmdctrl.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-float motor_control_dof_matrix_arr[8*6];                // Backing array for dof matrix
-matrix motor_control_dof_matrix;                        // dof matrix
+static float dof_matrix_arr[8*6];                       // Backing array for dof matrix
+static matrix dof_matrix;                               // dof matrix
 
-float motor_control_overlap_arrs[8][8];                 // Backing arrays for overlap vectors
-matrix motor_control_overlap_vecs[8];                   // overlaps vectors
+static float overlap_arrs[8][8];                        // Backing arrays for overlap vectors
+static matrix overlap_vectors[8];                       // overlaps vectors
+
+static struct timer_task mc_stop_task;                  // Task to stop motors
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+static void motor_control_cb_stop(const struct timer_task *const timer_task){
+    // Watchdog timed out.
+    
+    // Stop all motors
+    motor_pwm_set((float[]){0, 0, 0, 0, 0, 0, 0, 0});
+
+    // Warn other end (in case it is still there and just didn't feed watchdog)
+    cmdctrl_motors_killed();
+}
 
 void motor_control_init(void){
     // This is **NOT** the motor_matrix described in the math README
     // This is a directly constructed dof_matrix.
     // This implementation ALWAYS uses row i for motor i+1
     // row 0 = thruster 1, row 1 = thruster 2, etc
-    matrix_init_static(&dof_matrix, motor_control_dof_matrix_arr, 8, 6);
+    matrix_init_static(&dof_matrix, dof_matrix_arr, 8, 6);
     //                     MotorNum-1           x       y      z     pitch    roll     yaw
     matrix_set_row(&dof_matrix, 0, (float[]){  -1,     -1,     0,      0,      0,      +1  });
     matrix_set_row(&dof_matrix, 1, (float[]){  +1,     -1,     0,      0,      0,      -1  });
@@ -67,7 +72,7 @@ void motor_control_init(void){
     matrix v;
     matrix_init_static(&v, v_arr, 6, 1);
     for(size_t r = 0; r < contribution_matrix.rows; ++r){
-        matrix_init_static(&overlap_vectors[r], motor_control_overlap_arrs[r], contribution_matrix.rows, 1);
+        matrix_init_static(&overlap_vectors[r], overlap_arrs[r], contribution_matrix.rows, 1);
 
         // v = contribution_matrix row r transposed
         matrix_get_row(rowdata, &contribution_matrix, r);
@@ -85,9 +90,21 @@ void motor_control_init(void){
     }
 }
 
+void motor_control_feed_watchdog(void){
+    timer_remove_task(&TIMER_0, &mc_stop_task);     // Stop task if previously added (prevents kill)
+    mc_stop_task.cb = motor_control_cb_stop;        // Configure callback
+    mc_stop_task.mode = TIMER_TASK_ONE_SHOT;        // Configure mode
+    mc_stop_task.interval = 1500;                   // 1.5sec before watchdog kills motors
+    timer_add_task(&TIMER_0, &mc_stop_task);        // Add task now (starts 1.5sec timeout)
+}
+
 void motor_control_raw(float s1, float s2, float s3, float s4, float s5, float s6, float s7, float s8){
     float speeds[8] = { s1, s2, s3, s4, s5, s6, s7, s8 };
     motor_pwm_set(speeds);
+
+    // Just updated speed.
+    // Reset watchdog timeout
+    motor_control_feed_watchdog();
 }
 
 void motor_control_local(float x, float y, float z, float pitch, float roll, float yaw){
@@ -123,5 +140,8 @@ void motor_control_local(float x, float y, float z, float pitch, float roll, flo
 
     // Speed array already contains motor speeds in order
     // Because dof matrix rows are in order
-    motor_pwm_set(speed_arr);
+    // NOTE: Always call motor_control_raw NOT motor_pwm_set directly
+    //       To ensure timeout works properly
+    motor_control_raw(speed_arr[0], speed_arr[1], speed_arr[2], speed_arr[3],
+            speed_arr[4], speed_arr[5], speed_arr[6], speed_arr[7]);
 }

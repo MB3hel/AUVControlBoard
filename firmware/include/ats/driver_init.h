@@ -21,10 +21,14 @@ extern "C" {
 #include <hal_io.h>
 #include <hal_sleep.h>
 
+#include <hal_timer.h>
+#include <hpl_tc_base.h>
 #include <tcc_lite.h>
 #include <tcc_lite.h>
 
 #include "hal_usb_device.h"
+
+extern struct timer_descriptor TIMER_0;
 
 void PWM_0_CLOCK_init(void);
 

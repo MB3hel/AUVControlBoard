@@ -76,5 +76,14 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         // Update motor speeds
         motor_control_raw(speeds[0], speeds[1], speeds[2], speeds[3], 
                 speeds[4], speeds[5], speeds[6], speeds[7]);
+    }else if(data_matches(msg, len, (uint8_t[]){'W', 'D', 'G', 'F'}, 4)){
+        // Motor watchdog feed command
+        // W,D,G,F
+        motor_control_feed_watchdog();
     }
+}
+
+void cmdctrl_motors_killed(void){
+    // Send message telling the computer that the watchdog killed motors
+    pccomm_write_msg((uint8_t[]){'W', 'D', 'G', 'K'}, 4);
 }
