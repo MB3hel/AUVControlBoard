@@ -7,6 +7,11 @@ The control board is designed using development boards and breakout boards to re
 The control board generates ESC control signals (PWM), acquires and processes sensor data (using onboard IMU / IMUs, depth sensor, and sensor fusion / filtering algorithms) as well as running control loops for system motion and stability control. Additionally, an interface to the computer (Jetson) is provided to acquire sensor data and allow control of motors using high or low level methods (vectored motion or direct control of each motor’s speed).
 
 
+## Repository Structure
+
+TODO
+
+
 ## Firmware Development Environment
 
 Both the [control board firmware](./firmware/) and the [hardware test](./hwtest/) program are developed using [PlatformIO](https://platformio.org/). PlatformIO is installed as an extension to [VSCode](https://code.visualstudio.com/).
@@ -31,6 +36,10 @@ Both the [control board firmware](./firmware/) and the [hardware test](./hwtest/
 
 
 ## Control Board Usage
+
+### Usage Examples
+
+Python scripts demonstrating use of the control board are available in the [scripts](./scripts) folder.
 
 ### General Configuration
 
