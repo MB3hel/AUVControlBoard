@@ -21,7 +21,15 @@ extern "C" {
 #include <hal_io.h>
 #include <hal_sleep.h>
 
+#include <tcc_lite.h>
+
 #include "hal_usb_device.h"
+
+void PWM_0_CLOCK_init(void);
+
+void PWM_0_PORT_init(void);
+
+int8_t PWM_0_init(void);
 
 void USB_DEVICE_INSTANCE_CLOCK_init(void);
 void USB_DEVICE_INSTANCE_init(void);

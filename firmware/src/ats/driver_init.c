@@ -11,6 +11,24 @@
 #include <utils.h>
 #include <hal_init.h>
 
+void PWM_0_PORT_init(void)
+{
+
+	gpio_set_pin_function(PA16, PINMUX_PA16F_TCC1_WO0);
+
+	gpio_set_pin_function(PA17, PINMUX_PA17F_TCC1_WO1);
+
+	gpio_set_pin_function(PA18, PINMUX_PA18F_TCC1_WO2);
+
+	gpio_set_pin_function(PA19, PINMUX_PA19F_TCC1_WO3);
+}
+
+void PWM_0_CLOCK_init(void)
+{
+	hri_mclk_set_APBBMASK_TCC1_bit(MCLK);
+	hri_gclk_write_PCHCTRL_reg(GCLK, TCC1_GCLK_ID, CONF_GCLK_TCC1_SRC | (1 << GCLK_PCHCTRL_CHEN_Pos));
+}
+
 void USB_DEVICE_INSTANCE_PORT_init(void)
 {
 
@@ -132,17 +150,23 @@ void system_init(void)
 
 	// GPIO on PA22
 
-	// gpio_set_pin_level(RED_LED,
-	//                    // <y> Initial level
-	//                    // <id> pad_initial_level
-	//                    // <false"> Low
-	//                    // <true"> High
-	//                    false);
+	gpio_set_pin_level(RED_LED,
+	                   // <y> Initial level
+	                   // <id> pad_initial_level
+	                   // <false"> Low
+	                   // <true"> High
+	                   false);
 
-	// // Set pin direction to output
-	// gpio_set_pin_direction(RED_LED, GPIO_DIRECTION_OUT);
+	// Set pin direction to output
+	gpio_set_pin_direction(RED_LED, GPIO_DIRECTION_OUT);
 
-	// gpio_set_pin_function(RED_LED, GPIO_PIN_FUNCTION_OFF);
+	gpio_set_pin_function(RED_LED, GPIO_PIN_FUNCTION_OFF);
+
+	PWM_0_CLOCK_init();
+
+	PWM_0_PORT_init();
+
+	PWM_0_init();
 
 	USB_DEVICE_INSTANCE_init();
 }

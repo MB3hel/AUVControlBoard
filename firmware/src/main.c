@@ -16,11 +16,8 @@ int main(void){
     
     atmel_start_init();                             // Initialize ASF4 drivers & middleware
     pccomm_init();                                  // Initialize USB communications with PC
-    motor_pwm_init();                               // Initialize motor PWM subsystem
+    motor_pwm_init();                               // Initialize motor pwm configuration
     
-
-    float speeds[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-    motor_pwm_set(speeds);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Main loop
