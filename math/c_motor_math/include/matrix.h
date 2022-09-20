@@ -1,3 +1,21 @@
+/**
+ * Matrix math helper library
+ * 
+ * Note: This library does dynamically allocate memory to perform some operations
+ * As such, a sufficient heap is necessary.
+ * Such operations free dynamically allocated memory in inverse order of allocation.
+ * This should prevent heap fragmentation.
+ * det, cofactor, and inv are some operations using dynamic memory allocation
+ * 
+ * Additionally, this library is written using floats (single precision)
+ * to allow it to be hardware accelerated on a MCU with single precision FPU
+ * such as a Cortex M4
+ * 
+ * @file matrix.h
+ * @author Marcus Behel
+ */
+
+
 #pragma once
 
 #include <stddef.h>
@@ -32,7 +50,7 @@ typedef struct{
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Initialize float matrix
+ * Initialize float matrix (dynamically allocates memory)
  * @param m Pointer to the matrix to initialize
  * @param rows Number of rows in matrix
  * @param cols Number of columns in matrix
@@ -41,7 +59,18 @@ typedef struct{
 int matrix_init(matrix *m, size_t rows, size_t cols);
 
 /**
+ * Initialize a float matrix using a statically allocated array
+ * @param m Pointer to the matrix io initialize
+ * @param backing_array Array to use as backing memory of the matrix.
+ *      Must be of size rows * cols
+ * @param rows Number of rows in matrix
+ * @param cols Number of columns in matrix
+ */
+int matrix_init_static(matrix *m, float *backing_array, size_t rows, size_t cols);
+
+/**
  * Free float matrix
+ * WARNING: Do not call matrix_free for statically allocated matrices
  * @param m Pointer to the matrix to free
  */
 void matrix_free(matrix *m);
