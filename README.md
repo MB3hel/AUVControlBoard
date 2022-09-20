@@ -9,7 +9,12 @@ The control board generates ESC control signals (PWM), acquires and processes se
 
 ## Repository Structure
 
-TODO
+- `firmware`: PlatformIO project and source code for the control board firmware (Microchip ASF4 based)
+- `hwtest`: PlatformIO project and source code for an Arduino-based test program to verify hardware functionality.
+- `img`: Images used in documentation
+- `math`: Demo of thruster control math as well as documentation of the math
+- `prototype`: Assembly instructions for control board prototype
+- `scripts`: Python scripts that demo interfacing with the control board
 
 
 ## Firmware Development Environment
@@ -37,6 +42,8 @@ Both the [control board firmware](./firmware/) and the [hardware test](./hwtest/
 
 ## Control Board Usage
 
+This section describes the process of using the control board, **not** specific messages that are sent to acheive this process. The messages and how to send them are described in the "Communication Protocol" section.
+
 ### Usage Examples
 
 Python scripts demonstrating use of the control board are available in the [scripts](./scripts) folder.
@@ -50,15 +57,43 @@ TODO
 
 #### RAW Mode
 
-TODO
+In RAW mode, thruster speeds are directly controllable. Speeds (-1.0 to 1.0) for all 8 thrusters must be provided to the control board. It will then generate the PWM signals cooresponding to those speeds.
+
 
 #### LOCAL Mode
 
-TODO
+In LOCAL mode, "speeds" in each of 6 degrees of freedom (DoF) are provided. This includes 3 translation speeds (x, y, z) and 3 rotation speeds (pitch, roll, yaw). In LOCAL mode, these DoFs are relative to the robot **not** the world (meaning they do not change as the robot's orientation changes).
+
+Reference the coordinate system definition in the [math README](./math/README.md) for definitions of each DoF.
+
+Some examples (assume robot is "level"):
+
+- A target speed of 1.0 along y is "forward" motion at full possible speed
+- A target speed of 1.0 along x and y is motion along 45 degree line (forward and right) at full possible speed
+- A target speed of -0.5 yaw is rotation (clockwise when viewed from the top) at half speed
+- A target speed of 0.75 yaw and 0.75 y is motion in a circle about the left edge of the robot (at 75% speed). The circle will be counterclockwise when viewed from the top.
+- Adding -0.25 z to any above example adds a "submerge" of 25% to the resulting motion
+
+In LOCAL mode, note that -1.0 z will always result in motion toawrds the "bottom" of the *robot* (which is only submerge if the robot is level). If the robot were pitched down 90 degrees (-90 degree pitch) a -1.0 z would result in the robot moving in "reverse" relative to the world. This same idea applies to all DoFs (because motion is realative to the *robot*).
+
 
 ### Motor Watchdog
 
-TODO
+The control board runs a "motor watchdog" which must be periodically "fed" to avoid an automatic shutoff of the motors. The watchdog can be fed in one of two ways.
+
+1. A speed can be set in any mode as described above. When a new speed is set the watchdog will be "fed" automatically.
+2. The watchdog can be explicitly "fed" using a "feed" command
+
+The second method is useful when the desired motion has not changed. Setting desired motion (in any mode) results in some calculations occuring on the control board. To avoid perfoming these calculations more often than necessary, desired motion should only be set when it changes. As such, there needs to be a way to feed the watchdog without changing desired motion.
+
+Generally, the computer interfacing with the control board should just periodically "feed" the watchdog using the explicit "feed" command. By feeding the watchdog often enough (recomended to feed between every 100 and 500 milliseconds), the motors will never be automatically disabled (unless something goes wrong).
+
+The motor watchdog exists to ensure the motors will not continue running in unsafe situations such as
+
+- Communication between control board and the computer is interrupted
+- The computer is unable to provide speeds (program crashes, kernel panic, program deadlocks, etc)
+
+The watchdog will automatically disable motors if it is not fed for 1500 milliseconds (1.5 seconds). When the watchdog kills motors, a message is sent to the PC to indicate that this has occured.
 
 
 ### Communication Protocol
@@ -105,6 +140,8 @@ The following are the messages sent to the control board or received from the co
 
 **Set MODE**
 
+*Sent from computer to control board*
+
 ```
 MODE[mode_val]
 ```
@@ -116,6 +153,8 @@ where `mode_val` is one of the following
 
 
 **Get MODE**
+
+*Sent from computer to control board*
 
 ```
 ?MODE
@@ -134,9 +173,29 @@ where `mode_val` is one of the following
 
 **Set RAW Speeds**
 
+*Sent from computer to control board*
+
 ```
 RAW[speed1][speed2][speed3][speed4][speed5][speed6][speed7][speed8]
 ```
 
 where `speedx` (for `x` = 1, 2, ..., 8) is a little endian encoded 32-bit float between -1.0 and 1.0 indicating the speed of thruster `x`.
+
+
+**Feed Motor Watchdog**
+
+*Sent from computer to control board*
+
+```
+WDGF
+```
+
+**Motor Watchdog Did Disable**
+
+*Sent from control board to computer if the motor watchdog automatically kills motors.*
+
+```
+WDGK
+```
+
 
