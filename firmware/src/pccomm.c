@@ -7,6 +7,7 @@
 #include <pccomm.h>
 #include <atmel_start.h>
 #include <circular_buffer.h>
+#include <cmdctrl.h>
 #include <stdlib.h>
 
 
@@ -57,44 +58,6 @@ bool pccomm_cb_usb_write(const uint8_t ep, const enum usb_xfer_code rc, const ui
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Check if two byte arrays are identical
- * @param a First byte array
- * @param len_a Length of first array
- * @param b Second byte array
- * @param len_b Length of second array
- * @return true If arrays match
- * @return false If arrays do not match
- */
-bool pccomm_matches(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_t len_b){
-    if(len_a != len_b)
-        return false;
-    for(uint32_t i = 0; i < len_a; ++i){
-        if(a[i] != b[i])
-            return false;
-    }
-    return true;
-}
-
-/**
- * Check if one array starts with the data in another array
- * @param a The array to search in ("full" data)
- * @param len_a Length of array a
- * @param b The array to search for ("sub" / "prefix" data)
- * @param len_b Length of array b
- * @return true If array a starts with array b
- * @return false If array a does not start with array b
- */
-bool pccomm_startswith(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_t len_b){
-    if(len_a < len_b)
-        return false;
-    for(uint32_t i = 0; i < len_b; ++i){
-        if(a[i] != b[i])
-            return false;
-    }
-    return true;
-}
 
 /**
  * Calculate 16-bit CRC (CCITT) of the given data
@@ -169,7 +132,8 @@ void pccomm_handle_received_msg(void){
     // Done with crc now
     pccomm_recv_msg_pos -= 2;
 
-    // Handle messages here
+    // Have command & control interface handle messages
+    cmdctrl_handle_msg(pccomm_recv_msg, pccomm_recv_msg_pos);
 }
 
 

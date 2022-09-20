@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import serial
-import threading
 import time
+import threading
 from crccheck.crc import Crc16CcittFalse as Crc16
+import struct
 
 
 START_BYTE = b'\xfd'
@@ -11,7 +12,11 @@ END_BYTE = b'\xfe'
 ESCAPE_BYTE = b'\xff'
 
 
+unhandled_msgs = []
+
+
 def handle_read_message(msg: bytes):
+    global unhandled_msgs
     # Last two bytes of msg are crc
 
     # Verify CRC
@@ -25,7 +30,7 @@ def handle_read_message(msg: bytes):
     # Done with crc data
     msg = msg[:-2]
 
-    print(msg)
+    unhandled_msgs.append(msg)
 
 
 def read_thread(ser: serial.Serial):
@@ -67,15 +72,43 @@ def write_msg(ser: serial.Serial, msg: bytes):
     ser.write(END_BYTE)
 
 
+def wait_for_msg(msg: bytes):
+    global unhandled_msgs
+    while True:
+        if msg in unhandled_msgs:
+            return
+        time.sleep(0.05)
+
+
+def raw_speed_msg(s1, s2, s3, s4, s5, s6, s7, s8):
+    msg = bytearray()
+    msg.extend(b'RAW')
+    msg.extend(struct.pack("<f", s1))
+    msg.extend(struct.pack("<f", s2))
+    msg.extend(struct.pack("<f", s3))
+    msg.extend(struct.pack("<f", s4))
+    msg.extend(struct.pack("<f", s5))
+    msg.extend(struct.pack("<f", s6))
+    msg.extend(struct.pack("<f", s7))
+    msg.extend(struct.pack("<f", s8))
+    return msg
+
+
 if __name__ ==  "__main__":
     try:
         ser = serial.Serial("/dev/ttyACM0")
         t = threading.Thread(target=read_thread, daemon=True, args=(ser,))
         t.start()
-        while True:
-            write_msg(ser, b'RLED1')
-            time.sleep(1)
-            write_msg(ser, b'RLED0')
-            time.sleep(1)
+
+        print("Set MODE = RAW")
+        write_msg(ser, b'MODER')
+        write_msg(ser, b'?MODE')
+        wait_for_msg(b'MODER')
+        print("MODE = RAW")
+        
+        print("SET SPEEDS")
+        write_msg(ser, raw_speed_msg(-1, 1, -0.5, 0.5, -0.9, 0.9, -0.7, 0.7))
+        print("SPEEDS SET")
+
     except KeyboardInterrupt:
         pass

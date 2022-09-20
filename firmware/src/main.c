@@ -7,6 +7,8 @@
 #include <atmel_start.h>
 #include <pccomm.h>
 #include <motor_pwm.h>
+#include <conversions.h>
+#include <cmdctrl.h>
 
 
 int main(void){
@@ -17,6 +19,8 @@ int main(void){
     atmel_start_init();                             // Initialize ASF4 drivers & middleware
     pccomm_init();                                  // Initialize USB communications with PC
     motor_pwm_init();                               // Initialize motor pwm configuration
+    conversions_init();                             // Initilize conversions helper
+    cmdctrl_init();                                 // Initilize cmd & ctrl system
     
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
