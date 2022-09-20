@@ -58,6 +58,7 @@ void motor_pwm_init(void){
     TCC1->PER.reg = PWM_PERIOD;
 
     // Configure pins as outputs from timer
+    
     PORT->Group[P].PINCFG[T1].reg = PORT_PINCFG_PMUXEN;
 	PORT->Group[P].PMUX[T1/2].reg = PORT_PMUX_PMUXE(5); // Using function peripheral function F
 
