@@ -1,6 +1,6 @@
 /**
  * @file circular_buffer.c
- * @author Marcus Behel (mgbehel@ncsu.edu)
+ * @author Marcus Behel
  */
 
 /*

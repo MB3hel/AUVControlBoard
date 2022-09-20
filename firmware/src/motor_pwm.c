@@ -1,6 +1,7 @@
 /**
  * @file motor_pwm.c
- * @author Marcus Behel (mgbehel@ncsu.edu)
+ * @author Marcus Behel
+ * @author Chima Nwosu
  */
 
 #include <motor_pwm.h>
@@ -11,8 +12,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define TCALC 3                                         // Time in milliseconds it takes to count 1 tick is 1/3
-#define PULSE_WDITH(speed)  ((400*speed) + 1500)
+#define TCALC 3                                         // timer counts / usec
+#define PULSE_WDITH(speed)  ((400*speed) + 1500)		// Convert pulse high time in usec to CC value
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -21,6 +22,8 @@
 
 
 void motor_pwm_init(void){
+	// Actual initialization  is done by atmel_start_init
+	// This just ensures speeds are always initially set to 0
 	motor_pwm_set((float[]){0, 0, 0, 0, 0, 0, 0, 0});
 }
 

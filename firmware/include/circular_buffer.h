@@ -3,7 +3,7 @@
  * @brief Ciruclar (ring) buffer implementation for comm protocols
  * Implemented to be ISR safe (uses volatile)
  * Read and write functions are inlinable
- * @author Marcus Behel (mgbehel@ncsu.edu)
+ * @author Marcus Behel
  */
 
 /*

@@ -13,9 +13,16 @@
  * Thruster 7: DIO  1 = PA17 = TCC1[1]
  * Thruster 8: DIO  0 = PA16 = TCC1[0]
  * 
- * TODO: Clock configuration / calculation information
+ * ESCs use 1500usec pulse for 0%, 1100us for -100% and 1900us for 100%
+ * As such, timers are configured to generate a pulse with a 1901usec period
+ * The high time is varied from 1100usec to 1900usec to set thruster speeds
  * 
- * @author Marcus Behel (mgbehel@ncsu.edu)
+ * TCC0 and TCC1 clocks derived from GCLK1 = 48MHz
+ * Divider of 16 is configured: 48MHz / 16 = 3MHz timer clock
+ * Therefore there are 3 counts per microsecond (usec)
+ * 
+ * @author Marcus Behel
+ * @author Chima Nwosu
  */
 
 #pragma once

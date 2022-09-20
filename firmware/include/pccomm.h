@@ -27,7 +27,7 @@
  *
  * Note that the CRC is always calculated on the "original" payload **not** on the escaped data
  * 
- * @author Marcus Behel (mgbehel@ncsu.edu)
+ * @author Marcus Behel
  */
 
 #pragma once

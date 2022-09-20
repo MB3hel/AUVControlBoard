@@ -18,7 +18,7 @@ void PWM_0_PORT_init(void)
 
 	gpio_set_pin_function(PA21, PINMUX_PA21G_TCC0_WO1);
 
-	gpio_set_pin_function(RED_LED, PINMUX_PA22G_TCC0_WO2);
+	gpio_set_pin_function(PA22, PINMUX_PA22G_TCC0_WO2);
 
 	gpio_set_pin_function(PA23, PINMUX_PA23G_TCC0_WO3);
 }

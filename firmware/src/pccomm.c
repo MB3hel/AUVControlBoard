@@ -1,6 +1,6 @@
 /**
  * @file pccomm.c
- * @author Marcus Behel (mgbehel@ncsu.edu)
+ * @author Marcus Behel
  */
 
 
@@ -169,21 +169,7 @@ void pccomm_handle_received_msg(void){
     // Done with crc now
     pccomm_recv_msg_pos -= 2;
 
-    if(pccomm_startswith(pccomm_recv_msg, pccomm_recv_msg_pos, PCCOMM_MSG_LED_PREFIX, sizeof(PCCOMM_MSG_LED_PREFIX))){
-        switch(pccomm_recv_msg[sizeof(PCCOMM_MSG_LED_PREFIX)]){
-        case 'H':
-        case 'h':
-        case '1':
-            gpio_set_pin_level(RED_LED, true);
-            break;
-        case 'L':
-        case 'l':
-        case '0':
-            gpio_set_pin_level(RED_LED, false);
-            break;
-        }
-    }
-
+    // Handle messages here
 }
 
 

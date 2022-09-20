@@ -1449,11 +1449,11 @@ pads:
     mode: Peripheral IO
     user_label: PA21
     configuration: null
-  RED_LED:
+  PA22:
     name: PA22
     definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA22
     mode: Peripheral IO
-    user_label: RED_LED
+    user_label: PA22
     configuration: null
   PA23:
     name: PA23
