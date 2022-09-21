@@ -58,6 +58,12 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         // MODE set command
         // M,O,D,E,[MODE]
         // MODE: R = RAW, L = LOCAL
+
+        // Make sure there is enough data
+        if(len < 5)
+            return;
+
+        // Get mode from message
         switch(msg[4]){
         case 'R':
             cmdctrl_mode = CMDCTRL_MODE_RAW;
@@ -70,6 +76,10 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         // RAW speed set command (only works in RAW mode)
         // R,A,W,[speed1],[speed2],...,[speed8]
         // Each speed is a 32-bit float (little endian)
+
+        // Make sure there is enough data
+        if(len < 35)
+            return;
 
         // Get speeds from message        
         float speeds[8];
