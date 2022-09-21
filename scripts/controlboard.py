@@ -157,6 +157,12 @@ class ControlBoard:
         if msg.startswith(b'MODE'):
             # Mode status message
             # Response to mode query
+
+            # Make sure enough data
+            if len(msg) < 5:
+                return
+
+            # Parse data
             with self.__state_lock:
                 if msg[4:5] == b'R':
                     self.__mode = ControlBoard.Mode.RAW
@@ -169,6 +175,12 @@ class ControlBoard:
         elif msg.startswith(b'TINV'):
             # Thruster inversion status message
             # Response to thruster inversion query
+
+            # Make sure enough data
+            if len(msg) < 12:
+                return
+
+            # Parse data
             with self.__state_lock:
                 for i in range(8):
                     if msg[4+i] == 1:
