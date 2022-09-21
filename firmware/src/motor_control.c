@@ -23,6 +23,7 @@ static matrix overlap_vectors[8];                       // overlaps vectors
 
 static struct timer_task mc_stop_task;                  // Task to stop motors
 
+bool motor_control_tinv[8];                             // Thruster inversion status (true = inverted)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
@@ -39,6 +40,10 @@ static void motor_control_cb_stop(const struct timer_task *const timer_task){
 }
 
 void motor_control_init(void){
+    // Initialize all thrusters in a non-inverted state
+    for(size_t i = 0; i < 8; ++i)
+        motor_control_tinv[i] = false;
+
     // This is **NOT** the motor_matrix described in the math README
     // This is a directly constructed dof_matrix.
     // This implementation ALWAYS uses row i for motor i+1
@@ -100,6 +105,10 @@ void motor_control_feed_watchdog(void){
 
 void motor_control_raw(float s1, float s2, float s3, float s4, float s5, float s6, float s7, float s8){
     float speeds[8] = { s1, s2, s3, s4, s5, s6, s7, s8 };
+    for(size_t i = 0; i < 8; ++i){
+        if(motor_control_tinv[i])
+            speeds[i] = -speeds[i];
+    }
     motor_pwm_set(speeds);
 
     // Just updated speed.

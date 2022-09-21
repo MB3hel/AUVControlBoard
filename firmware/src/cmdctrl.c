@@ -9,6 +9,8 @@
 #include <conversions.h>
 #include <stdbool.h>
 #include <motor_control.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -41,6 +43,13 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
                 break;
             }
             pccomm_write_msg(response, 5);
+        }else if(data_matches(&msg[1], len -1, (uint8_t[]){'T', 'I', 'N', 'V'}, 4)){
+            // Query thruster inversions
+            uint8_t *response = (uint8_t[]){'T', 'I', 'N', 'V', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'};
+            for(size_t i = 0; i < 8; ++i){
+                response[4 + i] = motor_control_tinv[i];
+            }
+            pccomm_write_msg(response, 12);
         }
         return;
     }

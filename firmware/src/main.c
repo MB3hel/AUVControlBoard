@@ -23,11 +23,11 @@ int main(void){
     atmel_start_init();                             // Initialize ASF4 drivers & middleware
     pccomm_init();                                  // Initialize USB communications with PC
     motor_pwm_init();                               // Initialize motor pwm configuration
-    conversions_init();                             // Initilize conversions helper
-    cmdctrl_init();                                 // Initilize cmd & ctrl system
+    conversions_init();                             // Initialize conversions helper
+    cmdctrl_init();                                 // Initialize cmd & ctrl system
 
-    timer_start(&TIMER_0);                          // Start TIMER_0 = 1ms timer
-
+    timer_start(&TIMER_0);                          // Start TIMER_0 (1ms timer)
+    
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Main loop
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
