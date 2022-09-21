@@ -22,11 +22,19 @@ if __name__ == "__main__":
         else:
             print("Fail.", flush=True)
             exit(1)
-        print("")
+
+        print("Setting motor inversions...", end="", flush=True)
+        if cb.set_inverted(False, False, False, False, False, False, False, False):
+            print("Done.", flush=True)
+        else:
+            print("Fail.", flush=True)
+            exit(1)
     except KeyboardInterrupt:
         print("")
         print("Interrupted by user")
         exit(1)
+
+    print("")
 
     # Setup and run dry run thruster tests
     try:

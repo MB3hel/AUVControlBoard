@@ -1,4 +1,5 @@
 
+from typing import List
 import serial
 import time
 import struct
@@ -28,18 +29,22 @@ class ControlBoard:
         # Thus messages just sat in buffer
         self.__ser.read_all()
 
+        self.__state_lock = threading.Lock()
         self.__mode: ControlBoard.Mode = ControlBoard.Mode.UNKNOWN
+        self.__inverted: List[int] = [2] * 8
         self.__read_thread = threading.Thread(target=self.__read_thread, daemon=True)
         self.__read_thread.start()
         self.__feed_thread = threading.Thread(target=self.__feed_thread, daemon=True)
         self.__feed_thread.start()
 
         self.set_mode(ControlBoard.Mode.RAW)
+        self.set_inverted(False, False, False, False, False, False, False, False)
 
     def set_mode(self, mode: Mode) -> bool:
-        if mode == self.__mode:
-            # Already in the right mode
-            return True
+        with self.__state_lock:
+            if mode == self.__mode:
+                # Already in the right mode
+                return True
 
         # Construct and send mode set message
         msg = bytearray()
@@ -57,15 +62,70 @@ class ControlBoard:
         # Query mode and wait for it to change (with a timeout)
         self.__write_msg(b'?MODE')
         start_time = time.time()
-        while self.__mode != mode:
+        while True:
+            with self.__state_lock:
+                if self.__mode != mode:
+                    return True
             if time.time() - start_time > 3.0:
                 return False
             time.sleep(0.05)
-        return True
     
     def get_mode(self) -> Mode:
-        return self.__mode
+        with self.__state_lock:
+            return self.__mode
     
+    def set_inverted(self, i1: bool, i2: bool, i3: bool, i4: bool, i5: bool, i6: bool, i7: bool, i8: bool) -> bool:
+        newinv = [
+            1 if i1 else 0,
+            1 if i2 else 0,
+            1 if i3 else 0,
+            1 if i4 else 0,
+            1 if i5 else 0,
+            1 if i6 else 0,
+            1 if i7 else 0,
+            1 if i8 else 0
+        ]
+
+        with self.__state_lock:
+            same = True
+            for i in range(8):
+                if newinv[i] != self.__inverted[i]:
+                    same = False
+                    break
+            if same:
+                # Inversions already correct
+                return True
+        
+        # Construct and send message
+        msg = bytearray()
+        msg.extend(b'TINV')
+        for i in range(8):
+            msg.append(1 if newinv[i] else 0)
+        self.__write_msg(msg)
+
+        # Query inverted and wait for it to change (with a timeout)
+        self.__write_msg(b'?TINV')
+        start_time = time.time()
+        while True:
+            if time.time() - start_time > 3.0:
+                return False
+            with self.__state_lock:
+                same = True
+                for i in range(8):
+                    if newinv[i] != self.__inverted[i]:
+                        same = False
+                        break
+            if same:
+                return True
+            time.sleep(0.05)
+    
+    def get_inverted(self) -> List[bool]:
+        with self.__state_lock:
+            ret: List[bool] = []
+            for i in range(8):
+                ret.append(self.__inverted[i] == 1)
+            return ret
+
     def set_raw(self, s1: float, s2: float, s3: float, s4: float, s5: float, s6: float, s7: float, s8: float):
         msg = bytearray()
         msg.extend(b'RAW')
@@ -97,12 +157,24 @@ class ControlBoard:
         if msg.startswith(b'MODE'):
             # Mode status message
             # Response to mode query
-            if msg[4:5] == b'R':
-                self.__mode = ControlBoard.Mode.RAW
-            elif msg[4:5] == b'L':
-                self.__mode = ControlBoard.Mode.LOCAL
+            with self.__state_lock:
+                if msg[4:5] == b'R':
+                    self.__mode = ControlBoard.Mode.RAW
+                elif msg[4:5] == b'L':
+                    self.__mode = ControlBoard.Mode.LOCAL
         elif msg == b'WDGK':
+            # Watchdog kill message
+            # Received when motor watchdog times out and kills thrusters
             print("WARNING: Control Board Watchdog killed thrusters!")
+        elif msg.startswith(b'TINV'):
+            # Thruster inversion status message
+            # Response to thruster inversion query
+            with self.__state_lock:
+                for i in range(8):
+                    if msg[4+i] == 1:
+                        self.__inverted[i] = True
+                    else:
+                        self.__inverted[i] = False
 
     def __read_thread(self):
         parse_escaped = False
