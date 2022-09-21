@@ -64,14 +64,14 @@ Prototype is assembled on protoboard. Final assembled prototype is shown below.
 
 | Pin 1                      | Pin 2                    |
 | -------------------------- | ------------------------ |
-| ItsyBitsy 12               | PWM Signal 1             |
-| ItsyBitsy 11               | PWM Signal 2             |
-| ItsyBitsy 10               | PWM Signal 3             |
-| ItsyBitsy 9                | PWM Signal 4             |
-| ItsyBitsy 7                | PWM Signal 5             |
-| ItsyBitsy 5                | PWM Signal 6             |
-| ItsyBitsy A5               | PWM Signal 7             |
-| ItsyBitsy A4               | PWM Signal 8             |
+| ItsyBitsy 13               | PWM Signal 1             |
+| ItsyBitsy 12               | PWM Signal 2             |
+| ItsyBitsy 11               | PWM Signal 3             |
+| ItsyBitsy 10               | PWM Signal 4             |
+| ItsyBitsy 9                | PWM Signal 5             |
+| ItsyBitsy 7                | PWM Signal 6             |
+| ItsyBitsy 1                | PWM Signal 7             |
+| ItsyBitsy 0                | PWM Signal 8             |
 
 ![](.//prototype_pwm1.png)
 
