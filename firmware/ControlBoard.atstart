@@ -1504,5 +1504,17 @@ pads:
     mode: Advanced
     user_label: PA25
     configuration: null
+  DS_CLK:
+    name: PB02
+    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PB02
+    mode: Digital output
+    user_label: DS_CLK
+    configuration: null
+  DS_DAT:
+    name: PB03
+    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PB03
+    mode: Digital output
+    user_label: DS_DAT
+    configuration: null
 toolchain_options: []
 static_files: []

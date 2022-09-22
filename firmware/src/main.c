@@ -10,6 +10,7 @@
 #include <conversions.h>
 #include <cmdctrl.h>
 #include <stdbool.h>
+#include <dotstar.h>
 
 
 /**
@@ -21,6 +22,7 @@ int main(void){
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     atmel_start_init();                             // Initialize ASF4 drivers & middleware
+    dotstar_init();                                 // Initialize RGB led driver
     pccomm_init();                                  // Initialize USB communications with PC
     motor_pwm_init();                               // Initialize motor pwm configuration
     conversions_init();                             // Initialize conversions helper

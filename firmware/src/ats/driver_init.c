@@ -181,6 +181,34 @@ void system_init(void)
 {
 	init_mcu();
 
+	// GPIO on PB02
+
+	gpio_set_pin_level(DS_CLK,
+	                   // <y> Initial level
+	                   // <id> pad_initial_level
+	                   // <false"> Low
+	                   // <true"> High
+	                   false);
+
+	// Set pin direction to output
+	gpio_set_pin_direction(DS_CLK, GPIO_DIRECTION_OUT);
+
+	gpio_set_pin_function(DS_CLK, GPIO_PIN_FUNCTION_OFF);
+
+	// GPIO on PB03
+
+	gpio_set_pin_level(DS_DAT,
+	                   // <y> Initial level
+	                   // <id> pad_initial_level
+	                   // <false"> Low
+	                   // <true"> High
+	                   false);
+
+	// Set pin direction to output
+	gpio_set_pin_direction(DS_DAT, GPIO_DIRECTION_OUT);
+
+	gpio_set_pin_function(DS_DAT, GPIO_PIN_FUNCTION_OFF);
+
 	TIMER_0_init();
 	PWM_0_CLOCK_init();
 
