@@ -21,7 +21,7 @@
 
 Prototype is assembled on protoboard. Final assembled prototype is shown below.
 
-![](.//prototype_assembled.png)
+![](.//prototype_assembled_labeled.png)
 
 
 ### Assembly Instructions
@@ -43,7 +43,6 @@ Prototype is assembled on protoboard. Final assembled prototype is shown below.
 | ItsyBitsy SCL              | BMP280 SCK               |
 | ItsyBitsy SCL              | Depth SCL                |
 
-![](.//prototype_i2c.png)
 
 3. Wire power and ground to each sensor as shown below. Power comes from USB on MCU dev board through builtin regulator.
 
@@ -55,10 +54,6 @@ Prototype is assembled on protoboard. Final assembled prototype is shown below.
 | ItsyBitsy GND              | BNO055 GND               |
 | ItsyBitsy GND              | BMP280 GND               |
 | ItsyBitsy GND              | Depth GND                |
-
-![](.//prototype_power1.png)
-
-![](.//prototype_power2.png)
 
 4. Wire PWM signal header pins to GPIO pins on the dev board
 
@@ -73,6 +68,4 @@ Prototype is assembled on protoboard. Final assembled prototype is shown below.
 | ItsyBitsy 1                | PWM Signal 7             |
 | ItsyBitsy 0                | PWM Signal 8             |
 
-![](.//prototype_pwm1.png)
-
-![](.//prototype_pwm2.png)
+![](.//prototype_assembled.png)
