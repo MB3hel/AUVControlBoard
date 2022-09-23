@@ -86,7 +86,7 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
     }else if(data_startswith(msg, len, (uint8_t[]){'R', 'A', 'W'}, 3) && cmdctrl_mode == CMDCTRL_MODE_RAW){
         // RAW speed set command (only works in RAW mode)
         // R,A,W,[speed1],[speed2],...,[speed8]
-        // Each speed is a 32-bit float (little endian)
+        // Each speed is a 32-bit float (little endian) from -1.0 to 1.0
 
         // Make sure there is enough data
         if(len < 35)
@@ -122,6 +122,26 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         for(size_t i = 0; i < 8; ++i){
             motor_control_tinv[i] = msg[i + 4];
         }
+    }else if(data_startswith(msg, len, (uint8_t[]){'L', 'O', 'C', 'A', 'L'}, 5) && cmdctrl_mode == CMDCTRL_MODE_LOCAL){
+        // LOCAL speed set command (only works in LOCAL mode)
+        // L,O,C,A,L,[x],[y],[z],[pitch],[roll],[yaw]
+        // Each speed (x, y, z, pitch, roll, yaw) is a float (32-bit) from -1.0 to 1.0
+        float x, y, z, pitch, roll, yaw;
+
+        // Ensure enough data
+        if(len < 29)
+            return;
+
+        // Get speeds from message
+        x = conversions_data_to_float(&msg[5], true);
+        y = conversions_data_to_float(&msg[9], true);
+        z = conversions_data_to_float(&msg[13], true);
+        pitch = conversions_data_to_float(&msg[17], true);
+        roll = conversions_data_to_float(&msg[21], true);
+        yaw = conversions_data_to_float(&msg[25], true);
+
+        // Update motor speeds
+        motor_control_local(x, y, z, pitch, roll, yaw);
     }
 }
 

@@ -139,6 +139,16 @@ class ControlBoard:
         msg.extend(struct.pack("<f", s8))
         self.__write_msg(msg)
 
+    def set_local(self, x: float, y: float, z: float, pitch: float, roll: float, yaw: float):
+        msg = bytearray()
+        msg.extend(b'LOCAL')
+        msg.extend(struct.pack("<f", x))
+        msg.extend(struct.pack("<f", y))
+        msg.extend(struct.pack("<f", z))
+        msg.extend(struct.pack("<f", pitch))
+        msg.extend(struct.pack("<f", roll))
+        msg.extend(struct.pack("<f", yaw))
+
     def __handle_read_message(self, msg: bytes):
         # Last two bytes of msg are crc
         # Verify CRC
