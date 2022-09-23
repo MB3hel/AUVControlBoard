@@ -148,6 +148,7 @@ class ControlBoard:
         msg.extend(struct.pack("<f", pitch))
         msg.extend(struct.pack("<f", roll))
         msg.extend(struct.pack("<f", yaw))
+        self.__write_msg(msg)
 
     def __handle_read_message(self, msg: bytes):
         # Last two bytes of msg are crc
