@@ -30,11 +30,14 @@ int main(void){
 
     timer_start(&TIMER_0);                          // Start TIMER_0 (1ms timer)
     
+    wdt_set_timeout_period(&WDT_0, 1000, 5000);     // Configure 5 second watchdog period
+	wdt_enable(&WDT_0);                             // Enable WDT
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Main loop
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     while (true) {
-        
+        wdt_feed(&WDT_0);
     }
 }

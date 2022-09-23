@@ -13,6 +13,8 @@
 
 struct timer_descriptor TIMER_0;
 
+struct wdt_descriptor WDT_0;
+
 /**
  * \brief Timer initialization function
  *
@@ -177,6 +179,17 @@ void USB_DEVICE_INSTANCE_init(void)
 	USB_DEVICE_INSTANCE_PORT_init();
 }
 
+void WDT_0_CLOCK_init(void)
+{
+	hri_mclk_set_APBAMASK_WDT_bit(MCLK);
+}
+
+void WDT_0_init(void)
+{
+	WDT_0_CLOCK_init();
+	wdt_init(&WDT_0, WDT);
+}
+
 void system_init(void)
 {
 	init_mcu();
@@ -223,4 +236,6 @@ void system_init(void)
 	PWM_1_init();
 
 	USB_DEVICE_INSTANCE_init();
+
+	WDT_0_init();
 }
