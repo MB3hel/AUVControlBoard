@@ -11,6 +11,14 @@
 #include <motor_control.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <dotstar.h>
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Globals
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#define LED_COLOR_RAW       100, 100, 0
+#define LED_COLOR_LOCAL     10, 0, 100
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -26,6 +34,7 @@ unsigned int cmdctrl_mode;
 
 void cmdctrl_init(void){
     cmdctrl_mode = CMDCTRL_MODE_RAW;                // Default to RAW control mode
+    dotstar_set(LED_COLOR_RAW);                     // Default to correct LED color
 }
 
 void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
@@ -67,9 +76,11 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         switch(msg[4]){
         case 'R':
             cmdctrl_mode = CMDCTRL_MODE_RAW;
+            dotstar_set(LED_COLOR_RAW);
             break;
         case 'L':
             cmdctrl_mode = CMDCTRL_MODE_LOCAL;
+            dotstar_set(LED_COLOR_LOCAL);
             break;
         }
     }else if(data_startswith(msg, len, (uint8_t[]){'R', 'A', 'W'}, 3) && cmdctrl_mode == CMDCTRL_MODE_RAW){
