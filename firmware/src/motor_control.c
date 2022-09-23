@@ -106,8 +106,15 @@ void motor_control_feed_watchdog(void){
 void motor_control_raw(float s1, float s2, float s3, float s4, float s5, float s6, float s7, float s8){
     float speeds[8] = { s1, s2, s3, s4, s5, s6, s7, s8 };
     for(size_t i = 0; i < 8; ++i){
+        // Apply inversions if needed
         if(motor_control_tinv[i])
             speeds[i] = -speeds[i];
+
+        // Limit input speeds to correct range
+        if(speeds[i] > 1.0)
+            speeds[i] = 1.0;
+        if(speeds[i] < -1.0)
+            speeds[i] = -1.0;
     }
     motor_pwm_set(speeds);
 
@@ -121,6 +128,14 @@ void motor_control_local(float x, float y, float z, float pitch, float roll, flo
     matrix target;
     matrix_init_static(&target, target_arr, 6, 1);
     matrix_set_col(&target, 0, (float[]){x, y, z, pitch, roll, yaw});
+
+    // Limit input speeds to correct range
+    for(size_t i = 0; i < 6; ++i){
+        if(target_arr[i] > 1.0)
+            target_arr[i] = 1.0;
+        if(target_arr[i] < -1.0)
+            target_arr[i] = -1.0;
+    }
 
     float speed_arr[8];
     matrix speed_vec;
