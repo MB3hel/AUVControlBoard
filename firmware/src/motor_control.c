@@ -50,14 +50,14 @@ void motor_control_init(void){
     // row 0 = thruster 1, row 1 = thruster 2, etc
     matrix_init_static(&dof_matrix, dof_matrix_arr, 8, 6);
     //                     MotorNum-1           x       y      z     pitch    roll     yaw
-    matrix_set_row(&dof_matrix, 0, (float[]){  -1,     -1,     0,      0,      0,      +1  });
-    matrix_set_row(&dof_matrix, 1, (float[]){  +1,     -1,     0,      0,      0,      -1  });
-    matrix_set_row(&dof_matrix, 2, (float[]){  -1,     +1,     0,      0,      0,      -1  });
-    matrix_set_row(&dof_matrix, 3, (float[]){  +1,     +1,     0,      0,      0,      +1  });
-    matrix_set_row(&dof_matrix, 4, (float[]){   0,      0,    -1,     -1,     -1,       0  });
-    matrix_set_row(&dof_matrix, 5, (float[]){   0,      0,    -1,     -1,     +1,       0  });
-    matrix_set_row(&dof_matrix, 6, (float[]){   0,      0,    -1,     +1,     -1,       0  });
-    matrix_set_row(&dof_matrix, 7, (float[]){   0,      0,    -1,     +1,     +1,       0  });
+    matrix_set_row(&dof_matrix, 2, (float[]){  -1,     -1,     0,      0,      0,      +1  });
+    matrix_set_row(&dof_matrix, 3, (float[]){  +1,     -1,     0,      0,      0,      -1  });
+    matrix_set_row(&dof_matrix, 0, (float[]){  -1,     +1,     0,      0,      0,      -1  });
+    matrix_set_row(&dof_matrix, 1, (float[]){  +1,     +1,     0,      0,      0,      +1  });
+    matrix_set_row(&dof_matrix, 6, (float[]){   0,      0,    -1,     -1,     -1,       0  });
+    matrix_set_row(&dof_matrix, 7, (float[]){   0,      0,    -1,     -1,     +1,       0  });
+    matrix_set_row(&dof_matrix, 4, (float[]){   0,      0,    -1,     +1,     -1,       0  });
+    matrix_set_row(&dof_matrix, 5, (float[]){   0,      0,    -1,     +1,     +1,       0  });
 
     // Construct contribution  matrix (used to calculate overlap vectors)
     float contribution_arr[8*6];
