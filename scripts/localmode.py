@@ -24,14 +24,14 @@ if __name__ == "__main__":
             exit(1)
 
         print("Setting motor inversions...", end="", flush=True)
-        if cb.set_inverted(False, False, False, False, False, False, False, False):
+        if cb.set_inverted(True, True, False, False, True, False, False, True):
             print("Done.", flush=True)
         else:
             print("Fail.", flush=True)
             exit(1)
 
         #           x       y       z     pitch    roll    yaw        
-        target = [  0,      0.3,      0,      0,      0,      0   ]
+        target = [  0,      0,      -0.3,      0,      0,      0   ]
         print("Setting local vector {}...".format(target), flush=True)
         cb.set_local(target[0], target[1], target[2], target[3], target[4], target[5])
         input("Press enter to stop running...")
