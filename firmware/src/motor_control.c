@@ -160,7 +160,7 @@ void motor_control_local(float x, float y, float z, float pitch, float roll, flo
                 matrix_set_item(&speed_vec, i, 0, cval);
             }
         }
-    }
+    }    
 
     // Speed array already contains motor speeds in order
     // Because dof matrix rows are in order

@@ -11,6 +11,7 @@
 #include <cmdctrl.h>
 #include <stdbool.h>
 #include <dotstar.h>
+#include <motor_control.h>
 
 
 /**
@@ -23,8 +24,9 @@ int main(void){
     
     atmel_start_init();                             // Initialize ASF4 drivers & middleware
     dotstar_init();                                 // Initialize RGB led driver
-    pccomm_init();                                  // Initialize USB communications with PC
+    pccomm_init();                                  // Initialize USB communications with PC                      
     motor_pwm_init();                               // Initialize motor pwm configuration
+    motor_control_init();                           // Initialize motor control
     conversions_init();                             // Initialize conversions helper
     cmdctrl_init();                                 // Initialize cmd & ctrl system
 

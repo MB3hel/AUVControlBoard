@@ -157,7 +157,7 @@ class ControlBoard:
         calc_crc = int.from_bytes(Crc16.calcbytes(msg[:-2], byteorder='big'), byteorder='big', signed=False)
         if read_crc != calc_crc:
             # Ignore messages with invalid CRC
-            # Log that this occured
+            # Log that this occurred
             print("WARNING: Got a message with invalid CRC!")
             return
 
