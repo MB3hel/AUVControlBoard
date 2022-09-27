@@ -26,7 +26,7 @@ bool data_startswith(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_
     return true;
 }
 
-uint16_t crc16_ccitt(uint8_t *data, uint32_t len){
+uint16_t crc16_ccitt(volatile uint8_t *data, uint32_t len){
     uint16_t crc = 0xFFFF;
     int pos = 0;
     while(pos < len){
@@ -42,4 +42,12 @@ uint16_t crc16_ccitt(uint8_t *data, uint32_t len){
         pos++;
     }
     return crc;
+}
+
+void vmemcpy(volatile void *dest, volatile void *src, size_t len){
+    volatile uint8_t *bdest = (uint8_t*)dest;
+    volatile uint8_t *bsrc = (uint8_t*)src;
+    for(size_t i = 0; i < len; ++i){
+        bdest[i] = bsrc[i];
+    }
 }

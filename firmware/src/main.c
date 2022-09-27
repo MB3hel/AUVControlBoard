@@ -20,7 +20,7 @@
 #define FLAG_100MS      0b00000010
 #define FLAG_1000MS     0b00000100
 
-uint8_t flags = 0;
+volatile uint8_t flags = 0;
 
 #define SET_FLAG(x)         (flags |= x)
 #define CLEAR_FLAG(x)       (flags &= ~x)

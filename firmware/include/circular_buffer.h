@@ -93,4 +93,4 @@ bool cb_write(volatile circular_buffer *cb, uint8_t src);
  * @return true If successfully read
  * @return false If buffer is empty
  */
-bool cb_read(volatile circular_buffer *cb, uint8_t *dest);
+bool cb_read(volatile circular_buffer *cb, volatile uint8_t *dest);

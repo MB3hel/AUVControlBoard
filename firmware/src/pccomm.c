@@ -16,8 +16,8 @@
 /// Macros
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define MSG_QUEUE_COUNT             6                       // Max number of messages in message queue
-#define WRITE_BUF_LEN               512                     // Size of write buffer
+#define MSG_QUEUE_COUNT             6                                       // Max number of messages in message queue
+#define WRITE_BUF_LEN               512                                     // Size of write buffer
 
 #if CONF_USBD_HS_SP
 #define RAW_BUF_LEN                 CONF_USB_CDCD_ACM_DATA_BULKIN_MAXPKSZ_HS
@@ -26,31 +26,31 @@
 #endif
 
 
-#define START_BYTE                  253                     // Communication  protocol start byte
-#define END_BYTE                    254                     // Communication protocol end byte
-#define ESCAPE_BYTE                 255                     // Communication protocol end byte
+#define START_BYTE                  253                                     // Communication  protocol start byte
+#define END_BYTE                    254                                     // Communication protocol end byte
+#define ESCAPE_BYTE                 255                                     // Communication protocol end byte
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static bool parse_started, parse_escaped;                           // Used to identify complete message
+static bool parse_started, parse_escaped;                                   // Used to identify complete message
 
-static bool initialized = false;                                    // Tracks if initialized
+static bool initialized = false;                                            // Tracks if initialized
 
-static uint8_t buf_raw_rx[RAW_BUF_LEN];                             // Used by acm_read to read data into
-static uint8_t buf_raw_tx[RAW_BUF_LEN];                             // Used by acm_write to write data from
+static volatile uint8_t buf_raw_rx[RAW_BUF_LEN];                            // Used by acm_read to read data into
+static volatile uint8_t buf_raw_tx[RAW_BUF_LEN];                            // Used by acm_write to write data from
 
-static uint8_t curr_msg[PCCOMM_MAX_MSG_LEN + 2];                    // Holds the message currently being received & crc
-static uint32_t curr_msg_pos;                                       // Current size of current message
+static volatile uint8_t curr_msg[PCCOMM_MAX_MSG_LEN + 2];                   // Currently being received message + crc
+static volatile uint32_t curr_msg_pos;                                      // Current size of current message
 
-static uint8_t buf_write_arr[WRITE_BUF_LEN];                        // Backing array for write circular buffer
-static circular_buffer buf_write;                                   // Holds data waiting to be written
+static volatile uint8_t buf_write_arr[WRITE_BUF_LEN];                       // Backing array for write circular buffer
+static volatile circular_buffer buf_write;                                  // Holds data waiting to be written
 
-static uint8_t msg_queue[MSG_QUEUE_COUNT][PCCOMM_MAX_MSG_LEN];      // Holds unprocessed received messages
-static uint32_t msg_queue_pos[MSG_QUEUE_COUNT];                     // Size of messages in each spot in the queue
-static uint32_t msg_queue_widx;                                     // Index in queue to place next message at
-static uint32_t msg_queue_ridx;                                     // Index in queue to read next message from
+static volatile uint8_t msg_queue[MSG_QUEUE_COUNT][PCCOMM_MAX_MSG_LEN];     // Holds unprocessed received messages
+static volatile uint32_t msg_queue_pos[MSG_QUEUE_COUNT];                    // Size of messages in each spot in the queue
+static volatile uint32_t msg_queue_widx;                                    // Index in queue to place next message at
+static volatile uint32_t msg_queue_ridx;                                    // Index in queue to read next message from
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -166,7 +166,7 @@ static bool cb_usb_read(const uint8_t ep, const enum usb_xfer_code rc, const uin
                     uint16_t read_crc = (curr_msg[curr_msg_pos - 2] << 8) | curr_msg[curr_msg_pos - 1];
                     uint16_t calc_crc = crc16_ccitt(curr_msg, curr_msg_pos - 2);
                     if(read_crc == calc_crc){
-                        memcpy(msg_queue[msg_queue_widx], curr_msg, curr_msg_pos - 2);
+                        vmemcpy(msg_queue[msg_queue_widx], curr_msg, curr_msg_pos - 2);
                         msg_queue_pos[msg_queue_widx] = curr_msg_pos - 2;
                         msg_queue_widx++;
                         if(msg_queue_widx >= MSG_QUEUE_COUNT)
@@ -223,7 +223,7 @@ uint32_t pccomm_get_msg(uint8_t *dest){
         // Thus do not increment read index
         return 0;
     }else{
-        memcpy(dest, msg_queue[msg_queue_ridx], msg_queue_pos[msg_queue_ridx]);     // Copy data to dest
+        vmemcpy(dest, msg_queue[msg_queue_ridx], msg_queue_pos[msg_queue_ridx]);    // Copy data to dest
         uint32_t tmp = msg_queue_pos[msg_queue_ridx];                               // Store size of copied data for later
         msg_queue_pos[msg_queue_ridx] = 0;                                          // Indicate this slot is empty
         msg_queue_ridx++;                                                           // Move to next slot in queue

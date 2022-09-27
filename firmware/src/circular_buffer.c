@@ -53,7 +53,7 @@ bool cb_write(volatile circular_buffer *cb, uint8_t src){
     return true;
 }
 
-bool cb_read(volatile circular_buffer *cb, uint8_t *dest){
+bool cb_read(volatile circular_buffer *cb, volatile uint8_t *dest){
     if(CB_EMPTY(cb))
         return false;
     *dest = cb->array[cb->read_pos];

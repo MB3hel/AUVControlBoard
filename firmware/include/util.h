@@ -10,6 +10,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 
 /**
@@ -37,8 +38,17 @@ bool data_startswith(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_
 /**
  * Calculate 16-bit CRC (CCITT) of the given data
  * Uses hardware crc block
+ * Safe to call from ISRs (volatile data)
  * @param data Data to calculate crc of
  * @param len Length of data
  * @return uint16_t Calculated crc
  */
-uint16_t crc16_ccitt(uint8_t *data, uint32_t len);
+uint16_t crc16_ccitt(volatile uint8_t *data, uint32_t len);
+
+/**
+ * Volatile memcpy that copies from 0 to len one byte at a time
+ * @param dest Destination pointer
+ * @param src Source pointer
+ * @param len Number of bytes to copy
+ */
+void vmemcpy(volatile void *dest, volatile void *src, size_t len);
