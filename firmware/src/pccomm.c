@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <util.h>
 
+// DEBUG
+#include <dotstar.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -64,7 +66,7 @@ static volatile uint8_t buf_raw_rx[RAW_BUF_LEN];                            // U
 static volatile uint8_t buf_read_arr[READ_BUF_LEN];                         // Holds data read by one or more read ops
 static volatile circular_buffer buf_read;                                   // Read buffer (circular buffer)
 
-static volatile uint8_t msg_queue[MSG_QUEUE_COUNT][PCCOMM_MAX_MSG_LEN];     // Holds unprocessed received messages
+static volatile uint8_t msg_queue[MSG_QUEUE_COUNT][PCCOMM_MAX_MSG_LEN+2];   // Holds complete received messages & crcs
 static volatile uint32_t msg_queue_pos[MSG_QUEUE_COUNT];                    // Size of messages in each spot of queue
 static volatile uint32_t msg_queue_widx;                                    // Index in queue to place next message at
 static volatile uint32_t msg_queue_ridx;                                    // Index in queue to read next message from
@@ -170,10 +172,10 @@ void pccomm_process(void){
                         // Not a valid message. Clear queue spot
                         msg_queue_pos[msg_queue_widx] = 0;
                     }
-                    }else{
-                        // Not a valid message. Clear queue spot
-                        msg_queue_pos[msg_queue_widx] = 0;
-                    }
+                }else{
+                    // Not a valid message. Clear queue spot
+                    msg_queue_pos[msg_queue_widx] = 0;
+                }
                 break;
             case ESCAPE_BYTE:
                 if(!parse_started)
@@ -279,10 +281,11 @@ uint32_t pccomm_get_msg(uint8_t *dest){
     }
 
     // Copy next available message
-    vmemcpy(dest, msg_queue[msg_queue_ridx], msg_queue_pos[msg_queue_ridx]);
+    // Note: Exclude last two bytes because these are crc
+    vmemcpy(dest, msg_queue[msg_queue_ridx], msg_queue_pos[msg_queue_ridx] - 2);
 
     // Clear this spot in queue (so next write will start at index 0)
-    res = msg_queue_pos[msg_queue_ridx];
+    res = msg_queue_pos[msg_queue_ridx] - 2;
     msg_queue_pos[msg_queue_ridx] = 0;
 
     // Increment ridx (rolling over as needed)
