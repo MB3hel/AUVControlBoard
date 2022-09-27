@@ -33,6 +33,14 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Macros
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define PCCOMM_MAX_MSG_LEN                 128                     // Max number of bytes in a message
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -43,7 +51,7 @@
  * Initialize communications with PC via USB
  * Will block until ready
  */
-void pccomm_init(void);
+bool pccomm_init(void);
 
 /**
  * Write a complete message to the PC via USB
@@ -52,3 +60,10 @@ void pccomm_init(void);
  * @param len Length of data to transmit
  */
 void pccomm_write_msg(uint8_t *data, uint32_t len);
+
+/**
+ * Get the next available message from the message queue
+ * @param dest where to copy next available message (must be at least PCCOMM_MAX_MSG_LEN bytes)
+ * @return number of bytes copied (0 if no message)
+ */
+size_t pccomm_get_msg(uint8_t *dest);
