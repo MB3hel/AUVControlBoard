@@ -64,7 +64,7 @@ class ControlBoard:
         start_time = time.time()
         while True:
             with self.__state_lock:
-                if self.__mode != mode:
+                if self.__mode == mode:
                     return True
             if time.time() - start_time > 3.0:
                 return False
@@ -163,6 +163,8 @@ class ControlBoard:
 
         # Done with crc data
         msg = msg[:-2]
+
+        print(msg)
 
         # Handle the message
         if msg.startswith(b'MODE'):

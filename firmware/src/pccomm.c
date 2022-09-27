@@ -41,7 +41,7 @@ static bool initialized = false;                                    // Tracks if
 static uint8_t buf_raw_rx[RAW_BUF_LEN];                             // Used by acm_read to read data into
 static uint8_t buf_raw_tx[RAW_BUF_LEN];                             // Used by acm_write to write data from
 
-static uint8_t curr_msg[PCCOMM_MAX_MSG_LEN];                        // Holds the message currently being received
+static uint8_t curr_msg[PCCOMM_MAX_MSG_LEN + 2];                    // Holds the message currently being received & crc
 static uint32_t curr_msg_pos;                                       // Current size of current message
 
 static uint8_t buf_write_arr[WRITE_BUF_LEN];                        // Backing array for write circular buffer
@@ -163,8 +163,8 @@ static bool cb_usb_read(const uint8_t ep, const enum usb_xfer_code rc, const uin
                     uint16_t read_crc = (curr_msg[curr_msg_pos - 2] << 8) | curr_msg[curr_msg_pos - 1];
                     uint16_t calc_crc = crc16_ccitt(curr_msg, curr_msg_pos - 2);
                     if(read_crc == calc_crc){
-                        memcpy(msg_queue[msg_queue_widx], curr_msg, curr_msg_pos);
-                        msg_queue_pos[msg_queue_widx] = curr_msg_pos;
+                        memcpy(msg_queue[msg_queue_widx], curr_msg, curr_msg_pos - 2);
+                        msg_queue_pos[msg_queue_widx] = curr_msg_pos - 2;
                         msg_queue_widx++;
                         if(msg_queue_widx >= MSG_QUEUE_COUNT)
                             msg_queue_widx = 0;

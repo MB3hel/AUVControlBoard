@@ -155,6 +155,12 @@ void motor_control_local(float x, float y, float z, float pitch, float roll, flo
 }
 
 bool motor_control_watchdog_count(void){
+    if(motor_wd_count >= 15){
+        // Don't increment counter further (prevents rollover issues)
+        // false returned because motors were not just now disabled
+        return false;
+    }
+
     // Called every 100ms so 1 count = 100ms
     motor_wd_count++;
 

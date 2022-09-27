@@ -115,14 +115,14 @@ int main(void){
                 pccomm_initialized = pccomm_init();
 
             // Update RGB LED to indicate cmdctrl mode
-            switch(cmdctrl_get_mode()){
-            case CMDCTRL_MODE_RAW:
-                dotstar_set(100, 100, 0);
-                break;
-            case CMDCTRL_MODE_LOCAL:
-                dotstar_set(10, 0, 100);
-                break;
-            }
+            // switch(cmdctrl_get_mode()){
+            // case CMDCTRL_MODE_RAW:
+            //     dotstar_set(100, 100, 0);
+            //     break;
+            // case CMDCTRL_MODE_LOCAL:
+            //     dotstar_set(10, 0, 100);
+            //     break;
+            // }
 
             // Handle motor watchdog
             if(motor_control_watchdog_count()){
