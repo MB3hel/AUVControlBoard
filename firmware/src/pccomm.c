@@ -9,6 +9,7 @@
 #include <circular_buffer.h>
 #include <cmdctrl.h>
 #include <stdlib.h>
+#include <util.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -41,12 +42,15 @@ static uint8_t buf_raw_rx[RAW_BUF_LEN];                             // Used by a
 static uint8_t buf_raw_tx[RAW_BUF_LEN];                             // Used by acm_write to write data from
 
 static uint8_t curr_msg[PCCOMM_MAX_MSG_LEN];                        // Holds the message currently being received
-static size_t curr_msg_pos;                                         // Current size of current message
+static uint32_t curr_msg_pos;                                       // Current size of current message
 
 static uint8_t buf_write_arr[WRITE_BUF_LEN];                        // Backing array for write circular buffer
 static circular_buffer buf_write;                                   // Holds data waiting to be written
 
 static uint8_t msg_queue[MSG_QUEUE_COUNT][PCCOMM_MAX_MSG_LEN];      // Holds unprocessed received messages
+static uint32_t msg_queue_pos[MSG_QUEUE_COUNT];                     // Size of messages in each spot in the queue
+static uint32_t msg_queue_widx;                                     // Index in queue to place next message at
+static uint32_t msg_queue_ridx;                                     // Index in queue to read next message from
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,6 +80,11 @@ bool pccomm_init(void){
     parse_started = false;
     parse_escaped = false;
     curr_msg_pos = 0;
+    msg_queue_widx = 0;
+    msg_queue_ridx = 0;
+    for(uint32_t i = 0; i < MSG_QUEUE_COUNT; ++i){
+        msg_queue_pos[i] = 0;
+    }
     initialized = true;
     return true;
 }
@@ -89,7 +98,7 @@ void pccomm_write_msg(uint8_t *data, uint32_t len){
     }
 
     // Calculate and add crc
-    uint16_t crc = pccomm_crc16(data, len);
+    uint16_t crc = crc16_ccitt(data, len);
     cb_write(&buf_write, (crc >> 8) & 0xFF);
     cb_write(&buf_write, crc & 0xFF);
 
@@ -125,7 +134,60 @@ static bool cb_usb_state(usb_cdc_control_signal_t state){
 
 // Called when read completes. "count" is number of bytes that were read
 static bool cb_usb_read(const uint8_t ep, const enum usb_xfer_code rc, const uint32_t count){
-    // TODO
+    // Parse the read data and add to current message if warranted
+    for(uint32_t i = 0; i < count; ++i){
+        if(parse_escaped){
+            // Ignore invalid escaped data
+            if(buf_raw_rx[i] == START_BYTE || buf_raw_rx[i] == END_BYTE || buf_raw_rx[i] == ESCAPE_BYTE)
+                curr_msg[curr_msg_pos++] = buf_raw_rx[i];
+            parse_escaped = false;
+        }else{
+            switch(buf_raw_rx[i]){
+            case START_BYTE:
+                if(parse_started){
+                    // Got second start byte.
+                    // Discard previous data (never got end byte)
+                    curr_msg_pos = 0;
+                }
+                parse_started = true;
+                break;
+            case END_BYTE:
+                if(!parse_started)
+                    break;
+
+                // curr_msg is now complete
+                // Move it to the next spot in msg_queue
+                // Ignore empty messages
+                if(curr_msg_pos > 0){
+                    // TODO: Implement crc validation
+                    // For now, skip crc...
+                    curr_msg_pos -= 2;
+
+                    memcpy(msg_queue[msg_queue_widx], curr_msg, curr_msg_pos);
+                    msg_queue_pos[msg_queue_widx] = curr_msg_pos;
+                    msg_queue_widx++;
+                    if(msg_queue_widx >= MSG_QUEUE_COUNT)
+                        msg_queue_widx = 0;
+                    parse_started = false;
+                }
+
+                curr_msg_pos = 0;
+                break;
+            case ESCAPE_BYTE:
+                if(!parse_started)
+                    break;
+                parse_escaped = true;
+                break;
+            default:
+                if(!parse_started)
+                    break;
+                curr_msg[curr_msg_pos++] = buf_raw_rx[i];
+            }
+        }
+    }
+
+    // Start next read
+    cdcdf_acm_read((uint8_t*)buf_raw_rx, RAW_BUF_LEN);
 
     // No error
     return false;
@@ -133,8 +195,36 @@ static bool cb_usb_read(const uint8_t ep, const enum usb_xfer_code rc, const uin
 
 // Called when write complets. "count" is number of bytes that were just written
 static bool cb_usb_write(const uint8_t ep, const enum usb_xfer_code rc, const uint32_t count){
-    // TODO
+    // Move data from write buffer into raw tx buffer
+    uint32_t i;
+    for(i = 0; i < RAW_BUF_LEN; ++i){
+        if(CB_EMPTY(&buf_write))
+            break;  // Nothing else to transmit
+        cb_read(&buf_write, &buf_raw_tx[i]);
+    }
+
+    // Start next write (if anything to write)
+    if(i != 0){
+        cdcdf_acm_write((uint8_t*)buf_raw_tx, i);
+    }
     
     // No error
     return false;
+}
+
+uint32_t pccomm_get_msg(uint8_t *dest){
+    if(msg_queue_pos[msg_queue_ridx] == 0){
+        // Next message to read is of size 0
+        // This means there are no messages in the queue
+        // Thus do not increment read index
+        return 0;
+    }else{
+        memcpy(dest, msg_queue[msg_queue_ridx], msg_queue_pos[msg_queue_ridx]);     // Copy data to dest
+        uint32_t tmp = msg_queue_pos[msg_queue_ridx];                               // Store size of copied data for later
+        msg_queue_pos[msg_queue_ridx] = 0;                                          // Indicate this slot is empty
+        msg_queue_ridx++;                                                           // Move to next slot in queue
+        if(msg_queue_ridx >= MSG_QUEUE_COUNT)                                       // Rollover if needed
+            msg_queue_ridx = 0;
+        return tmp;                                                                 // Return number of bytes copied
+    }
 }

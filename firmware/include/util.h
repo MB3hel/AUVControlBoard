@@ -33,3 +33,12 @@ bool data_matches(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_t l
  * @return false If array a does not start with array b
  */
 bool data_startswith(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_t len_b);
+
+/**
+ * Calculate 16-bit CRC (CCITT) of the given data
+ * Uses hardware crc block
+ * @param data Data to calculate crc of
+ * @param len Length of data
+ * @return uint16_t Calculated crc
+ */
+uint16_t crc16_ccitt(uint8_t *data, uint32_t len);

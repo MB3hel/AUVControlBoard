@@ -22,7 +22,6 @@ void dotstar_write_byte(uint8_t val){
 }
 
 void dotstar_init(void){
-    // dotstar_set(0, 0, 0);
     gpio_set_pin_level(DS_DAT, false);
     gpio_set_pin_level(DS_CLK, false);
 }

@@ -21,23 +21,11 @@ static matrix dof_matrix;                               // dof matrix
 static float overlap_arrs[8][8];                        // Backing arrays for overlap vectors
 static matrix overlap_vectors[8];                       // overlaps vectors
 
-static struct timer_task mc_stop_task;                  // Task to stop motors
-
 bool motor_control_tinv[8];                             // Thruster inversion status (true = inverted)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-static void motor_control_cb_stop(const struct timer_task *const timer_task){
-    // Watchdog timed out.
-    
-    // Stop all motors
-    motor_pwm_set((float[]){0, 0, 0, 0, 0, 0, 0, 0});
-
-    // Warn other end (in case it is still there and just didn't feed watchdog)
-    cmdctrl_motors_killed();
-}
 
 void motor_control_init(void){
     // Initialize all thrusters in a non-inverted state
@@ -95,14 +83,6 @@ void motor_control_init(void){
     }
 }
 
-void motor_control_feed_watchdog(void){
-    timer_remove_task(&TIMER_0, &mc_stop_task);     // Stop task if previously added (prevents kill)
-    mc_stop_task.cb = motor_control_cb_stop;        // Configure callback
-    mc_stop_task.mode = TIMER_TASK_ONE_SHOT;        // Configure mode
-    mc_stop_task.interval = 1500;                   // 1.5sec before watchdog kills motors
-    timer_add_task(&TIMER_0, &mc_stop_task);        // Add task now (starts 1.5sec timeout)
-}
-
 void motor_control_raw(float s1, float s2, float s3, float s4, float s5, float s6, float s7, float s8){
     float speeds[8] = { s1, s2, s3, s4, s5, s6, s7, s8 };
     for(size_t i = 0; i < 8; ++i){
@@ -120,7 +100,7 @@ void motor_control_raw(float s1, float s2, float s3, float s4, float s5, float s
 
     // Just updated speed.
     // Reset watchdog timeout
-    motor_control_feed_watchdog();
+    // TODO: Feed motor watchdog
 }
 
 void motor_control_local(float x, float y, float z, float pitch, float roll, float yaw){

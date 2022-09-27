@@ -37,3 +37,9 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len);
  * Call when motors are killed by watchdog
  */
 void cmdctrl_motors_killed(void);
+
+/**
+ * Get current operating mode
+ * @return CMD_CTRL_MODE_...
+ */
+uint8_t cmdctrl_get_mode(void);

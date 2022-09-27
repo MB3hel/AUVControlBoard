@@ -17,13 +17,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define LED_COLOR_RAW       100, 100, 0
-#define LED_COLOR_LOCAL     10, 0, 100
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// Globals
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 unsigned int cmdctrl_mode;
 
@@ -34,7 +27,6 @@ unsigned int cmdctrl_mode;
 
 void cmdctrl_init(void){
     cmdctrl_mode = CMDCTRL_MODE_RAW;                // Default to RAW control mode
-    dotstar_set(LED_COLOR_RAW);                     // Default to correct LED color
 }
 
 void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
@@ -76,11 +68,9 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         switch(msg[4]){
         case 'R':
             cmdctrl_mode = CMDCTRL_MODE_RAW;
-            dotstar_set(LED_COLOR_RAW);
             break;
         case 'L':
             cmdctrl_mode = CMDCTRL_MODE_LOCAL;
-            dotstar_set(LED_COLOR_LOCAL);
             break;
         }
     }else if(data_startswith(msg, len, (uint8_t[]){'R', 'A', 'W'}, 3) && cmdctrl_mode == CMDCTRL_MODE_RAW){
@@ -109,7 +99,7 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
     }else if(data_matches(msg, len, (uint8_t[]){'W', 'D', 'G', 'F'}, 4)){
         // Motor watchdog feed command
         // W,D,G,F
-        motor_control_feed_watchdog();
+        // TODO: Feed motor watchdog
     }else if(data_startswith(msg, len, (uint8_t[]){'T', 'I', 'N', 'V'}, 4)){
         // Set thruster inversion command
         // TINV[i1][i2][i3][i4][i5][i6][i7][i8]
@@ -148,4 +138,8 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
 void cmdctrl_motors_killed(void){
     // Send message telling the computer that the watchdog killed motors
     pccomm_write_msg((uint8_t[]){'W', 'D', 'G', 'K'}, 4);
+}
+
+uint8_t cmdctrl_get_mode(void){
+    return cmdctrl_mode;
 }

@@ -66,4 +66,4 @@ void pccomm_write_msg(uint8_t *data, uint32_t len);
  * @param dest where to copy next available message (must be at least PCCOMM_MAX_MSG_LEN bytes)
  * @return number of bytes copied (0 if no message)
  */
-size_t pccomm_get_msg(uint8_t *dest);
+uint32_t pccomm_get_msg(uint8_t *dest);

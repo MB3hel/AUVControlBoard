@@ -33,11 +33,6 @@ extern bool motor_control_tinv[8];
 void motor_control_init(void);
 
 /**
- * Feed watchdog to prevent auto disabling of motors
- */
-void motor_control_feed_watchdog(void);
-
-/**
  * Set motor speeds in "raw" mode
  * Raw mode directly specifies speeds for each motor
  * @param s1 Speed for thruster 1 (-1.0 to +1.0)
