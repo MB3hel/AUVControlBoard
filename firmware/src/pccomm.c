@@ -18,6 +18,7 @@
 
 #define MSG_QUEUE_COUNT             6                                       // Max number of messages in message queue
 #define WRITE_BUF_LEN               512                                     // Size of write buffer
+#define READ_BUF_LEN                256                                     // Size of read buffer
 
 #if CONF_USBD_HS_SP
 #define RAW_BUF_LEN                 CONF_USB_CDCD_ACM_DATA_BULKIN_MAXPKSZ_HS
@@ -34,24 +35,47 @@
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static bool parse_started, parse_escaped;                                   // Used to identify complete message
+// State
 
+static bool parse_started, parse_escaped;                                   // Used to identify complete message
 static bool initialized = false;                                            // Tracks if initialized
 
-static volatile uint8_t buf_raw_rx[RAW_BUF_LEN];                            // Used by acm_read to read data into
-static volatile uint8_t buf_raw_tx[RAW_BUF_LEN];                            // Used by acm_write to write data from
 
-static volatile uint8_t curr_msg[PCCOMM_MAX_MSG_LEN + 2];                   // Currently being received message + crc
-static volatile uint32_t curr_msg_pos;                                      // Current size of current message
+// Receive buffers
+
+// calls to cdcdf_acm_read() will read data into buf_raw_rx
+// The read callback is run when there is data in buf_raw_rx
+// The callback just copies from buf_raw_rx to buf_read
+// The callback should be treated as an ISR and should run fast
+// to prevent starvation of the main thread when large volumes of data are sent
+// Later, when pccomm_process is called, the data in buf_read is parsed and
+// copied into the message queue
+// The message queue is an array of byte arrays = an array of messages
+// This queue is implemented itself as a ring
+// widx points to the message currently being written (by pccomm)
+// When a complete message is written widx is incremented (with rollover)
+// ridx points to the next complete message in the queue
+// This queue is filled with messages by pccomm_process
+// Note: if ridx == widx queue is either full or empty
+// Calls to pccomm_get_msg remove a message from the queue
+
+static volatile uint8_t buf_raw_rx[RAW_BUF_LEN];                            // Used by acm_read to read data into
+
+static volatile uint8_t buf_read_arr[READ_BUF_LEN];                         // Holds data read by one or more read ops
+static volatile circular_buffer buf_read;                                   // Read buffer (circular buffer)
+
+static volatile uint8_t msg_queue[MSG_QUEUE_COUNT][PCCOMM_MAX_MSG_LEN];     // Holds unprocessed received messages
+static volatile uint32_t msg_queue_pos[MSG_QUEUE_COUNT];                    // Size of messages in each spot of queue
+static volatile uint32_t msg_queue_widx;                                    // Index in queue to place next message at
+static volatile uint32_t msg_queue_ridx;                                    // Index in queue to read next message from
+static volatile uint32_t msg_queue_count;                                   // Number of complete messages in queue
+
+
+// Transmit buffers
+static volatile uint8_t buf_raw_tx[RAW_BUF_LEN];                            // Used by acm_write to write data from
 
 static volatile uint8_t buf_write_arr[WRITE_BUF_LEN];                       // Backing array for write circular buffer
 static volatile circular_buffer buf_write;                                  // Holds data waiting to be written
-
-static volatile uint8_t msg_queue[MSG_QUEUE_COUNT][PCCOMM_MAX_MSG_LEN];     // Holds unprocessed received messages
-static volatile uint32_t msg_queue_pos[MSG_QUEUE_COUNT];                    // Size of messages in each spot in the queue
-static volatile uint32_t msg_queue_widx;                                    // Index in queue to place next message at
-static volatile uint32_t msg_queue_ridx;                                    // Index in queue to read next message from
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Callback forward declarations
@@ -77,16 +101,95 @@ bool pccomm_init(void){
 
     // Other initialization
     cb_init(&buf_write, buf_write_arr, WRITE_BUF_LEN);
+    cb_init(&buf_read, buf_read_arr, READ_BUF_LEN);
     parse_started = false;
     parse_escaped = false;
-    curr_msg_pos = 0;
     msg_queue_widx = 0;
     msg_queue_ridx = 0;
     for(uint32_t i = 0; i < MSG_QUEUE_COUNT; ++i){
         msg_queue_pos[i] = 0;
     }
+    msg_queue_count = 0;
     initialized = true;
     return true;
+}
+
+void pccomm_process(void){
+    uint8_t c;
+
+    // Nowhere to put processed data (msg_queue full)
+    // This should never happen...
+    // If it does, message queue should probably be larger
+    if(msg_queue_count == MSG_QUEUE_COUNT)
+        return;
+
+    // Parse at most 64 bytes from read buffer
+    // Don't just parse until read buffer is empty because
+    // data can still be getting written into the buffer by read callback
+    // Thus that could block forever
+    for(uint32_t i = 0; i < 64; ++i){
+        if(CB_EMPTY(&buf_read))
+            break;
+        
+        // Parse byte and copy into msg_queue[widx] as needed
+        cb_read(&buf_read, &c);
+        if(parse_escaped){
+            // Currently escaped (last byte was ESCAPE_BYTE)
+            // Copy only valid escaped bytes into buffer
+            if(c == START_BYTE || c == END_BYTE || c == ESCAPE_BYTE)
+                msg_queue[msg_queue_widx][msg_queue_pos[msg_queue_widx]++] = c;
+            
+            // byte after ESCAPE_BYTE handled now
+            parse_escaped = false;
+        }else{
+            switch(c){
+            case START_BYTE:
+                if(parse_started){
+                    // Got a second start byte
+                    // Discard previous data (never got end byte)
+                    msg_queue_pos[msg_queue_widx] = 0;
+                }
+                parse_started = true;
+                break;
+            case END_BYTE:
+                if(!parse_started)
+                    break;
+                // Got a complete message
+                if(msg_queue_pos[msg_queue_widx] >= 3){
+                    // Must have at least one data byte + crc
+                    volatile uint8_t *crc_data = &msg_queue[msg_queue_widx][msg_queue_pos[msg_queue_widx] - 2];
+                    uint16_t read_crc = (crc_data[0] << 8) | crc_data[1];
+                    uint16_t calc_crc = crc16_ccitt(msg_queue[msg_queue_widx], msg_queue_pos[msg_queue_widx] - 2);
+                    if(read_crc == calc_crc){
+                        // Valid message. Move widx to next spot in queue.
+                        msg_queue_widx++;
+                        if(msg_queue_widx >= MSG_QUEUE_COUNT)
+                            msg_queue_widx = 0;
+                        msg_queue_count++;
+                    }else{
+                        // Not a valid message. Clear queue spot
+                        msg_queue_pos[msg_queue_widx] = 0;
+                    }
+                    }else{
+                        // Not a valid message. Clear queue spot
+                        msg_queue_pos[msg_queue_widx] = 0;
+                    }
+                break;
+            case ESCAPE_BYTE:
+                if(!parse_started)
+                    break;
+                parse_escaped = true;
+                break;
+            default:
+                if(!parse_started)
+                    break;
+                // Add byte to message
+                msg_queue[msg_queue_widx][msg_queue_pos[msg_queue_widx]++] = c;
+                break;
+            }
+        }
+
+    }
 }
 
 void pccomm_write_msg(uint8_t *data, uint32_t len){
@@ -137,57 +240,9 @@ static bool cb_usb_state(usb_cdc_control_signal_t state){
 
 // Called when read completes. "count" is number of bytes that were read
 static bool cb_usb_read(const uint8_t ep, const enum usb_xfer_code rc, const uint32_t count){
-    // Parse the read data and add to current message if warranted
+    // Copy the read data to be handled (parsed) later (when pccomm_process) is called
     for(uint32_t i = 0; i < count; ++i){
-        if(parse_escaped){
-            // Ignore invalid escaped data
-            if(buf_raw_rx[i] == START_BYTE || buf_raw_rx[i] == END_BYTE || buf_raw_rx[i] == ESCAPE_BYTE)
-                curr_msg[curr_msg_pos++] = buf_raw_rx[i];
-            parse_escaped = false;
-        }else{
-            switch(buf_raw_rx[i]){
-            case START_BYTE:
-                if(parse_started){
-                    // Got second start byte.
-                    // Discard previous data (never got end byte)
-                    curr_msg_pos = 0;
-                }
-                parse_started = true;
-                break;
-            case END_BYTE:
-                if(!parse_started)
-                    break;
-
-                // curr_msg is now complete
-                // Move it to the next spot in msg_queue
-                // Ignore empty messages
-                if(curr_msg_pos > 0){
-                    // Only queue message if crc is valid
-                    uint16_t read_crc = (curr_msg[curr_msg_pos - 2] << 8) | curr_msg[curr_msg_pos - 1];
-                    uint16_t calc_crc = crc16_ccitt(curr_msg, curr_msg_pos - 2);
-                    if(read_crc == calc_crc){
-                        vmemcpy(msg_queue[msg_queue_widx], curr_msg, curr_msg_pos - 2);
-                        msg_queue_pos[msg_queue_widx] = curr_msg_pos - 2;
-                        msg_queue_widx++;
-                        if(msg_queue_widx >= MSG_QUEUE_COUNT)
-                            msg_queue_widx = 0;
-                        parse_started = false;
-                    }
-                }
-
-                curr_msg_pos = 0;
-                break;
-            case ESCAPE_BYTE:
-                if(!parse_started)
-                    break;
-                parse_escaped = true;
-                break;
-            default:
-                if(!parse_started)
-                    break;
-                curr_msg[curr_msg_pos++] = buf_raw_rx[i];
-            }
-        }
+        cb_write(&buf_read, buf_raw_rx[i]);
     }
 
     // Start next read
@@ -197,7 +252,7 @@ static bool cb_usb_read(const uint8_t ep, const enum usb_xfer_code rc, const uin
     return false;
 }
 
-// Called when write complets. "count" is number of bytes that were just written
+// Called when write completes. "count" is number of bytes that were just written
 static bool cb_usb_write(const uint8_t ep, const enum usb_xfer_code rc, const uint32_t count){
     // Move data from write buffer into raw tx buffer
     uint32_t i;
@@ -217,18 +272,26 @@ static bool cb_usb_write(const uint8_t ep, const enum usb_xfer_code rc, const ui
 }
 
 uint32_t pccomm_get_msg(uint8_t *dest){
-    if(msg_queue_pos[msg_queue_ridx] == 0){
-        // Next message to read is of size 0
-        // This means there are no messages in the queue
-        // Thus do not increment read index
+    uint32_t res;
+    if(msg_queue_count == 0){
+        // Nothing to get
         return 0;
-    }else{
-        vmemcpy(dest, msg_queue[msg_queue_ridx], msg_queue_pos[msg_queue_ridx]);    // Copy data to dest
-        uint32_t tmp = msg_queue_pos[msg_queue_ridx];                               // Store size of copied data for later
-        msg_queue_pos[msg_queue_ridx] = 0;                                          // Indicate this slot is empty
-        msg_queue_ridx++;                                                           // Move to next slot in queue
-        if(msg_queue_ridx >= MSG_QUEUE_COUNT)                                       // Rollover if needed
-            msg_queue_ridx = 0;
-        return tmp;                                                                 // Return number of bytes copied
     }
+
+    // Copy next available message
+    vmemcpy(dest, msg_queue[msg_queue_ridx], msg_queue_pos[msg_queue_ridx]);
+
+    // Clear this spot in queue (so next write will start at index 0)
+    res = msg_queue_pos[msg_queue_ridx];
+    msg_queue_pos[msg_queue_ridx] = 0;
+
+    // Increment ridx (rolling over as needed)
+    msg_queue_ridx++;
+    if(msg_queue_ridx == MSG_QUEUE_COUNT)
+        msg_queue_ridx = 0;
+
+    // Decrement counter
+    msg_queue_count--;
+
+    return res;
 }

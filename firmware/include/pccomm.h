@@ -54,6 +54,11 @@
 bool pccomm_init(void);
 
 /**
+ * Perform any required actions for pccomm (handles read data)
+ */
+void pccomm_process(void);
+
+/**
  * Write a complete message to the PC via USB
  * Does NOT block until transmitted
  * @param data Data to transmit (array)

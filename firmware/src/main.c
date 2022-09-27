@@ -141,6 +141,9 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
         }
 
+        // Handle some data if available every iteration
+        pccomm_process();
+
         // Feed watchdog every iteration
         wdt_feed(&WDT_0);
     }
