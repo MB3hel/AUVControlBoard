@@ -99,7 +99,7 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
     }else if(data_matches(msg, len, (uint8_t[]){'W', 'D', 'G', 'F'}, 4)){
         // Motor watchdog feed command
         // W,D,G,F
-        motor_watchdog_feed();
+        motor_control_watchdog_feed();
     }else if(data_startswith(msg, len, (uint8_t[]){'T', 'I', 'N', 'V'}, 4)){
         // Set thruster inversion command
         // TINV[i1][i2][i3][i4][i5][i6][i7][i8]

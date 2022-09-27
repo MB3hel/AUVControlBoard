@@ -160,7 +160,7 @@ bool motor_control_watchdog_count(void){
 
     // Disable after 1500ms
     if(motor_wd_count >= 15){
-        motor_pwm_set((uint8_t[]){0, 0, 0, 0, 0, 0, 0, 0});
+        motor_pwm_set((float[]){0, 0, 0, 0, 0, 0, 0, 0});
         return true;
     }
 
