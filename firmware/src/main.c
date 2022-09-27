@@ -81,7 +81,10 @@ int main(void){
 
     timer_start(&TIMER_0);                          // Start TIMER_0 (1ms timer)
     
-    wdt_set_timeout_period(&WDT_0, 1000, 2000);     // Configure 2 second watchdog period
+    wdt_set_timeout_period(&WDT_0, 1024, 2000);     // Configure 2 second watchdog period
+                                                    // Note: 1024Hz is CLK_WDT_OSC (not configurable on this chip)
+                                                    // Only change the second parameter (2000)
+
 	wdt_enable(&WDT_0);                             // Enable WDT
 
 
