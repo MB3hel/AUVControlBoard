@@ -90,6 +90,9 @@ bool pccomm_init(void){
 }
 
 void pccomm_write_msg(uint8_t *data, uint32_t len){
+    if(!initialized)
+        return;
+    
     cb_write(&buf_write, START_BYTE);
     for(uint8_t i = 0; i < len; ++i){
         if(data[i] == START_BYTE || data[i] == END_BYTE || data[i] == ESCAPE_BYTE)

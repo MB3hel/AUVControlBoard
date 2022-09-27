@@ -11,6 +11,8 @@
 #include <cmdctrl.h>
 
 
+#define WD_DISABLE_COUNT         15                     // 15 * 100ms = 1500ms
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -30,7 +32,7 @@ bool motor_control_tinv[8];                             // Thruster inversion st
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void motor_control_init(void){
-    motor_wd_count = 0;
+    motor_wd_count = WD_DISABLE_COUNT;
 
     // Initialize all thrusters in a non-inverted state
     for(size_t i = 0; i < 8; ++i)
@@ -155,7 +157,7 @@ void motor_control_local(float x, float y, float z, float pitch, float roll, flo
 }
 
 bool motor_control_watchdog_count(void){
-    if(motor_wd_count >= 15){
+    if(motor_wd_count >= WD_DISABLE_COUNT){
         // Don't increment counter further (prevents rollover issues)
         // false returned because motors were not just now disabled
         return false;
@@ -164,8 +166,8 @@ bool motor_control_watchdog_count(void){
     // Called every 100ms so 1 count = 100ms
     motor_wd_count++;
 
-    // Disable after 1500ms
-    if(motor_wd_count >= 15){
+    // Disable after configured time
+    if(motor_wd_count >= WD_DISABLE_COUNT){
         motor_pwm_set((float[]){0, 0, 0, 0, 0, 0, 0, 0});
         return true;
     }
