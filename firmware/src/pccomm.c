@@ -159,16 +159,17 @@ static bool cb_usb_read(const uint8_t ep, const enum usb_xfer_code rc, const uin
                 // Move it to the next spot in msg_queue
                 // Ignore empty messages
                 if(curr_msg_pos > 0){
-                    // TODO: Implement crc validation
-                    // For now, skip crc...
-                    curr_msg_pos -= 2;
-
-                    memcpy(msg_queue[msg_queue_widx], curr_msg, curr_msg_pos);
-                    msg_queue_pos[msg_queue_widx] = curr_msg_pos;
-                    msg_queue_widx++;
-                    if(msg_queue_widx >= MSG_QUEUE_COUNT)
-                        msg_queue_widx = 0;
-                    parse_started = false;
+                    // Only queue message if crc is valid
+                    uint16_t read_crc = (curr_msg[curr_msg_pos - 2] << 8) | curr_msg[curr_msg_pos - 1];
+                    uint16_t calc_crc = crc16_ccitt(curr_msg, curr_msg_pos - 2);
+                    if(read_crc == calc_crc){
+                        memcpy(msg_queue[msg_queue_widx], curr_msg, curr_msg_pos);
+                        msg_queue_pos[msg_queue_widx] = curr_msg_pos;
+                        msg_queue_widx++;
+                        if(msg_queue_widx >= MSG_QUEUE_COUNT)
+                            msg_queue_widx = 0;
+                        parse_started = false;
+                    }
                 }
 
                 curr_msg_pos = 0;

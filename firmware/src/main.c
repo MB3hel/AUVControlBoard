@@ -49,8 +49,6 @@ static void cb_timing(const struct timer_task *const timer_task){
  * Program entry point
  */
 int main(void){
-    // TODO: Reimplement motor watchdog
-
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Initialization
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -124,6 +122,11 @@ int main(void){
             case CMDCTRL_MODE_LOCAL:
                 dotstar_set(10, 0, 100);
                 break;
+            }
+
+            // Handle motor watchdog
+            if(motor_control_watchdog_count()){
+                cmdctrl_motors_killed();
             }
             // ---------------------------------------------------------------------------------------------------------
         }else if(CHECK_FLAG(FLAG_1000MS)){

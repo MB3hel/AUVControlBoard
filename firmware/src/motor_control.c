@@ -21,6 +21,8 @@ static matrix dof_matrix;                               // dof matrix
 static float overlap_arrs[8][8];                        // Backing arrays for overlap vectors
 static matrix overlap_vectors[8];                       // overlaps vectors
 
+static uint16_t motor_wd_count;                         // Motor watchdog counter
+
 bool motor_control_tinv[8];                             // Thruster inversion status (true = inverted)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -28,6 +30,8 @@ bool motor_control_tinv[8];                             // Thruster inversion st
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void motor_control_init(void){
+    motor_wd_count = 0;
+
     // Initialize all thrusters in a non-inverted state
     for(size_t i = 0; i < 8; ++i)
         motor_control_tinv[i] = false;
@@ -100,7 +104,7 @@ void motor_control_raw(float s1, float s2, float s3, float s4, float s5, float s
 
     // Just updated speed.
     // Reset watchdog timeout
-    // TODO: Feed motor watchdog
+    motor_control_watchdog_feed();
 }
 
 void motor_control_local(float x, float y, float z, float pitch, float roll, float yaw){
@@ -148,4 +152,21 @@ void motor_control_local(float x, float y, float z, float pitch, float roll, flo
     //       To ensure timeout works properly
     motor_control_raw(speed_arr[0], speed_arr[1], speed_arr[2], speed_arr[3],
             speed_arr[4], speed_arr[5], speed_arr[6], speed_arr[7]);
+}
+
+bool motor_control_watchdog_count(void){
+    // Called every 100ms so 1 count = 100ms
+    motor_wd_count++;
+
+    // Disable after 1500ms
+    if(motor_wd_count >= 15){
+        motor_pwm_set((uint8_t[]){0, 0, 0, 0, 0, 0, 0, 0});
+        return true;
+    }
+
+    return false;
+}
+
+void motor_control_watchdog_feed(void){
+    motor_wd_count = 0;
 }

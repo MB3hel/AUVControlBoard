@@ -58,3 +58,19 @@ void motor_control_raw(float s1, float s2, float s3, float s4, float s5, float s
  * @param yaw Speed in +yaw rotation DoF (-1.o to +1.0)
  */
 void motor_control_local(float x, float y, float z, float pitch, float roll, float yaw);
+
+/**
+ * Increments the motor watchdog by 1 count
+ * Should be called every 100ms
+ * 
+ * Will disable motors if count has become too high
+ * 
+ * @return true if watchdog disabled motors
+ * @return false if watchdog did not disable motors
+ */
+bool motor_control_watchdog_count(void);
+
+/**
+ * Feeds motor watchdog to prevent automatic disable
+ */
+void motor_control_watchdog_feed(void);
