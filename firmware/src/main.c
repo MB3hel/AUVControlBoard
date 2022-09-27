@@ -70,12 +70,12 @@ int main(void){
     timer_add_task(&TIMER_0, &task_10ms);
 
     task_100ms.cb = cb_timing;                      // Setup 100ms timing task
-    task_100ms.interval = 10;
+    task_100ms.interval = 100;
     task_100ms.mode = TIMER_TASK_REPEAT;
     timer_add_task(&TIMER_0, &task_100ms);
 
     task_1000ms.cb = cb_timing;                     // Setup 1000ms timing task
-    task_1000ms.interval = 10;
+    task_1000ms.interval = 1000;
     task_1000ms.mode = TIMER_TASK_REPEAT;
     timer_add_task(&TIMER_0, &task_1000ms);
 
@@ -115,14 +115,14 @@ int main(void){
                 pccomm_initialized = pccomm_init();
 
             // Update RGB LED to indicate cmdctrl mode
-            // switch(cmdctrl_get_mode()){
-            // case CMDCTRL_MODE_RAW:
-            //     dotstar_set(100, 100, 0);
-            //     break;
-            // case CMDCTRL_MODE_LOCAL:
-            //     dotstar_set(10, 0, 100);
-            //     break;
-            // }
+            switch(cmdctrl_get_mode()){
+            case CMDCTRL_MODE_RAW:
+                dotstar_set(100, 100, 0);
+                break;
+            case CMDCTRL_MODE_LOCAL:
+                dotstar_set(10, 0, 100);
+                break;
+            }
 
             // Handle motor watchdog
             if(motor_control_watchdog_count()){

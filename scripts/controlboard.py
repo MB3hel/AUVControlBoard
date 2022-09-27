@@ -164,8 +164,6 @@ class ControlBoard:
         # Done with crc data
         msg = msg[:-2]
 
-        print(msg)
-
         # Handle the message
         if msg.startswith(b'MODE'):
             # Mode status message
