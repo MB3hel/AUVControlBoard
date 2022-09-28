@@ -149,9 +149,10 @@ int main(void){
             // Nothing here
             // ---------------------------------------------------------------------------------------------------------
         }else{
-            // Enter sleep mode because nothing to do right now
+            // Enter sleep mode because nothing to do right now (no flags set)
             // Will be woken by ISRs, which may have set flags
             sleep(PM_SLEEPCFG_SLEEPMODE_IDLE0);
+            // Will resume running here once woken by ISR, which may have set a flag
         }        
     }
 }
