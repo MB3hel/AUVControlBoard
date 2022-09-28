@@ -48,7 +48,8 @@ static void cb_timing(const struct timer_task *const timer_task){
 }
 
 void cb_i2c0(i2c_trans *trans){
-
+    // TODO: Compare trans to transaction pointers for different sensors
+    //       and set correct flag.
 }
 
 /**
