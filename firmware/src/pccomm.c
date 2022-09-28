@@ -221,63 +221,6 @@ void pccomm_write_msg(uint8_t *data, uint32_t len){
     cdcdf_acm_write((uint8_t *)buf_raw_tx, 0);
 }
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// Callbacks
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-static bool cb_usb_state(usb_cdc_control_signal_t state){
-    if (state.rs232.DTR) {
-        // Register callbacks **AFTER** endpoints allocated
-        cdcdf_acm_register_callback(CDCDF_ACM_CB_READ, (FUNC_PTR)cb_usb_read);
-        cdcdf_acm_register_callback(CDCDF_ACM_CB_WRITE, (FUNC_PTR)cb_usb_write);
-
-        // Initial read
-        // Any data read will be available in the read callback
-        // The next read should occur in the read callback
-        cdcdf_acm_read((uint8_t *)buf_raw_rx, RAW_BUF_LEN);
-    }
-
-    // No error
-    return false;
-}
-
-// Called when read completes. "count" is number of bytes that were read
-static bool cb_usb_read(const uint8_t ep, const enum usb_xfer_code rc, const uint32_t count){
-    // Copy the read data to be handled (parsed) later (when pccomm_process) is called
-    for(uint32_t i = 0; i < count; ++i){
-        cb_write(&buf_read, buf_raw_rx[i]);
-    }
-
-    // Data is in read buffer. Indicate that pccomm_process should be called by main tree
-    FLAG_SET(flags_main, FLAG_MAIN_PCCOMM_PROC);
-
-    // Start next read
-    cdcdf_acm_read((uint8_t*)buf_raw_rx, RAW_BUF_LEN);
-
-    // No error
-    return false;
-}
-
-// Called when write completes. "count" is number of bytes that were just written
-static bool cb_usb_write(const uint8_t ep, const enum usb_xfer_code rc, const uint32_t count){
-    // Move data from write buffer into raw tx buffer
-    uint32_t i;
-    for(i = 0; i < RAW_BUF_LEN; ++i){
-        if(CB_EMPTY(&buf_write))
-            break;  // Nothing else to transmit
-        cb_read(&buf_write, &buf_raw_tx[i]);
-    }
-
-    // Start next write (if anything to write)
-    if(i != 0){
-        cdcdf_acm_write((uint8_t*)buf_raw_tx, i);
-    }
-    
-    // No error
-    return false;
-}
-
 uint32_t pccomm_get_msg(uint8_t *dest){
     uint32_t res;
     if(msg_queue_count == 0){
@@ -308,4 +251,66 @@ uint32_t pccomm_get_msg(uint8_t *dest){
     }
 
     return res;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Callbacks
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// This is called from an ISR. Treat this function as an ISR.
+// System will wake from sleep after this function is called
+static bool cb_usb_state(usb_cdc_control_signal_t state){
+    if (state.rs232.DTR) {
+        // Register callbacks **AFTER** endpoints allocated
+        cdcdf_acm_register_callback(CDCDF_ACM_CB_READ, (FUNC_PTR)cb_usb_read);
+        cdcdf_acm_register_callback(CDCDF_ACM_CB_WRITE, (FUNC_PTR)cb_usb_write);
+
+        // Initial read
+        // Any data read will be available in the read callback
+        // The next read should occur in the read callback
+        cdcdf_acm_read((uint8_t *)buf_raw_rx, RAW_BUF_LEN);
+    }
+
+    // No error
+    return false;
+}
+
+// Called when read completes. "count" is number of bytes that were read
+// This is called from an ISR. Treat this function as an ISR.
+// System will wake from sleep after this function is called
+static bool cb_usb_read(const uint8_t ep, const enum usb_xfer_code rc, const uint32_t count){
+    // Copy the read data to be handled (parsed) later (when pccomm_process) is called
+    for(uint32_t i = 0; i < count; ++i){
+        cb_write(&buf_read, buf_raw_rx[i]);
+    }
+
+    // Data is in read buffer. Indicate that pccomm_process should be called by main tree
+    FLAG_SET(flags_main, FLAG_MAIN_PCCOMM_PROC);
+
+    // Start next read
+    cdcdf_acm_read((uint8_t*)buf_raw_rx, RAW_BUF_LEN);
+
+    // No error
+    return false;
+}
+
+// Called when write completes. "count" is number of bytes that were just written
+// This is called from an ISR. Treat this function as an ISR.
+// System will wake from sleep after this function is called
+static bool cb_usb_write(const uint8_t ep, const enum usb_xfer_code rc, const uint32_t count){
+    // Move data from write buffer into raw tx buffer
+    uint32_t i;
+    for(i = 0; i < RAW_BUF_LEN; ++i){
+        if(CB_EMPTY(&buf_write))
+            break;  // Nothing else to transmit
+        cb_read(&buf_write, &buf_raw_tx[i]);
+    }
+
+    // Start next write (if anything to write)
+    if(i != 0){
+        cdcdf_acm_write((uint8_t*)buf_raw_tx, i);
+    }
+    
+    // No error
+    return false;
 }

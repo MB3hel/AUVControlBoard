@@ -12,7 +12,6 @@
 // Macros to work with flags
 
 // Set a flag
-// TODO: Wakeup from sleep mode when flags set
 #define FLAG_SET(field, flag)       ((field) |= (flag))
 
 // Clear (unset)  a flag

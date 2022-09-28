@@ -33,6 +33,8 @@ static struct timer_task task_10ms, task_100ms, task_1000ms;
 
 /**
  * Callback for timing flag tasks
+ * This is called from timer ISR. Treat this function as an ISR.
+ * System will wake from sleep after this function is called
  */
 static void cb_timing(const struct timer_task *const timer_task){
     if(timer_task == &task_10ms){
@@ -147,8 +149,9 @@ int main(void){
             // Nothing here
             // ---------------------------------------------------------------------------------------------------------
         }else{
-            // TODO: Enter sleep mode because nothing to do right now
-            // Will be woken up when a flag is set
+            // Enter sleep mode because nothing to do right now
+            // Will be woken by ISRs, which may have set flags
+            sleep(PM_SLEEPCFG_SLEEPMODE_IDLE0);
         }        
     }
 }
