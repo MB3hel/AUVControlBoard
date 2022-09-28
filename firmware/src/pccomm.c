@@ -10,9 +10,8 @@
 #include <cmdctrl.h>
 #include <stdlib.h>
 #include <util.h>
+#include <flags.h>
 
-// DEBUG
-#include <dotstar.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -125,11 +124,11 @@ void pccomm_process(void){
     if(msg_queue_count == MSG_QUEUE_COUNT)
         return;
 
-    // Parse at most 64 bytes from read buffer
-    // Don't just parse until read buffer is empty because
-    // data can still be getting written into the buffer by read callback
-    // Thus that could block forever
-    for(uint32_t i = 0; i < 64; ++i){
+    // Parse finite number of bytes from the read buffer
+    // Cannot just parse until read buffer is empty
+    // Data could be inserted into read buffer by callback while this runs
+    // Thus waiting until buffer is empty could block forever
+    for(uint32_t i = 0; i < READ_BUF_LEN; ++i){
         if(CB_EMPTY(&buf_read))
             break;
         
@@ -168,6 +167,9 @@ void pccomm_process(void){
                         if(msg_queue_widx >= MSG_QUEUE_COUNT)
                             msg_queue_widx = 0;
                         msg_queue_count++;
+
+                        // Indicate to main tree that there is a message it should process
+                        FLAG_SET(flags_main, FLAG_MAIN_PCCOMM_MSG);
                     }else{
                         // Not a valid message. Clear queue spot
                         msg_queue_pos[msg_queue_widx] = 0;
@@ -247,6 +249,9 @@ static bool cb_usb_read(const uint8_t ep, const enum usb_xfer_code rc, const uin
         cb_write(&buf_read, buf_raw_rx[i]);
     }
 
+    // Data is in read buffer. Indicate that pccomm_process should be called by main tree
+    FLAG_SET(flags_main, FLAG_MAIN_PCCOMM_PROC);
+
     // Start next read
     cdcdf_acm_read((uint8_t*)buf_raw_rx, RAW_BUF_LEN);
 
@@ -295,6 +300,12 @@ uint32_t pccomm_get_msg(uint8_t *dest){
 
     // Decrement counter
     msg_queue_count--;
+
+    if(msg_queue_count != 0){
+        // Still message(s) in the queue
+        // Indicate to main tree that there is a message it should process
+        FLAG_SET(flags_main, FLAG_MAIN_PCCOMM_MSG);
+    }
 
     return res;
 }

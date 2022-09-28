@@ -12,36 +12,35 @@
 #include <stdbool.h>
 #include <dotstar.h>
 #include <motor_control.h>
+#include <flags.h>
 
 
-// General flags
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Globals
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define FLAG_10MS       0b00000001
-#define FLAG_100MS      0b00000010
-#define FLAG_1000MS     0b00000100
-
-volatile uint8_t flags = 0;
-
-#define SET_FLAG(x)         (flags |= x)
-#define CLEAR_FLAG(x)       (flags &= ~x)
-#define CHECK_FLAG(x)       (flags & x)
+// Definition of main flags field (see flags.h)
+uint8_t flags_main = 0;
 
 
 // Timer tasks
-
 static struct timer_task task_10ms, task_100ms, task_1000ms; 
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Functions
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Callback for timing flag tasks
  */
 static void cb_timing(const struct timer_task *const timer_task){
     if(timer_task == &task_10ms){
-        SET_FLAG(FLAG_10MS);
+        FLAG_SET(flags_main, FLAG_MAIN_10MS);
     }else if(timer_task == &task_100ms){
-        SET_FLAG(FLAG_100MS);
+        FLAG_SET(flags_main, FLAG_MAIN_100MS);
     }else if(timer_task == &task_1000ms){
-        SET_FLAG(FLAG_1000MS);
+        FLAG_SET(flags_main, FLAG_MAIN_1000MS);
     }
 }
 
@@ -49,13 +48,13 @@ static void cb_timing(const struct timer_task *const timer_task){
  * Program entry point
  */
 int main(void){
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /// Initialization
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    
     bool pccomm_initialized = false;
     uint8_t msg[PCCOMM_MAX_MSG_LEN];
     uint32_t msg_len;
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Initialization
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     atmel_start_init();                             // Initialize ASF4 drivers & middleware
     dotstar_init();                                 // Initialize RGB led driver
@@ -93,22 +92,30 @@ int main(void){
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     while (true) {
-        msg_len = pccomm_get_msg(msg);
-        if(msg_len != 0){
+        if(FLAG_CHECK(flags_main, FLAG_MAIN_PCCOMM_MSG)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_PCCOMM_MSG);
             // ---------------------------------------------------------------------------------------------------------
             // Runs when a new message from the controlling pc is available
             // ---------------------------------------------------------------------------------------------------------
+            msg_len = pccomm_get_msg(msg);
             cmdctrl_handle_msg(msg, msg_len);
             // ---------------------------------------------------------------------------------------------------------
-        }else if(CHECK_FLAG(FLAG_10MS)){
-            CLEAR_FLAG(FLAG_10MS);
+        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_PCCOMM_PROC)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_PCCOMM_PROC);
+            // ---------------------------------------------------------------------------------------------------------
+            // Runs when pccomm_process needs to be called by main
+            // ---------------------------------------------------------------------------------------------------------
+            pccomm_process();
+            // ---------------------------------------------------------------------------------------------------------
+        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_10MS)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_10MS);
             // ---------------------------------------------------------------------------------------------------------
             // Runs every 10ms
             // ---------------------------------------------------------------------------------------------------------
-            // Nothing here
+            wdt_feed(&WDT_0);                           // Feed watchdog every 10ms
             // ---------------------------------------------------------------------------------------------------------
-        }else if(CHECK_FLAG(FLAG_100MS)){
-            CLEAR_FLAG(FLAG_100MS);
+        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_100MS)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_100MS);
             // ---------------------------------------------------------------------------------------------------------
             // Runs every 100ms
             // ---------------------------------------------------------------------------------------------------------
@@ -132,19 +139,16 @@ int main(void){
                 cmdctrl_motors_killed();
             }
             // ---------------------------------------------------------------------------------------------------------
-        }else if(CHECK_FLAG(FLAG_1000MS)){
-            CLEAR_FLAG(FLAG_1000MS);
+        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_1000MS)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_1000MS);
             // ---------------------------------------------------------------------------------------------------------
             // Runs every 1000ms
             // ---------------------------------------------------------------------------------------------------------
             // Nothing here
             // ---------------------------------------------------------------------------------------------------------
-        }
-
-        // Handle some data if available every iteration
-        pccomm_process();
-
-        // Feed watchdog every iteration
-        wdt_feed(&WDT_0);
+        }else{
+            // TODO: Enter sleep mode because nothing to do right now
+            // Will be woken up when a flag is set
+        }        
     }
 }
