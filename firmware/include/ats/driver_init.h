@@ -21,6 +21,7 @@ extern "C" {
 #include <hal_io.h>
 #include <hal_sleep.h>
 
+#include <hal_i2c_m_async.h>
 #include <hal_timer.h>
 #include <hpl_tc_base.h>
 #include <tcc_lite.h>
@@ -30,9 +31,14 @@ extern "C" {
 
 #include <hal_wdt.h>
 
+extern struct i2c_m_async_desc I2C_0;
 extern struct timer_descriptor TIMER_0;
 
 extern struct wdt_descriptor WDT_0;
+
+void I2C_0_PORT_init(void);
+void I2C_0_CLOCK_init(void);
+void I2C_0_init(void);
 
 void PWM_0_CLOCK_init(void);
 

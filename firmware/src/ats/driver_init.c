@@ -13,7 +13,48 @@
 
 struct timer_descriptor TIMER_0;
 
+struct i2c_m_async_desc I2C_0;
+
 struct wdt_descriptor WDT_0;
+
+void I2C_0_PORT_init(void)
+{
+
+	gpio_set_pin_pull_mode(PA12,
+	                       // <y> Pull configuration
+	                       // <id> pad_pull_config
+	                       // <GPIO_PULL_OFF"> Off
+	                       // <GPIO_PULL_UP"> Pull-up
+	                       // <GPIO_PULL_DOWN"> Pull-down
+	                       GPIO_PULL_OFF);
+
+	gpio_set_pin_function(PA12, PINMUX_PA12C_SERCOM2_PAD0);
+
+	gpio_set_pin_pull_mode(PA13,
+	                       // <y> Pull configuration
+	                       // <id> pad_pull_config
+	                       // <GPIO_PULL_OFF"> Off
+	                       // <GPIO_PULL_UP"> Pull-up
+	                       // <GPIO_PULL_DOWN"> Pull-down
+	                       GPIO_PULL_OFF);
+
+	gpio_set_pin_function(PA13, PINMUX_PA13C_SERCOM2_PAD1);
+}
+
+void I2C_0_CLOCK_init(void)
+{
+	hri_gclk_write_PCHCTRL_reg(GCLK, SERCOM2_GCLK_ID_CORE, CONF_GCLK_SERCOM2_CORE_SRC | (1 << GCLK_PCHCTRL_CHEN_Pos));
+	hri_gclk_write_PCHCTRL_reg(GCLK, SERCOM2_GCLK_ID_SLOW, CONF_GCLK_SERCOM2_SLOW_SRC | (1 << GCLK_PCHCTRL_CHEN_Pos));
+
+	hri_mclk_set_APBBMASK_SERCOM2_bit(MCLK);
+}
+
+void I2C_0_init(void)
+{
+	I2C_0_CLOCK_init();
+	i2c_m_async_init(&I2C_0, SERCOM2);
+	I2C_0_PORT_init();
+}
 
 /**
  * \brief Timer initialization function
@@ -221,6 +262,8 @@ void system_init(void)
 	gpio_set_pin_direction(DS_DAT, GPIO_DIRECTION_OUT);
 
 	gpio_set_pin_function(DS_DAT, GPIO_PIN_FUNCTION_OFF);
+
+	I2C_0_init();
 
 	TIMER_0_init();
 	PWM_0_CLOCK_init();
