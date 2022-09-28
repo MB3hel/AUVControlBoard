@@ -52,9 +52,11 @@ void i2c0_init(void (*cb_done_loc)(i2c_trans*)){
     i2c_m_async_get_io_descriptor(&I2C, &io);                   // Store for later
     i2c_m_async_enable(&I2C);                                   // Enable bus (ASF layer)
     i2c_m_async_register_callback(&I2C, 
-            I2C_M_ASYNC_TX_COMPLETE, &cb_tx_complete);          // Register tx callback
+            I2C_M_ASYNC_TX_COMPLETE, 
+            (FUNC_PTR)&cb_tx_complete);                         // Register tx callback
     i2c_m_async_register_callback(&I2C, 
-            I2C_M_ASYNC_RX_COMPLETE, &cb_rx_complete);          // Register rx callback
+            I2C_M_ASYNC_RX_COMPLETE, 
+            (FUNC_PTR)&cb_rx_complete);                         // Register rx callback
     idle = true;                                                // Idle on start
 }
 
