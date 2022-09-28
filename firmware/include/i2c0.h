@@ -22,8 +22,9 @@
 
 /**
  * Initialize i2c0 bus
+ * @param cb_done_loc Pointer to function to run when transaction completes
  */
-void i2c0_init(void);
+void i2c0_init(void (*cb_done_loc)(i2c_trans*));
 
 /**
  * Perform a transaction on the i2c0 bus
@@ -34,9 +35,3 @@ void i2c0_init(void);
  */
 void i2c0_perform(i2c_trans *trans);
 
-/**
- * Check if i2c0 is idle
- * @return true if idle (no transaction in progress)
- * @return fals if not idle (transaction in progress)
- */
-bool i2c0_idle(void);

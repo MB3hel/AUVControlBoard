@@ -13,6 +13,7 @@
 #include <dotstar.h>
 #include <motor_control.h>
 #include <flags.h>
+#include <i2c0.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -46,6 +47,10 @@ static void cb_timing(const struct timer_task *const timer_task){
     }
 }
 
+void cb_i2c0(i2c_trans *trans){
+
+}
+
 /**
  * Program entry point
  */
@@ -64,6 +69,8 @@ int main(void){
     motor_control_init();                           // Initialize motor control
     conversions_init();                             // Initialize conversions helper
     cmdctrl_init();                                 // Initialize cmd & ctrl system
+    i2c0_init(cb_i2c0);                             // Initialize i2c0
+    // TODO: Initialize I2C sensors
 
     task_10ms.cb = cb_timing;                       // Setup 10ms timing task
     task_10ms.interval = 10;

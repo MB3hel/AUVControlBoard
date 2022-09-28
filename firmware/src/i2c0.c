@@ -18,6 +18,7 @@
 static bool idle;                                               // Current state (idle or busy)
 static struct io_descriptor *io;                                // Io descriptor
 static i2c_trans *curr_trans;                                   // Current transaction
+static void (*cb_done)(i2c_trans*);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
@@ -32,6 +33,8 @@ static void cb_tx_complete(struct i2c_m_async_desc *const i2c){
     }else{
         // No read phase, transaction done
         idle = true;
+        if(cb_done != NULL)
+            cb_done(curr_trans);
     }
 }
 
@@ -40,9 +43,12 @@ static void cb_rx_complete(struct i2c_m_async_desc *const i2c){
     // Read always happens after write phase
     // Now done with transaction
     idle = true;
+    if(cb_done != NULL)
+        cb_done(curr_trans);
 }
 
-void i2c0_init(void){
+void i2c0_init(void (*cb_done_loc)(i2c_trans*)){
+    cb_done = cb_done_loc;                                      // Store for later
     i2c_m_async_get_io_descriptor(&I2C, &io);                   // Store for later
     i2c_m_async_enable(&I2C);                                   // Enable bus (ASF layer)
     i2c_m_async_register_callback(&I2C, 
@@ -73,9 +79,7 @@ void i2c0_perform(i2c_trans *trans){
     }else{
         // Nothing to do in this transaction
         // remains idle
+        if(cb_done != NULL)
+            cb_done(trans);
     }
-}
-
-bool i2c0_idle(void){
-    return idle;
 }
