@@ -14,6 +14,7 @@
 #include <motor_control.h>
 #include <flags.h>
 #include <i2c0.h>
+#include <timers.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -24,33 +25,9 @@
 uint8_t flags_main = 0;
 
 
-// Timer tasks
-static struct timer_task task_10ms, task_100ms, task_1000ms; 
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Callback for timing flag tasks
- * This is called from timer ISR. Treat this function as an ISR.
- * System will wake from sleep after this function is called
- */
-static void cb_timing(const struct timer_task *const timer_task){
-    if(timer_task == &task_10ms){
-        FLAG_SET(flags_main, FLAG_MAIN_10MS);
-    }else if(timer_task == &task_100ms){
-        FLAG_SET(flags_main, FLAG_MAIN_100MS);
-    }else if(timer_task == &task_1000ms){
-        FLAG_SET(flags_main, FLAG_MAIN_1000MS);
-    }
-}
-
-void cb_i2c0(i2c_trans *trans){
-    // TODO: Compare trans to transaction pointers for different sensors
-    //       and set correct flag.
-}
 
 /**
  * Program entry point
@@ -70,31 +47,9 @@ int main(void){
     motor_control_init();                           // Initialize motor control
     conversions_init();                             // Initialize conversions helper
     cmdctrl_init();                                 // Initialize cmd & ctrl system
-    i2c0_init(cb_i2c0);                             // Initialize i2c0
-    // TODO: Initialize I2C sensors
-
-    task_10ms.cb = cb_timing;                       // Setup 10ms timing task
-    task_10ms.interval = 10;
-    task_10ms.mode = TIMER_TASK_REPEAT;
-    timer_add_task(&TIMER_0, &task_10ms);
-
-    task_100ms.cb = cb_timing;                      // Setup 100ms timing task
-    task_100ms.interval = 100;
-    task_100ms.mode = TIMER_TASK_REPEAT;
-    timer_add_task(&TIMER_0, &task_100ms);
-
-    task_1000ms.cb = cb_timing;                     // Setup 1000ms timing task
-    task_1000ms.interval = 1000;
-    task_1000ms.mode = TIMER_TASK_REPEAT;
-    timer_add_task(&TIMER_0, &task_1000ms);
-
-    timer_start(&TIMER_0);                          // Start TIMER_0 (1ms timer)
-    
-    wdt_set_timeout_period(&WDT_0, 1024, 2000);     // Configure 2 second watchdog period
-                                                    // Note: 1024Hz is CLK_WDT_OSC (not configurable on this chip)
-                                                    // Only change the second parameter (2000)
-
-	wdt_enable(&WDT_0);                             // Enable WDT
+    i2c0_init();                                    // Initialize i2c0
+    // TODO: Initialize I2C sensorss
+    timers_init();                                  // Initialize timers (including WDT)
 
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

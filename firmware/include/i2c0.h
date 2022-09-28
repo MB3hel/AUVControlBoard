@@ -2,7 +2,7 @@
 /**
  * @file i2c0.h
  * 
- * Implementation for i2c0 asynchronous master state machine
+ * Implementation for i2c0 asynchronous master with queued transactions
  * 
  * @author Marcus Behel
  */
@@ -22,16 +22,21 @@
 
 /**
  * Initialize i2c0 bus
- * @param cb_done_loc Pointer to function to run when transaction completes
  */
-void i2c0_init(void (*cb_done_loc)(i2c_trans*));
+void i2c0_init(void);
 
 /**
- * Perform a transaction on the i2c0 bus
+ * Handle operations for i2c0 bus
+ */
+void i2c0_process(void);
+
+/**
+ * Queue a transaction on the i2c0 bus
  * Transaction consists of a write followed by a read to a device with a particular address
  * Transaction is performed asynchronously
- * This function should not be called unless idle
- * @param trans Pointer to the transaction to perform.
+ * @param trans Pointer to the transaction to perform. Note that the object pointed to 
+ * must remain valid and not be modified until the transaction is completed 
+ * (trans->done is true).
  */
 void i2c0_perform(i2c_trans *trans);
 

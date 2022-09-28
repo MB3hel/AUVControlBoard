@@ -4,6 +4,7 @@
  */
 
 #include <i2c0.h>
+#include <flags.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -11,14 +12,18 @@
 
 #define I2C                 I2C_0                               // Which ASF I2C object to use
 
+// States
+#define STATE_IDLE          0
+#define STATE_WRITE         1
+#define STATE_READ          2
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static bool idle;                                               // Current state (idle or busy)
+static uint8_t curr_state, next_state;                          // Current state and next state
 static struct io_descriptor *io;                                // Io descriptor
-static i2c_trans *curr_trans;                                   // Current transaction
-static void (*cb_done)(i2c_trans*);
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
@@ -27,28 +32,17 @@ static void (*cb_done)(i2c_trans*);
 static void cb_tx_complete(struct i2c_m_async_desc *const i2c){
     // Called when all bytes have been written from write phase
     // Now move to read state (if any)
-    if(curr_trans->read_count > 0){
-        // Start read phase
-        io_read(io, curr_trans->read_buf, curr_trans->read_count);
-    }else{
-        // No read phase, transaction done
-        idle = true;
-        if(cb_done != NULL)
-            cb_done(curr_trans);
-    }
+    // TODO
 }
 
 static void cb_rx_complete(struct i2c_m_async_desc *const i2c){
     // Called when all bytes have been read from read phase
     // Read always happens after write phase
     // Now done with transaction
-    idle = true;
-    if(cb_done != NULL)
-        cb_done(curr_trans);
+    // TODO
 }
 
-void i2c0_init(void (*cb_done_loc)(i2c_trans*)){
-    cb_done = cb_done_loc;                                      // Store for later
+void i2c0_init(void){
     i2c_m_async_get_io_descriptor(&I2C, &io);                   // Store for later
     i2c_m_async_enable(&I2C);                                   // Enable bus (ASF layer)
     i2c_m_async_register_callback(&I2C, 
@@ -57,31 +51,39 @@ void i2c0_init(void (*cb_done_loc)(i2c_trans*)){
     i2c_m_async_register_callback(&I2C, 
             I2C_M_ASYNC_RX_COMPLETE, 
             (FUNC_PTR)&cb_rx_complete);                         // Register rx callback
-    idle = true;                                                // Idle on start
+    curr_state = STATE_IDLE;
+    next_state = STATE_IDLE;
+}
+
+void i2c0_process(void){
+    if(curr_state == next_state)
+        // No state change, so no actions necessary
+        return;
+    
+    switch(next_state){
+    case STATE_WRITE:
+        // Switching to write state once no longer idle
+        // TODO
+        break;
+    case STATE_READ:
+        // Switching to read state after write finished
+        // TODO
+        break;
+    case STATE_IDLE:
+        // Switching to idle state after read finished
+        // TODO
+        break;
+    }
+
+    curr_state = next_state;
 }
 
 void i2c0_perform(i2c_trans *trans){
-    if(!idle)
-        // Currently performing transaction; cannot interrupt
-        return;
-
-    curr_trans = trans;                                         // Update current transaction pointer
-    i2c_m_async_set_slaveaddr(&I2C, 
-            trans->address, I2C_M_SEVEN);                       // Set address for transaction (7-bit addr mode)
-    
-    if(trans->write_count > 0){
-        // Start write
-        idle = false;
-        io_write(io, trans->write_buf, trans->write_count);
-    }else if(trans->read_count > 0){
-        // No write phase, but a read phase
-        // Start read
-        idle = false;
-        io_read(io, trans->read_buf, trans->read_count);
-    }else{
-        // Nothing to do in this transaction
-        // remains idle
-        if(cb_done != NULL)
-            cb_done(trans);
+    trans->done = false;
+    // TODO: Add current transaction to queue
+    if(curr_state == STATE_IDLE){
+        // Change state and have main call process to facilitate state change
+        next_state = STATE_WRITE;
+        FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
     }
 }

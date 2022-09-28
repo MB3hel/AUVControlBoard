@@ -21,6 +21,7 @@ typedef struct {
     uint16_t write_count;
     uint8_t *read_buf;
     uint16_t read_count;
+    bool done;
 } i2c_trans;
 
 /**
