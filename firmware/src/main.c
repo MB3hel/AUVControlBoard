@@ -79,7 +79,7 @@ int main(void){
             // Runs every 10ms
             // ---------------------------------------------------------------------------------------------------------
             wdt_feed(&WDT_0);                           // Feed watchdog every 10ms
-            bno055_read();                              // Attempt a read every 10ms
+            bno055_10ms();                              // Inform driver that 10ms have elapsed
             // ---------------------------------------------------------------------------------------------------------
         }else if(FLAG_CHECK(flags_main, FLAG_MAIN_100MS)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_100MS);
@@ -125,7 +125,7 @@ int main(void){
             // Runs when i2c0 completes a transaction
             // ---------------------------------------------------------------------------------------------------------
             // Have any sensor that uses i2c0 check if it's transaction is complete
-            bno055_process();
+            bno055_checki2c();
             // ---------------------------------------------------------------------------------------------------------
         }else{
             // Enter sleep mode because nothing to do right now (no flags set)

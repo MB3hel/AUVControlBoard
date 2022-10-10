@@ -203,10 +203,17 @@ static i2c_trans curr_trans;
 static uint8_t write_buf[16];
 static uint8_t read_buf[16];
 
+// Delay counter
+static uint32_t delay = 0;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+static void bno055_state_machine(bool i2c_done, bool delay_done){
+    // TODO: Implement state machine
+}
 
 bool bno055_init(void){
     // Setup curr_trans
@@ -242,14 +249,26 @@ bool bno055_init(void){
     return true;
 }
 
-void bno055_process(void){
+void bno055_checki2c(void){
     // The current transaction is still in progress, so do nothing
     if(curr_trans.status == I2C_STATUS_BUSY)
         return;
-
-    // TODO: Implement state machine
+    
+    // Handle state transitions due to i2c finishing
+    bno055_state_machine(true, false);
 }
 
-void bno055_read(void){
-    // TODO: Start a reading if in the IDLE state
+void bno055_10ms(void){
+    // No delay in progress
+    if(delay == 0)
+        return;
+
+    // Decrement delay counter by 10 (don't rollover past 0)
+    if(delay >= 10)
+        delay -= 10;
+    else
+        delay = 0;
+    
+    // Handle state transitions due to delay finishing
+    bno055_state_machine(false, true);
 }

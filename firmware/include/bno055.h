@@ -28,9 +28,9 @@ bool bno055_init(void);
  * BNO055 state machine. Starts by configuring the sensor (default settings)
  * Then enters an idle state until a reading is triggered using bno055_read
  */
-void bno055_process(void);
+void bno055_checki2c(void);
 
 /**
- * Start a read if in the IDLE state
+ * Handle 10ms elapsed (used for non-blocking delays)
  */
-void bno055_read(void);
+void bno055_10ms(void);
