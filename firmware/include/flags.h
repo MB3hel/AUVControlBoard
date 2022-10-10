@@ -22,13 +22,14 @@
 
 
 // Flags in flags_main field
-#define FLAG_MAIN_10MS              0b00000001      // 10ms elapsed
-#define FLAG_MAIN_100MS             0b00000010      // 100ms elapsed
-#define FLAG_MAIN_1000MS            0b00000100      // 1000ms elapsed
-#define FLAG_MAIN_PCCOMM_PROC       0b00001000      // pccomm needs process
-#define FLAG_MAIN_PCCOMM_MSG        0b00010000      // pccomm has a message
-#define FLAG_MAIN_I2C0_PROC         0b00100000      // i2c0 needs process
-#define FLAG_MAIN_I2C0_DONE         0b01000000      // i2c0 transaction done
+#define FLAG_MAIN_10MS              0b0000000000000001      // 10ms elapsed
+#define FLAG_MAIN_100MS             0b0000000000000010      // 100ms elapsed
+#define FLAG_MAIN_1000MS            0b0000000000000100      // 1000ms elapsed
+#define FLAG_MAIN_PCCOMM_PROC       0b0000000000001000      // pccomm needs process
+#define FLAG_MAIN_PCCOMM_MSG        0b0000000000010000      // pccomm has a message
+#define FLAG_MAIN_I2C0_PROC         0b0000000000100000      // i2c0 needs process
+#define FLAG_MAIN_I2C0_DONE         0b0000000001000000      // i2c0 transaction done
+#define FLAG_MAIN_BNO055_DATA       0b0000000010000000      // bno055 has new data
 
 // Defined in main.c
-extern uint8_t flags_main;
+extern uint16_t flags_main;

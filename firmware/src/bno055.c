@@ -235,6 +235,9 @@ static bool reconfig = false;
 // Current axis config
 static bno055_axis_config axis_config;
 
+// Current reading data
+static bno055_data data;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
@@ -589,4 +592,8 @@ void bno055_reconfig(bno055_axis_config new_axis_config){
     axis_config = new_axis_config;
     reconfig = true;
     bno055_state_machine(false, false, false);
+}
+
+bno055_data bno055_get(void){
+    return data;
 }

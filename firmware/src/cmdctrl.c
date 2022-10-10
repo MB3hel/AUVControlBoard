@@ -143,3 +143,7 @@ void cmdctrl_motors_killed(void){
 uint8_t cmdctrl_get_mode(void){
     return cmdctrl_mode;
 }
+
+void cmdctrl_send_bno055(bno055_data data){
+    // TODO: Implement this
+}
