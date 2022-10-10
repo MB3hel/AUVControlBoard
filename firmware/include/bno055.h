@@ -10,6 +10,32 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Macros
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Axis config values
+#define BNO055_AXIS_X                           0b00        // Remap to b x-axis
+#define BNO055_AXIS_Y                           0b01        // Remap to be y-axis
+#define BNO055_AXIS_Z                           0b10        // Remap to be z-axis
+#define BNO055_AXIS_POS                         0b0         // Positive axis sign
+#define BNO055_AXIS_NEG                         0b1         // Negative axis sign
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Typedefs
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+typedef struct{
+    // Native BNO055 axes
+    // Set to desired axis
+    // Eg to swap X and Z axes set x = BNO055_AXIS_Z and z = BNO055_AXIS_X
+    uint8_t x, y, z;
+
+    // Axis signs
+    uint8_t sx, sy, sz;
+} bno055_axis_config;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -39,4 +65,4 @@ void bno055_10ms(void);
  * Trigger a reconfigure
  * TODO: Add axis remap and sign info as arguments
  */
-void bno055_reconfig(void);
+void bno055_reconfig(bno055_axis_config new_axis_config);

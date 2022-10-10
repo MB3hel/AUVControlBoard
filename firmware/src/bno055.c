@@ -209,6 +209,7 @@
 #define STATE_READ_GYRO                     13          // Read gyro data (raw)
 #define STATE_READ_ACCEL                    14          // Read accel data (raw)
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -232,6 +233,9 @@ static uint8_t curr_state;
 
 // Reconfig flag
 static bool reconfig = false;
+
+// Current axis config
+static bno055_axis_config axis_config;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -514,6 +518,14 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
 }
 
 bool bno055_init(void){
+    // Initial axis config
+    axis_config.x = BNO055_AXIS_X;
+    axis_config.y = BNO055_AXIS_Y;
+    axis_config.z = BNO055_AXIS_Z;
+    axis_config.sx = BNO055_AXIS_POS;
+    axis_config.sy = BNO055_AXIS_POS;
+    axis_config.sz = BNO055_AXIS_POS;
+
     // Setup curr_trans
     curr_trans.address = BNO055_ADDR;
     curr_trans.read_buf = read_buf;
@@ -583,8 +595,8 @@ void bno055_10ms(void){
     }
 }
 
-void bno055_reconfig(void){
-    // TODO: Store requested axis config info
+void bno055_reconfig(bno055_axis_config new_axis_config){
+    axis_config = new_axis_config;
     reconfig = true;
     bno055_state_machine(false, false, false);
 }
