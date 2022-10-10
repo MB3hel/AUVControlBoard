@@ -64,13 +64,17 @@ bool bno055_init(void);
 void bno055_checki2c(void);
 
 /**
- * Handle 10ms elapsed (used for non-blocking delays)
+ * Call when delay done
  */
-void bno055_10ms(void);
+void bno055_delay_done(void);
+
+/**
+ * Call when idle done
+ */
+void bno055_idle_done(void);
 
 /**
  * Trigger a reconfigure
- * TODO: Add axis remap and sign info as arguments
  */
 void bno055_reconfig(bno055_axis_config new_axis_config);
 

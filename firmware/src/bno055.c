@@ -2,6 +2,7 @@
 #include <bno055.h>
 #include <i2c0.h>
 #include <stdint.h>
+#include <timers.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -207,6 +208,9 @@
 #define STATE_READ_GRAV                     11          // Read gravity vector
 #define STATE_READ_QUAT                     12          // Read orientation quaternion
 
+// Operating modes
+#define OPMODE_CFG                          0b0000
+#define OPMODE_IMU                          0b1000
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Globals
@@ -253,6 +257,11 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
     *                       │i2c_done
     *                       │
     *                ┌──────▼──────┐
+    *                │    DELAY    │ (30ms)
+    *                └──────┬──────┘
+    *                       │delay_done
+    *                       │
+    *                ┌──────▼──────┐
     *                │   CFG_RST   │
     *                └──────┬──────┘
     *                       │i2c_done
@@ -268,6 +277,11 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
     *         i2c_done,valid│
     *                       │
     *                ┌──────▼──────┐
+    *                │    DELAY    │ (50ms)
+    *                └──────┬──────┘
+    *                       │delay_done
+    *                       │
+    *                ┌──────▼──────┐
     *                │   CFG_PWR   │
     *                └──────┬──────┘
     *                       │i2c_done
@@ -278,7 +292,7 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
     *                       │delay_done
     *                       │
     *                ┌──────▼──────┐
-    *                │  CFG_PAGE   │ 
+    *                │  CFG_PAGE   │
     *                └──────┬──────┘
     *                       │i2c_done
     *                       │
@@ -341,7 +355,7 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
     *                       │i2c_done                             │
     *                       │                                     │
     *                ┌──────▼──────┐                              │
-    *                │    DELAY    │ (20ms)                       │
+    *                │    DELAY    │ (30ms)                       │
     *                └──────┬──────┘                              │
     *                       │                                     │
     *                       └─────────────────────────────────────┘
@@ -369,7 +383,9 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
         break;
     case STATE_CFG_START:
         if(i2c_done){
-            next_state = STATE_CFG_RST;
+            next_state = STATE_DELAY;
+            delay = 30;
+            delay_next_state = STATE_CFG_RST;
         }
         break;
     case STATE_CFG_RST:
@@ -389,7 +405,9 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
             bool valid = curr_trans.read_buf[0] == BNO055_ID;
             valid = valid && (curr_trans.status == I2C_STATUS_SUCCESS);
             if(valid){
-                next_state = STATE_CFG_PWR;
+                next_state = STATE_DELAY;
+                delay = 50;
+                delay_next_state = STATE_CFG_PWR;
             }else{
                 next_state = STATE_CFG_ID;
             }
@@ -455,7 +473,7 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
     case STATE_RECONFIG:
         if(i2c_done){
             next_state = STATE_DELAY;
-            delay = 20;
+            delay = 30;
             delay_next_state = STATE_CFG_AXRMP;
         }
         break;
@@ -465,22 +483,47 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
     if(next_state != STATE_NONE){
         switch(next_state){
         case STATE_CFG_START:
-            // TODO: Set to CFG mode (i2c write)
+            // Set to CFG mode
+            curr_trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
+            curr_trans.write_buf[1] = OPMODE_CFG;
+            curr_trans.write_count = 2;
+            curr_trans.read_count = 0;
+            i2c0_perform(&curr_trans);
             break;
         case STATE_CFG_RST:
-            // TODO: Reset IMU (i2c write)
+            // Reset IMU
+            curr_trans.write_buf[0] = BNO055_SYS_TRIGGER_ADDR;
+            curr_trans.write_buf[1] = 0x20;
+            curr_trans.write_count = 2;
+            curr_trans.read_count = 0;
+            i2c0_perform(&curr_trans);
             break;
         case STATE_DELAY:
-            // No actions required when transitioning to this state
+            // Start delay
+            timers_bbo055_delay(delay);
             break;
         case STATE_CFG_ID:
-            // TODO: Verify device ID to determine when reset done (i2c read)
+            // Verify device ID to determine when reset done
+            curr_trans.write_buf[0] = BNO055_CHIP_ID_ADDR;
+            curr_trans.write_count = 1;
+            curr_trans.read_count = 1;
+            i2c0_perform(&curr_trans);
             break;
         case STATE_CFG_PWR:
-            // TODO: Set power mode (i2c write)
+            // Set power mode
+            curr_trans.write_buf[0] = BNO055_PWR_MODE_ADDR;
+            curr_trans.write_buf[1] = 0x00; // Normal power mode
+            curr_trans.write_count = 2;
+            curr_trans.read_count = 0;
+            i2c0_perform(&curr_trans);
             break;
         case STATE_CFG_PAGE:
-            // TODO: Set page reg (i2c write)
+            // Set page reg
+            curr_trans.write_buf[0] = BNO055_PAGE_ID_ADDR;
+            curr_trans.write_buf[1] = 0x00;
+            curr_trans.write_count = 2;
+            curr_trans.read_count = 0;
+            i2c0_perform(&curr_trans);
             break;
         case STATE_CFG_AXRMP:
             // TODO: Set axis remap reg (i2c write)
@@ -498,7 +541,8 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
             // TODO: Read quaternion orientation (i2c read)
             break;
         case STATE_IDLE:
-            // No actions required when transitioning to this state
+            // Start idle time
+            timers_bbo055_idle(idle);
             break;
         case STATE_RECONFIG:
             // TODO: Set to CFG mode (i2c write)
@@ -562,30 +606,12 @@ void bno055_checki2c(void){
     bno055_state_machine(true, false, false);
 }
 
-void bno055_10ms(void){
-    // Handle delay counter
-    if(delay != 0){
-        // Decrement delay counter by 10 (don't rollover past 0)
-        if(delay >= 10)
-            delay -= 10;
-        else
-            delay = 0;
-        
-        // Handle state transitions due to delay finishing
-        bno055_state_machine(false, true, false);
-    }
+void bno055_delay_done(void){
+    bno055_state_machine(false, true, false);
+}
 
-    // Handle idle counter
-    if(idle != 0){
-        // Decrement idle coutner by 10 (don't rollover past 0)
-        if(idle >= 10)
-            idle -= 10;
-        else
-            idle = 0;
-        
-        // Handle state transitions due to idle finishing
-        bno055_state_machine(false, false, true);
-    }
+void bno055_idle_done(void){
+    bno055_state_machine(false, false, true);
 }
 
 void bno055_reconfig(bno055_axis_config new_axis_config){

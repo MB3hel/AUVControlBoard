@@ -30,6 +30,8 @@
 #define FLAG_MAIN_I2C0_PROC         0b0000000000100000      // i2c0 needs process
 #define FLAG_MAIN_I2C0_DONE         0b0000000001000000      // i2c0 transaction done
 #define FLAG_MAIN_BNO055_DATA       0b0000000010000000      // bno055 has new data
+#define FLAG_MAIN_BNO055_DELAY      0b0000000100000000      // bno055 delay completed
+#define FLAG_MAIN_BNO055_IDLE       0b0000001000000000      // bno055 idle completed
 
 // Defined in main.c
 extern uint16_t flags_main;
