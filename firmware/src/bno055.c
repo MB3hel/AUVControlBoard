@@ -525,13 +525,30 @@ static void bno055_state_machine(bool i2c_done, bool delay_done){
             i2c0_perform(&curr_trans);
             break;
         case STATE_CFG_AXRMP:
-            // TODO: Set axis remap reg (i2c write)
+            // Set axis remap reg
+            curr_trans.write_buf[0] = BNO055_AXIS_MAP_CONFIG_ADDR;
+            curr_trans.write_buf[1] = axis_config.x | (axis_config.y << 2) | (axis_config.z << 4);
+            curr_trans.write_count = 2;
+            curr_trans.read_count = 0;
+            i2c0_perform(&curr_trans);
             break;
         case STATE_CFG_AXSGN:
-            // TODO: Set axis sign reg (i2c write)
+            // Set axis sign reg
+            curr_trans.write_buf[0] = BNO055_AXIS_MAP_CONFIG_ADDR;
+            curr_trans.write_buf[1] = axis_config.sx | (axis_config.sy << 1) | (axis_config.sz << 2);
+            curr_trans.write_count = 2;
+            curr_trans.read_count = 0;
+            i2c0_perform(&curr_trans);
+            break;
+        case STATE_CFG_UNRST:
             break;
         case STATE_CFG_MODE:
-            // TODO: Set in IMU mode (i2c write)
+            // Set in IMU mode
+            curr_trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
+            curr_trans.write_buf[1] = OPMODE_IMU;
+            curr_trans.write_count = 2;
+            curr_trans.read_count = 0;
+            i2c0_perform(&curr_trans);
             break;
         case STATE_READ_GRAV:
             // TODO: Read gravity vector (i2c read)
