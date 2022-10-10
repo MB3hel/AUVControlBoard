@@ -1,6 +1,7 @@
 
 #include <bno055.h>
 #include <i2c0.h>
+#include <stdint.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -210,8 +211,8 @@ static uint8_t read_buf[16];
 bool bno055_init(void){
     // Setup curr_trans
     curr_trans.address = BNO055_ADDR;
-    curr_trans.read_buf = &read_buf;
-    curr_trans.write_buf = &write_buf;
+    curr_trans.read_buf = read_buf;
+    curr_trans.write_buf = write_buf;
 
     // Attempt an empty transaction to verify the device exists
     // Block until transaction finishes
@@ -233,7 +234,22 @@ bool bno055_init(void){
     if(curr_trans.read_buf[0] != BNO055_ID)
         return false;
 
+    // Start the state machine now
+    bno055_process();
+
     // Chip "initialized"
     // There is still asynchronous configuration to be done by the state machine
     return true;
+}
+
+void bno055_process(void){
+    // The current transaction is still in progress, so do nothing
+    if(curr_trans.status == I2C_STATUS_BUSY)
+        return;
+
+    // TODO: Implement state machine
+}
+
+void bno055_read(void){
+    // TODO: Start a reading if in the IDLE state
 }

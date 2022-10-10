@@ -15,6 +15,7 @@
 #include <flags.h>
 #include <i2c0.h>
 #include <timers.h>
+#include <bno055.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -48,7 +49,7 @@ int main(void){
     conversions_init();                             // Initialize conversions helper
     cmdctrl_init();                                 // Initialize cmd & ctrl system
     i2c0_init();                                    // Initialize i2c0
-    // TODO: Initialize I2C sensorss
+    bno055_init();                                  // Initialize IMU
     timers_init();                                  // Initialize timers (including WDT)
 
 
@@ -78,6 +79,7 @@ int main(void){
             // Runs every 10ms
             // ---------------------------------------------------------------------------------------------------------
             wdt_feed(&WDT_0);                           // Feed watchdog every 10ms
+            bno055_read();                              // Attempt a read every 10ms
             // ---------------------------------------------------------------------------------------------------------
         }else if(FLAG_CHECK(flags_main, FLAG_MAIN_100MS)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_100MS);
@@ -122,7 +124,8 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
             // Runs when i2c0 completes a transaction
             // ---------------------------------------------------------------------------------------------------------
-            // TODO: Have any sensor that uses i2c0 check if it's transaction is complete
+            // Have any sensor that uses i2c0 check if it's transaction is complete
+            bno055_process();
             // ---------------------------------------------------------------------------------------------------------
         }else{
             // Enter sleep mode because nothing to do right now (no flags set)
