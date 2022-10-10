@@ -394,6 +394,7 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
     case STATE_CFG_ID:
         if(i2c_done){
             bool valid = curr_trans.read_buf[0] == BNO055_ID;
+            valid = valid && (curr_trans.status == I2C_STATUS_SUCCESS);
             if(valid){
                 next_state = STATE_CFG_PWR;
             }else{
@@ -481,34 +482,49 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
     if(next_state != STATE_NONE){
         switch(next_state){
         case STATE_CFG_START:
+            // TODO: Set to CFG mode (i2c write)
             break;
         case STATE_CFG_RST:
+            // TODO: Reset IMU (i2c write)
             break;
         case STATE_DELAY:
+            // No actions required when transitioning to this state
             break;
         case STATE_CFG_ID:
+            // TODO: Verify device ID to determine when reset done (i2c read)
             break;
         case STATE_CFG_PWR:
+            // TODO: Set power mode (i2c write)
             break;
         case STATE_CFG_PAGE:
+            // TODO: Set page reg (i2c write)
             break;
         case STATE_CFG_AXRMP:
+            // TODO: Set axis remap reg (i2c write)
             break;
         case STATE_CFG_AXSGN:
+            // TODO: Set axis sign reg (i2c write)
             break;
         case STATE_CFG_MODE:
+            // TODO: Set in IMU mode (i2c write)
             break;
         case STATE_READ_GRAV:
+            // TODO: Read gravity vector (i2c read)
             break;
         case STATE_READ_QUAT:
+            // TODO: Read quaternion orientation (i2c read)
             break;
         case STATE_READ_GYRO:
+            // TODO: Read raw gyro data (i2c read)
             break;
         case STATE_READ_ACCEL:
+            // TODO: Read raw accel data (i2c read)
             break;
         case STATE_IDLE:
+            // No actions required when transitioning to this state
             break;
         case STATE_RECONFIG:
+            // TODO: Set to CFG mode (i2c write)
             break;
         }
 
