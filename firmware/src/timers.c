@@ -12,7 +12,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Timer tasks
-static struct timer_task task_10ms, task_100ms, task_1000ms, task_bno055_delay, task_bno055_idle;
+static struct timer_task task_10ms, task_100ms, task_1000ms, task_bno055_delay;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -28,8 +28,6 @@ static void cb_timing(const struct timer_task *const timer_task){
         FLAG_SET(flags_main, FLAG_MAIN_1000MS);
     }else if(timer_task == &task_bno055_delay){
         FLAG_SET(flags_main, FLAG_MAIN_BNO055_DELAY);
-    }else if(timer_task == &task_bno055_idle){
-        FLAG_SET(flags_main, FLAG_MAIN_BNO055_IDLE);
     }
 }
 
@@ -71,11 +69,4 @@ void timers_bbo055_delay(uint32_t delay){
     task_bno055_delay.interval = delay;
     task_bno055_delay.mode = TIMER_TASK_ONE_SHOT;
     timer_add_task(&TIMER_0, &task_bno055_delay);
-}
-
-void timers_bbo055_idle(uint32_t delay){
-    task_bno055_idle.cb = cb_timing;
-    task_bno055_idle.interval = delay;
-    task_bno055_idle.mode = TIMER_TASK_ONE_SHOT;
-    timer_add_task(&TIMER_0, &task_bno055_idle);
 }

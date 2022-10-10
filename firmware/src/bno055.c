@@ -227,9 +227,6 @@ static uint8_t read_buf[16];
 static uint32_t delay = 0;
 static uint8_t delay_next_state;
 
-// Idle counter
-static uint32_t idle = 0;
-
 // Current state
 static uint8_t curr_state;
 
@@ -247,7 +244,7 @@ static bno055_data data;
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done){
+static void bno055_state_machine(bool i2c_done, bool delay_done){
     /*
     *                       │init
     *                       │
@@ -460,7 +457,7 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
                 reconfig = false;
             }else{
                 next_state = STATE_IDLE;
-                idle = 10;
+                delay = 10;
             }
         }
         break;
@@ -468,6 +465,8 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
         if(reconfig){
             next_state = STATE_RECONFIG;
             reconfig = false;
+        }else if(delay_done){
+            next_state = STATE_READ_GRAV;
         }
         break;
     case STATE_RECONFIG:
@@ -542,7 +541,7 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
             break;
         case STATE_IDLE:
             // Start idle time
-            timers_bbo055_idle(idle);
+            timers_bbo055_delay(delay);
             break;
         case STATE_RECONFIG:
             // TODO: Set to CFG mode (i2c write)
@@ -590,7 +589,7 @@ bool bno055_init(void){
 
     // Move to first state
     curr_state = STATE_NONE;
-    bno055_state_machine(false, false, false);
+    bno055_state_machine(false, false);
 
     // Chip "initialized"
     // There is still asynchronous configuration to be done by the state machine
@@ -603,21 +602,17 @@ void bno055_checki2c(void){
         return;
     
     // Handle state transitions due to i2c finishing
-    bno055_state_machine(true, false, false);
+    bno055_state_machine(true, false);
 }
 
 void bno055_delay_done(void){
-    bno055_state_machine(false, true, false);
-}
-
-void bno055_idle_done(void){
-    bno055_state_machine(false, false, true);
+    bno055_state_machine(false, true);
 }
 
 void bno055_reconfig(bno055_axis_config new_axis_config){
     axis_config = new_axis_config;
     reconfig = true;
-    bno055_state_machine(false, false, false);
+    bno055_state_machine(false, false);
 }
 
 bno055_data bno055_get(void){
