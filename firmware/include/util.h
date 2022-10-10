@@ -12,6 +12,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+// I2C transaction status codes
+#define I2C_STATUS_SUCCESS          0           // Transaction finished successfully
+#define I2C_STATUS_ERROR            1           // Transaction finished unsuccessfully
+#define I2C_STATUS_BUSY             2           // Transaction in progress
+
 /**
  * I2C transaction structure that can be used by multiple i2c bus implementations
  */
@@ -21,7 +26,7 @@ typedef struct {
     uint16_t write_count;
     uint8_t *read_buf;
     uint16_t read_count;
-    bool done;
+    uint8_t status;
 } i2c_trans;
 
 /**
