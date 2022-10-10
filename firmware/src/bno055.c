@@ -206,8 +206,6 @@
 #define STATE_RECONFIG                      10          // Back into config mode (reconfigure axes)
 #define STATE_READ_GRAV                     11          // Read gravity vector
 #define STATE_READ_QUAT                     12          // Read orientation quaternion
-#define STATE_READ_GYRO                     13          // Read gyro data (raw)
-#define STATE_READ_ACCEL                    14          // Read accel data (raw)
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -257,7 +255,7 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
     *                       │i2c_done
     *                       │
     *                ┌──────▼──────┐
-    *                │    DELAY    │   (30ms)
+    *                │    DELAY    │ (30ms)
     *                └──────┬──────┘
     *                       │delay_done
     *                       │
@@ -272,17 +270,17 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
     *                       │i2c_done
     *                       │
     *                ┌──────▼──────┐
-    *                │    DELAY    │   (10ms)
+    *                │    DELAY    │ (10ms)
     *                └──────┬──────┘
     *                       │delay_done
     *                       │
     *                ┌──────▼──────┐
-    *                │  CFG_PAGE   │
+    *                │  CFG_PAGE   │ 
     *                └──────┬──────┘
     *                       │i2c_done
     *                       │
     *                ┌──────▼──────┐
-    *                │    DELAY    │   (10ms)
+    *                │    DELAY    │ (10ms)
     *                └──────┬──────┘
     *                       │delay_done
     *                       │
@@ -292,7 +290,7 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
     *                       │i2c_done                             │
     *                       │                                     │
     *                ┌──────▼──────┐                              │
-    *                │    DELAY    │   (10ms)                     │
+    *                │    DELAY    │ (10ms)                       │
     *                └──────┬──────┘                              │
     *                       │delay_done                           │
     *                       │                                     │
@@ -302,7 +300,7 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
     *                       │i2c_done                             │
     *                       │                                     │
     *                ┌──────▼──────┐                              │
-    *                │    DELAY    │   (10ms)                     │
+    *                │    DELAY    │ (10ms)                       │
     *                └──────┬──────┘                              │
     *                       │delay_done                           │
     *                       │                                     │
@@ -312,7 +310,7 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
     *                       │i2c_done                             │
     *                       │                                     │
     *                ┌──────▼──────┐                              │
-    *                │    DELAY    │   (20ms)                     │
+    *                │    DELAY    │ (20ms)                       │
     *                └──────┬──────┘                              │
     *                       │delay_done                           │
     *                       │                                     │
@@ -326,18 +324,10 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
     *           │    └──────┬──────┘                              │
     *           │           │i2c_done                             │
     *           │           │                                     │
-    *           │    ┌──────▼──────┐                              │
-    *           │    │  READ_GYRO  │                              │
-    *  idle_done│    └──────┬──────┘                              │
-    *           │           │i2c_done                             │
     *           │           │                                     │
-    *           │    ┌──────▼──────┐                              │
-    *           │    │ READ_ACCEL  │                              │
-    *           │    └──────┬──────┘                              │
-    *           │           │i2c_done                             │
     *           │           │                                     │
-    *           │    ┌──────▼──────┐                              │
-    *           │    │    IDLE     │   (10ms)                     │
+    * delay_done│    ┌──────▼──────┐                              │
+    *           │    │    IDLE     │ (10ms)                       │
     *           │    └──┬────────┬─┘                              │
     *           │       │        │reconfig                        │
     *           └───────┘        │                                │
@@ -348,7 +338,7 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
     *                       │i2c_done                             │
     *                       │                                     │
     *                ┌──────▼──────┐                              │
-    *                │    DELAY    │   (20ms)                     │
+    *                │    DELAY    │ (20ms)                       │
     *                └──────┬──────┘                              │
     *                       │                                     │
     *                       └─────────────────────────────────────┘
@@ -444,16 +434,6 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
         break;
     case STATE_READ_QUAT:
         if(i2c_done){
-            next_state = STATE_READ_GYRO;
-        }
-        break;
-    case STATE_READ_GYRO:
-        if(i2c_done){
-            next_state = STATE_READ_ACCEL;
-        }
-        break;
-    case STATE_READ_ACCEL:
-        if(i2c_done){
             if(reconfig){
                 next_state = STATE_RECONFIG;
                 reconfig = false;
@@ -513,12 +493,6 @@ static void bno055_state_machine(bool i2c_done, bool delay_done, bool idle_done)
             break;
         case STATE_READ_QUAT:
             // TODO: Read quaternion orientation (i2c read)
-            break;
-        case STATE_READ_GYRO:
-            // TODO: Read raw gyro data (i2c read)
-            break;
-        case STATE_READ_ACCEL:
-            // TODO: Read raw accel data (i2c read)
             break;
         case STATE_IDLE:
             // No actions required when transitioning to this state

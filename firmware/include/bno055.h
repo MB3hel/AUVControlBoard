@@ -37,6 +37,13 @@ typedef struct{
     uint8_t sx, sy, sz;
 } bno055_axis_config;
 
+typedef struct{
+    // Gravity vector
+    float grav_x, grav_y, grav_z;
+
+    // Quaternion orientation
+    float quat_w, quat_x, quat_y, quat_z;
+} bno055_data;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
@@ -66,3 +73,10 @@ void bno055_10ms(void);
  * TODO: Add axis remap and sign info as arguments
  */
 void bno055_reconfig(bno055_axis_config new_axis_config);
+
+/**
+ * Get current data from bno055
+ * 
+ * @return bno055_data 
+ */
+bno055_data bno055_get(void);
