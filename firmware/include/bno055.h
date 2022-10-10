@@ -35,4 +35,8 @@ void bno055_checki2c(void);
  */
 void bno055_10ms(void);
 
-// TODO: Implement bno055_reconfig()
+/**
+ * Trigger a reconfigure
+ * TODO: Add axis remap and sign info as arguments
+ */
+void bno055_reconfig(void);
