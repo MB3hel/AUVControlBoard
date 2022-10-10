@@ -100,32 +100,15 @@ void i2c0_process(void){
         // Switching to write state once no longer idle
         // ridx points to current transaction
         // Start the current transaction's write phase
-        // If no write phase, move to read phase immediately
-        if(trans_queue[trans_queue_ridx]->write_count > 0){
-            // Start the actual write
-            // Callback transitions to read state when write finishes
-            io_write(io, trans_queue[trans_queue_ridx]->write_buf, trans_queue[trans_queue_ridx]->write_count);
-        }else{
-            // Same actions as would be take if write phase had completed
-            next_state = STATE_READ;
-            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-        }
+        // Callback transitions to read state when write finishes
+        io_write(io, trans_queue[trans_queue_ridx]->write_buf, trans_queue[trans_queue_ridx]->write_count);
         break;
     case STATE_READ:
         // Switching to read state after write finished
         // ridx points to current transaction
         // Start the current transaction's read phase
-        // If no read phase, move to idle phase immediately
-        if(trans_queue[trans_queue_ridx]->read_count > 0){
-            // Start the actual read
-            // Callback transitions to idle state when read finishes
-            io_read(io, trans_queue[trans_queue_ridx]->read_buf, trans_queue[trans_queue_ridx]->read_count);
-        }else{
-            // Same actions as would be take if read phase had completed
-            trans_queue[trans_queue_ridx]->status = I2C_STATUS_SUCCESS;
-            next_state = STATE_IDLE;
-            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-        }
+        // Callback transitions to idle state when read finishes
+        io_read(io, trans_queue[trans_queue_ridx]->read_buf, trans_queue[trans_queue_ridx]->read_count);
         break;
     case STATE_IDLE:
         // Switching to idle state after read finished
