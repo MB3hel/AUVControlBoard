@@ -235,6 +235,119 @@ static bool reconfig = false;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 static void bno055_state_machine(bool i2c_done, bool delay_done){
+    /* State Machine Diagram (generated using asciiflow.com)
+     *
+     *                                                                            trigger/action
+     *                                     │init/i2c_perform()                    ──────────────►
+     *                                     │
+     *                              ┌──────▼──────┐
+     *                              │  CFG_START  │                               i2c_done = when last i2c_perform finishes
+     *                              └──────┬──────┘
+     *                                     │i2c_done/i2c_perform()                delay_done = when delay finishes
+     *                                     │
+     *                              ┌──────▼──────┐                               delay(x) sets up a delay of 10ms
+     *                              │   CFG_RST   │
+     *                              └──────┬──────┘                               i2c_perform() performs an i2c transaction
+     *                                     │i2c_done/delay(30)
+     *                                     │                                      reconfig is a flag indicating when a reconfig is needed
+     *                              ┌──────▼──────┐
+     *                              │    DELAY    │                               parse_data() stores read data into variables
+     *                              └──────┬──────┘
+     *                                     │delay_done/i2c_perform()
+     *                                     │
+     *                              ┌──────▼──────┐◄───────┐
+     *                              │   CFG_ID    │        │i2c_done,!valid/i2c_perform()
+     *                              └──────┬──────┴────────┘
+     *         i2c_done,valid/i2c_perform()│
+     *                                     │
+     *                              ┌──────▼──────┐
+     *                              │   CFG_PWR   │
+     *                              └──────┬──────┘
+     *                                     │i2c_done/delay(10)
+     *                                     │
+     *                              ┌──────▼──────┐
+     *                              │    DELAY    │
+     *                              └──────┬──────┘
+     *                                     │delay_done/i2c_perform()
+     *                                     │
+     *                              ┌──────▼──────┐
+     *                              │  CFG_PAGE   │
+     *                              └──────┬──────┘
+     *                                     │i2c_done/delay(10)
+     *                                     │
+     *                              ┌──────▼──────┐
+     *                              │    DELAY    │
+     *                              └──────┬──────┘
+     *                                     │delay_done/i2c_perform()
+     *                                     │
+     *                              ┌──────▼──────┐
+     *                              │  CFG_AXRMP  ◄──────────────────────────────┐
+     *                              └──────┬──────┘                              │
+     *                                     │i2c_done/delay(10)                   │
+     *                                     │                                     │
+     *                              ┌──────▼──────┐                              │
+     *                              │    DELAY    │                              │
+     *                              └──────┬──────┘                              │
+     *                                     │delay_done/i2c_perform()             │
+     *                                     │                                     │
+     *                              ┌──────▼──────┐                              │
+     *                              │  CFG_AXSGN  │                              │
+     *                              └──────┬──────┘                              │
+     *                                     │i2c_done/delay(10)                   │
+     *                                     │                                     │
+     *                              ┌──────▼──────┐                              │
+     *                              │    DELAY    │                              │
+     *                              └──────┬──────┘                              │
+     *                                     │delay_done/i2c_perform()             │
+     *                                     │                                     │
+     *                              ┌──────▼──────┐                              │
+     *                              │  CFG_MODE   │                              │
+     *                              └──────┬──────┘                              │
+     *                                     │i2c_done/delay(20)                   │
+     *                                     │                                     │
+     *                              ┌──────▼──────┐                              │
+     *                              │    DELAY    │                              │
+     *                              └──────┬──────┘                              │
+     *                                     │delay_done/i2c_perform()             │
+     *                                     │                                     │
+     *                              ┌──────▼──────┐                              │
+     *                         ┌───►│  READ_GRAV  │                              │
+     *                         │    └──────┬──────┘                              │
+     *                         │           │i2c_done/i2c_perform()               │
+     *                         │           │         parse_data()                │
+     *                         │    ┌──────▼──────┐                              │
+     *                         │    │  READ_QUAT  │                              │
+     *                         │    └──────┬──────┘                              │
+     *                         │           │i2c_done/i2c_perform()               │
+     *                         │           │         parse_data()                │
+     *                         │    ┌──────▼──────┐                              │
+     *                         │    │  READ_GYRO  │                              │
+     * delay_done/i2c_perform()│    └──────┬──────┘                              │
+     *                         │           │i2c_done/i2c_perform()               │
+     *                         │           │         parse_data()                │
+     *                         │    ┌──────▼──────┐                              │
+     *                         │    │ READ_ACCEL  │                              │
+     *                         │    └──────┬──────┘                              │
+     *                         │           │i2c_done/delay(10)                   │
+     *                         │           │                                     │
+     *                         │    ┌──────▼──────┐                              │
+     *                         │    │    IDLE     │                              │
+     *                         │    └──┬────────┬─┘                              │
+     *                         │       │        │reconfig/i2c_perform()          │
+     *                         └───────┘        │                                │
+     *                                          │                                │
+     *                              ┌───────────▼─┐                              │
+     *                              │  RECONFIG   │                              │
+     *                              └──────┬──────┘                              │
+     *                                     │i2c_done/delay(10)                   │
+     *                                     │                                     │
+     *                              ┌──────▼──────┐                              │
+     *                              │    DELAY    │                              │
+     *                              └──────┬──────┘                              │
+     *                                     │                                     │
+     *                                     └─────────────────────────────────────┘
+     *                                          delay_done/i2c_perform()
+     */
     // TODO: Implement state machine
 }
 
