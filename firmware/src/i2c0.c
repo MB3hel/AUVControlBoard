@@ -49,6 +49,14 @@ static void cb_tx_complete(struct i2c_m_async_desc *const i2c){
 static void cb_rx_complete(struct i2c_m_async_desc *const i2c){
     // Called when all bytes have been read from read phase
     // Now done with read phase
+    trans_queue[trans_queue_ridx]->status = I2C_STATUS_SUCCESS;
+    next_state = STATE_IDLE;
+    FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+}
+
+static void cb_err(struct i2c_m_async_desc *const i2c){
+    // Error occurred during transaction. Set status and move to idle state
+    trans_queue[trans_queue_ridx]->status = I2C_STATUS_ERROR;
     next_state = STATE_IDLE;
     FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
 }
@@ -67,6 +75,9 @@ void i2c0_init(void){
     i2c_m_async_register_callback(&I2C, 
             I2C_M_ASYNC_RX_COMPLETE, 
             (FUNC_PTR)&cb_rx_complete);                         // Register rx callback
+    i2c_m_async_register_callback(&I2C,
+            I2C_M_ASYNC_ERROR,
+            (FUNC_PTR)&cb_err);                                 // Register error callback
     
     // State initialization
     curr_state = STATE_IDLE;
@@ -111,6 +122,7 @@ void i2c0_process(void){
             io_read(io, trans_queue[trans_queue_ridx]->read_buf, trans_queue[trans_queue_ridx]->read_count);
         }else{
             // Same actions as would be take if read phase had completed
+            trans_queue[trans_queue_ridx]->status = I2C_STATUS_SUCCESS;
             next_state = STATE_IDLE;
             FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
         }
@@ -140,7 +152,7 @@ void i2c0_perform(i2c_trans *trans){
         return;
     
     // Add transaction to the queue
-    trans->done = false;
+    trans->status = I2C_STATUS_BUSY;
     trans_queue[trans_queue_widx] = trans;
     trans_queue_widx++;
     if(trans_queue_widx >= QUEUE_SIZE)
