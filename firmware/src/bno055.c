@@ -191,6 +191,22 @@
 #define BNO055_GYRO_ANY_MOTION_THRES_ADDR   (0X1E)
 #define BNO055_GYRO_ANY_MOTION_SET_ADDR     (0X1F)
 
+// States
+#define STATE_CFG_START                     0           // Set into config mode to start config
+#define STATE_CFG_RST                       1           // Reset IMU
+#define STATE_DELAY                         2           // Delay for some duration
+#define STATE_CFG_ID                        3           // Check sensor ID
+#define STATE_CFG_PWR                       4           // Configure power mode
+#define STATE_CFG_PAGE                      5           // Set PAGE_ID_ADDR
+#define STATE_CFG_AXRMP                     6           // Set axis remap
+#define STATE_CFG_AXSGN                     7           // Set axis signs
+#define STATE_CFG_MODE                      8           // Set operating mode
+#define STATE_IDLE                          9           // Idle (delay between readings)
+#define STATE_RECONFIG                      10          // Back into config mode (reconfigure axes)
+#define STATE_READ_GRAV                     11          // Read gravity vector
+#define STATE_READ_QUAT                     12          // Read orientation quaternion
+#define STATE_READ_GYRO                     13          // Read gyro data (raw)
+#define STATE_READ_ACCEL                    14          // Read accel data (raw)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Globals
@@ -205,6 +221,13 @@ static uint8_t read_buf[16];
 
 // Delay counter
 static uint32_t delay = 0;
+static uint8_t delay_next_state;
+
+// Current state
+static uint8_t state;
+
+// Reconfig flag
+static bool reconfig = false;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -241,8 +264,7 @@ bool bno055_init(void){
     if(curr_trans.read_buf[0] != BNO055_ID)
         return false;
 
-    // Start the state machine now
-    bno055_process();
+    // TODO: Move to first state
 
     // Chip "initialized"
     // There is still asynchronous configuration to be done by the state machine

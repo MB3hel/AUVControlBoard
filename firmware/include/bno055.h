@@ -34,3 +34,5 @@ void bno055_checki2c(void);
  * Handle 10ms elapsed (used for non-blocking delays)
  */
 void bno055_10ms(void);
+
+// TODO: Implement bno055_reconfig()
