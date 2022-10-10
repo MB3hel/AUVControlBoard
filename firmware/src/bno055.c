@@ -198,12 +198,42 @@
 // Current I2C transaction for this sensor
 static i2c_trans curr_trans;
 
+// Read and write buffers for this transaction
+static uint8_t write_buf[16];
+static uint8_t read_buf[16];
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool bno055_init(void){
-    // Attempt to read from the sensor to verify it exists
+    // Setup curr_trans
+    curr_trans.address = BNO055_ADDR;
+    curr_trans.read_buf = &read_buf;
+    curr_trans.write_buf = &write_buf;
+
+    // Attempt an empty transaction to verify the device exists
+    // Block until transaction finishes
+    curr_trans.write_count = 0;
+    curr_trans.read_count = 0;
+    i2c0_perform(&curr_trans);
+    while(curr_trans.status == I2C_STATUS_BUSY) delay_ms(5);
+    if(curr_trans.status == I2C_STATUS_ERROR)
+        return false;
     
+    // Read the chip ID to verify this is the correct device
+    // Block until read finishes
+    curr_trans.write_count = 0;
+    curr_trans.read_count = 1;
+    i2c0_perform(&curr_trans);
+    while(curr_trans.status == I2C_STATUS_BUSY) delay_ms(5);
+    if(curr_trans.status == I2C_STATUS_ERROR)
+        return false;
+    if(curr_trans.read_buf[0] != BNO055_ID)
+        return false;
+
+    // Chip "initialized"
+    // There is still asynchronous configuration to be done by the state machine
+    return true;
 }
