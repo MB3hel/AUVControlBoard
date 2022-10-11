@@ -31,6 +31,18 @@ uint16_t flags_main = 0;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Blink dotstar LED on sensor error
+ */
+void sensor_error(void){
+    while(1){
+        dotstar_set(255, 0, 0);
+        delay_ms(1000);
+        dotstar_set(0, 0, 0);
+        delay_ms(1000);
+    }
+}
+
+/**
  * Program entry point
  */
 int main(void){
@@ -50,7 +62,11 @@ int main(void){
     cmdctrl_init();                                 // Initialize cmd & ctrl system
     i2c0_init();                                    // Initialize i2c0
     timers_init();                                  // Initialize timers (including WDT)
-    bno055_init();                                  // Initialize IMU
+
+    // Sensor init
+    if(!bno055_init()){
+        sensor_error();
+    }
 
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
