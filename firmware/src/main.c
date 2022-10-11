@@ -49,8 +49,8 @@ int main(void){
     conversions_init();                             // Initialize conversions helper
     cmdctrl_init();                                 // Initialize cmd & ctrl system
     i2c0_init();                                    // Initialize i2c0
-    bno055_init();                                  // Initialize IMU
     timers_init();                                  // Initialize timers (including WDT)
+    bno055_init();                                  // Initialize IMU
 
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
