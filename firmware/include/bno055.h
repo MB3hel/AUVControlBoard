@@ -38,10 +38,10 @@ typedef struct{
 } bno055_axis_config;
 
 typedef struct{
-    // Gravity vector
+    // Gravity vector (m/s^2)
     float grav_x, grav_y, grav_z;
 
-    // Quaternion orientation
+    // Quaternion orientation (rad)
     float quat_w, quat_x, quat_y, quat_z;
 } bno055_data;
 

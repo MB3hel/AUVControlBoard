@@ -383,6 +383,9 @@ static void bno055_state_machine(bool i2c_done, bool delay_done){
     // Make sure this is STATE_NONE if no transition occurs
     uint8_t next_state = STATE_NONE;
 
+    // Temp use for data parse
+    int16_t tmp16;
+
     // State transitions
     switch(curr_state){
     case STATE_NONE:
@@ -583,7 +586,13 @@ static void bno055_state_machine(bool i2c_done, bool delay_done){
             break;
         case STATE_READ_QUAT:
             // Parse old data (gravity vector)
-            // TODO
+            // 1 LSB = 1/100 m/s^2
+            tmp16 = ((int16_t)curr_trans.read_buf[0]) | (((int16_t)curr_trans.read_buf[1]) << 8);
+            data.grav_x = tmp16 / 100.0f;
+            tmp16 = ((int16_t)curr_trans.read_buf[2]) | (((int16_t)curr_trans.read_buf[3]) << 8);
+            data.grav_y = tmp16 / 100.0f;
+            tmp16 = ((int16_t)curr_trans.read_buf[4]) | (((int16_t)curr_trans.read_buf[5]) << 8);
+            data.grav_z = tmp16 / 100.0f;
 
             // Read quaternion orientation
             curr_trans.write_buf[0] = BNO055_QUATERNION_DATA_W_LSB_ADDR;
@@ -593,7 +602,14 @@ static void bno055_state_machine(bool i2c_done, bool delay_done){
             break;
         case STATE_IDLE:
             // Parse old data (quaternion orientation)
-            // TODO
+            tmp16 = (((uint16_t)curr_trans.read_buf[1]) << 8) | ((uint16_t)curr_trans.read_buf[0]);
+            data.quat_w = tmp16 / 16384.0;
+            tmp16 = (((uint16_t)curr_trans.read_buf[3]) << 8) | ((uint16_t)curr_trans.read_buf[2]);
+            data.quat_x = tmp16 / 16384.0;
+            tmp16 = (((uint16_t)curr_trans.read_buf[5]) << 8) | ((uint16_t)curr_trans.read_buf[4]);
+            data.quat_y = tmp16 / 16384.0;
+            tmp16 = (((uint16_t)curr_trans.read_buf[7]) << 8) | ((uint16_t)curr_trans.read_buf[6]);
+            data.quat_z = tmp16 / 16384.0;
 
             // Start idle time
             timers_bbo055_delay(delay);
