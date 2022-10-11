@@ -542,6 +542,14 @@ static void bno055_state_machine(bool i2c_done, bool delay_done){
             curr_trans.read_count = 0;
             i2c0_perform(&curr_trans);
             break;
+        case STATE_CFG_INT:
+            // Set interrupts config reg
+            curr_trans.write_buf[0] = BNO055_SYS_TRIGGER_ADDR;
+            curr_trans.write_buf[1] = 0x00;
+            curr_trans.write_count = 2;
+            curr_trans.read_count = 0;
+            i2c0_perform(&curr_trans);
+            break;
         case STATE_CFG_AXRMP:
             // Set axis remap reg
             curr_trans.write_buf[0] = BNO055_AXIS_MAP_CONFIG_ADDR;
