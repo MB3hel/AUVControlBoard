@@ -207,6 +207,7 @@
 #define STATE_RECONFIG                      10          // Back into config mode (reconfigure axes)
 #define STATE_READ_GRAV                     11          // Read gravity vector
 #define STATE_READ_QUAT                     12          // Read orientation quaternion
+#define STATE_CFG_INT                       13          // Configure interrupts state
 
 // Operating modes
 #define OPMODE_CFG                          0b0000
@@ -297,6 +298,16 @@ static void bno055_state_machine(bool i2c_done, bool delay_done){
     *                │    DELAY    │ (10ms)
     *                └──────┬──────┘
     *                       │delay_done
+    *                       │
+    *                ┌──────▼──────┐
+    *                │   CFG_INT   │
+    *                └──────┬──────┘
+    *                       │i2c_done
+    *                       │
+    *                ┌──────▼──────┐
+    *                │    DELAY    │ (10ms)
+    *                └──────┬──────┘
+    *                       │
     *                       │
     *                ┌──────▼──────┐
     *                │  CFG_AXRMP  ◄──────────────────────────────┐
@@ -421,6 +432,13 @@ static void bno055_state_machine(bool i2c_done, bool delay_done){
         if(i2c_done){
             next_state = STATE_DELAY;
             delay = 10;
+            delay_next_state = STATE_CFG_INT;
+        }
+        break;
+    case STATE_CFG_INT:
+        if(i2c_done){
+            next_state = STATE_DELAY;
+            delay = 10;
             delay_next_state = STATE_CFG_AXRMP;
         }
         break;
@@ -539,8 +557,6 @@ static void bno055_state_machine(bool i2c_done, bool delay_done){
             curr_trans.write_count = 2;
             curr_trans.read_count = 0;
             i2c0_perform(&curr_trans);
-            break;
-        case STATE_CFG_UNRST:
             break;
         case STATE_CFG_MODE:
             // Set in IMU mode
