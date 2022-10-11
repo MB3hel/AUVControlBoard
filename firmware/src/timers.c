@@ -52,16 +52,6 @@ void timers_init(void){
 
     timer_start(&TIMER_0);                          // Start TIMER_0 (1ms timer)
     // -----------------------------------------------------------------------------------------------------------------
-
-    // -----------------------------------------------------------------------------------------------------------------
-    // WDT
-    // -----------------------------------------------------------------------------------------------------------------
-    wdt_set_timeout_period(&WDT_0, 1024, 2000);     // Configure 2 second watchdog period
-                                                    // Note: 1024Hz is CLK_WDT_OSC (not configurable on this chip)
-                                                    // Only change the second parameter (2000)
-
-	wdt_enable(&WDT_0);                             // Enable WDT
-    // -----------------------------------------------------------------------------------------------------------------
 }
 
 void timers_bbo055_delay(uint32_t delay){
@@ -69,4 +59,15 @@ void timers_bbo055_delay(uint32_t delay){
     task_bno055_delay.interval = delay;
     task_bno055_delay.mode = TIMER_TASK_ONE_SHOT;
     timer_add_task(&TIMER_0, &task_bno055_delay);
+}
+
+void timers_wdt_enable(void){
+    wdt_set_timeout_period(&WDT_0, 1024, 2000);     // Configure 2 second watchdog period
+                                                    // Note: 1024Hz is CLK_WDT_OSC (not configurable on this chip)
+                                                    // Only change the second parameter (2000)
+	wdt_enable(&WDT_0);                             // Enable WDT
+}
+
+void timers_wdt_feed(void){
+    wdt_feed(&WDT_0);
 }

@@ -21,3 +21,13 @@ void timers_init(void);
  * Set BNO055 delay flag after given delay
  */
 void timers_bbo055_delay(uint32_t delay);
+
+/**
+ * Enable watchdog timer
+ */
+void timers_wdt_enable(void);
+
+/**
+ * Feed watchdog timer
+ */
+void timers_wdt_feed(void);

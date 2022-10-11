@@ -647,8 +647,7 @@ bool bno055_init(void){
     // Block until transaction finishes
     curr_trans.write_count = 0;
     curr_trans.read_count = 0;
-    i2c0_perform(&curr_trans);
-    while(curr_trans.status == I2C_STATUS_BUSY) delay_ms(5);
+    i2c0_perform_block(&curr_trans);
     if(curr_trans.status == I2C_STATUS_ERROR)
         return false;
     
@@ -656,8 +655,7 @@ bool bno055_init(void){
     // Block until read finishes
     curr_trans.write_count = 0;
     curr_trans.read_count = 1;
-    i2c0_perform(&curr_trans);
-    while(curr_trans.status == I2C_STATUS_BUSY) delay_ms(5);
+    i2c0_perform_block(&curr_trans);
     if(curr_trans.status == I2C_STATUS_ERROR)
         return false;
     if(curr_trans.read_buf[0] != BNO055_ID)

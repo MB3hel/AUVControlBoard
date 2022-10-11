@@ -40,3 +40,7 @@ void i2c0_process(void);
  */
 void i2c0_perform(i2c_trans *trans);
 
+/**
+ * Queue a transaction and block until it finishes
+ */
+void i2c0_perform_block(i2c_trans *trans);
