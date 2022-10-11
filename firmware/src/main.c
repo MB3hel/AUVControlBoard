@@ -79,6 +79,7 @@ int main(void){
             // Runs every 10ms
             // ---------------------------------------------------------------------------------------------------------
             wdt_feed(&WDT_0);                           // Feed watchdog every 10ms
+            cmdctrl_send_bno055();                      // Send bno055 data every 10ms
             // ---------------------------------------------------------------------------------------------------------
         }else if(FLAG_CHECK(flags_main, FLAG_MAIN_100MS)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_100MS);
@@ -127,15 +128,8 @@ int main(void){
             // Have any sensor that uses i2c0 check if it's transaction is complete
             bno055_checki2c();
             // ---------------------------------------------------------------------------------------------------------
-        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_BNO055_DATA)){
-            FLAG_CLEAR(flags_main, FLAG_MAIN_BNO055_DATA);
-            // ---------------------------------------------------------------------------------------------------------
-            // Runs when bno055 has new data
-            // ---------------------------------------------------------------------------------------------------------
-            cmdctrl_send_bno055(bno055_get());
-            // ---------------------------------------------------------------------------------------------------------
         }else if(FLAG_CHECK(flags_main, FLAG_MAIN_BNO055_DELAY)){
-            FLAG_CLEAR(flags_main, FLAG_MAIN_BNO055_DATA);
+            FLAG_CLEAR(flags_main, FLAG_MAIN_BNO055_DELAY);
             // ---------------------------------------------------------------------------------------------------------
             // Runs when bno055 delay done
             // ---------------------------------------------------------------------------------------------------------

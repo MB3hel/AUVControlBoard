@@ -52,8 +52,7 @@ bool data_matches(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_t l
 bool data_startswith(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_t len_b);
 
 /**
- * Calculate 16-bit CRC (CCITT) of the given data
- * Uses hardware crc block
+ * Calculate 16-bit CRC (CCITT-FALSE) of the given data
  * Safe to call from ISRs (volatile data)
  * @param data Data to calculate crc of
  * @param len Length of data

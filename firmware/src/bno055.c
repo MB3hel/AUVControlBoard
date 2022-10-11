@@ -575,17 +575,36 @@ static void bno055_state_machine(bool i2c_done, bool delay_done){
             i2c0_perform(&curr_trans);
             break;
         case STATE_READ_GRAV:
-            // TODO: Read gravity vector (i2c read)
+            // Read gravity vector
+            curr_trans.write_buf[0] = BNO055_GRAVITY_DATA_X_LSB_ADDR;
+            curr_trans.write_count = 1;
+            curr_trans.read_count = 6;
+            i2c0_perform(&curr_trans);
             break;
         case STATE_READ_QUAT:
-            // TODO: Read quaternion orientation (i2c read)
+            // Parse old data (gravity vector)
+            // TODO
+
+            // Read quaternion orientation
+            curr_trans.write_buf[0] = BNO055_QUATERNION_DATA_W_LSB_ADDR;
+            curr_trans.write_count = 1;
+            curr_trans.read_count = 8;
+            i2c0_perform(&curr_trans);
             break;
         case STATE_IDLE:
+            // Parse old data (quaternion orientation)
+            // TODO
+
             // Start idle time
             timers_bbo055_delay(delay);
             break;
         case STATE_RECONFIG:
-            // TODO: Set to CFG mode (i2c write)
+            // Set to CFG mode
+            curr_trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
+            curr_trans.write_buf[1] = OPMODE_CFG;
+            curr_trans.write_count = 2;
+            curr_trans.read_count = 0;
+            i2c0_perform(&curr_trans);
             break;
         }
 

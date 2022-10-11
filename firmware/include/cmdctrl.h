@@ -10,7 +10,6 @@
 #pragma once
 
 #include <stdint.h>
-#include <bno055.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -48,4 +47,4 @@ uint8_t cmdctrl_get_mode(void);
 /**
  * Send IMU data from BNO055 to PC
  */
-void cmdctrl_send_bno055(bno055_data data);
+void cmdctrl_send_bno055(void);
