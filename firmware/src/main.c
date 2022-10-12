@@ -31,11 +31,23 @@ uint16_t flags_main = 0;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Hardware fault handler
+ */
+void HardFault_Handler(void){
+    // But turn LED red indicating error
+    dotstar_set(255, 0, 0);
+
+    // Block forever
+    // Don't feed watchdog so it will reset the system after 2 seconds
+    while(1);
+}
+
+/**
  * Blink dotstar LED on sensor error
  */
 void sensor_error(void){
     while(1){
-        dotstar_set(255, 0, 0);
+        dotstar_set(255, 32, 0);
         delay_ms(1000);
         dotstar_set(0, 0, 0);
         delay_ms(1000);
@@ -64,9 +76,11 @@ int main(void){
     timers_init();                                  // Initialize timers (including WDT)
 
     // Sensor init
-    if(!bno055_init()){
-        sensor_error();
-    }
+    // if(!bno055_init()){
+    //     sensor_error();
+    // }
+
+    sensor_error();
 
     // Enable WDT only after all other init is done
     timers_wdt_enable();
@@ -97,7 +111,7 @@ int main(void){
             // Runs every 10ms
             // ---------------------------------------------------------------------------------------------------------
             timers_wdt_feed();                          // Feed watchdog every 10ms
-            cmdctrl_send_bno055();                      // Send bno055 data every 10ms
+            // cmdctrl_send_bno055();                      // Send bno055 data every 10ms
             // ---------------------------------------------------------------------------------------------------------
         }else if(FLAG_CHECK(flags_main, FLAG_MAIN_100MS)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_100MS);
@@ -129,14 +143,14 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
             // Runs every 1000ms
             // ---------------------------------------------------------------------------------------------------------
-            // Nothing here
+            // Nothing here for now
             // ---------------------------------------------------------------------------------------------------------
         }else if(FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_PROC)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_PROC);
             // ---------------------------------------------------------------------------------------------------------
             // Runs when i2c0_process needs to be called by main
             // ---------------------------------------------------------------------------------------------------------
-            i2c0_process();
+            // i2c0_process();
             // ---------------------------------------------------------------------------------------------------------
         }else if(FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_DONE)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_DONE);
@@ -144,14 +158,14 @@ int main(void){
             // Runs when i2c0 completes a transaction
             // ---------------------------------------------------------------------------------------------------------
             // Have any sensor that uses i2c0 check if it's transaction is complete
-            bno055_checki2c();
+            // bno055_checki2c();
             // ---------------------------------------------------------------------------------------------------------
         }else if(FLAG_CHECK(flags_main, FLAG_MAIN_BNO055_DELAY)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_BNO055_DELAY);
             // ---------------------------------------------------------------------------------------------------------
             // Runs when bno055 delay done
             // ---------------------------------------------------------------------------------------------------------
-            bno055_delay_done();
+            // bno055_delay_done();
             // ---------------------------------------------------------------------------------------------------------
         }else{
             // Enter sleep mode because nothing to do right now (no flags set)

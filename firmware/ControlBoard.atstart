@@ -2,16 +2,16 @@ format_version: '2'
 name: ControlBoard
 versions:
   api: '1.0'
-  backend: 1.8.580
-  commit: f3d8d96e294de8dee688333bbbe8d8458a4f6b4c
+  backend: 1.9.696
+  commit: ''
   content: unknown
   content_pack_name: unknown
   format: '2'
-  frontend: 1.8.580
+  frontend: 1.9.696
   packs_version_avr8: 1.0.1463
   packs_version_qtouch: unknown
   packs_version_sam: 1.0.1726
-  version_backend: 1.8.580
+  version_backend: 1.9.696
   version_frontend: ''
 board:
   identifier: CustomBoard
@@ -1000,7 +1000,7 @@ drivers:
       i2c_master_arch_sdahold: 300-600ns hold time
       i2c_master_arch_sexttoen: false
       i2c_master_arch_trise: 215
-      i2c_master_baud_rate: 400000
+      i2c_master_baud_rate: 100000
     optional_signals: []
     variant:
       specification: SDA=0, SCL=1
@@ -1015,7 +1015,7 @@ drivers:
       domain_group:
         nodes:
         - name: Core
-          input: Generic clock generator 0
+          input: Generic clock generator 1
           external: false
           external_frequency: 0
         - name: Slow
@@ -1023,7 +1023,7 @@ drivers:
           external: false
           external_frequency: 0
         configuration:
-          core_gclk_selection: Generic clock generator 0
+          core_gclk_selection: Generic clock generator 1
           slow_gclk_selection: Generic clock generator 3
   TIMER_0:
     user_label: TIMER_0

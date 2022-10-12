@@ -44,6 +44,17 @@ Both the [control board firmware](./firmware/) and the [hardware test](./hwtest/
 
 This section describes the process of using the control board, **not** specific messages that are sent to acheive this process. The messages and how to send them are described in the "Communication Protocol" section.
 
+### LED Indicator
+
+The ItsyBitsy M4 includes an RGB LED. This LED's color is used indicate operating mode, errors, or other information during firmware execution. Note that the LED is also used by the bootloader (red then green, followed by purple when the bootloader ends).
+
+- Solid RED = Hardware fault occurred. Note that the system will reset after 2 seconds so this may appear to "blink"
+- Blinking RED-ORANGE = Sensor init failed
+- YELLOW = RAW mode
+- BLUE-PURPLE = LOCAL mode
+- ORANGE = GLOBAL mode
+- GREEN = STABILITY_ASSIST mode
+
 ### Usage Examples
 
 Python scripts demonstrating use of the control board are available in the [scripts](./scripts) folder.
