@@ -6,7 +6,6 @@
 #include <i2c0.h>
 #include <flags.h>
 #include <timers.h>
-#include <dotstar.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -47,7 +46,6 @@ static void cb_tx_complete(struct i2c_m_async_desc *const i2c){
     // Now done with write phase
     next_state = STATE_READ;
     FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-    dotstar_set(0, 255, 255);
 }
 
 static void cb_rx_complete(struct i2c_m_async_desc *const i2c){
