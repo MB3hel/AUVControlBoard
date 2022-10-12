@@ -129,6 +129,7 @@ void i2c0_process(void){
         if(trans_queue_ridx > QUEUE_SIZE)
             trans_queue_ridx = 0;
         trans_queue_count--;
+        FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
         break;
     }
 
@@ -137,7 +138,7 @@ void i2c0_process(void){
         if(trans_queue_count > 0){
             // Something else in queue
             // Transition to write state
-            next_state = STATE_IDLE;
+            next_state = STATE_WRITE;
             FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
         }
     }
