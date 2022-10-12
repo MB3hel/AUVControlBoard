@@ -12,7 +12,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <dotstar.h>
-#include <bno055.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -146,6 +145,6 @@ uint8_t cmdctrl_get_mode(void){
 }
 
 void cmdctrl_send_bno055(void){
-    bno055_data data = bno055_get();
+    // bno055_data data = bno055_get();
     // TODO: Actually send the data
 }

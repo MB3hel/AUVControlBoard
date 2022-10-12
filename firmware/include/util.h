@@ -17,17 +17,7 @@
 #define I2C_STATUS_ERROR            1           // Transaction finished unsuccessfully
 #define I2C_STATUS_BUSY             2           // Transaction in progress
 
-/**
- * I2C transaction structure that can be used by multiple i2c bus implementations
- */
-typedef struct {
-    uint8_t address;
-    uint8_t *write_buf;
-    uint16_t write_count;
-    uint8_t *read_buf;
-    uint16_t read_count;
-    uint8_t status;
-} i2c_trans;
+
 
 /**
  * Check if two byte arrays are identical
