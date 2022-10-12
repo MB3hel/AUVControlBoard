@@ -27,6 +27,8 @@
 #define FLAG_MAIN_1000MS            0b0000000000000100      // 1000ms elapsed
 #define FLAG_MAIN_PCCOMM_PROC       0b0000000000001000      // pccomm needs process
 #define FLAG_MAIN_PCCOMM_MSG        0b0000000000010000      // pccomm has a message
+#define FLAG_MAIN_I2C0_PROC         0b0000000000100000      // i2c0 needs process
+#define FLAG_MAIN_I2C0_DONE         0b0000000001000000      // i2c0 transaction done
 
 // Defined in main.c
 extern uint16_t flags_main;
