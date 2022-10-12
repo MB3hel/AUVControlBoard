@@ -642,18 +642,13 @@ bool bno055_init(void){
     curr_trans.address = BNO055_ADDR;
     curr_trans.read_buf = read_buf;
     curr_trans.write_buf = write_buf;
-
-    // Attempt an empty transaction to verify the device exists
-    // Block until transaction finishes
-    curr_trans.write_count = 0;
-    curr_trans.read_count = 0;
-    i2c0_perform_block(&curr_trans);
-    if(curr_trans.status == I2C_STATUS_ERROR)
-        return false;
     
     // Read the chip ID to verify this is the correct device
+    // If the read errors, the device is not there
+    // If the result is wrong, this is not the correct device
     // Block until read finishes
-    curr_trans.write_count = 0;
+    curr_trans.write_buf[0] = BNO055_CHIP_ID_ADDR;
+    curr_trans.write_count = 1;
     curr_trans.read_count = 1;
     i2c0_perform_block(&curr_trans);
     if(curr_trans.status == I2C_STATUS_ERROR)
