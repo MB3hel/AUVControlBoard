@@ -39,15 +39,27 @@ void cb_tx_done(struct i2c_m_async_desc *const i2c){
         state = STATE_READ;
         FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
     }
+
+    // NOTE: Not sure why this needs to be cleared in user callback
+    // But not doing so results in interrupt repeatedly occurring
+    // Looking in hal_i2c_m_async and hpl_sercom, it looks like this flag is
+    // never cleared. My guess is that this is an SAMD51 specific ASF4 bug...
+    hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, SERCOM_I2CM_INTFLAG_MB);
 }
 
 void cb_rx_done(struct i2c_m_async_desc *const i2c){
     curr_trans->status = I2C_STATUS_SUCCESS;
     state = STATE_IDLE;
     FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
+
+    // NOTE: Not sure why this needs to be cleared in user callback
+    // But not doing so results in interrupt repeatedly occurring
+    // Looking in hal_i2c_m_async and hpl_sercom, it looks like this flag is
+    // never cleared. My guess is that this is an SAMD51 specific ASF4 bug...
+    hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, SERCOM_I2CM_INTFLAG_SB);
 }
 
-void cb_error(struct i2c_m_async_desc *const i2c){
+void cb_error(struct i2c_m_async_desc *const i2c, int32_t error){
     curr_trans->status = I2C_STATUS_ERROR;
     state = STATE_IDLE;
     FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
@@ -58,7 +70,7 @@ void i2c0_init(void){
     i2c_m_async_enable(&I2C);
     i2c_m_async_register_callback(&I2C, I2C_M_ASYNC_TX_COMPLETE, (FUNC_PTR)cb_tx_done);
     i2c_m_async_register_callback(&I2C, I2C_M_ASYNC_RX_COMPLETE, (FUNC_PTR)cb_rx_done);
-    i2c_m_async_register_callback(&I2C, I2C_M_ASYNC_TX_COMPLETE, (FUNC_PTR)cb_error);
+    i2c_m_async_register_callback(&I2C, I2C_M_ASYNC_ERROR, (FUNC_PTR)cb_error);
 }
 
 void i2c0_process(void){
@@ -95,11 +107,19 @@ void i2c0_perform(i2c_trans *trans){
 }
 
 void i2c0_perform_blocking(i2c_trans *trans){
+    bool toggle = false;
     i2c0_perform(trans);
     while(!FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_DONE)){
         if(FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_PROC)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_PROC);
             i2c0_process();
+        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_100MS)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_1000MS);
+            toggle = !toggle;
+            if(toggle)
+                dotstar_set(0, 0, 255);
+            else
+                dotstar_set(0, 0, 0);
         }
     }
     FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_DONE);
