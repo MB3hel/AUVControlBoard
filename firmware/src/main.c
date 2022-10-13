@@ -93,13 +93,8 @@ int main(void){
     dummy_trans.write_count = 1;
     dummy_trans.read_count = 1;
     i2c0_perform(&dummy_trans);
-
-    // Sensor init
-    // if(!bno055_init()){
-    //     sensor_error();
-    // }
-
-    sensor_error();
+    if(read_buf[0] != 0xA0)
+        sensor_error();
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Main loop
@@ -140,14 +135,14 @@ int main(void){
                 pccomm_initialized = pccomm_init();
 
             // Update RGB LED to indicate cmdctrl mode
-            // switch(cmdctrl_get_mode()){
-            // case CMDCTRL_MODE_RAW:
-            //     dotstar_set(100, 100, 0);
-            //     break;
-            // case CMDCTRL_MODE_LOCAL:
-            //     dotstar_set(10, 0, 100);
-            //     break;
-            // }
+            switch(cmdctrl_get_mode()){
+            case CMDCTRL_MODE_RAW:
+                dotstar_set(100, 100, 0);
+                break;
+            case CMDCTRL_MODE_LOCAL:
+                dotstar_set(10, 0, 100);
+                break;
+            }
 
             // Handle motor watchdog
             if(motor_control_watchdog_count()){
