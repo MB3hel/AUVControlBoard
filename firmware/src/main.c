@@ -91,7 +91,6 @@ int main(void){
     //     sensor_error();
     // }
 
-    while(1);
     sensor_error();
 
     // Enable WDT only after all other init is done
