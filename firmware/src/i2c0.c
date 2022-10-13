@@ -20,21 +20,32 @@
 #define STATE_WRITE         1                                   // Write a byte
 #define STATE_READ          2                                   // Read a byte
 
+#define QUEUE_SIZE          6
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 static uint8_t state;
-static i2c_trans *curr_trans;
+
+static uint8_t result;
+
+// Transaction queue (implemented as ring buffer)
+// next = index to insert at next
+// current = index of current transaction
+// count = number of items in queue
+static i2c_trans *queue[QUEUE_SIZE];
+static uint16_t next, current, count;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void cb_tx_done(struct i2c_m_async_desc *const i2c){
-    if(curr_trans->read_count == 0){
+    if(queue[current]->read_count == 0){
         state = STATE_IDLE;
-        FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
+        result = I2C_STATUS_SUCCESS;
+        FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
     }else{
         state = STATE_READ;
         FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
@@ -48,9 +59,10 @@ void cb_tx_done(struct i2c_m_async_desc *const i2c){
 }
 
 void cb_rx_done(struct i2c_m_async_desc *const i2c){
-    curr_trans->status = I2C_STATUS_SUCCESS;
+    queue[current]->status = I2C_STATUS_SUCCESS;
     state = STATE_IDLE;
-    FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
+    result = I2C_STATUS_SUCCESS;
+    FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
 
     // NOTE: Not sure why this needs to be cleared in user callback
     // But not doing so results in interrupt repeatedly occurring
@@ -60,12 +72,18 @@ void cb_rx_done(struct i2c_m_async_desc *const i2c){
 }
 
 void cb_error(struct i2c_m_async_desc *const i2c, int32_t error){
-    curr_trans->status = I2C_STATUS_ERROR;
     state = STATE_IDLE;
-    FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
+    result = I2C_STATUS_ERROR;
+    FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
 }
 
 void i2c0_init(void){
+    // Initialize queue indices
+    current = 0;
+    count = 0;
+    next = 0;
+
+    // Initialize I2C
     state = STATE_IDLE;
     i2c_m_async_enable(&I2C);
     i2c_m_async_register_callback(&I2C, I2C_M_ASYNC_TX_COMPLETE, (FUNC_PTR)cb_tx_done);
@@ -80,47 +98,75 @@ void i2c0_process(void){
 
     switch(state){
     case STATE_WRITE:
-	    msg.addr = curr_trans->address;
-        msg.buffer = curr_trans->write_buf;
-	    msg.len = curr_trans->write_count;
+        // Start write operation
+        i2c_m_async_set_slaveaddr(&I2C, queue[current]->address, I2C_M_SEVEN);
+	    msg.addr = queue[current]->address;
+        msg.buffer = queue[current]->write_buf;
+	    msg.len = queue[current]->write_count;
         msg.flags = 0;
         i2c_m_async_transfer(&I2C, &msg);
         break;
     case STATE_READ:
-        msg.addr = curr_trans->address;
-        msg.buffer = curr_trans->read_buf;
-        msg.len = curr_trans->read_count;
+        // Start read operation
+        msg.addr = queue[current]->address;
+        msg.buffer = queue[current]->read_buf;
+        msg.len = queue[current]->read_count;
         msg.flags = I2C_M_RD | I2C_M_STOP;
         i2c_m_async_transfer(&I2C, &msg);
+        break;
+    case STATE_IDLE:
+        // Set result and flag
+        queue[current]->status = result;
+        FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
+
+        // Adjust queue vars
+        current++;
+        if(current == QUEUE_SIZE)
+            current = 0;
+        count--;
+
+        // Start next transaction if queue not empty
+        if(count > 0){
+            state = STATE_WRITE;
+            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+        }
         break;
     }
 }
 
 void i2c0_perform(i2c_trans *trans){
-    if(state != STATE_IDLE)
-        return;
-    curr_trans = trans;
-    curr_trans->status = I2C_STATUS_BUSY;
-    i2c_m_async_set_slaveaddr(&I2C, curr_trans->address, I2C_M_SEVEN);
-    state = STATE_WRITE;
-    FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-}
+    // Add transaction to queue (cannot just start or it may interrupt a current transaction)
+    i2c0_enqueue(trans);
 
-void i2c0_perform_blocking(i2c_trans *trans){
-    bool toggle = false;
-    i2c0_perform(trans);
-    while(!FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_DONE)){
+    // Wait for this transaction to finish (anything else in the queue will run first)
+    while(trans->status == I2C_STATUS_BUSY){
         if(FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_PROC)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_PROC);
             i2c0_process();
-        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_100MS)){
-            FLAG_CLEAR(flags_main, FLAG_MAIN_1000MS);
-            toggle = !toggle;
-            if(toggle)
-                dotstar_set(0, 0, 255);
-            else
-                dotstar_set(0, 0, 0);
+        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_10MS)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_10MS);
+            timers_wdt_feed();
         }
     }
-    FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_DONE);
+}
+
+void i2c0_enqueue(i2c_trans *trans){
+    // This should never happen
+    // If it does, either queue is too small or i2c is too slow
+    if(count == QUEUE_SIZE)
+        return;
+    
+    // Add trans to queue
+    trans->status = I2C_STATUS_BUSY;
+    queue[next] = trans;
+    next++;
+    if(next == QUEUE_SIZE)
+        next = 0;
+    count++;
+
+    // If idle, start this transaction now
+    if(state == STATE_IDLE){
+        state = STATE_WRITE;
+        FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+    }
 }

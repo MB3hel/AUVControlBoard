@@ -31,12 +31,12 @@ void i2c0_init(void);
 void i2c0_process(void);
 
 /**
- * Start a transaction (if idle)
+ * Perform a transaction and BLOCK UNTIL DONE.
  */
 void i2c0_perform(i2c_trans *trans);
 
 /**
- * Perform a transaction and block until it finishes
- * WARNING: DOES NOT FEED WATCHDOG!!!
+ * Add a new transaction to the queue
+ * POINTER MUST REMAIN VALID UNTIL STATUS IS NOT BUSY!
  */
-void i2c0_perform_blocking(i2c_trans *trans);
+void i2c0_enqueue(i2c_trans *trans);
