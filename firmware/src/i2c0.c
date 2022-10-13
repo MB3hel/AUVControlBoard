@@ -44,8 +44,17 @@ static uint8_t result_status;
 static void cb_tx_complete(struct i2c_m_async_desc *const i2c){
     // Called when all bytes have been written from write phase
     // Now done with write phase
-    next_state = STATE_READ;
+    if(trans_queue[trans_queue_ridx]->read_count == 0)
+        next_state = STATE_IDLE;
+    else
+        next_state = STATE_READ;
     FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+
+    // NOTE: Not sure why this needs to be cleared in user callback
+    // But not doing so results in interrupt repeatedly occurring
+    // Looking in hal_i2c_m_async and hpl_sercom, it looks like this flag is
+    // never cleared. My guess is that this is an SAMD51 specific ASF4 bug...
+    hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, SERCOM_I2CM_INTFLAG_MB);
 }
 
 static void cb_rx_complete(struct i2c_m_async_desc *const i2c){
@@ -54,6 +63,12 @@ static void cb_rx_complete(struct i2c_m_async_desc *const i2c){
     result_status = I2C_STATUS_SUCCESS;
     next_state = STATE_IDLE;
     FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+
+    // NOTE: Not sure why this needs to be cleared in user callback
+    // But not doing so results in interrupt repeatedly occurring
+    // Looking in hal_i2c_m_async and hpl_sercom, it looks like this flag is
+    // never cleared. My guess is that this is an SAMD51 specific ASF4 bug...
+    hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, SERCOM_I2CM_INTFLAG_SB);
 }
 
 static void cb_err(struct i2c_m_async_desc *const i2c){
@@ -106,7 +121,10 @@ void i2c0_process(void){
         msg.addr = trans_queue[trans_queue_ridx]->address;
         msg.buffer = trans_queue[trans_queue_ridx]->write_buf;
 	    msg.len = trans_queue[trans_queue_ridx]->write_count;
-        msg.flags = 0;
+        if(trans_queue[trans_queue_ridx]->read_count == 0)
+            msg.flags = I2C_M_STOP; // Need stop after write if no read phase
+        else
+            msg.flags = 0;          // Will be a stop after read phase
         i2c_m_async_transfer(&I2C, &msg);
         break;
     case STATE_READ:
@@ -167,7 +185,6 @@ void i2c0_perform(i2c_trans *trans){
 }
 
 void i2c0_perform_block(i2c_trans *trans){
-    bool toggle = false;
     i2c0_perform(trans);
     while(trans->status == I2C_STATUS_BUSY){
         if(FLAG_CHECK(flags_main, FLAG_MAIN_10MS)){
@@ -176,14 +193,6 @@ void i2c0_perform_block(i2c_trans *trans){
         }else if(FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_PROC)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_PROC);
             i2c0_process();
-        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_1000MS)){
-            FLAG_CLEAR(flags_main, FLAG_MAIN_1000MS);
-            if(toggle){
-                dotstar_set(0, 0, 255);
-            }else{
-                dotstar_set(0, 0, 0);
-            }
-            toggle = !toggle;
         }
     }
 }
