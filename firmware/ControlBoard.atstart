@@ -1502,13 +1502,15 @@ pads:
     definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA12
     mode: I2C
     user_label: PA12
-    configuration: null
+    configuration:
+      pad_pull_config: Pull-up
   PA13:
     name: PA13
     definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA13
     mode: I2C
     user_label: PA13
-    configuration: null
+    configuration:
+      pad_pull_config: Pull-up
   PA16:
     name: PA16
     definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::pad::PA16

@@ -74,16 +74,14 @@ int main(void){
     cmdctrl_init();                                 // Initialize cmd & ctrl system
     i2c0_init();                                    // Initialize i2c0
     timers_init();                                  // Initialize timers (including WDT)
+    timers_wdt_enable();                            // Enable watchdog timer
 
     // Sensor init
-    // if(!bno055_init()){
-    //     sensor_error();
-    // }
+    if(!bno055_init()){
+        sensor_error();
+    }
 
-    sensor_error();
-
-    // Enable WDT only after all other init is done
-    timers_wdt_enable();
+    
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Main loop
@@ -150,7 +148,7 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
             // Runs when i2c0_process needs to be called by main
             // ---------------------------------------------------------------------------------------------------------
-            // i2c0_process();
+            i2c0_process();
             // ---------------------------------------------------------------------------------------------------------
         }else if(FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_DONE)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_DONE);
@@ -158,14 +156,14 @@ int main(void){
             // Runs when i2c0 completes a transaction
             // ---------------------------------------------------------------------------------------------------------
             // Have any sensor that uses i2c0 check if it's transaction is complete
-            // bno055_checki2c();
+            bno055_checki2c();
             // ---------------------------------------------------------------------------------------------------------
         }else if(FLAG_CHECK(flags_main, FLAG_MAIN_BNO055_DELAY)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_BNO055_DELAY);
             // ---------------------------------------------------------------------------------------------------------
             // Runs when bno055 delay done
             // ---------------------------------------------------------------------------------------------------------
-            // bno055_delay_done();
+            bno055_delay_done();
             // ---------------------------------------------------------------------------------------------------------
         }else{
             // Enter sleep mode because nothing to do right now (no flags set)

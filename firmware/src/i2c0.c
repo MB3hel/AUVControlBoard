@@ -6,6 +6,7 @@
 #include <i2c0.h>
 #include <flags.h>
 #include <timers.h>
+#include <dotstar.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -166,16 +167,23 @@ void i2c0_perform(i2c_trans *trans){
 }
 
 void i2c0_perform_block(i2c_trans *trans){
+    bool toggle = false;
     i2c0_perform(trans);
     while(trans->status == I2C_STATUS_BUSY){
-        if(FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_PROC)){
-            FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_PROC);
-            i2c0_process();
-        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_DONE)){
-            FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_DONE);
-        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_10MS)){
+        if(FLAG_CHECK(flags_main, FLAG_MAIN_10MS)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_10MS);
             timers_wdt_feed();
+        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_PROC)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_PROC);
+            i2c0_process();
+        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_1000MS)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_1000MS);
+            if(toggle){
+                dotstar_set(0, 0, 255);
+            }else{
+                dotstar_set(0, 0, 0);
+            }
+            toggle = !toggle;
         }
     }
 }
