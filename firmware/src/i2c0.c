@@ -7,6 +7,7 @@
 #include <flags.h>
 #include <timers.h>
 #include <atmel_start.h>
+#include <dotstar.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -31,8 +32,13 @@ static i2c_trans *curr_trans;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void cb_tx_done(struct i2c_m_async_desc *const i2c){
-    state = STATE_READ;
-    FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+    if(curr_trans->read_count == 0){
+        state = STATE_IDLE;
+        FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
+    }else{
+        state = STATE_READ;
+        FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+    }
 }
 
 void cb_rx_done(struct i2c_m_async_desc *const i2c){
@@ -71,7 +77,7 @@ void i2c0_process(void){
     case STATE_READ:
         msg.addr = curr_trans->address;
         msg.buffer = curr_trans->read_buf;
-	    msg.len = curr_trans->read_count;
+        msg.len = curr_trans->read_count;
         msg.flags = I2C_M_RD | I2C_M_STOP;
         i2c_m_async_transfer(&I2C, &msg);
         break;

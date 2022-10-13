@@ -73,6 +73,18 @@ int main(void){
     cmdctrl_init();                                 // Initialize cmd & ctrl system
     i2c0_init();                                    // Initialize i2c0
     timers_init();                                  // Initialize timers (including WDT)
+    // timers_wdt_enable();
+
+    uint8_t write_buf[8];
+    uint8_t read_buf[8];
+    i2c_trans dummy_trans;
+    dummy_trans.address = 0x28;
+    dummy_trans.write_buf = write_buf;
+    dummy_trans.read_buf = read_buf;
+    dummy_trans.write_buf[0] = 0x00;
+    dummy_trans.write_count = 1;
+    dummy_trans.read_count = 1;
+    i2c0_perform_blocking(&dummy_trans);
 
     // Sensor init
     // if(!bno055_init()){
