@@ -41,15 +41,9 @@ static uint16_t next, current, count;
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void cb_tx_done(struct i2c_m_async_desc *const i2c){
-    if(queue[current]->read_count == 0){
-        state = STATE_IDLE;
-        result = I2C_STATUS_SUCCESS;
-        FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-    }else{
-        state = STATE_READ;
-        FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-    }
+static void cb_tx_done(struct i2c_m_async_desc *const i2c){
+    state = STATE_READ;
+    FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
 
     // NOTE: Not sure why this needs to be cleared in user callback
     // But not doing so results in interrupt repeatedly occurring
@@ -58,8 +52,7 @@ void cb_tx_done(struct i2c_m_async_desc *const i2c){
     hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, SERCOM_I2CM_INTFLAG_MB);
 }
 
-void cb_rx_done(struct i2c_m_async_desc *const i2c){
-    queue[current]->status = I2C_STATUS_SUCCESS;
+static void cb_rx_done(struct i2c_m_async_desc *const i2c){
     state = STATE_IDLE;
     result = I2C_STATUS_SUCCESS;
     FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
@@ -71,7 +64,7 @@ void cb_rx_done(struct i2c_m_async_desc *const i2c){
     hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, SERCOM_I2CM_INTFLAG_SB);
 }
 
-void cb_error(struct i2c_m_async_desc *const i2c, int32_t error){
+static void cb_error(struct i2c_m_async_desc *const i2c, int32_t error){
     state = STATE_IDLE;
     result = I2C_STATUS_ERROR;
     FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
@@ -98,21 +91,37 @@ void i2c0_process(void){
 
     switch(state){
     case STATE_WRITE:
-        // Start write operation
+        // Set address
         i2c_m_async_set_slaveaddr(&I2C, queue[current]->address, I2C_M_SEVEN);
-	    msg.addr = queue[current]->address;
-        msg.buffer = queue[current]->write_buf;
-	    msg.len = queue[current]->write_count;
-        msg.flags = 0;
-        i2c_m_async_transfer(&I2C, &msg);
+
+        if(queue[current]->write_count > 0){
+            // Start write operation
+            msg.addr = queue[current]->address;
+            msg.buffer = queue[current]->write_buf;
+            msg.len = queue[current]->write_count;
+            msg.flags = 0;
+            if(queue[current]->read_count == 0)
+                msg.flags = I2C_M_STOP;
+            i2c_m_async_transfer(&I2C, &msg);
+        }else{
+            // Nothing to write, skip to read state
+            state = STATE_READ;
+            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+        }
         break;
     case STATE_READ:
-        // Start read operation
-        msg.addr = queue[current]->address;
-        msg.buffer = queue[current]->read_buf;
-        msg.len = queue[current]->read_count;
-        msg.flags = I2C_M_RD | I2C_M_STOP;
-        i2c_m_async_transfer(&I2C, &msg);
+        if(queue[current]->read_count > 0){
+            // Start read operation
+            msg.addr = queue[current]->address;
+            msg.buffer = queue[current]->read_buf;
+            msg.len = queue[current]->read_count;
+            msg.flags = I2C_M_RD | I2C_M_STOP;
+            i2c_m_async_transfer(&I2C, &msg);
+        }else{
+            // Nothing to read, skip to idle state
+            state = STATE_IDLE;
+            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+        }
         break;
     case STATE_IDLE:
         // Set result and flag

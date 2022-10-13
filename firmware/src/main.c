@@ -83,18 +83,27 @@ int main(void){
     timers_init();                                  // Initialize timers
     timers_wdt_enable();                            // Enable WDT now
 
-    uint8_t write_buf[8];
-    uint8_t read_buf[8];
-    i2c_trans dummy_trans;
-    dummy_trans.address = 0x28;
-    dummy_trans.write_buf = write_buf;
-    dummy_trans.read_buf = read_buf;
-    dummy_trans.write_buf[0] = 0x00;
-    dummy_trans.write_count = 1;
-    dummy_trans.read_count = 1;
-    i2c0_perform(&dummy_trans);
-    if(read_buf[0] != 0xA0)
+    // Wait for 100ms to let sensors power up
+    for(int i = 0; i < 10; ++i){
+        timers_wdt_feed();
+        delay_ms(10);
+    }
+
+    // Initialize sensors
+    uint8_t write_buf_ex[8];
+    uint8_t read_buf_ex[8];
+    i2c_trans exist_trans;
+    exist_trans.address = 0x28;
+    exist_trans.write_buf = write_buf_ex;
+    exist_trans.write_buf[0] = 0x00;
+    exist_trans.write_count = 0;
+    exist_trans.read_buf = read_buf_ex;
+    exist_trans.read_count = 1;
+    i2c0_perform(&exist_trans);
+
+    if(exist_trans.status == I2C_STATUS_ERROR){
         sensor_error();
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Main loop
