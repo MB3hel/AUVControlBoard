@@ -28,7 +28,7 @@
 // <e> Advanced
 // <id> i2c_master_advanced
 #ifndef CONF_SERCOM_2_I2CM_ADVANCED_CONFIG
-#define CONF_SERCOM_2_I2CM_ADVANCED_CONFIG 0
+#define CONF_SERCOM_2_I2CM_ADVANCED_CONFIG 1
 #endif
 
 // <o> TRise (ns) <0-300>
@@ -60,7 +60,7 @@
 // <i> Enables SCL low time-out. If SCL is held low for 25ms-35ms, the master will release it's clock hold
 // <id> i2c_master_arch_lowtout
 #ifndef CONF_SERCOM_2_I2CM_LOWTOUT
-#define CONF_SERCOM_2_I2CM_LOWTOUT 0
+#define CONF_SERCOM_2_I2CM_LOWTOUT 1
 #endif
 
 // <o> Inactive Time-Out (INACTOUT)
@@ -71,7 +71,7 @@
 // <i> Defines if inactivity time-out should be enabled, and how long the time-out should be
 // <id> i2c_master_arch_inactout
 #ifndef CONF_SERCOM_2_I2CM_INACTOUT
-#define CONF_SERCOM_2_I2CM_INACTOUT 0x0
+#define CONF_SERCOM_2_I2CM_INACTOUT 0x3
 #endif
 
 // <o> SDA Hold Time (SDAHOLD)

@@ -991,10 +991,10 @@ drivers:
     functionality: I2C
     api: HAL:Driver:I2C_Master_Async
     configuration:
-      i2c_master_advanced: false
+      i2c_master_advanced: true
       i2c_master_arch_dbgstop: Keep running
-      i2c_master_arch_inactout: Disabled
-      i2c_master_arch_lowtout: false
+      i2c_master_arch_inactout: 20-21 SCL cycle time-out(200-210us)
+      i2c_master_arch_lowtout: true
       i2c_master_arch_mexttoen: false
       i2c_master_arch_runstdby: false
       i2c_master_arch_sdahold: 300-600ns hold time
