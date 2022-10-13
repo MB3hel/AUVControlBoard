@@ -26,7 +26,7 @@ void I2C_0_PORT_init(void)
 	                       // <GPIO_PULL_OFF"> Off
 	                       // <GPIO_PULL_UP"> Pull-up
 	                       // <GPIO_PULL_DOWN"> Pull-down
-	                       GPIO_PULL_UP);
+	                       GPIO_PULL_OFF);
 
 	gpio_set_pin_function(PA12, PINMUX_PA12C_SERCOM2_PAD0);
 
@@ -36,7 +36,7 @@ void I2C_0_PORT_init(void)
 	                       // <GPIO_PULL_OFF"> Off
 	                       // <GPIO_PULL_UP"> Pull-up
 	                       // <GPIO_PULL_DOWN"> Pull-down
-	                       GPIO_PULL_UP);
+	                       GPIO_PULL_OFF);
 
 	gpio_set_pin_function(PA13, PINMUX_PA13C_SERCOM2_PAD1);
 }

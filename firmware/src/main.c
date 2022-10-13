@@ -84,7 +84,7 @@ int main(void){
     timers_wdt_enable();                            // Enable WDT now
 
     // Wait for 100ms to let sensors power up
-    for(int i = 0; i < 100; ++i){
+    for(int i = 0; i < 10; ++i){
         timers_wdt_feed();
         delay_ms(10);
     }
