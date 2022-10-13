@@ -22,7 +22,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Definition of main flags field (see flags.h)
-uint16_t flags_main = 0;
+volatile uint16_t flags_main = 0;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -62,6 +62,19 @@ void sensor_error(void){
 }
 
 /**
+ * Wait for 10ms flag to be set a number of times
+ */
+void safe_delay_10ms(uint32_t count){
+    while(count > 0){
+        if(FLAG_CHECK(flags_main, FLAG_MAIN_10MS)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_10MS);
+            timers_wdt_feed();
+            count--;
+        }
+    }
+}
+
+/**
  * Program entry point
  */
 int main(void){
@@ -83,11 +96,7 @@ int main(void){
     timers_init();                                  // Initialize timers
     timers_wdt_enable();                            // Enable WDT now
 
-    // Wait for 100ms to let sensors power up
-    for(int i = 0; i < 10; ++i){
-        timers_wdt_feed();
-        delay_ms(10);
-    }
+    safe_delay_10ms(50);                            // Wait 500ms for sensors to power on
 
     // Initialize sensors
     uint8_t write_buf_ex[8];

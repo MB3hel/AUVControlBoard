@@ -78,6 +78,13 @@ void i2c0_init(void){
 
     // Initialize I2C
     state = STATE_IDLE;
+
+    // NOTE: Not sure why this needs to be cleared manually. Should really
+    // be handled by i2c_m_async_enable to prevent rapid interrupt slowing 
+    // everything. Looks like a bug in ASF4...
+    // Clears all interrupt flag bits
+    hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, 0xFF);
+
     i2c_m_async_enable(&I2C);
     i2c_m_async_register_callback(&I2C, I2C_M_ASYNC_TX_COMPLETE, (FUNC_PTR)cb_tx_done);
     i2c_m_async_register_callback(&I2C, I2C_M_ASYNC_RX_COMPLETE, (FUNC_PTR)cb_rx_done);

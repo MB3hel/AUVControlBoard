@@ -29,6 +29,7 @@
 #define FLAG_MAIN_PCCOMM_MSG        0b0000000000010000      // pccomm has a message
 #define FLAG_MAIN_I2C0_PROC         0b0000000000100000      // i2c0 needs process
 #define FLAG_MAIN_I2C0_DONE         0b0000000001000000      // i2c0 transaction done
+#define FLAG_MAIN_BNO055_DELAY      0b0000000010000000      // bno055 delay done
 
 // Defined in main.c
-extern uint16_t flags_main;
+extern volatile uint16_t flags_main;
