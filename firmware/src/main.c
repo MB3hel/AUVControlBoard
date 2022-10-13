@@ -45,11 +45,19 @@ void HardFault_Handler(void){
  * Blink dotstar LED on sensor error
  */
 void sensor_error(void){
+    bool toggle = false;
     while(1){
-        dotstar_set(255, 32, 0);
-        delay_ms(1000);
-        dotstar_set(0, 0, 0);
-        delay_ms(1000);
+        if(FLAG_CHECK(flags_main, FLAG_MAIN_1000MS)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_1000MS);
+            toggle = !toggle;
+            if(toggle)
+                dotstar_set(255, 32, 0);
+            else
+                dotstar_set(0, 0, 0);
+        }else if (FLAG_CHECK(flags_main, FLAG_MAIN_10MS)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_10MS);
+            timers_wdt_feed();
+        }
     }
 }
 
