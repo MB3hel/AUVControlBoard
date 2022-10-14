@@ -385,6 +385,34 @@ void bno055_state_machine(uint8_t trigger){
                 delay_next_state = STATE_WR_SYSTRIGGER;
             }
             break;
+        case STATE_WR_SYSTRIGGER:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 10;
+                delay_next_state = STATE_WR_AXIS_MAP;
+            }
+            break;
+        case STATE_WR_AXIS_MAP:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 10;
+                delay_next_state = STATE_WR_AXIS_SIGN;
+            }
+            break;
+        case STATE_WR_AXIS_SIGN:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 10;
+                delay_next_state = STATE_SETMODE_IMU;
+            }
+            break;
+        case STATE_SETMODE_IMU:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 20;
+                delay_next_state = STATE_RD_GRAV;
+            }
+            break;
         }
     }
 
@@ -437,6 +465,33 @@ void bno055_state_machine(uint8_t trigger){
         trans.write_buf[1] = 0x00;
         trans.write_count = 2;
         trans.read_count = 0;
+        i2c0_enqueue(&trans);
+        break;
+    case STATE_WR_AXIS_MAP:
+        trans.write_buf[0] = BNO055_AXIS_MAP_CONFIG_ADDR;
+        trans.write_buf[1] = config.axis_x | (config.axis_y << 2) | (config.axis_z << 4);
+        trans.write_count = 2;
+        trans.read_count = 0;
+        i2c0_enqueue(&trans);
+        break;
+    case STATE_WR_AXIS_SIGN:
+        trans.write_buf[0] = BNO055_AXIS_MAP_SIGN_ADDR;
+        trans.write_buf[1] = config.sign_z | (config.sign_y << 1) | (config.sign_z << 2);
+        trans.write_count = 2;
+        trans.read_count = 0;
+        i2c0_enqueue(&trans);
+        break;
+    case STATE_SETMODE_IMU:
+        trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
+        trans.write_buf[1] = OPMODE_IMU;
+        trans.write_count = 2;
+        trans.read_count = 0;
+        i2c0_enqueue(&trans);
+        break;
+    case STATE_RD_GRAV:
+        trans.write_buf[0] = BNO055_GRAVITY_DATA_X_LSB_ADDR;
+        trans.write_count = 1;
+        trans.read_count = 6;
         i2c0_enqueue(&trans);
         break;
     }

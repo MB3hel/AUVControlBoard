@@ -5,6 +5,9 @@
  * Notes: There seem to be numerous bugs stemming from the ASF4 hpl_sercom layer. 
  * It is likely other protocols have bugs too. Seemingly, ASF4 drivers were just written and
  * tested with one test case (the example code) and really don't always work well in practice.
+ * 
+ * Most of the time, these "bugs" relate to flags not being cleared properly while handling
+ * interrupts. This can lead to an interrupt repeating forever (thus deadlocking main)
  */
 
 #include <i2c0.h>
