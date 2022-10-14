@@ -204,14 +204,35 @@
 #define READ_BUF_SIZE           4           // max number of read bytes per transaction
 
 // States
-#define STATE_DELAY             0
-#define STATE_NONE              1
-#define STATE_SETMODE_CFG       2
-#define STATE_RESET             3
+#define STATE_DELAY             0           // Delay state
+#define STATE_NONE              1           // No state (used for init)
+#define STATE_SETMODE_CFG       2           // Set to config mode
+#define STATE_RESET             3           // Reset chip
+#define STATE_RD_ID             4           // Read chip id
+#define STATE_WR_PWR_MODE       5           // Set power mode
+#define STATE_WR_PAGE_ID        6           // Write page id register
+#define STATE_WR_SYSTRIGGER     7           // Write sys trigger register
+#define STATE_WR_AXIS_MAP       8           // Set axis map
+#define STATE_WR_AXIS_SIGN      9           // Set axis signs
+#define STATE_SETMODE_IMU       10          // Set to imu mode
+#define STATE_RD_GRAV           11          // Read gravity vector
+#define STATE_RD_QUAT           12          // Read quaternion orientation
+#define STATE_IDLE              13          // Idle time between readings
+#define STATE_RECONFIG          14          // Enter config mode before reconfigure
+
+// State transition triggers
+#define TRIGGER_NONE            0
+#define TRIGGER_I2C_DONE        1
+#define TRIGGER_I2C_ERROR       2
+#define TRIGGER_DELAY_DONE      3
+#define TRIGGER_IDLE_DONE       4
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+static bno055_config config;
+static bool reconfig;
 
 static uint8_t write_buf[WRITE_BUF_SIZE];
 static uint8_t read_buf[READ_BUF_SIZE];
@@ -226,8 +247,79 @@ static uint8_t delay_next_state;
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// State machine diagram generated with asciiflow.com
+/*
+ *               │start
+ *               │
+ *       ┌───────▼───────┐
+ *       │     NONE      │                   trigger(delay_ms)
+ *       └───────┬───────┘                 ─────────────────────►
+ *               │init(0)
+ *               │                         Note: i2c_error causes
+ *       ┌───────▼───────┐                 a repeat of any state
+ *       │  SETMODE_CFG  │
+ *       └───────┬───────┘
+ *               │i2c_done(30)
+ *               │
+ *       ┌───────▼───────┐
+ *       │     RESET     │
+ *       └───────┬───────┘
+ *               │i2c_done(30)
+ *               │
+ *       ┌───────▼───────┐◄───────┐
+ *       │     RD_ID     │        │i2c_done,invalid_id(10)
+ *       └───────┬───────┴────────┘
+ *               │i2c_done,valid_id(50)
+ *               │
+ *       ┌───────▼───────┐
+ *       │  WR_PWR_MODE  │
+ *       └───────┬───────┘
+ *               │i2c_done(10)
+ *               │
+ *       ┌───────▼───────┐
+ *       │  WR_PAGE_ID   │
+ *       └───────┬───────┘
+ *               │i2c_done(10)
+ *               │
+ *       ┌───────▼───────┐
+ *       │ WR_SYSTRIGGER │
+ *       └───────┬───────┘
+ *               │i2c_done(10)
+ *               │
+ *       ┌───────▼───────┐
+ *       │  WR_AXIS_MAP  ◄─────────────────────────────────┐
+ *       └───────┬───────┘                                 │
+ *               │i2c_done(10)                             │
+ *               │                                         │
+ *       ┌───────▼───────┐                                 │
+ *       │ WR_AXIS_SIGN  │                                 │
+ *       └───────┬───────┘                                 │
+ *               │i2c_done(10)                             │
+ *               │                                         │
+ *       ┌───────▼───────┐                                 │
+ *       │  SETMODE_IMU  │                                 │
+ *       └───────┬───────┘                                 │
+ *               │i2c_done(20)                             │
+ *               │                             i2c_done(30)│
+ *       ┌───────▼───────┐                         ┌───────┴───────┐
+ * ┌─────►    RD_GRAV    │                         │   RECONFIG    │
+ * │     └───────┬───────┘                         └───────▲───────┘
+ * │             │i2c_done(2)                              │
+ * │             │                                         │
+ * │     ┌───────▼───────┐                                 │
+ * │     │    RD_QUAT    │                                 │
+ * │     └───────┬───────┘                                 │
+ * │             │i2c_done(2)                              │
+ * │             │                                         │
+ * │     ┌───────▼───────┐                                 │
+ * │     │     IDLE      │                                 │
+ * │     └───┬───────┬───┘                                 │
+ * │         │       │                                     │
+ * └─────────┘       └─────────────────────────────────────┘
+ *  idle_done                       reconfig
+ */
 // Called when some event that may change state occurs
-void bno055_state_machine(bool i2c_done, bool i2c_error, bool delay_done){    
+void bno055_state_machine(uint8_t trigger){    
     // Store original state
     uint8_t orig_state = state;
     
@@ -235,7 +327,7 @@ void bno055_state_machine(bool i2c_done, bool i2c_error, bool delay_done){
     switch(state){
     case STATE_DELAY:
         // Transition out of delay state when delay done
-        if(delay_done){
+        if(trigger == TRIGGER_DELAY_DONE){
             state = delay_next_state;
         }
         break;
@@ -245,7 +337,7 @@ void bno055_state_machine(bool i2c_done, bool i2c_error, bool delay_done){
         state = STATE_SETMODE_CFG;
         break;
     case STATE_SETMODE_CFG:
-        if(i2c_done){
+        if(trigger == TRIGGER_I2C_DONE){
             state = STATE_DELAY;
             delay = 30;
             delay_next_state = STATE_RESET;
@@ -253,7 +345,7 @@ void bno055_state_machine(bool i2c_done, bool i2c_error, bool delay_done){
         break;
     }
 
-    if(!i2c_error && (state == orig_state)){
+    if((state == orig_state) && trigger != TRIGGER_I2C_ERROR){
         // No state transition occurred. No actions.
         // If i2c_error, repeat the same state, so don't skip actions
         return;
@@ -282,6 +374,17 @@ void bno055_state_machine(bool i2c_done, bool i2c_error, bool delay_done){
 }
 
 bool bno055_init(void){
+    // Initial flags
+    reconfig = false;
+
+    // Setup initial config
+    config.axis_x = BNO055_AXIS_X;
+    config.axis_y = BNO055_AXIS_Y;
+    config.axis_z = BNO055_AXIS_Z;
+    config.sign_x = BNO055_SIGN_POS;
+    config.sign_y = BNO055_SIGN_POS;
+    config.sign_z = BNO055_SIGN_POS;
+
     // Setup transaction
     trans.address = BNO055_ADDR;
     trans.write_buf = write_buf;
@@ -315,14 +418,17 @@ bool bno055_init(void){
     
     // Set initial state and start state machine
     state = STATE_NONE;
-    bno055_state_machine(false, false, false);
+    bno055_state_machine(TRIGGER_NONE);
 
     // Indicate success
     return true;
 }
 
 void bno055_delay_done(void){
-    bno055_state_machine(false, false, true);
+    if(state == STATE_IDLE)
+        bno055_state_machine(TRIGGER_IDLE_DONE);
+    else
+        bno055_state_machine(TRIGGER_DELAY_DONE);
 }
 
 void bno055_check_i2c(void){
@@ -330,12 +436,18 @@ void bno055_check_i2c(void){
     // It could either still be busy or idle
     // If so, nothing should happen I2C0_DONE was set b/c another sensor's transaction finished
     if(trans.status == I2C_STATUS_SUCCESS){
-        bno055_state_machine(true, false, false);
+        bno055_state_machine(TRIGGER_I2C_DONE);
     }else if(trans.status == I2C_STATUS_ERROR){
-        bno055_state_machine(false, true, false);
+        bno055_state_machine(TRIGGER_I2C_ERROR);
     }
 
     // Set this flag so transition does not occur when another sensor finishes
     trans.status = I2C_STATUS_IDLE;
 }
 
+void bno055_reconfig(bno055_config new_config){
+    // Update config var
+    config = new_config;
+    // Set persistant flag to be handled next time in idle state
+    reconfig = true;
+}
