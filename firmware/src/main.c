@@ -130,14 +130,14 @@ int main(void){
                 pccomm_initialized = pccomm_init();
 
             // Update RGB LED to indicate cmdctrl mode
-            switch(cmdctrl_get_mode()){
-            case CMDCTRL_MODE_RAW:
-                dotstar_set(100, 100, 0);
-                break;
-            case CMDCTRL_MODE_LOCAL:
-                dotstar_set(10, 0, 100);
-                break;
-            }
+            // switch(cmdctrl_get_mode()){
+            // case CMDCTRL_MODE_RAW:
+            //     dotstar_set(100, 100, 0);
+            //     break;
+            // case CMDCTRL_MODE_LOCAL:
+            //     dotstar_set(10, 0, 100);
+            //     break;
+            // }
 
             // Handle motor watchdog
             if(motor_control_watchdog_count()){
@@ -163,14 +163,14 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
             // Runs when i2c0 finishes a transaction
             // ---------------------------------------------------------------------------------------------------------
-            // TODO: Have every sensor check if its transaction is done
+            bno055_check_i2c();
             // ---------------------------------------------------------------------------------------------------------
         }else if(FLAG_CHECK(flags_main, FLAG_MAIN_BNO055_DELAY)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_BNO055_DELAY);
             // ---------------------------------------------------------------------------------------------------------
             // Runs when bno055 delay finishes
             // ---------------------------------------------------------------------------------------------------------
-            // TODO: call bno055 function
+            bno055_delay_done();
             // ---------------------------------------------------------------------------------------------------------
         }else{
             // Enter sleep mode because nothing to do right now (no flags set)

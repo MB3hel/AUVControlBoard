@@ -195,27 +195,90 @@
 #define BNO055_GYRO_ANY_MOTION_THRES_ADDR   (0X1E)
 #define BNO055_GYRO_ANY_MOTION_SET_ADDR     (0X1F)
 
+// Operating modes
+#define OPMODE_CFG              0x00
+#define OPMODE_IMU              0X08
 
 // Buffer settings
 #define WRITE_BUF_SIZE          4           // max number of write bytes per transaction
 #define READ_BUF_SIZE           4           // max number of read bytes per transaction
 
+// States
+#define STATE_DELAY             0
+#define STATE_NONE              1
+#define STATE_SETMODE_CFG       2
+#define STATE_RESET             3
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-uint8_t write_buf[WRITE_BUF_SIZE];
-uint8_t read_buf[READ_BUF_SIZE];
+static uint8_t write_buf[WRITE_BUF_SIZE];
+static uint8_t read_buf[READ_BUF_SIZE];
 static i2c_trans trans;
 
+static uint8_t state;
+
+static uint32_t delay;
+static uint8_t delay_next_state;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void bno055_state_machine(void){
-    // TODO
+// Called when some event that may change state occurs
+void bno055_state_machine(bool i2c_done, bool i2c_error, bool delay_done){    
+    // Store original state
+    uint8_t orig_state = state;
+    
+    // State transitions
+    switch(state){
+    case STATE_DELAY:
+        // Transition out of delay state when delay done
+        if(delay_done){
+            state = delay_next_state;
+        }
+        break;
+    case STATE_NONE:
+        // Always transition to next state
+        // This is just used to start the state machine
+        state = STATE_SETMODE_CFG;
+        break;
+    case STATE_SETMODE_CFG:
+        if(i2c_done){
+            state = STATE_DELAY;
+            delay = 30;
+            delay_next_state = STATE_RESET;
+        }
+        break;
+    }
+
+    if(!i2c_error && (state == orig_state)){
+        // No state transition occurred. No actions.
+        // If i2c_error, repeat the same state, so don't skip actions
+        return;
+    }
+
+    // Actions for the current state
+    switch(state){
+    case STATE_DELAY:
+        timers_enable_bno055_delay(delay);
+        break;
+    case STATE_SETMODE_CFG:
+        trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
+        trans.write_buf[1] = OPMODE_CFG;
+        trans.write_count = 2;
+        trans.read_count = 0;
+        i2c0_enqueue(&trans);
+        break;
+    case STATE_RESET:
+        trans.write_buf[0] = BNO055_SYS_TRIGGER_ADDR;
+        trans.write_buf[1] = 0x20;
+        trans.write_count = 2;
+        trans.read_count = 0;
+        i2c0_enqueue(&trans);
+        break;
+    }
 }
 
 bool bno055_init(void){
@@ -247,14 +310,32 @@ bool bno055_init(void){
         return false;
     
     // Init done. Correct device is connected.
+    // Delay after this transaction to ensure next one doesn't happen before sensor ready
+    timers_safe_delay(10);
+    
+    // Set initial state and start state machine
+    state = STATE_NONE;
+    bno055_state_machine(false, false, false);
+
+    // Indicate success
     return true;
 }
 
 void bno055_delay_done(void){
-
+    bno055_state_machine(false, false, true);
 }
 
 void bno055_check_i2c(void){
+    // Check if this I2C transaction was the one that finished
+    // It could either still be busy or idle
+    // If so, nothing should happen I2C0_DONE was set b/c another sensor's transaction finished
+    if(trans.status == I2C_STATUS_SUCCESS){
+        bno055_state_machine(true, false, false);
+    }else if(trans.status == I2C_STATUS_ERROR){
+        bno055_state_machine(false, true, false);
+    }
 
+    // Set this flag so transition does not occur when another sensor finishes
+    trans.status = I2C_STATUS_IDLE;
 }
 

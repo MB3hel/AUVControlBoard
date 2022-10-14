@@ -16,6 +16,7 @@
 #define I2C_STATUS_SUCCESS          0           // Transaction finished successfully
 #define I2C_STATUS_ERROR            1           // Transaction finished unsuccessfully
 #define I2C_STATUS_BUSY             2           // Transaction in progress
+#define I2C_STATUS_IDLE             3           // Transaction finished and now idle
 
 typedef struct {
     uint8_t address;

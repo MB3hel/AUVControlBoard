@@ -91,9 +91,7 @@ void i2c0_init(void){
 }
 
 void i2c0_process(void){
-    struct io_descriptor *io;
     struct _i2c_m_msg msg;
-    i2c_m_async_get_io_descriptor(&I2C_0, &io);
 
     switch(state){
     case STATE_WRITE:
