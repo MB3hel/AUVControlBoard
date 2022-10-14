@@ -1,6 +1,10 @@
 /**
  * @file i2c0.c
  * @author Marcus Behel
+ * 
+ * Notes: There seem to be numerous bugs stemming from the ASF4 hpl_sercom layer. 
+ * It is likely other protocols have bugs too. Seemingly, ASF4 drivers were just written and
+ * tested with one test case (the example code) and really don't always work well in practice.
  */
 
 #include <i2c0.h>
@@ -67,6 +71,18 @@ static void cb_error(struct i2c_m_async_desc *const i2c, int32_t error){
     state = STATE_IDLE;
     result = I2C_STATUS_ERROR;
     FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+
+    // Again, this should be handled by ASF. I consider this an ASF bug...
+    if(error == I2C_NACK){
+        _i2c_m_async_send_stop(&I2C.device);
+    }
+
+    // NOTE: Not sure why this needs to be cleared in user callback
+    // But not doing so results in interrupt repeatedly occurring
+    // Looking in hal_i2c_m_async and hpl_sercom, it looks like this flag is
+    // never cleared. My guess is that this is an SAMD51 specific ASF4 bug...
+    hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, SERCOM_I2CM_INTFLAG_MB);
+    hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, SERCOM_I2CM_INTFLAG_SB);
 }
 
 void i2c0_init(void){

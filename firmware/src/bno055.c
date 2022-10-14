@@ -343,6 +343,13 @@ void bno055_state_machine(uint8_t trigger){
             delay_next_state = STATE_RESET;
         }
         break;
+    case STATE_RESET:
+        if(trigger == TRIGGER_I2C_DONE){
+            state = STATE_DELAY;
+            delay = 30;
+            delay_next_state = STATE_RD_ID;
+        }
+        break;
     }
 
     if((state == orig_state) && trigger != TRIGGER_I2C_ERROR){
@@ -368,6 +375,12 @@ void bno055_state_machine(uint8_t trigger){
         trans.write_buf[1] = 0x20;
         trans.write_count = 2;
         trans.read_count = 0;
+        i2c0_enqueue(&trans);
+        break;
+    case STATE_RD_ID:
+        trans.write_buf[0] = BNO055_CHIP_ID_ADDR;
+        trans.write_count = 1;
+        trans.read_count = 1;
         i2c0_enqueue(&trans);
         break;
     }
