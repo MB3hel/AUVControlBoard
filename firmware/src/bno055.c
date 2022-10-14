@@ -256,7 +256,7 @@ static uint8_t delay_next_state;
  *       └───────┬───────┘                 ─────────────────────►
  *               │init(0)
  *               │                         Note: i2c_error causes
- *       ┌───────▼───────┐                 a repeat of any state
+ *       ┌───────▼───────┐                 a repeat of any state after 10ms
  *       │  SETMODE_CFG  │
  *       └───────┬───────┘
  *               │i2c_done(30)
@@ -322,39 +322,74 @@ static uint8_t delay_next_state;
 void bno055_state_machine(uint8_t trigger){    
     // Store original state
     uint8_t orig_state = state;
-    
-    // State transitions
-    switch(state){
-    case STATE_DELAY:
-        // Transition out of delay state when delay done
-        if(trigger == TRIGGER_DELAY_DONE){
-            state = delay_next_state;
+
+    if(trigger == TRIGGER_I2C_ERROR){
+        // Repeat same state after 10ms
+        delay = 10;
+        delay_next_state = state;
+        state = STATE_DELAY;
+    }else{
+        // State transitions
+        switch(state){
+        case STATE_DELAY:
+            // Transition out of delay state when delay done
+            if(trigger == TRIGGER_DELAY_DONE){
+                state = delay_next_state;
+            }
+            break;
+        case STATE_NONE:
+            // Always transition to next state
+            // This is just used to start the state machine
+            state = STATE_SETMODE_CFG;
+            break;
+        case STATE_SETMODE_CFG:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 30;
+                delay_next_state = STATE_RESET;
+            }
+            break;
+        case STATE_RESET:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 30;
+                delay_next_state = STATE_RD_ID;
+            }
+            break;
+        case STATE_RD_ID:
+            if(trigger == TRIGGER_I2C_DONE){
+                if(read_buf[0] != BNO055_ID){
+                    // Invalid id. Read again until correct id.
+                    state = STATE_DELAY;
+                    delay = 10;
+                    delay_next_state = STATE_RD_ID;
+                }else{
+                    // Valid id. Move to next state
+                    state = STATE_DELAY;
+                    delay = 10;
+                    delay_next_state = STATE_WR_PWR_MODE;
+                }
+            }
+            break;
+        case STATE_WR_PWR_MODE:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 10;
+                delay_next_state = STATE_WR_PAGE_ID;
+            }
+            break;
+        case STATE_WR_PAGE_ID:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 10;
+                delay_next_state = STATE_WR_SYSTRIGGER;
+            }
+            break;
         }
-        break;
-    case STATE_NONE:
-        // Always transition to next state
-        // This is just used to start the state machine
-        state = STATE_SETMODE_CFG;
-        break;
-    case STATE_SETMODE_CFG:
-        if(trigger == TRIGGER_I2C_DONE){
-            state = STATE_DELAY;
-            delay = 30;
-            delay_next_state = STATE_RESET;
-        }
-        break;
-    case STATE_RESET:
-        if(trigger == TRIGGER_I2C_DONE){
-            state = STATE_DELAY;
-            delay = 30;
-            delay_next_state = STATE_RD_ID;
-        }
-        break;
     }
 
-    if((state == orig_state) && trigger != TRIGGER_I2C_ERROR){
+    if((state == orig_state)){
         // No state transition occurred. No actions.
-        // If i2c_error, repeat the same state, so don't skip actions
         return;
     }
 
@@ -381,6 +416,27 @@ void bno055_state_machine(uint8_t trigger){
         trans.write_buf[0] = BNO055_CHIP_ID_ADDR;
         trans.write_count = 1;
         trans.read_count = 1;
+        i2c0_enqueue(&trans);
+        break;
+    case STATE_WR_PWR_MODE:
+        trans.write_buf[0] = BNO055_PWR_MODE_ADDR;
+        trans.write_buf[1] = 0x00; // Normal power mode
+        trans.write_count = 2;
+        trans.read_count = 0;
+        i2c0_enqueue(&trans);
+        break;
+    case STATE_WR_PAGE_ID:
+        trans.write_buf[0] = BNO055_PAGE_ID_ADDR;
+        trans.write_buf[1] = 0x00;
+        trans.write_count = 2;
+        trans.read_count = 0;
+        i2c0_enqueue(&trans);
+        break;
+    case STATE_WR_SYSTRIGGER:
+        trans.write_buf[0] = BNO055_SYS_TRIGGER_ADDR;
+        trans.write_buf[1] = 0x00;
+        trans.write_count = 2;
+        trans.read_count = 0;
         i2c0_enqueue(&trans);
         break;
     }
