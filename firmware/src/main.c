@@ -15,6 +15,7 @@
 #include <flags.h>
 #include <i2c0.h>
 #include <timers.h>
+#include <bno055.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -62,19 +63,6 @@ void sensor_error(void){
 }
 
 /**
- * Wait for 10ms flag to be set a number of times
- */
-void safe_delay_10ms(uint32_t count){
-    while(count > 0){
-        if(FLAG_CHECK(flags_main, FLAG_MAIN_10MS)){
-            FLAG_CLEAR(flags_main, FLAG_MAIN_10MS);
-            timers_wdt_feed();
-            count--;
-        }
-    }
-}
-
-/**
  * Program entry point
  */
 int main(void){
@@ -96,21 +84,10 @@ int main(void){
     timers_init();                                  // Initialize timers
     timers_wdt_enable();                            // Enable WDT now
 
-    safe_delay_10ms(50);                            // Wait 500ms for sensors to power on
+    timers_safe_delay(50);                          // Wait ~500ms for sensors to power on
 
     // Initialize sensors
-    uint8_t write_buf_ex[8];
-    uint8_t read_buf_ex[8];
-    i2c_trans exist_trans;
-    exist_trans.address = 0x28;
-    exist_trans.write_buf = write_buf_ex;
-    exist_trans.write_buf[0] = 0x00;
-    exist_trans.write_count = 0;
-    exist_trans.read_buf = read_buf_ex;
-    exist_trans.read_count = 1;
-    i2c0_perform(&exist_trans);
-
-    if(exist_trans.status == I2C_STATUS_ERROR){
+    if(!bno055_init()){
         sensor_error();
     }
 
@@ -174,9 +151,32 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
             // Nothing here for now
             // ---------------------------------------------------------------------------------------------------------
+        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_PROC)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_PROC);
+            // ---------------------------------------------------------------------------------------------------------
+            // Runs when i2c0 needs process
+            // ---------------------------------------------------------------------------------------------------------
+            i2c0_process();
+            // ---------------------------------------------------------------------------------------------------------
+        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_DONE)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_DONE);
+            // ---------------------------------------------------------------------------------------------------------
+            // Runs when i2c0 finishes a transaction
+            // ---------------------------------------------------------------------------------------------------------
+            // TODO: Have every sensor check if its transaction is done
+            // ---------------------------------------------------------------------------------------------------------
+        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_BNO055_DELAY)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_BNO055_DELAY);
+            // ---------------------------------------------------------------------------------------------------------
+            // Runs when bno055 delay finishes
+            // ---------------------------------------------------------------------------------------------------------
+            // TODO: call bno055 function
+            // ---------------------------------------------------------------------------------------------------------
         }else{
             // Enter sleep mode because nothing to do right now (no flags set)
             // Will be woken by ISRs, which may have set flags
+            // Note: Nothing needs to be done in an ISR to explicitly wake.
+            // The CPU is woken by any interrupt (after ISR runs)
             sleep(PM_SLEEPCFG_SLEEPMODE_IDLE0);
             // Will resume running here once woken by ISR, which may have set a flag
         }        

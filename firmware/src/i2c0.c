@@ -26,9 +26,8 @@
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static uint8_t state;
-
-static uint8_t result;
+static volatile uint8_t state;
+static volatile uint8_t result;
 
 // Transaction queue (implemented as ring buffer)
 // next = index to insert at next

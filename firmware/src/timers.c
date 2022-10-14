@@ -12,8 +12,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Timer tasks
-static struct timer_task task_10ms, task_100ms, task_1000ms;
+static struct timer_task task_10ms, task_100ms, task_1000ms, task_bno055, task_safe_delay;
 
+static volatile bool safe_delay_done;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
@@ -26,6 +27,12 @@ static void cb_timing(const struct timer_task *const timer_task){
         FLAG_SET(flags_main, FLAG_MAIN_100MS);
     }else if(timer_task == &task_1000ms){
         FLAG_SET(flags_main, FLAG_MAIN_1000MS);
+    }else if(timer_task == &task_bno055){
+        FLAG_SET(flags_main, FLAG_MAIN_BNO055_DELAY);
+        timer_remove_task(&TIMER_0, &task_bno055);
+    }else if(timer_task == &task_safe_delay){
+        safe_delay_done = true;
+        timer_remove_task(&TIMER_0, &task_safe_delay);
     }
 }
 
@@ -61,4 +68,25 @@ void timers_wdt_enable(void){
 
 void timers_wdt_feed(void){
     wdt_feed(&WDT_0);
+}
+
+void timers_enable_bno055_delay(uint32_t delay){
+    task_bno055.cb = cb_timing;
+    task_bno055.interval = delay;
+    task_bno055.mode = TIMER_TASK_ONE_SHOT;
+    timer_add_task(&TIMER_0, &task_bno055);
+}
+
+void timers_safe_delay(uint32_t delayms){
+    safe_delay_done = false;
+    task_safe_delay.cb = cb_timing;
+    task_safe_delay.interval = delayms;
+    task_safe_delay.mode = TIMER_TASK_ONE_SHOT;
+    timer_add_task(&TIMER_0, &task_safe_delay);
+    while(!safe_delay_done){
+        if(FLAG_CHECK(flags_main, FLAG_MAIN_10MS)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_10MS);
+            timers_wdt_feed();
+        }
+    }
 }
