@@ -175,6 +175,14 @@ if __name__ == "__main__":
             print("Fail.")
             exit(1)
 
+        print("Setting thruster inversions...", end="")
+        if cb.set_inverted(True, True, False, False, True, False, False, True):
+            print("Done.")
+        else:
+            print("Fail.")
+            exit(1)
+
+
         print("Initializing networking...", end="")
         try:
             netmgr = NetMgr()
@@ -209,11 +217,11 @@ if __name__ == "__main__":
 
             # Scale speeds to make the robot more controllable
             x *= 0.5
-            y *= 0.5
-            yaw *= -0.35
-            pitch *= 0.1
-            roll *= 0.1
-            z *= 0.3
+            y *= -0.5
+            yaw *= 0.45
+            pitch *= 0.3
+            roll *= 0.2
+            z *= 0.5
 
             # Set the speeds
             cb.set_local(x, y, z, pitch, roll, yaw)
