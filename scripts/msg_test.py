@@ -65,7 +65,7 @@ def set_local(x: float, y: float, z: float, pitch: float, roll: float, yaw: floa
     msg.extend(struct.pack("<f", pitch))
     msg.extend(struct.pack("<f", roll))
     msg.extend(struct.pack("<f", yaw))
-    write_msg()
+    write_msg(msg)
 
 def set_mode(mode: Mode) -> bool:
     # Construct and send mode set message
@@ -102,4 +102,6 @@ def set_inverted(i1: bool, i2: bool, i3: bool, i4: bool, i5: bool, i6: bool, i7:
 
 if __name__ == "__main__":
     set_mode(Mode.RAW)
+    set_inverted(True, True, False, False, True, False, False, True)
     set_raw(0.5, 0, 0, 0, 0, 0, 0, 0)
+    set_local(0, 0.5, 0, 0, 0, 0)
