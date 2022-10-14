@@ -200,8 +200,8 @@
 #define OPMODE_IMU              0X08
 
 // Buffer settings
-#define WRITE_BUF_SIZE          4           // max number of write bytes per transaction
-#define READ_BUF_SIZE           4           // max number of read bytes per transaction
+#define WRITE_BUF_SIZE          16          // max number of write bytes per transaction
+#define READ_BUF_SIZE           16          // max number of read bytes per transaction
 
 // States
 #define STATE_DELAY             0           // Delay state
@@ -217,15 +217,13 @@
 #define STATE_SETMODE_IMU       10          // Set to imu mode
 #define STATE_RD_GRAV           11          // Read gravity vector
 #define STATE_RD_QUAT           12          // Read quaternion orientation
-#define STATE_IDLE              13          // Idle time between readings
-#define STATE_RECONFIG          14          // Enter config mode before reconfigure
+#define STATE_RECONFIG          13          // Enter config mode before reconfigure
 
 // State transition triggers
 #define TRIGGER_NONE            0
 #define TRIGGER_I2C_DONE        1
 #define TRIGGER_I2C_ERROR       2
 #define TRIGGER_DELAY_DONE      3
-#define TRIGGER_IDLE_DONE       4
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Globals
@@ -249,74 +247,73 @@ static uint8_t delay_next_state;
 
 // State machine diagram generated with asciiflow.com
 /*
- *               │start
- *               │
- *       ┌───────▼───────┐
- *       │     NONE      │                   trigger(delay_ms)
- *       └───────┬───────┘                 ─────────────────────►
- *               │init(0)
- *               │                         Note: i2c_error causes
- *       ┌───────▼───────┐                 a repeat of any state after 10ms
- *       │  SETMODE_CFG  │
- *       └───────┬───────┘
- *               │i2c_done(30)
- *               │
- *       ┌───────▼───────┐
- *       │     RESET     │
- *       └───────┬───────┘
- *               │i2c_done(30)
- *               │
- *       ┌───────▼───────┐◄───────┐
- *       │     RD_ID     │        │i2c_done,invalid_id(10)
- *       └───────┬───────┴────────┘
- *               │i2c_done,valid_id(50)
- *               │
- *       ┌───────▼───────┐
- *       │  WR_PWR_MODE  │
- *       └───────┬───────┘
- *               │i2c_done(10)
- *               │
- *       ┌───────▼───────┐
- *       │  WR_PAGE_ID   │
- *       └───────┬───────┘
- *               │i2c_done(10)
- *               │
- *       ┌───────▼───────┐
- *       │ WR_SYSTRIGGER │
- *       └───────┬───────┘
- *               │i2c_done(10)
- *               │
- *       ┌───────▼───────┐
- *       │  WR_AXIS_MAP  ◄─────────────────────────────────┐
- *       └───────┬───────┘                                 │
- *               │i2c_done(10)                             │
- *               │                                         │
- *       ┌───────▼───────┐                                 │
- *       │ WR_AXIS_SIGN  │                                 │
- *       └───────┬───────┘                                 │
- *               │i2c_done(10)                             │
- *               │                                         │
- *       ┌───────▼───────┐                                 │
- *       │  SETMODE_IMU  │                                 │
- *       └───────┬───────┘                                 │
- *               │i2c_done(20)                             │
- *               │                             i2c_done(30)│
- *       ┌───────▼───────┐                         ┌───────┴───────┐
- * ┌─────►    RD_GRAV    │                         │   RECONFIG    │
- * │     └───────┬───────┘                         └───────▲───────┘
- * │             │i2c_done(2)                              │
- * │             │                                         │
- * │     ┌───────▼───────┐                                 │
- * │     │    RD_QUAT    │                                 │
- * │     └───────┬───────┘                                 │
- * │             │i2c_done(2)                              │
- * │             │                                         │
- * │     ┌───────▼───────┐                                 │
- * │     │     IDLE      │                                 │
- * │     └───┬───────┬───┘                                 │
- * │         │       │                                     │
- * └─────────┘       └─────────────────────────────────────┘
- *  idle_done                       reconfig
+ *                            │start
+ *                            │
+ *                    ┌───────▼───────┐
+ *                    │     NONE      │                   trigger(delay_ms)
+ *                    └───────┬───────┘                 ─────────────────────►
+ *                            │init(0)
+ *                            │                         Note: i2c_error causes
+ *                    ┌───────▼───────┐                 a repeat of any state after 10ms
+ *                    │  SETMODE_CFG  │
+ *                    └───────┬───────┘
+ *                            │i2c_done(30)
+ *                            │
+ *                    ┌───────▼───────┐
+ *                    │     RESET     │
+ *                    └───────┬───────┘
+ *                            │i2c_done(30)
+ *                            │
+ *                    ┌───────▼───────┐◄───────┐
+ *                    │     RD_ID     │        │i2c_done,invalid_id(10)
+ *                    └───────┬───────┴────────┘
+ *                            │i2c_done,valid_id(50)
+ *                            │
+ *                    ┌───────▼───────┐
+ *                    │  WR_PWR_MODE  │
+ *                    └───────┬───────┘
+ *                            │i2c_done(10)
+ *                            │
+ *                    ┌───────▼───────┐
+ *                    │  WR_PAGE_ID   │
+ *                    └───────┬───────┘
+ *                            │i2c_done(10)
+ *                            │
+ *                    ┌───────▼───────┐
+ *                    │ WR_SYSTRIGGER │
+ *                    └───────┬───────┘
+ *                            │i2c_done(10)
+ *                            │
+ *                    ┌───────▼───────┐
+ *                    │  WR_AXIS_MAP  ◄─────────────────────────────────┐
+ *                    └───────┬───────┘                                 │
+ *                            │i2c_done(10)                             │
+ *                            │                                         │
+ *                    ┌───────▼───────┐                                 │
+ *                    │ WR_AXIS_SIGN  │                                 │
+ *                    └───────┬───────┘                                 │
+ *                            │i2c_done(10)                             │
+ *                            │                                         │
+ *                    ┌───────▼───────┐                                 │
+ *                    │  SETMODE_IMU  │                                 │
+ *                    └───────┬───────┘                                 │
+ *                            │i2c_done(20)                             │
+ *                            │                             i2c_done(30)│
+ *                    ┌───────▼───────┐                         ┌───────┴───────┐
+ * ┌──────────────────►    RD_GRAV    │                         │   RECONFIG    │
+ * │                  └───────┬───────┘                         └───────▲───────┘
+ * │                          │i2c_done(10)                             │
+ * │                          │                                         │
+ * │                  ┌───────▼───────┐                                 │
+ * │                  │    RD_QUAT    │                                 │
+ * │                  └───┬───────┬───┘                                 │
+ * │                      │       │                                     │
+ * │                      │       │                                     │
+ * │i2c_done,!reconfig(10)│       │i2c_done,reconfig(10)                │
+ * │                      │       │                                     │
+ * │                      │       │                                     │
+ * │                      │       │                                     │
+ * └──────────────────────┘       └─────────────────────────────────────┘
  */
 // Called when some event that may change state occurs
 void bno055_state_machine(uint8_t trigger){    
@@ -413,6 +410,21 @@ void bno055_state_machine(uint8_t trigger){
                 delay_next_state = STATE_RD_GRAV;
             }
             break;
+        case STATE_RD_GRAV:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 10;
+                delay_next_state = STATE_RD_QUAT;
+            }
+            break;
+        case STATE_RD_QUAT:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 10;
+                delay_next_state = reconfig ? STATE_RECONFIG : STATE_RD_GRAV;
+                reconfig = false;
+            }
+            break;
         }
     }
 
@@ -494,6 +506,12 @@ void bno055_state_machine(uint8_t trigger){
         trans.read_count = 6;
         i2c0_enqueue(&trans);
         break;
+    case STATE_RD_QUAT:
+        trans.write_buf[0] = BNO055_QUATERNION_DATA_W_LSB_ADDR;
+        trans.write_count = 1;
+        trans.read_count = 8;
+        i2c0_enqueue(&trans);
+        break;
     }
 }
 
@@ -549,13 +567,10 @@ bool bno055_init(void){
 }
 
 void bno055_delay_done(void){
-    if(state == STATE_IDLE)
-        bno055_state_machine(TRIGGER_IDLE_DONE);
-    else
-        bno055_state_machine(TRIGGER_DELAY_DONE);
+    bno055_state_machine(TRIGGER_DELAY_DONE);
 }
 
-void bno055_check_i2c(void){
+void bno055_check_i2c(void){   
     // Check if this I2C transaction was the one that finished
     // It could either still be busy or idle
     // If so, nothing should happen I2C0_DONE was set b/c another sensor's transaction finished
