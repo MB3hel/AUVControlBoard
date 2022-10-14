@@ -231,6 +231,9 @@ class ControlBoard:
                 self.__ser.write(ControlBoard.ESCAPE_BYTE)
             self.__ser.write(c)
         crc = Crc16.calcbytes(msg, byteorder='big')
+        crc = crc.replace(ControlBoard.START_BYTE, ControlBoard.ESCAPE_BYTE + ControlBoard.START_BYTE)
+        crc = crc.replace(ControlBoard.ESCAPE_BYTE, ControlBoard.ESCAPE_BYTE + ControlBoard.ESCAPE_BYTE)
+        crc = crc.replace(ControlBoard.END_BYTE, ControlBoard.ESCAPE_BYTE + ControlBoard.END_BYTE)
         self.__ser.write(crc)
         self.__ser.write(ControlBoard.END_BYTE)
 

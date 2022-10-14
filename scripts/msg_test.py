@@ -25,6 +25,9 @@ def write_msg(msg: bytes):
             res.extend(ESCAPE_BYTE)
         res.extend(c)
     crc = Crc16.calcbytes(msg, byteorder='big')
+    crc = crc.replace(START_BYTE, ESCAPE_BYTE + START_BYTE)
+    crc = crc.replace(ESCAPE_BYTE, ESCAPE_BYTE + ESCAPE_BYTE)
+    crc = crc.replace(END_BYTE, ESCAPE_BYTE + END_BYTE)
     res.extend(crc)
     res.extend(END_BYTE)
     
