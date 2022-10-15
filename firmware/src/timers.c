@@ -12,7 +12,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Timer tasks
-static struct timer_task task_10ms, task_100ms, task_1000ms, task_bno055, task_safe_delay;
+static struct timer_task task_10ms, task_20ms, task_50ms, task_100ms, task_1000ms, task_bno055, task_safe_delay;
 
 static volatile bool safe_delay_done;
 
@@ -23,6 +23,10 @@ static volatile bool safe_delay_done;
 static void cb_timing(const struct timer_task *const timer_task){
     if(timer_task == &task_10ms){
         FLAG_SET(flags_main, FLAG_MAIN_10MS);
+    }else if(timer_task == &task_20ms){
+        FLAG_SET(flags_main, FLAG_MAIN_20MS);
+    }else if(timer_task == &task_50ms){
+        FLAG_SET(flags_main, FLAG_MAIN_50MS);
     }else if(timer_task == &task_100ms){
         FLAG_SET(flags_main, FLAG_MAIN_100MS);
     }else if(timer_task == &task_1000ms){
@@ -44,6 +48,16 @@ void timers_init(void){
     task_10ms.interval = 10;
     task_10ms.mode = TIMER_TASK_REPEAT;
     timer_add_task(&TIMER_0, &task_10ms);
+
+    task_20ms.cb = cb_timing;                       // Setup 20ms timing task
+    task_20ms.interval = 20;
+    task_20ms.mode = TIMER_TASK_REPEAT;
+    timer_add_task(&TIMER_0, &task_20ms);
+
+    task_50ms.cb = cb_timing;                       // Setup 50ms timing task
+    task_50ms.interval = 50;
+    task_50ms.mode = TIMER_TASK_REPEAT;
+    timer_add_task(&TIMER_0, &task_50ms);
 
     task_100ms.cb = cb_timing;                      // Setup 100ms timing task
     task_100ms.interval = 100;

@@ -83,8 +83,11 @@ static void cb_error(struct i2c_m_async_desc *const i2c, int32_t error){
     // But not doing so results in interrupt repeatedly occurring
     // Looking in hal_i2c_m_async and hpl_sercom, it looks like this flag is
     // never cleared. My guess is that this is an SAMD51 specific ASF4 bug...
-    hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, SERCOM_I2CM_INTFLAG_MB);
-    hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, SERCOM_I2CM_INTFLAG_SB);
+    // TODO: Determine if this needs too be done for other error codes too
+    if(error == I2C_NACK){
+        hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, SERCOM_I2CM_INTFLAG_MB);
+        hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, SERCOM_I2CM_INTFLAG_SB);
+    }
 }
 
 void i2c0_init(void){

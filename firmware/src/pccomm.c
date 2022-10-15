@@ -121,8 +121,9 @@ void pccomm_process(void){
     // Nowhere to put processed data (msg_queue full)
     // This should never happen...
     // If it does, message queue should probably be larger
-    if(msg_queue_count == MSG_QUEUE_COUNT)
+    if(msg_queue_count == MSG_QUEUE_COUNT){
         return;
+    }
 
     // Parse finite number of bytes from the read buffer
     // Cannot just parse until read buffer is empty

@@ -304,14 +304,14 @@ static bno055_data data;
  *                    ┌───────▼───────┐                         ┌───────┴───────┐
  * ┌──────────────────►    RD_GRAV    │                         │   RECONFIG    │
  * │                  └───────┬───────┘                         └───────▲───────┘
- * │                          │i2c_done(10)                             │
+ * │                          │i2c_done(15)                             │
  * │                          │                                         │
  * │                  ┌───────▼───────┐                                 │
  * │                  │    RD_QUAT    │                                 │
  * │                  └───┬───────┬───┘                                 │
  * │                      │       │                                     │
  * │                      │       │                                     │
- * │i2c_done,!reconfig(10)│       │i2c_done,reconfig(10)                │
+ * │i2c_done,!reconfig(15)│       │i2c_done,reconfig(15)                │
  * │                      │       │                                     │
  * │                      │       │                                     │
  * │                      │       │                                     │
@@ -446,14 +446,14 @@ void bno055_state_machine(uint8_t trigger){
         case STATE_RD_GRAV:
             if(trigger == TRIGGER_I2C_DONE){
                 state = STATE_DELAY;
-                delay = 10;
+                delay = 15;
                 delay_next_state = STATE_RD_QUAT;
             }
             break;
         case STATE_RD_QUAT:
             if(trigger == TRIGGER_I2C_DONE){
                 state = STATE_DELAY;
-                delay = 10;
+                delay = 15;
                 delay_next_state = reconfig ? STATE_RECONFIG : STATE_RD_GRAV;
                 reconfig = false;
             }

@@ -8,6 +8,9 @@ from enum import Enum, auto
 from crccheck.crc import Crc16CcittFalse as Crc16
 
 
+debug_prints = True
+
+
 class Quaternion:
     def __init__(self, w: float = 0.0, x: float = 0.0, y: float = 0.0, z: float = 0.0):
         self.w: float = w
@@ -40,7 +43,9 @@ class ControlBoard:
         # This could include old messages such as watchdog kills, sensor data, etc
         # From when control board was connected, but not in use
         # Thus messages just sat in buffer
-        self.__ser.read_all()
+        for i in range(10):
+            self.__ser.read_all()
+            time.sleep(0.05)
 
         self.__state_lock = threading.Lock()
         self.__mode: ControlBoard.Mode = ControlBoard.Mode.UNKNOWN
@@ -174,6 +179,16 @@ class ControlBoard:
         return Quaternion(self.__orientation_quat.w, self.__orientation_quat.x, 
                 self.__orientation_quat.y, self.__orientation_quat.z)
 
+    def __print_bytes(self, msg: bytes):
+        print("[", end="")
+        for i in range(len(msg)):
+            b = msg[i]
+            print("0x{:02X}".format(b), end="")
+            if i == len(msg) - 1:
+                print("]")
+            else:
+                print(" ", end="")
+
     def __handle_read_message(self, msg: bytes):
         # Last two bytes of msg are crc
         # Verify CRC
@@ -182,7 +197,13 @@ class ControlBoard:
         if read_crc != calc_crc:
             # Ignore messages with invalid CRC
             # Log that this occurred
-            print("WARNING: Got a message with invalid CRC!")
+            if debug_prints:
+                print("WARNING: Got a message with invalid CRC!")
+                print(msg)
+                self.__print_bytes(msg)
+                print("read_crc = 0x{:04X}".format(read_crc))
+                print("calc_crc = 0x{:04X}".format(calc_crc))
+                print()
             return
 
         # Done with crc data

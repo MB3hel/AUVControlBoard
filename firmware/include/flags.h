@@ -30,6 +30,8 @@
 #define FLAG_MAIN_I2C0_PROC         0b0000000000100000      // i2c0 needs process
 #define FLAG_MAIN_I2C0_DONE         0b0000000001000000      // i2c0 transaction done
 #define FLAG_MAIN_BNO055_DELAY      0b0000000010000000      // bno055 delay done
+#define FLAG_MAIN_20MS              0b0000000100000000      // 20ms elapsed
+#define FLAG_MAIN_50MS              0b0000001000000000      // 50ms elapsed
 
 // Defined in main.c
 extern volatile uint16_t flags_main;
