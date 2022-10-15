@@ -8,6 +8,19 @@ from enum import Enum, auto
 from crccheck.crc import Crc16CcittFalse as Crc16
 
 
+class Quaternion:
+    def __init__(self, w: float = 0.0, x: float = 0.0, y: float = 0.0, z: float = 0.0):
+        self.w: float = w
+        self.w: float = x
+        self.y: float = y
+        self.z: float = z
+
+class Vector3:
+    def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0):
+        self.x = x
+        self.y = y
+        self.z = z
+
 class ControlBoard:
     # Communication protocol special values
     START_BYTE = b'\xfd'
@@ -36,6 +49,9 @@ class ControlBoard:
         self.__read_thread.start()
         self.__feed_thread = threading.Thread(target=self.__feed_thread, daemon=True)
         self.__feed_thread.start()
+
+        self.__orientation_quat: Quaternion = Quaternion()
+        self.__grav_vec: Vector3 = Vector3()
 
         self.set_mode(ControlBoard.Mode.RAW)
         self.set_inverted(False, False, False, False, False, False, False, False)
@@ -149,6 +165,13 @@ class ControlBoard:
         msg.extend(struct.pack("<f", roll))
         msg.extend(struct.pack("<f", yaw))
         self.__write_msg(msg)
+
+    def get_gravity_vector(self) -> Vector3:
+        return Vector3(self.__grav_vec.x, self.__grav_vec.y, self.__grav_vec.z)
+    
+    def get_orientation_quat(self) -> Quaternion:
+        return Quaternion(self.__orientation_quat.w, self.__orientation_quat.x, 
+                self.__orientation_quat.y, self.__orientation_quat.z)
 
     def __handle_read_message(self, msg: bytes):
         # Last two bytes of msg are crc
