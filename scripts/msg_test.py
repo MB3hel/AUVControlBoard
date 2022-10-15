@@ -8,6 +8,7 @@ from enum import Enum, auto
 class Mode(Enum):
     RAW = auto()
     LOCAL = auto()
+    GLOBAL = auto()
 
 START_BYTE = b'\xfd'
 END_BYTE = b'\xfe'
@@ -67,6 +68,17 @@ def set_local(x: float, y: float, z: float, pitch: float, roll: float, yaw: floa
     msg.extend(struct.pack("<f", yaw))
     write_msg(msg)
 
+def set_global(self, x: float, y: float, z: float, pitch: float, roll: float, yaw: float):
+    msg = bytearray()
+    msg.extend(b'GLOBAL')
+    msg.extend(struct.pack("<f", x))
+    msg.extend(struct.pack("<f", y))
+    msg.extend(struct.pack("<f", z))
+    msg.extend(struct.pack("<f", pitch))
+    msg.extend(struct.pack("<f", roll))
+    msg.extend(struct.pack("<f", yaw))
+    write_msg(msg)
+
 def set_mode(mode: Mode) -> bool:
     # Construct and send mode set message
     msg = bytearray()
@@ -75,6 +87,8 @@ def set_mode(mode: Mode) -> bool:
         msg.extend(b'R')
     elif mode == Mode.LOCAL:
         msg.extend(b'L')
+    elif mode == Mode.GLOBAL:
+        msg.extend(b'G')
     else:
         # Not a valid mode to set
         # Note that UNKNOWN mode cannot be set

@@ -35,6 +35,7 @@ class ControlBoard:
         UNKNOWN = auto()
         RAW = auto()
         LOCAL = auto()
+        GLOBAL = auto()
 
     def __init__(self, port: str):
         self.__ser: serial.Serial = serial.Serial(port)
@@ -75,6 +76,8 @@ class ControlBoard:
             msg.extend(b'R')
         elif mode == ControlBoard.Mode.LOCAL:
             msg.extend(b'L')
+        elif mode == ControlBoard.Mode.GLOBAL:
+            msg.extend(b'G')
         else:
             # Not a valid mode to set
             # Note that UNKNOWN mode cannot be set
@@ -171,6 +174,17 @@ class ControlBoard:
         msg.extend(struct.pack("<f", roll))
         msg.extend(struct.pack("<f", yaw))
         self.__write_msg(msg)
+    
+    def set_global(self, x: float, y: float, z: float, pitch: float, roll: float, yaw: float):
+        msg = bytearray()
+        msg.extend(b'GLOBAL')
+        msg.extend(struct.pack("<f", x))
+        msg.extend(struct.pack("<f", y))
+        msg.extend(struct.pack("<f", z))
+        msg.extend(struct.pack("<f", pitch))
+        msg.extend(struct.pack("<f", roll))
+        msg.extend(struct.pack("<f", yaw))
+        self.__write_msg(msg)
 
     def get_gravity_vector(self) -> Vector3:
         return Vector3(self.__grav_vec.x, self.__grav_vec.y, self.__grav_vec.z)
@@ -224,6 +238,8 @@ class ControlBoard:
                     self.__mode = ControlBoard.Mode.RAW
                 elif msg[4:5] == b'L':
                     self.__mode = ControlBoard.Mode.LOCAL
+                elif msg[4:5] == b'G':
+                    self.__mode = ControlBoard.Mode.GLOBAL
         elif msg == b'WDGK':
             # Watchdog kill message
             # Received when motor watchdog times out and kills thrusters

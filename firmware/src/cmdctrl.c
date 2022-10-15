@@ -54,6 +54,9 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
             case CMDCTRL_MODE_LOCAL:
                 response[4] = 'L';
                 break;
+            case CMDCTRL_MODE_GLOBAL:
+                response[4] = 'G';
+                break;
             }
             pccomm_write_msg(response, 5);
         }else if(data_matches(&msg[1], len -1, (uint8_t[]){'T', 'I', 'N', 'V'}, 4)){
