@@ -178,7 +178,6 @@ void motor_control_local(float x, float y, float z, float pitch, float roll, flo
 }
 
 void motor_control_global(float x, float y, float z, float pitch, float roll, float yaw, float grav_x, float grav_y, float grav_z){
-    
     // Construct target motion vector
     float target_arr[6];
     matrix target;

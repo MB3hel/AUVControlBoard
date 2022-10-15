@@ -163,16 +163,16 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         // Each speed (x, y, z, pitch, roll, yaw) is a float (32-bit) from -1.0 to 1.0
 
         // Ensure enough data
-        if(len < 29)
+        if(len < 30)
             return;
 
         // Get speeds from message
-        global_x = conversions_data_to_float(&msg[5], true);
-        global_y = conversions_data_to_float(&msg[9], true);
-        global_z = conversions_data_to_float(&msg[13], true);
-        global_pitch = conversions_data_to_float(&msg[17], true);
-        global_roll = conversions_data_to_float(&msg[21], true);
-        global_yaw = conversions_data_to_float(&msg[25], true);
+        global_x = conversions_data_to_float(&msg[6], true);
+        global_y = conversions_data_to_float(&msg[10], true);
+        global_z = conversions_data_to_float(&msg[14], true);
+        global_pitch = conversions_data_to_float(&msg[18], true);
+        global_roll = conversions_data_to_float(&msg[22], true);
+        global_yaw = conversions_data_to_float(&msg[26], true);
 
         // Get sensor data
         bno055_data imu_dat = bno055_get();
