@@ -150,6 +150,9 @@ int main(void){
             case CMDCTRL_MODE_LOCAL:
                 dotstar_set(10, 0, 100);
                 break;
+            case CMDCTRL_MODE_GLOBAL:
+                dotstar_set(120, 50, 0);
+                break;
             }
 
             // Handle motor watchdog
