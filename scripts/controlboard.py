@@ -227,7 +227,7 @@ class ControlBoard:
             self.__orientation_quat.x = struct.unpack_from("<f", buffer=msg, offset=8)[0]
             self.__orientation_quat.y = struct.unpack_from("<f", buffer=msg, offset=12)[0]
             self.__orientation_quat.z = struct.unpack_from("<f", buffer=msg, offset=16)[0]
-        elif msg.startswith(b'GRAV'):
+        elif msg.startswith(b'GVEC'):
             self.__grav_vec.x = struct.unpack_from("<f", buffer=msg, offset=4)[0]
             self.__grav_vec.y = struct.unpack_from("<f", buffer=msg, offset=8)[0]
             self.__grav_vec.z = struct.unpack_from("<f", buffer=msg, offset=12)[0]

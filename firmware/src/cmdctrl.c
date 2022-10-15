@@ -167,4 +167,5 @@ void cmdctrl_send_sensors(void){
     conversions_float_to_data(imu_dat.grav_x, &msg[4], true);
     conversions_float_to_data(imu_dat.grav_y, &msg[8], true);
     conversions_float_to_data(imu_dat.grav_z, &msg[12], true);
+    pccomm_write_msg(msg, 16);
 }
