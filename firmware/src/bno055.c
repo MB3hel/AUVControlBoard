@@ -229,7 +229,7 @@
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static bno055_config config;
+static uint8_t axis_config;
 static bool reconfig;
 
 static uint8_t write_buf[WRITE_BUF_SIZE];
@@ -332,6 +332,9 @@ void bno055_state_machine(uint8_t trigger){
         data.grav_y = tmp16 / 100.0f;
         tmp16 = ((int16_t)trans.read_buf[4]) | (((int16_t)trans.read_buf[5]) << 8);
         data.grav_z = tmp16 / 100.0f;
+
+        // TODO: Fix this properly instead of an extra inversion here...
+        data.grav_z *= -1;
         break;
     case STATE_RD_QUAT:
         tmp16 = (((uint16_t)trans.read_buf[1]) << 8) | ((uint16_t)trans.read_buf[0]);
@@ -446,14 +449,14 @@ void bno055_state_machine(uint8_t trigger){
         case STATE_RD_GRAV:
             if(trigger == TRIGGER_I2C_DONE){
                 state = STATE_DELAY;
-                delay = 15;
+                delay = 50;
                 delay_next_state = STATE_RD_QUAT;
             }
             break;
         case STATE_RD_QUAT:
             if(trigger == TRIGGER_I2C_DONE){
                 state = STATE_DELAY;
-                delay = 15;
+                delay = 50;
                 delay_next_state = reconfig ? STATE_RECONFIG : STATE_RD_GRAV;
                 reconfig = false;
             }
@@ -525,14 +528,64 @@ void bno055_state_machine(uint8_t trigger){
         break;
     case STATE_WR_AXIS_MAP:
         trans.write_buf[0] = BNO055_AXIS_MAP_CONFIG_ADDR;
-        trans.write_buf[1] = config.axis_x | (config.axis_y << 2) | (config.axis_z << 4);
+        switch(axis_config){
+        case BNO055_AXIS_REMAP_P0:
+            trans.write_buf[1] = 0x21;
+            break;
+        case BNO055_AXIS_REMAP_P1:
+            trans.write_buf[1] = 0x24;
+            break;
+        case BNO055_AXIS_REMAP_P2:
+            trans.write_buf[1] = 0x24;
+            break;
+        case BNO055_AXIS_REMAP_P3:
+            trans.write_buf[1] = 0x21;
+            break;
+        case BNO055_AXIS_REMAP_P4:
+            trans.write_buf[1] = 0x24;
+            break;
+        case BNO055_AXIS_REMAP_P5:
+            trans.write_buf[1] = 0x21;
+            break;
+        case BNO055_AXIS_REMAP_P6:
+            trans.write_buf[1] = 0x21;
+            break;
+        case BNO055_AXIS_REMAP_P7:
+            trans.write_buf[1] = 0x24;
+            break;
+        }
         trans.write_count = 2;
         trans.read_count = 0;
         i2c0_enqueue(&trans);
         break;
     case STATE_WR_AXIS_SIGN:
         trans.write_buf[0] = BNO055_AXIS_MAP_SIGN_ADDR;
-        trans.write_buf[1] = config.sign_z | (config.sign_y << 1) | (config.sign_z << 2);
+        switch(axis_config){
+        case BNO055_AXIS_REMAP_P0:
+            trans.write_buf[1] = 0x04;
+            break;
+        case BNO055_AXIS_REMAP_P1:
+            trans.write_buf[1] = 0x00;
+            break;
+        case BNO055_AXIS_REMAP_P2:
+            trans.write_buf[1] = 0x06;
+            break;
+        case BNO055_AXIS_REMAP_P3:
+            trans.write_buf[1] = 0x02;
+            break;
+        case BNO055_AXIS_REMAP_P4:
+            trans.write_buf[1] = 0x03;
+            break;
+        case BNO055_AXIS_REMAP_P5:
+            trans.write_buf[1] = 0x01;
+            break;
+        case BNO055_AXIS_REMAP_P6:
+            trans.write_buf[1] = 0x07;
+            break;
+        case BNO055_AXIS_REMAP_P7:
+            trans.write_buf[1] = 0x05;
+            break;
+        }
         trans.write_count = 2;
         trans.read_count = 0;
         i2c0_enqueue(&trans);
@@ -580,12 +633,7 @@ bool bno055_init(void){
     reconfig = false;
 
     // Setup initial config
-    config.axis_x = BNO055_AXIS_X;
-    config.axis_y = BNO055_AXIS_Y;
-    config.axis_z = BNO055_AXIS_Z;
-    config.sign_x = BNO055_SIGN_POS;
-    config.sign_y = BNO055_SIGN_POS;
-    config.sign_z = BNO055_SIGN_POS;
+    axis_config = BNO055_AXIS_REMAP_P5;
 
     // Setup transaction
     trans.address = BNO055_ADDR;
@@ -644,9 +692,9 @@ void bno055_check_i2c(void){
     trans.status = I2C_STATUS_IDLE;
 }
 
-void bno055_reconfig(bno055_config new_config){
+void bno055_reconfig(uint8_t axis_remap){
     // Update config var
-    config = new_config;
+    axis_config = axis_remap;
     // Set persistant flag to be handled next time in idle state
     reconfig = true;
 }

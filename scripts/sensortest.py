@@ -1,9 +1,12 @@
+import controlboard
 from controlboard import ControlBoard
 import traceback
 import time
 
 
 if __name__ == "__main__":
+    controlboard.debug_prints = False
+
     # Connect to and configure control board
     try:
         print("Connecting to control board...", end="", flush=True)
