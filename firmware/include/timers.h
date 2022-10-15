@@ -38,3 +38,8 @@ void timers_enable_bno055_delay(uint32_t delay);
  * @param delayms Duration in ms to delay for
  */
 void timers_safe_delay(uint32_t delayms);
+
+/**
+ * Use WDT to trigger a system reset now
+ */
+void timers_reset_now(void);

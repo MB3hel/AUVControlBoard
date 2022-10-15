@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <bno055.h>
+#include <timers.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -179,6 +180,10 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         // Update motor speeds
         motor_control_global(global_x, global_y, global_z, global_pitch, global_roll, 
                 global_yaw, imu_dat.grav_x, imu_dat.grav_y, imu_dat.grav_z);
+    }else if(data_matches(msg, len, (uint8_t[]){'R', 'E', 'S', 'E', 'T'}, 5)){
+        // RESET command (reset MCU)
+        // R,E,S,E,T
+        timers_reset_now();
     }
 }
 

@@ -104,3 +104,10 @@ void timers_safe_delay(uint32_t delayms){
         }
     }
 }
+
+void timers_reset_now(void){
+    wdt_disable(&WDT_0); 
+    wdt_set_timeout_period(&WDT_0, 1024, 1);
+    wdt_enable(&WDT_0); 
+    while(1);
+}
