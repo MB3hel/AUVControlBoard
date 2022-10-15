@@ -209,8 +209,14 @@ void pccomm_write_msg(uint8_t *data, uint32_t len){
 
     // Calculate and add crc
     uint16_t crc = crc16_ccitt(data, len);
-    cb_write(&buf_write, (crc >> 8) & 0xFF);
-    cb_write(&buf_write, crc & 0xFF);
+    uint8_t high_byte = (crc >> 8) & 0xFF;
+    uint8_t low_byte = crc & 0xFF;
+    if(high_byte == START_BYTE || high_byte == END_BYTE || high_byte == ESCAPE_BYTE)
+        cb_write(&buf_write, ESCAPE_BYTE);
+    cb_write(&buf_write, high_byte);
+    if(low_byte == START_BYTE || low_byte == END_BYTE || low_byte == ESCAPE_BYTE)
+        cb_write(&buf_write, ESCAPE_BYTE);
+    cb_write(&buf_write, low_byte);
 
     cb_write(&buf_write, END_BYTE);
 

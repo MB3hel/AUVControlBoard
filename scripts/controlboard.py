@@ -224,9 +224,13 @@ class ControlBoard:
                         self.__inverted[i] = False
         elif msg.startswith(b'QUAT'):
             self.__orientation_quat.w = struct.unpack_from("<f", buffer=msg, offset=4)[0]
-            self.__orientation_quat.x = struct.unpack_from("<f", buffer=msg, offset=4)[0]
-            self.__orientation_quat.y = struct.unpack_from("<f", buffer=msg, offset=4)[0]
-            self.__orientation_quat.z = struct.unpack_from("<f", buffer=msg, offset=4)[0]
+            self.__orientation_quat.x = struct.unpack_from("<f", buffer=msg, offset=8)[0]
+            self.__orientation_quat.y = struct.unpack_from("<f", buffer=msg, offset=12)[0]
+            self.__orientation_quat.z = struct.unpack_from("<f", buffer=msg, offset=16)[0]
+        elif msg.startswith(b'GRAV'):
+            self.__grav_vec.x = struct.unpack_from("<f", buffer=msg, offset=4)[0]
+            self.__grav_vec.y = struct.unpack_from("<f", buffer=msg, offset=8)[0]
+            self.__grav_vec.z = struct.unpack_from("<f", buffer=msg, offset=12)[0]
 
     def __read_thread(self):
         parse_escaped = False

@@ -23,11 +23,15 @@ if __name__ == "__main__":
     print("")
     
     # Show the data
+    start_time = time.time()
     try:
         while True:
             quat = cb.get_orientation_quat()
-            print("W: {0:.4f}\tX: {1:.4f}\tY: {2:.4f}\tZ: {3:.4f}\t".format(
-                quat.w, quat.x, quat.y, quat.z
+            grav = cb.get_gravity_vector()
+            print("({:05d}) QW: {:.4f}\tQX: {:.4f}\tQY: {:.4f}\tQZ: {:.4f}\tGX: {:.4f}\tGY: {:.4f}\t GZ: {:.4f}".format(
+                int((time.time() - start_time)*1000),
+                quat.w, quat.x, quat.y, quat.z,
+                grav.x, grav.y, grav.z
             ))
             time.sleep(0.1)
     except KeyboardInterrupt:
