@@ -11,7 +11,7 @@ from crccheck.crc import Crc16CcittFalse as Crc16
 class Quaternion:
     def __init__(self, w: float = 0.0, x: float = 0.0, y: float = 0.0, z: float = 0.0):
         self.w: float = w
-        self.w: float = x
+        self.x: float = x
         self.y: float = y
         self.z: float = z
 
@@ -45,13 +45,14 @@ class ControlBoard:
         self.__state_lock = threading.Lock()
         self.__mode: ControlBoard.Mode = ControlBoard.Mode.UNKNOWN
         self.__inverted: List[int] = [2] * 8
+        self.__orientation_quat: Quaternion = Quaternion()
+        self.__grav_vec: Vector3 = Vector3()
+
         self.__read_thread = threading.Thread(target=self.__read_thread, daemon=True)
         self.__read_thread.start()
         self.__feed_thread = threading.Thread(target=self.__feed_thread, daemon=True)
         self.__feed_thread.start()
 
-        self.__orientation_quat: Quaternion = Quaternion()
-        self.__grav_vec: Vector3 = Vector3()
 
         self.set_mode(ControlBoard.Mode.RAW)
         self.set_inverted(False, False, False, False, False, False, False, False)
@@ -221,6 +222,11 @@ class ControlBoard:
                         self.__inverted[i] = True
                     else:
                         self.__inverted[i] = False
+        elif msg.startswith(b'QUAT'):
+            self.__orientation_quat.w = struct.unpack_from("<f", buffer=msg, offset=4)[0]
+            self.__orientation_quat.x = struct.unpack_from("<f", buffer=msg, offset=4)[0]
+            self.__orientation_quat.y = struct.unpack_from("<f", buffer=msg, offset=4)[0]
+            self.__orientation_quat.z = struct.unpack_from("<f", buffer=msg, offset=4)[0]
 
     def __read_thread(self):
         parse_escaped = False

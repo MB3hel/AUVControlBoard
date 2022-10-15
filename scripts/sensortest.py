@@ -26,9 +26,10 @@ if __name__ == "__main__":
     try:
         while True:
             quat = cb.get_orientation_quat()
-            print("W: {:.4f}\tX: {:.4f}\tY: {:.4f}\tZ: {:.4f}\t".format(
+            print("W: {0:.4f}\tX: {1:.4f}\tY: {2:.4f}\tZ: {3:.4f}\t".format(
                 quat.w, quat.x, quat.y, quat.z
             ))
+            time.sleep(0.1)
     except KeyboardInterrupt:
         print("")
         print("Interrupted by user")
