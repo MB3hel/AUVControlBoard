@@ -17,6 +17,7 @@
 
 #define CMDCTRL_MODE_RAW            0
 #define CMDCTRL_MODE_LOCAL          1
+#define CMDCTRL_MODE_GLOBAL         2
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -48,3 +49,8 @@ uint8_t cmdctrl_get_mode(void);
  * Send sensor data to PC
  */
 void cmdctrl_send_sensors(void);
+
+/**
+ * Update motors (periodic) if needed in the current mode of operation
+ */
+void cmdctrl_update_motors(void);

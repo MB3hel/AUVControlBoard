@@ -60,6 +60,24 @@ void motor_control_raw(float s1, float s2, float s3, float s4, float s5, float s
 void motor_control_local(float x, float y, float z, float pitch, float roll, float yaw);
 
 /**
+ * Set motor speeds in "global" mode
+ * Global mode specifies target "speeds" in each of 6 DoFs relative to the WORLD (mostly)
+ * Note that "yaw" in the world is ignored meaning +y is partially relative to the robot
+ * Pitch and roll adjustments are world relative though. Basically, this corrects for data
+ * determinable from an accelerometer
+ * @param x Speed in +x translation DoF (-1.0 to +1.0)
+ * @param y Speed in +y translation DoF (-1.0 to +1.0)
+ * @param z Speed in +z translation DoF (-1.0 to +1.0)
+ * @param pitch Speed in +pitch rotation DoF (-1.o to +1.0)
+ * @param roll Speed in +roll rotation DoF (-1.o to +1.0)
+ * @param yaw Speed in +yaw rotation DoF (-1.o to +1.0)
+ * @param grav_x Gravity vector x component
+ * @param grav_y Gravity vector y component
+ * @param grav_z Gravity vector z component
+ */
+void motor_control_global(float x, float y, float z, float pitch, float roll, float yaw, float grav_x, float grav_y, float grav_z);
+
+/**
  * Increments the motor watchdog by 1 count
  * Should be called every 100ms
  * 

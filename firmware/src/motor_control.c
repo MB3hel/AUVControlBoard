@@ -156,6 +156,10 @@ void motor_control_local(float x, float y, float z, float pitch, float roll, flo
             speed_arr[4], speed_arr[5], speed_arr[6], speed_arr[7]);
 }
 
+void motor_control_global(float x, float y, float z, float pitch, float roll, float yaw, float grav_x, float grav_y, float grav_z){
+    // TODO: Implement the actual math
+}
+
 bool motor_control_watchdog_count(void){
     if(motor_wd_count >= WD_DISABLE_COUNT){
         // Don't increment counter further (prevents rollover issues)
