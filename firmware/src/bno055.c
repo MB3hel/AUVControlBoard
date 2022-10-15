@@ -241,6 +241,8 @@ static uint8_t state;
 static uint32_t delay;
 static uint8_t delay_next_state;
 
+static bno055_data data;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -317,6 +319,37 @@ static uint8_t delay_next_state;
  */
 // Called when some event that may change state occurs
 void bno055_state_machine(uint8_t trigger){    
+    
+    // -----------------------------------------------------------------------------------------------------------------
+    // Actions at END of state
+    // -----------------------------------------------------------------------------------------------------------------
+    int16_t tmp16;
+    switch(state){
+    case STATE_RD_GRAV:
+        tmp16 = ((int16_t)trans.read_buf[0]) | (((int16_t)trans.read_buf[1]) << 8);
+        data.grav_x = tmp16 / 100.0f;
+        tmp16 = ((int16_t)trans.read_buf[2]) | (((int16_t)trans.read_buf[3]) << 8);
+        data.grav_y = tmp16 / 100.0f;
+        tmp16 = ((int16_t)trans.read_buf[4]) | (((int16_t)trans.read_buf[5]) << 8);
+        data.grav_z = tmp16 / 100.0f;
+        break;
+    case STATE_RD_QUAT:
+        tmp16 = (((uint16_t)trans.read_buf[1]) << 8) | ((uint16_t)trans.read_buf[0]);
+        data.quat_w = tmp16 / 16384.0;
+        tmp16 = (((uint16_t)trans.read_buf[3]) << 8) | ((uint16_t)trans.read_buf[2]);
+        data.quat_x = tmp16 / 16384.0;
+        tmp16 = (((uint16_t)trans.read_buf[5]) << 8) | ((uint16_t)trans.read_buf[4]);
+        data.quat_y = tmp16 / 16384.0;
+        tmp16 = (((uint16_t)trans.read_buf[7]) << 8) | ((uint16_t)trans.read_buf[6]);
+        data.quat_z = tmp16 / 16384.0;
+        break;
+    }
+    
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // State changes
+    // -----------------------------------------------------------------------------------------------------------------
+    
     // Store original state
     uint8_t orig_state = state;
 
@@ -425,15 +458,26 @@ void bno055_state_machine(uint8_t trigger){
                 reconfig = false;
             }
             break;
+        case STATE_RECONFIG:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 30;
+                delay_next_state = STATE_WR_AXIS_MAP;
+            }
+            break;
         }
     }
 
     if((state == orig_state)){
-        // No state transition occurred. No actions.
+        // No state transition occurred
         return;
     }
 
-    // Actions for the current state
+    
+    // -----------------------------------------------------------------------------------------------------------------
+    // Actions at START of state
+    // -----------------------------------------------------------------------------------------------------------------
+
     switch(state){
     case STATE_DELAY:
         timers_enable_bno055_delay(delay);
@@ -512,10 +556,26 @@ void bno055_state_machine(uint8_t trigger){
         trans.read_count = 8;
         i2c0_enqueue(&trans);
         break;
+    case STATE_RECONFIG:
+        trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
+        trans.write_buf[1] = OPMODE_CFG;
+        trans.write_count = 2;
+        trans.read_count = 0;
+        i2c0_enqueue(&trans);
+        break;
     }
 }
 
 bool bno055_init(void){
+    // Initial data
+    data.grav_x = 0.0f;
+    data.grav_y = 0.0f;
+    data.grav_z = 0.0f;
+    data.quat_w = 0.0f;
+    data.quat_x = 0.0f;
+    data.quat_y = 0.0f;
+    data.quat_z = 0.0f;
+
     // Initial flags
     reconfig = false;
 
@@ -589,4 +649,8 @@ void bno055_reconfig(bno055_config new_config){
     config = new_config;
     // Set persistant flag to be handled next time in idle state
     reconfig = true;
+}
+
+bno055_data bno055_get(void){
+    return data;
 }

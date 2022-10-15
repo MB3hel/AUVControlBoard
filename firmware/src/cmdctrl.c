@@ -11,7 +11,7 @@
 #include <motor_control.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <dotstar.h>
+#include <bno055.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -144,7 +144,27 @@ uint8_t cmdctrl_get_mode(void){
     return cmdctrl_mode;
 }
 
-void cmdctrl_send_bno055(void){
-    // bno055_data data = bno055_get();
-    // TODO: Actually send the data
+void cmdctrl_send_sensors(void){
+    uint8_t msg[20];
+    bno055_data imu_dat = bno055_get();
+
+    // Send IMU orientation (quaternion)
+    msg[0] = 'Q';
+    msg[1] = 'U';
+    msg[2] = 'A';
+    msg[3] = 'T';
+    conversions_float_to_data(imu_dat.quat_w, &msg[4], true);
+    conversions_float_to_data(imu_dat.quat_x, &msg[8], true);
+    conversions_float_to_data(imu_dat.quat_y, &msg[12], true);
+    conversions_float_to_data(imu_dat.quat_z, &msg[16], true);
+    pccomm_write_msg(msg, 20);
+
+    // Send IMU gravity vector
+    msg[0] = 'G';
+    msg[1] = 'V';
+    msg[2] = 'E';
+    msg[3] = 'C';
+    conversions_float_to_data(imu_dat.grav_x, &msg[4], true);
+    conversions_float_to_data(imu_dat.grav_y, &msg[8], true);
+    conversions_float_to_data(imu_dat.grav_z, &msg[12], true);
 }

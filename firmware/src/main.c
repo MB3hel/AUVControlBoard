@@ -84,7 +84,7 @@ int main(void){
     timers_init();                                  // Initialize timers
     timers_wdt_enable();                            // Enable WDT now
 
-    timers_safe_delay(50);                          // Wait ~500ms for sensors to power on
+    timers_safe_delay(500);                         // Wait ~500ms for sensors to power on
 
     // Initialize sensors
     if(!bno055_init()){
@@ -117,7 +117,7 @@ int main(void){
             // Runs every 10ms
             // ---------------------------------------------------------------------------------------------------------
             timers_wdt_feed();                          // Feed watchdog every 10ms
-            // cmdctrl_send_bno055();                      // Send bno055 data every 10ms
+            cmdctrl_send_sensors();                     // Send sensor data every 10ms
             // ---------------------------------------------------------------------------------------------------------
         }else if(FLAG_CHECK(flags_main, FLAG_MAIN_100MS)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_100MS);

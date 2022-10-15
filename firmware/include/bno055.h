@@ -37,6 +37,11 @@ typedef struct {
     uint8_t sign_z;
 } bno055_config;
 
+typedef struct {
+    float grav_x, grav_y, grav_z;
+    float quat_w, quat_x, quat_y, quat_z;
+} bno055_data;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -61,3 +66,10 @@ void bno055_check_i2c(void);
  * @param new_config New configuration for the IMU
  */
 void bno055_reconfig(bno055_config new_config);
+
+/**
+ * Get BNO055 sensor data
+ * 
+ * @return bno055 
+ */
+bno055_data bno055_get(void);
