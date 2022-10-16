@@ -11,6 +11,9 @@ from typing import Dict, List
 import time
 from socketserver import TCPServer, UDPServer, BaseRequestHandler, BaseServer
 from controlboard import ControlBoard
+import controlboard
+
+controlboard.debug_prints = False
 
 
 class Gamepad:
@@ -168,8 +171,8 @@ if __name__ == "__main__":
             print("Fail.")
             exit(1)
         
-        print("Setting control board to LOCAL mode...", end="")
-        if cb.set_mode(ControlBoard.Mode.LOCAL):
+        print("Setting control board to GLOBAL mode...", end="")
+        if cb.set_mode(ControlBoard.Mode.GLOBAL):
             print("Done.")
         else:
             print("Fail.")
@@ -219,13 +222,13 @@ if __name__ == "__main__":
             x *= 0.5
             y *= -0.5
             yaw *= 0.45
-            pitch *= 0.3
+            pitch *= 0.7
             roll *= 0.2
             z *= 0.5
 
             # Set the speeds
-            cb.set_local(x, y, z, pitch, roll, yaw)
+            cb.set_global(x, y, z, pitch, roll, yaw)
             time.sleep(0.02)
     except KeyboardInterrupt:
-        cb.set_local(0, 0, 0, 0, 0 ,0)
+        cb.set_global(0, 0, 0, 0, 0 ,0)
         exit(0)

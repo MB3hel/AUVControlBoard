@@ -2,7 +2,7 @@ import serial
 
 opened = False
 try:
-    ser: serial.Serial = serial.Serial("/dev/ttyACM0")
+    ser: serial.Serial = serial.Serial("/dev/ttyACM3")
     opened = True
     print("Resetting")
     ser.write(b'\xfdRESET}\xb2\xfe')
