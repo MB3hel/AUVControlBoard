@@ -987,20 +987,36 @@ drivers:
       domain_group: null
   I2C_0:
     user_label: I2C_0
-    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::SERCOM2::driver_config_definition::I2C.Master.Standard~2FFast-mode::HAL:Driver:I2C.Master.Async
+    definition: Atmel:SAMD51_Drivers:0.0.1::SAMD51G19A-MF::SERCOM2::driver_config_definition::I2C.Master.Standard~2FFast-mode::Lite:I2C:I2C.Master
     functionality: I2C
-    api: HAL:Driver:I2C_Master_Async
+    api: Lite:I2C:I2C_Master
     configuration:
-      i2c_master_advanced: true
-      i2c_master_arch_dbgstop: Keep running
-      i2c_master_arch_inactout: 20-21 SCL cycle time-out(200-210us)
-      i2c_master_arch_lowtout: true
-      i2c_master_arch_mexttoen: false
-      i2c_master_arch_runstdby: false
-      i2c_master_arch_sdahold: 300-600ns hold time
-      i2c_master_arch_sexttoen: false
-      i2c_master_arch_trise: 215
-      i2c_master_baud_rate: 100000
+      baud_baud: 100000
+      baud_trise: 215
+      ctrla_enable: false
+      ctrla_inactout: 20-21 SCL cycle time-out(200-210us)
+      ctrla_lowtout: false
+      ctrla_mexttoen: false
+      ctrla_mode: i2c master operation
+      ctrla_pinout: false
+      ctrla_runstdby: false
+      ctrla_sclsm: true
+      ctrla_sdahold: Disabled
+      ctrla_sexttoen: false
+      ctrla_speed: Standard-mode (Sm) up to 100 kHz and Fast-mode (Fm) up to 400 kHz
+      ctrlb_ackact: false
+      ctrlb_cmd: 0
+      ctrlb_qcen: false
+      ctrlb_smen: false
+      dbgctrl_dbgstop: false
+      i2c_baud_control: true
+      i2c_ctrla_control: true
+      i2c_ctrlb_control: false
+      i2c_dbgctrl_control: false
+      i2c_intenset_control: true
+      intenset_error: true
+      intenset_mb: true
+      intenset_sb: true
     optional_signals: []
     variant:
       specification: SDA=0, SCL=1

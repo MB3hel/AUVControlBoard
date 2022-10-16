@@ -13,8 +13,6 @@
 
 struct timer_descriptor TIMER_0;
 
-struct i2c_m_async_desc I2C_0;
-
 struct wdt_descriptor WDT_0;
 
 void I2C_0_PORT_init(void)
@@ -47,13 +45,6 @@ void I2C_0_CLOCK_init(void)
 	hri_gclk_write_PCHCTRL_reg(GCLK, SERCOM2_GCLK_ID_SLOW, CONF_GCLK_SERCOM2_SLOW_SRC | (1 << GCLK_PCHCTRL_CHEN_Pos));
 
 	hri_mclk_set_APBBMASK_SERCOM2_bit(MCLK);
-}
-
-void I2C_0_init(void)
-{
-	I2C_0_CLOCK_init();
-	i2c_m_async_init(&I2C_0, SERCOM2);
-	I2C_0_PORT_init();
 }
 
 /**
@@ -263,7 +254,9 @@ void system_init(void)
 
 	gpio_set_pin_function(DS_DAT, GPIO_PIN_FUNCTION_OFF);
 
+	I2C_0_CLOCK_init();
 	I2C_0_init();
+	I2C_0_PORT_init();
 
 	TIMER_0_init();
 	PWM_0_CLOCK_init();

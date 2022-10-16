@@ -19,8 +19,6 @@
 /// Macros
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define I2C                 I2C_0                               // Which ASF I2C object to use
-
 // States
 #define STATE_IDLE          0                                   // Idle, doing nothing
 #define STATE_WRITE         1                                   // Write a byte
@@ -46,88 +44,28 @@ static uint16_t next, current, count;
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static void cb_tx_done(struct i2c_m_async_desc *const i2c){
-    state = STATE_READ;
-    FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-
-    // NOTE: Not sure why this needs to be cleared in user callback
-    // But not doing so results in interrupt repeatedly occurring
-    // Looking in hal_i2c_m_async and hpl_sercom, it looks like this flag is
-    // never cleared. My guess is that this is an SAMD51 specific ASF4 bug...
-    hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, SERCOM_I2CM_INTFLAG_MB);
-}
-
-static void cb_rx_done(struct i2c_m_async_desc *const i2c){
-    state = STATE_IDLE;
-    result = I2C_STATUS_SUCCESS;
-    FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-
-    // NOTE: Not sure why this needs to be cleared in user callback
-    // But not doing so results in interrupt repeatedly occurring
-    // Looking in hal_i2c_m_async and hpl_sercom, it looks like this flag is
-    // never cleared. My guess is that this is an SAMD51 specific ASF4 bug...
-    hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, SERCOM_I2CM_INTFLAG_SB);
-}
-
-static void cb_error(struct i2c_m_async_desc *const i2c, int32_t error){
-    state = STATE_IDLE;
-    result = I2C_STATUS_ERROR;
-    FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-
-    // Again, this should be handled by ASF. I consider this an ASF bug...
-    if(error == I2C_NACK){
-        _i2c_m_async_send_stop(&I2C.device);
-    }
-
-    // NOTE: Not sure why this needs to be cleared in user callback
-    // But not doing so results in interrupt repeatedly occurring
-    // Looking in hal_i2c_m_async and hpl_sercom, it looks like this flag is
-    // never cleared. My guess is that this is an SAMD51 specific ASF4 bug...
-    // TODO: Determine if this needs too be done for other error codes too
-    if(error == I2C_NACK){
-        hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, SERCOM_I2CM_INTFLAG_MB);
-        hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, SERCOM_I2CM_INTFLAG_SB);
-    }
-}
-
 void i2c0_init(void){
     // Initialize queue indices
     current = 0;
     count = 0;
     next = 0;
 
-    // Initialize I2C
+    // Initial state
     state = STATE_IDLE;
 
-    // NOTE: Not sure why this needs to be cleared manually. Should really
-    // be handled by i2c_m_async_enable to prevent rapid interrupt slowing 
-    // everything. Looks like a bug in ASF4...
-    // Clears all interrupt flag bits
-    hri_sercomi2cm_clear_INTFLAG_reg(I2C.device.hw, 0xFF);
-
-    i2c_m_async_enable(&I2C);
-    i2c_m_async_register_callback(&I2C, I2C_M_ASYNC_TX_COMPLETE, (FUNC_PTR)cb_tx_done);
-    i2c_m_async_register_callback(&I2C, I2C_M_ASYNC_RX_COMPLETE, (FUNC_PTR)cb_rx_done);
-    i2c_m_async_register_callback(&I2C, I2C_M_ASYNC_ERROR, (FUNC_PTR)cb_error);
+    // Enable the sercom device and force BUSSTATE to idle
+    hri_sercomi2cm_set_CTRLA_ENABLE_bit(SERCOM2);
+    hri_sercomi2cm_set_STATUS_BUSSTATE_bf(SERCOM2, 0x01);
 }
 
 void i2c0_process(void){
-    struct _i2c_m_msg msg;
-
     switch(state){
     case STATE_WRITE:
         // Set address
-        i2c_m_async_set_slaveaddr(&I2C, queue[current]->address, I2C_M_SEVEN);
+        // TODO: Set slave address
 
         if(queue[current]->write_count > 0){
-            // Start write operation
-            msg.addr = queue[current]->address;
-            msg.buffer = queue[current]->write_buf;
-            msg.len = queue[current]->write_count;
-            msg.flags = 0;
-            if(queue[current]->read_count == 0)
-                msg.flags = I2C_M_STOP;
-            i2c_m_async_transfer(&I2C, &msg);
+            // TODO: Start write operation
         }else{
             // Nothing to write, skip to read state
             state = STATE_READ;
@@ -136,12 +74,7 @@ void i2c0_process(void){
         break;
     case STATE_READ:
         if(queue[current]->read_count > 0){
-            // Start read operation
-            msg.addr = queue[current]->address;
-            msg.buffer = queue[current]->read_buf;
-            msg.len = queue[current]->read_count;
-            msg.flags = I2C_M_RD | I2C_M_STOP;
-            i2c_m_async_transfer(&I2C, &msg);
+            // TODO: Start read
         }else{
             // Nothing to read, skip to idle state
             state = STATE_IDLE;
@@ -203,4 +136,68 @@ void i2c0_enqueue(i2c_trans *trans){
         state = STATE_WRITE;
         FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
     }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// IRQ handler functions
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+static void irq_handler(void){
+    // Common IRQ handler for any SERCOM interrupts for this SERCOM
+    // Flags are used to determine what the interrupt is, not which IRQ runs
+    
+    if(hri_sercomi2cm_get_INTFLAG_SB_bit(SERCOM2)){
+        // SB bit is set when data is received
+
+        // TODO: Handle data received
+
+        // TODO: When all requested bytes received
+        // state = STATE_IDLE;
+        // result = I2C_STATUS_SUCCESS;
+        // FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+
+        // Clear interrupt flag
+        hri_sercomi2cm_clear_INTFLAG_SB_bit(SERCOM2);
+    }else if(hri_sercomi2cm_get_INTFLAG_MB_bit(SERCOM2)){
+        // MB bit is set when data transmit is done
+
+        // TODO: Handle transmit complete
+
+        // TODO: When all bytes transmitted
+        // state = STATE_READ;
+        // FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+
+        // Clear interrupt flag
+        hri_sercomi2cm_clear_INTFLAG_MB_bit(SERCOM2);
+    }else{
+        // This is an ERROR interrupt
+        
+        // Send STOP
+        hri_sercomi2cm_set_CTRLB_CMD_bf(SERCOM2, 0x03);
+
+        // Move back to idle state with error status
+        state = STATE_IDLE;
+        result = I2C_STATUS_ERROR;
+        FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+
+        // Clear interrupt flag
+        hri_sercomi2cm_clear_INTFLAG_ERROR_bit(SERCOM2);
+    }
+}
+
+void SERCOM2_0_Handler(void){
+    irq_handler();
+}
+
+void SERCOM2_1_Handler(void){
+    irq_handler();
+}
+
+void SERCOM2_2_Handler(void){
+    irq_handler();
+}
+
+void SERCOM2_3_Handler(void){
+    irq_handler();
 }
