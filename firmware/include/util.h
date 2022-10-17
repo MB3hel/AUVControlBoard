@@ -22,7 +22,7 @@ typedef struct {
     uint8_t address;
     uint8_t *write_buf;
     uint32_t write_count;
-    uint8_t *read_buf;
+    volatile uint8_t *read_buf;
     uint32_t read_count;
     uint8_t status;
 } i2c_trans;

@@ -10,6 +10,8 @@
  * interrupts. This can lead to an interrupt repeating forever (thus deadlocking main)
  */
 
+// TODO: Implement I2C timeout
+
 #include <i2c0.h>
 #include <flags.h>
 #include <timers.h>
@@ -40,6 +42,11 @@ static volatile uint8_t result;
 static i2c_trans *queue[QUEUE_SIZE];
 static uint16_t next, current, count;
 
+// Transceiver counter
+// Tracks number of bytes either transmitted or received
+// During TX and RX phases
+uint32_t txr_counter;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -61,25 +68,18 @@ void i2c0_init(void){
 void i2c0_process(void){
     switch(state){
     case STATE_WRITE:
-        // Set address
-        // TODO: Set slave address
-
-        if(queue[current]->write_count > 0){
-            // TODO: Start write operation
-        }else{
-            // Nothing to write, skip to read state
-            state = STATE_READ;
-            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-        }
+        txr_counter = 0;
+        // Set slave address (which starts transaction)
+        // Will set MB flag when finished. First byte is transmitted there
+        // Addresses are 7-bit. LSB is 0 for write, 1 for read
+        hri_sercomi2cm_write_ADDR_ADDR_bf(SERCOM2, queue[current]->address << 1 | 0b0);
         break;
     case STATE_READ:
-        if(queue[current]->read_count > 0){
-            // TODO: Start read
-        }else{
-            // Nothing to read, skip to idle state
-            state = STATE_IDLE;
-            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-        }
+        txr_counter = 0;
+        // Set slave address (which starts transaction)
+        // Will set SB flag when finished. First byte is read there
+        // Addresses are 7-bit. LSB is 0 for write, 1 for read
+        hri_sercomi2cm_write_ADDR_ADDR_bf(SERCOM2, queue[current]->address << 1 | 0b1);
         break;
     case STATE_IDLE:
         // Set result and flag
@@ -94,8 +94,19 @@ void i2c0_process(void){
 
         // Start next transaction if queue not empty
         if(count > 0){
-            state = STATE_WRITE;
-            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+            if(queue[current]->write_count > 0){
+                // Start with write phase
+                state = STATE_WRITE;
+                FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+            }else if(queue[current]->read_count > 0){
+                // Start with read phase
+                state = STATE_READ;
+                FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+            }else{
+                // Empty transaction "complete" now
+                state = STATE_IDLE;
+                FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+            }
         }
         break;
     }
@@ -133,8 +144,19 @@ void i2c0_enqueue(i2c_trans *trans){
 
     // If idle, start this transaction now
     if(state == STATE_IDLE){
-        state = STATE_WRITE;
-        FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+        if(queue[current]->write_count > 0){
+            // Start with write phase
+            state = STATE_WRITE;
+            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+        }else if(queue[current]->read_count > 0){
+            // Start with read phase
+            state = STATE_READ;
+            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+        }else{
+            // Empty transaction "complete" now
+            state = STATE_IDLE;
+            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+        }
     }
 }
 
@@ -150,23 +172,71 @@ static void irq_handler(void){
     if(hri_sercomi2cm_get_INTFLAG_SB_bit(SERCOM2)){
         // SB bit is set when data is received
 
-        // TODO: Handle data received
+        // Handle received byte
+        if(txr_counter < queue[current]->read_count){
+            queue[current]->read_buf[txr_counter] = hri_sercomi2cm_read_DATA_reg(SERCOM2);
+            txr_counter++;
+        }
 
-        // TODO: When all requested bytes received
-        // state = STATE_IDLE;
-        // result = I2C_STATUS_SUCCESS;
-        // FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+        // ACK if another byte is needed
+        // NACK if no more bytes should be read
+        if(txr_counter == queue[current]->read_count){
+            // Send ACK and start read of next byte
+            hri_sercomi2cm_clear_CTRLB_ACKACT_bit(SERCOM2);
+            hri_sercomi2cm_set_CTRLB_CMD_bf(SERCOM2, 0x02);
+        }else{
+            // Send NACK (done reading)
+            hri_sercomi2cm_set_CTRLB_ACKACT_bit(SERCOM2);
+
+            // Send STOP (done with transaction)
+            hri_sercomi2cm_set_CTRLB_CMD_bf(SERCOM2, 0x03);
+        
+            // Move to IDLE state (current transaction done)
+            state = STATE_IDLE;
+            result = I2C_STATUS_SUCCESS;
+            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+        }        
 
         // Clear interrupt flag
         hri_sercomi2cm_clear_INTFLAG_SB_bit(SERCOM2);
     }else if(hri_sercomi2cm_get_INTFLAG_MB_bit(SERCOM2)){
-        // MB bit is set when data transmit is done
+        if(hri_sercomi2cm_get_STATUS_RXNACK_bit(SERCOM2)){
+            // MB bit may be set on NACK received during either TX or RX
+            // This is an ERROR
+            // Send STOP
+            hri_sercomi2cm_set_CTRLB_CMD_bf(SERCOM2, 0x03);
 
-        // TODO: Handle transmit complete
+            // Move to idle state with error status
+            state = STATE_IDLE;
+            result = I2C_STATUS_ERROR;
+            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+        }else{
+            // Otherwise, MB bit is set when data transmit is done
+            
+            if(txr_counter < queue[current]->write_count){
+                // There is another byte to write
+                txr_counter++;
+                hri_sercomi2cm_write_DATA_reg(SERCOM2, queue[current]->write_buf[txr_counter]);
+            }else{
+                // There are no more bytes to write
+                if(queue[current]->read_count > 0){
+                    // This transaction has a read part. Start it.
+                    state = STATE_READ;
+                    FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+                }else{
+                    // No read part to this transaction.
+                    // Transaction is done.
 
-        // TODO: When all bytes transmitted
-        // state = STATE_READ;
-        // FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+                    // Send STOP
+                    hri_sercomi2cm_set_CTRLB_CMD_bf(SERCOM2, 0x03);
+
+                    // Move to IDLE state (current transaction done)
+                    state = STATE_IDLE;
+                    result = I2C_STATUS_SUCCESS;
+                    FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+                }
+            }
+        }
 
         // Clear interrupt flag
         hri_sercomi2cm_clear_INTFLAG_MB_bit(SERCOM2);
@@ -176,7 +246,7 @@ static void irq_handler(void){
         // Send STOP
         hri_sercomi2cm_set_CTRLB_CMD_bf(SERCOM2, 0x03);
 
-        // Move back to idle state with error status
+        // Move to idle state with error status
         state = STATE_IDLE;
         result = I2C_STATUS_ERROR;
         FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
