@@ -640,13 +640,20 @@ bool bno055_init(void){
     trans.write_buf = write_buf;
     trans.read_buf = read_buf;
     
+    // Empty transaction to device. If success, a device exists at this address
+    // Blocks until finished
+    // trans.write_count = 0;
+    // trans.read_count = 0;
+    // i2c0_perform(&trans);
+
+    // TODO: Test both methods
     // Read a byte to verify a device exists with the correct address
     // Blocks until finished
-    trans.write_count = 0;
-    trans.read_count = 1;
-    i2c0_perform(&trans);
-    if(trans.status == I2C_STATUS_ERROR)
-        return false;
+    // trans.write_count = 0;
+    // trans.read_count = 1;
+    // i2c0_perform(&trans);
+    // if(trans.status == I2C_STATUS_ERROR)
+    //     return false;
     
     // Delay between transactions or the chip won't respond
     timers_safe_delay(10);

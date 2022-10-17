@@ -2,15 +2,27 @@
  * @file i2c0.c
  * @author Marcus Behel
  * 
- * Notes: There seem to be numerous bugs stemming from the ASF4 hpl_sercom layer. 
- * It is likely other protocols have bugs too. Seemingly, ASF4 drivers were just written and
- * tested with one test case (the example code) and really don't always work well in practice.
+ * Notes on ASF4's hri nomenclature
  * 
- * Most of the time, these "bugs" relate to flags not being cleared properly while handling
- * interrupts. This can lead to an interrupt repeating forever (thus deadlocking main)
+ * There are various functions to perform actions on bits, bitfields, or registers
+ * These actions are
+ * set = Set some bits to a 1 (using a mask; bit indices in the mask that are 1 will be set)
+ * get = Get the value of some bits (using a mask; bit indices in the mask that are 1 will be read)
+ * clear = Set some bits to a 0 (using a mask; bit indices in the mask that are 1 will be cleared)
+ * write = Copy a given value to the bit, bitfield, or register
+ * read = Read the entire bit, bitfield, or register
+ * 
+ * Note that set / clear / get for single bits take no mask argument (because there is only one bit)
+ * Thus
+ * set_bit is the same as write_bit(1)
+ * get_bit is the same as read_bit
+ * clear_bit is the same as write_bit(0)
+ * 
+ * Also not that masks should not be shifted. This means that the lowest index of the bitfield is 
+ * bit 0 in the mask (regardless of what bit it is in the register).
+ * 
  */
 
-// TODO: Implement I2C timeout
 
 #include <i2c0.h>
 #include <flags.h>
@@ -60,9 +72,15 @@ void i2c0_init(void){
     // Initial state
     state = STATE_IDLE;
 
+    // Enable interrupts at controller level
+    NVIC_EnableIRQ(SERCOM2_0_IRQn);         // MB interrupt
+    NVIC_EnableIRQ(SERCOM2_1_IRQn);         // SB interrupt
+    NVIC_EnableIRQ(SERCOM2_2_IRQn);         // ERROR interrupt
+    NVIC_EnableIRQ(SERCOM2_3_IRQn);         // Unused in I2CM mode
+
     // Enable the sercom device and force BUSSTATE to idle
     hri_sercomi2cm_set_CTRLA_ENABLE_bit(SERCOM2);
-    hri_sercomi2cm_set_STATUS_BUSSTATE_bf(SERCOM2, 0x01);
+    hri_sercomi2cm_write_STATUS_BUSSTATE_bf(SERCOM2, 0x01);
 }
 
 void i2c0_process(void){
@@ -143,96 +161,85 @@ void i2c0_enqueue(i2c_trans *trans){
 /// IRQ handler functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static void irq_handler(void){
-    // Common IRQ handler for any SERCOM interrupts for this SERCOM
-    // Flags are used to determine what the interrupt is, not which IRQ runs
-    
-    if(hri_sercomi2cm_get_INTFLAG_SB_bit(SERCOM2)){
-        // SB bit is set when data is received
-
-        // Handle received byte
-        if(txr_counter < queue[current]->read_count){
-            queue[current]->read_buf[txr_counter] = hri_sercomi2cm_read_DATA_reg(SERCOM2);
-            txr_counter++;
-        }
-
-        // ACK if another byte is needed
-        // NACK if no more bytes should be read
-        if(txr_counter == queue[current]->read_count){
-            // Send ACK and start read of next byte
-            hri_sercomi2cm_clear_CTRLB_ACKACT_bit(SERCOM2);
-            hri_sercomi2cm_set_CTRLB_CMD_bf(SERCOM2, 0x02);
-        }else{
-            // Send NACK (done reading)
-            hri_sercomi2cm_set_CTRLB_ACKACT_bit(SERCOM2);
-
-            // Send STOP (done with transaction)
-            hri_sercomi2cm_set_CTRLB_CMD_bf(SERCOM2, 0x03);
-        
-            // Move to IDLE state (current transaction done)
-            state = STATE_IDLE;
-            result = I2C_STATUS_SUCCESS;
-            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-        }        
-
-        // Clear interrupt flag
-        hri_sercomi2cm_clear_INTFLAG_SB_bit(SERCOM2);
-    }else if(hri_sercomi2cm_get_INTFLAG_MB_bit(SERCOM2)){
-        if(hri_sercomi2cm_get_STATUS_RXNACK_bit(SERCOM2)){
-            // MB bit may be set on NACK received during either TX or RX
-            // This is an ERROR
-            // Send STOP
-            hri_sercomi2cm_set_CTRLB_CMD_bf(SERCOM2, 0x03);
-
-            // Move to idle state with error status
-            state = STATE_IDLE;
-            result = I2C_STATUS_ERROR;
-            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-        }else{
-            // Otherwise, MB bit is set when data transmit is done
-            
-            if(txr_counter < queue[current]->write_count){
-                // There is another byte to write
-                hri_sercomi2cm_write_DATA_reg(SERCOM2, queue[current]->write_buf[txr_counter]);
-                txr_counter++;
-            }else{
-                // There are no more bytes to write
-                // Move to read state
-                state = STATE_READ;
-                FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-            }
-        }
-
-        // Clear interrupt flag
-        hri_sercomi2cm_clear_INTFLAG_MB_bit(SERCOM2);
-    }else{
-        // This is an ERROR interrupt
-        
+// MB IRQ Handler
+void SERCOM2_0_Handler(void){
+    if(hri_sercomi2cm_get_STATUS_RXNACK_bit(SERCOM2)){
+        // MB bit may be set on NACK received during either TX or RX
+        // This is an ERROR
         // Send STOP
-        hri_sercomi2cm_set_CTRLB_CMD_bf(SERCOM2, 0x03);
+        hri_sercomi2cm_write_CTRLB_CMD_bf(SERCOM2, 0x03);
 
         // Move to idle state with error status
         state = STATE_IDLE;
         result = I2C_STATUS_ERROR;
         FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-
-        // Clear interrupt flag
-        hri_sercomi2cm_clear_INTFLAG_ERROR_bit(SERCOM2);
+    }else{
+        // Otherwise, MB bit is set when data transmit is done
+        
+        if(txr_counter < queue[current]->write_count){
+            // There is another byte to write
+            hri_sercomi2cm_write_DATA_reg(SERCOM2, queue[current]->write_buf[txr_counter]);
+            txr_counter++;
+        }else{
+            // There are no more bytes to write
+            // Move to read state
+            state = STATE_READ;
+            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+        }
     }
+
+    // Clear interrupt flag
+    hri_sercomi2cm_clear_INTFLAG_MB_bit(SERCOM2);
 }
 
-void SERCOM2_0_Handler(void){
-    irq_handler();
-}
-
+// SB IRQ Handler
 void SERCOM2_1_Handler(void){
-    irq_handler();
+    // SB bit is set when data is received
+
+    // Handle received byte
+    if(txr_counter < queue[current]->read_count){
+        queue[current]->read_buf[txr_counter] = hri_sercomi2cm_read_DATA_reg(SERCOM2);
+        txr_counter++;
+    }
+
+    // ACK if another byte is needed
+    // NACK if no more bytes should be read
+    if(txr_counter == queue[current]->read_count){
+        // Send ACK and start read of next byte
+        hri_sercomi2cm_clear_CTRLB_ACKACT_bit(SERCOM2);
+        hri_sercomi2cm_write_CTRLB_CMD_bf(SERCOM2, 0x02);
+    }else{
+        // Send NACK (done reading)
+        hri_sercomi2cm_set_CTRLB_ACKACT_bit(SERCOM2);
+
+        // Send STOP (done with transaction)
+        hri_sercomi2cm_write_CTRLB_CMD_bf(SERCOM2, 0x03);
+    
+        // Move to IDLE state (current transaction done)
+        state = STATE_IDLE;
+        result = I2C_STATUS_SUCCESS;
+        FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+    }        
+
+    // Clear interrupt flag
+    hri_sercomi2cm_clear_INTFLAG_SB_bit(SERCOM2);
 }
 
+// ERROR IRQ Handler
 void SERCOM2_2_Handler(void){
-    irq_handler();
+    // Send STOP
+    hri_sercomi2cm_write_CTRLB_CMD_bf(SERCOM2, 0x03);
+
+    // Move to idle state with error status
+    state = STATE_IDLE;
+    result = I2C_STATUS_ERROR;
+    FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+
+    // Clear interrupt flag
+    hri_sercomi2cm_clear_INTFLAG_ERROR_bit(SERCOM2);
 }
 
+// Unused in I2CM mode
 void SERCOM2_3_Handler(void){
-    irq_handler();
+    // Empty function
 }
