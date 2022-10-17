@@ -94,20 +94,8 @@ void i2c0_process(void){
 
         // Start next transaction if queue not empty
         if(count > 0){
-            if(queue[current]->write_count > 0){
-                // Start with write phase
-                state = STATE_WRITE;
-                FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-            }else if(queue[current]->read_count > 0){
-                // Start with read phase
-                state = STATE_READ;
-                FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-            }else{
-                // Empty transaction "complete" now
-                result = I2C_STATUS_SUCCESS;
-                state = STATE_IDLE;
-                FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-            }
+            state = STATE_WRITE;
+            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
         }
         break;
     }
@@ -145,20 +133,8 @@ void i2c0_enqueue(i2c_trans *trans){
 
     // If idle, start this transaction now
     if(state == STATE_IDLE){
-        if(queue[current]->write_count > 0){
-            // Start with write phase
-            state = STATE_WRITE;
-            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-        }else if(queue[current]->read_count > 0){
-            // Start with read phase
-            state = STATE_READ;
-            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-        }else{
-            // Empty transaction "complete" now
-            result = I2C_STATUS_SUCCESS;
-            state = STATE_IDLE;
-            FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-        }
+        state = STATE_WRITE;
+        FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
     }
 }
 
@@ -221,22 +197,9 @@ static void irq_handler(void){
                 txr_counter++;
             }else{
                 // There are no more bytes to write
-                if(queue[current]->read_count > 0){
-                    // This transaction has a read part. Start it.
-                    state = STATE_READ;
-                    FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-                }else{
-                    // No read part to this transaction.
-                    // Transaction is done.
-
-                    // Send STOP
-                    hri_sercomi2cm_set_CTRLB_CMD_bf(SERCOM2, 0x03);
-
-                    // Move to IDLE state (current transaction done)
-                    state = STATE_IDLE;
-                    result = I2C_STATUS_SUCCESS;
-                    FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-                }
+                // Move to read state
+                state = STATE_READ;
+                FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
             }
         }
 
