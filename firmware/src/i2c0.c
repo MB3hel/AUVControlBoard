@@ -183,8 +183,7 @@ static void irq_handler(void){
             // Send ACK and start read of next byte
             hri_sercomi2cm_clear_CTRLB_ACKACT_bit(SERCOM2);
             hri_sercomi2cm_write_CTRLB_CMD_bf(SERCOM2, 0x02);
-
-            // DO NOT clear SB flag here or it will end transmit
+            // SB flag is cleared when CMD bitfield is set (see pg 954 of datasheet)
         }else{
             // Send NACK (done reading)
             hri_sercomi2cm_set_CTRLB_ACKACT_bit(SERCOM2);
@@ -197,7 +196,7 @@ static void irq_handler(void){
             result = I2C_STATUS_SUCCESS;
             FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
 
-            // Clear interrupt flag only if no more data to read
+            // Clear interrupt flag manually
             hri_sercomi2cm_clear_INTFLAG_SB_bit(SERCOM2);
         }
     }else if(hri_sercomi2cm_get_INTFLAG_MB_bit(SERCOM2)){
@@ -212,24 +211,23 @@ static void irq_handler(void){
             result = I2C_STATUS_ERROR;
             FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
 
-            // Clear interrupt flag only if no more data to transmit
+            // Clear interrupt flag manually
             hri_sercomi2cm_clear_INTFLAG_MB_bit(SERCOM2);
         }else{
             // Otherwise, MB bit is set when data transmit is done
             
             if(txr_counter < queue[current]->write_count){
                 // There is another byte to write
-                hri_sercomi2cm_write_DATA_reg(SERCOM2, queue[current]->write_buf[txr_counter]);
+                hri_sercomi2cm_write_DATA_DATA_bf(SERCOM2, queue[current]->write_buf[txr_counter]);
                 txr_counter++;
-
-                // DO NOT clear MB flag here or it will end transmit
+                // MB flag is cleared when DATA register is set (see pg 954 of datasheet)
             }else{
                 // There are no more bytes to write
                 // Move to read state
                 state = STATE_READ;
                 FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
 
-                // Clear interrupt flag only if no more data to transmit
+                // Clear interrupt flag manually
                 hri_sercomi2cm_clear_INTFLAG_MB_bit(SERCOM2);
             }
         }
@@ -244,7 +242,7 @@ static void irq_handler(void){
         result = I2C_STATUS_ERROR;
         FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
 
-        // Clear interrupt flag
+        // Clear interrupt flag manually
         hri_sercomi2cm_clear_INTFLAG_ERROR_bit(SERCOM2);
     }
 }
