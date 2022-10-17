@@ -104,6 +104,7 @@ void i2c0_process(void){
                 FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
             }else{
                 // Empty transaction "complete" now
+                result = I2C_STATUS_SUCCESS;
                 state = STATE_IDLE;
                 FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
             }
@@ -154,6 +155,7 @@ void i2c0_enqueue(i2c_trans *trans){
             FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
         }else{
             // Empty transaction "complete" now
+            result = I2C_STATUS_SUCCESS;
             state = STATE_IDLE;
             FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
         }
