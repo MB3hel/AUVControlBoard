@@ -183,6 +183,8 @@ static void irq_handler(void){
             // Send ACK and start read of next byte
             hri_sercomi2cm_clear_CTRLB_ACKACT_bit(SERCOM2);
             hri_sercomi2cm_write_CTRLB_CMD_bf(SERCOM2, 0x02);
+
+            // DO NOT clear SB flag here or it will end transmit
         }else{
             // Send NACK (done reading)
             hri_sercomi2cm_set_CTRLB_ACKACT_bit(SERCOM2);
@@ -194,10 +196,10 @@ static void irq_handler(void){
             state = STATE_IDLE;
             result = I2C_STATUS_SUCCESS;
             FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
-        }        
 
-        // Clear interrupt flag
-        hri_sercomi2cm_clear_INTFLAG_SB_bit(SERCOM2);
+            // Clear interrupt flag only if no more data to read
+            hri_sercomi2cm_clear_INTFLAG_SB_bit(SERCOM2);
+        }
     }else if(hri_sercomi2cm_get_INTFLAG_MB_bit(SERCOM2)){
         if(hri_sercomi2cm_get_STATUS_RXNACK_bit(SERCOM2)){
             // MB bit may be set on NACK received during either TX or RX
@@ -209,6 +211,9 @@ static void irq_handler(void){
             state = STATE_IDLE;
             result = I2C_STATUS_ERROR;
             FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+
+            // Clear interrupt flag only if no more data to transmit
+            hri_sercomi2cm_clear_INTFLAG_MB_bit(SERCOM2);
         }else{
             // Otherwise, MB bit is set when data transmit is done
             
@@ -216,16 +221,18 @@ static void irq_handler(void){
                 // There is another byte to write
                 hri_sercomi2cm_write_DATA_reg(SERCOM2, queue[current]->write_buf[txr_counter]);
                 txr_counter++;
+
+                // DO NOT clear MB flag here or it will end transmit
             }else{
                 // There are no more bytes to write
                 // Move to read state
                 state = STATE_READ;
                 FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+
+                // Clear interrupt flag only if no more data to transmit
+                hri_sercomi2cm_clear_INTFLAG_MB_bit(SERCOM2);
             }
         }
-
-        // Clear interrupt flag
-        hri_sercomi2cm_clear_INTFLAG_MB_bit(SERCOM2);
     }else{
         // This is an ERROR interrupt
         
