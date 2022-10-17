@@ -45,7 +45,7 @@ static uint16_t next, current, count;
 // Transceiver counter
 // Tracks number of bytes either transmitted or received
 // During TX and RX phases
-uint32_t txr_counter;
+volatile uint32_t txr_counter;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
@@ -215,8 +215,8 @@ static void irq_handler(void){
             
             if(txr_counter < queue[current]->write_count){
                 // There is another byte to write
-                txr_counter++;
                 hri_sercomi2cm_write_DATA_reg(SERCOM2, queue[current]->write_buf[txr_counter]);
+                txr_counter++;
             }else{
                 // There are no more bytes to write
                 if(queue[current]->read_count > 0){
