@@ -73,7 +73,7 @@ void i2c0_init(void){
     // The counter is enabled in i2c0_process either WRITE or READ state
     // It is reset each time a transmit / receive finishes (irq handler)
     // except when no more to tx / rx in which case it is disabled
-    timers_i2c0_timeout_init(&i2c0_timeout, 250);
+    timers_i2c0_timeout_init(&i2c0_timeout, 5);
     repeated_timeouts = 0;
 
     // Initialize queue indices
@@ -131,12 +131,20 @@ void i2c0_process(void){
 
             // TODO: BNO055 sometimes gets "stuck" retrying a transaction, but there is no
             // TODO: Activity on the pins. Something happens that "breaks" i2c.
+            // TODO: Figure out why setting ADDR field would not start a transaction. This is what
+            // TODO: is happening. This seems to happen "randomly" within a transaction. Using an AD2
+            // TODO: to spy on the bus, it often happens partially through a read or after a STOP
+            // TODO: Is sent after a read. This likely has nothing to do with reading specifically.
+            // TODO: Most likely coincidence because the majority of time is spent on read transactions
+            // TODO: When only the BNO055 is in use (post configuration).
             // TODO: Debug this and fix properly. This is just error detection / recovery.
-            // If the timeout happens too many times in a row (meaning several transactions fail due to timeout)
-            // Reset the i2c bus.
+            // TODO: If the timeout happens too many times in a row (meaning several transactions
+            // TODO: in a row fail due to timeout) the bus is reset
+            // TODO: The problem seems to be most easily reproduced by moving around so IMU
+            // TODO: data is changing. This could just be coincidence though.
             if(repeated_timeouts >= 5){
                 hri_sercomi2cm_clear_CTRLA_ENABLE_bit(SERCOM2);
-                timers_safe_delay(5);
+                asm("nop");
                 hri_sercomi2cm_set_CTRLA_ENABLE_bit(SERCOM2);
                 repeated_timeouts = 0;
             }
