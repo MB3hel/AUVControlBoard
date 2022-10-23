@@ -57,7 +57,9 @@ static uint16_t next, current, count;
 // Transceiver counter
 // Tracks number of bytes either transmitted or received
 // During TX and RX phases
-volatile uint32_t txr_counter;
+static volatile uint32_t txr_counter;
+
+static volatile uint32_t repeated_timeouts;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
@@ -72,6 +74,7 @@ void i2c0_init(void){
     // It is reset each time a transmit / receive finishes (irq handler)
     // except when no more to tx / rx in which case it is disabled
     timers_i2c0_timeout_init(&i2c0_timeout, 250);
+    repeated_timeouts = 0;
 
     // Initialize queue indices
     current = 0;
@@ -119,6 +122,28 @@ void i2c0_process(void){
         hri_sercomi2cm_write_ADDR_ADDR_bf(SERCOM2, queue[current]->address << 1 | 0b1);
         break;
     case STATE_IDLE:
+        // Clear error bits in STATUS register
+        // Could also read the bits and do something based on them
+        if(result == I2C_STATUS_ERROR){
+            hri_sercomi2cm_clear_STATUS_BUSERR_bit(SERCOM2);
+            hri_sercomi2cm_clear_STATUS_ARBLOST_bit(SERCOM2);
+            hri_sercomi2cm_clear_STATUS_RXNACK_bit(SERCOM2);
+
+            // TODO: BNO055 sometimes gets "stuck" retrying a transaction, but there is no
+            // TODO: Activity on the pins. Something happens that "breaks" i2c.
+            // TODO: Debug this and fix properly. This is just error detection / recovery.
+            // If the timeout happens too many times in a row (meaning several transactions fail due to timeout)
+            // Reset the i2c bus.
+            if(repeated_timeouts >= 5){
+                hri_sercomi2cm_clear_CTRLA_ENABLE_bit(SERCOM2);
+                timers_safe_delay(5);
+                hri_sercomi2cm_set_CTRLA_ENABLE_bit(SERCOM2);
+                repeated_timeouts = 0;
+            }
+        }else{
+            repeated_timeouts = 0;
+        }
+
         // Force bus to idle state
         hri_sercomi2cm_write_STATUS_BUSSTATE_bf(SERCOM2, 0x01);
 
@@ -180,7 +205,8 @@ void i2c0_enqueue(i2c_trans *trans){
 
 void i2c0_timeout(void){
     // Timeout counter is automatically disabled before this is called (see timers.c)
-    dotstar_set(rand() % 255, rand() % 255, rand() % 255);
+
+    repeated_timeouts++;
 
     // Send STOP
     hri_sercomi2cm_write_CTRLB_CMD_bf(SERCOM2, 0x03);

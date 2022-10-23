@@ -323,6 +323,8 @@ void bno055_state_machine(uint8_t trigger){
     // -----------------------------------------------------------------------------------------------------------------
     // Actions at END of state
     // -----------------------------------------------------------------------------------------------------------------
+    // TODO: THESE CAN RUN WHEN THEY SHOULD NOT!!!
+    // TODO: MOVE THESE ELSEWHERE!!!
     int16_t tmp16;
     switch(state){
     case STATE_RD_GRAV:
