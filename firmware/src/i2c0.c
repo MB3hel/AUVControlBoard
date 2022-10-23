@@ -185,10 +185,10 @@ static void irq_handler(void){
             hri_sercomi2cm_write_CTRLB_CMD_bf(SERCOM2, 0x02);
             // SB flag is cleared when CMD bitfield is set (see pg 954 of datasheet)
         }else{
-            // Send NACK (done reading)
+            // Set ACK action to NACK (done reading)
             hri_sercomi2cm_set_CTRLB_ACKACT_bit(SERCOM2);
 
-            // Send STOP (done with transaction)
+            // Send ACK action followed by STOP (done with transaction)
             // This also clears the SB flag because CMD bitfield is set
             hri_sercomi2cm_write_CTRLB_CMD_bf(SERCOM2, 0x03);
         

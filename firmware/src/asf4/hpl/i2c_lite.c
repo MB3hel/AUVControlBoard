@@ -53,12 +53,12 @@ int8_t I2C_0_init()
 	hri_sercomi2cm_write_CTRLA_reg(
 	    SERCOM2,
 	    0 << SERCOM_I2CM_CTRLA_LOWTOUTEN_Pos      /* SCL Low Time-Out: disabled */
-	        | 3 << SERCOM_I2CM_CTRLA_INACTOUT_Pos /* Inactive Time-Out: 3 */
-	        | 1 << SERCOM_I2CM_CTRLA_SCLSM_Pos    /* SCL Clock Stretch Mode: enabled */
+	        | 0 << SERCOM_I2CM_CTRLA_INACTOUT_Pos /* Inactive Time-Out: 0 */
+	        | 0 << SERCOM_I2CM_CTRLA_SCLSM_Pos    /* SCL Clock Stretch Mode: disabled */
 	        | 0 << SERCOM_I2CM_CTRLA_SPEED_Pos    /* Transfer Speed: 0 */
 	        | 0 << SERCOM_I2CM_CTRLA_SEXTTOEN_Pos /* Slave SCL Low Extend Time-Out: disabled */
 	        | 0 << SERCOM_I2CM_CTRLA_MEXTTOEN_Pos /* Master SCL Low Extend Time-Out: 0 */
-	        | 0 << SERCOM_I2CM_CTRLA_SDAHOLD_Pos  /* SDA Hold Time: 0 */
+	        | 3 << SERCOM_I2CM_CTRLA_SDAHOLD_Pos  /* SDA Hold Time: 3 */
 	        | 0 << SERCOM_I2CM_CTRLA_PINOUT_Pos   /* Pin Usage: disabled */
 	        | 0 << SERCOM_I2CM_CTRLA_RUNSTDBY_Pos /* Run In Standby: disabled */
 	        | 5 << SERCOM_I2CM_CTRLA_MODE_Pos);   /* Operating Mode: 5 */
