@@ -87,13 +87,9 @@ int main(void){
     timers_safe_delay(500);                         // Wait ~500ms for sensors to power on
 
     // Initialize sensors
-    // if(!bno055_init()){
-    //     sensor_error();
-    // }
-
-    // TODO: Remove these two lines (used for testing i2c stack only)
-    bno055_init();
-    sensor_error();
+    if(!bno055_init()){
+        sensor_error();
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Main loop
