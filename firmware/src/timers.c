@@ -12,7 +12,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Timer tasks
-static struct timer_task task_10ms, task_20ms, task_50ms, task_100ms, task_1000ms, task_bno055, task_safe_delay;
+static struct timer_task task_10ms, task_20ms, task_50ms, task_100ms, task_1000ms, task_bno055, task_safe_delay, 
+        task_i2c0_timeout;
+
+static void (*i2c0_timeout_target)(void);
 
 static volatile bool safe_delay_done;
 
@@ -37,6 +40,9 @@ static void cb_timing(const struct timer_task *const timer_task){
     }else if(timer_task == &task_safe_delay){
         safe_delay_done = true;
         timer_remove_task(&TIMER_0, &task_safe_delay);
+    }else if(timer_task == &task_i2c0_timeout){
+        timer_remove_task(&TIMER_0, &task_i2c0_timeout);
+        i2c0_timeout_target();
     }
 }
 
@@ -110,4 +116,20 @@ void timers_reset_now(void){
     wdt_set_timeout_period(&WDT_0, 1024, 1);
     wdt_enable(&WDT_0); 
     while(1);
+}
+
+void timers_i2c0_timeout_init(void (*target)(void), uint32_t timeout){
+    i2c0_timeout_target = target;
+    task_i2c0_timeout.cb = cb_timing;
+    task_i2c0_timeout.interval = timeout;
+    task_i2c0_timeout.mode = TIMER_TASK_ONE_SHOT;
+}
+
+void timers_i2c0_timeout_reset(void){
+    timer_remove_task(&TIMER_0, &task_i2c0_timeout);
+    timer_add_task(&TIMER_0, &task_i2c0_timeout);
+}
+
+void timers_i2c0_timeout_disable(void){
+    timer_remove_task(&TIMER_0, &task_i2c0_timeout);
 }

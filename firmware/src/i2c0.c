@@ -63,7 +63,16 @@ volatile uint32_t txr_counter;
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void i2c0_timeout(void);
+
 void i2c0_init(void){
+    // Setup timeout task
+    // This timeout is for receiving or transmitting one byte
+    // The counter is enabled in i2c0_process either WRITE or READ state
+    // It is reset each time a transmit / receive finishes (irq handler)
+    // except when no more to tx / rx in which case it is disabled
+    timers_i2c0_timeout_init(&i2c0_timeout, 250);
+
     // Initialize queue indices
     current = 0;
     count = 0;
@@ -90,6 +99,9 @@ void i2c0_init(void){
 void i2c0_process(void){
     switch(state){
     case STATE_WRITE:
+        // Enable timeout counter
+        timers_i2c0_timeout_reset();
+
         txr_counter = 0;
         // Set slave address (which starts transaction)
         // Will set MB flag when finished. First byte is transmitted there
@@ -97,6 +109,9 @@ void i2c0_process(void){
         hri_sercomi2cm_write_ADDR_ADDR_bf(SERCOM2, queue[current]->address << 1 | 0b0);
         break;
     case STATE_READ:
+        // Enable timeout counter
+        timers_i2c0_timeout_reset();
+
         txr_counter = 0;
         // Set slave address (which starts transaction)
         // Will set SB flag when finished. First byte is read there
@@ -104,6 +119,9 @@ void i2c0_process(void){
         hri_sercomi2cm_write_ADDR_ADDR_bf(SERCOM2, queue[current]->address << 1 | 0b1);
         break;
     case STATE_IDLE:
+        // Force bus to idle state
+        hri_sercomi2cm_write_STATUS_BUSSTATE_bf(SERCOM2, 0x01);
+
         // Set result and flag
         queue[current]->status = result;
         FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
@@ -160,12 +178,25 @@ void i2c0_enqueue(i2c_trans *trans){
     }
 }
 
+void i2c0_timeout(void){
+    // Timeout counter is automatically disabled before this is called (see timers.c)
+    dotstar_set(rand() % 255, rand() % 255, rand() % 255);
+
+    // Send STOP
+    hri_sercomi2cm_write_CTRLB_CMD_bf(SERCOM2, 0x03);
+
+    // Move to idle state with error status
+    state = STATE_IDLE;
+    result = I2C_STATUS_ERROR;
+    FLAG_SET(flags_main, FLAG_MAIN_I2C0_PROC);
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// IRQ handler functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static void irq_handler(void){    
+static void irq_handler(void){  
     // Common IRQ handler for any SERCOM interrupts for this SERCOM
     // Flags are used to determine what the interrupt is, not which IRQ runs
     if(hri_sercomi2cm_get_INTFLAG_SB_bit(SERCOM2)){
@@ -180,11 +211,17 @@ static void irq_handler(void){
         // ACK if another byte is needed
         // NACK if no more bytes should be read
         if(txr_counter < queue[current]->read_count){
+            // Reset timeout counter
+            timers_i2c0_timeout_reset();
+
             // Send ACK and start read of next byte
             hri_sercomi2cm_clear_CTRLB_ACKACT_bit(SERCOM2);
             hri_sercomi2cm_write_CTRLB_CMD_bf(SERCOM2, 0x02);
             // SB flag is cleared when CMD bitfield is set (see pg 954 of datasheet)
         }else{
+            // Receive done. Disable timeout counter.
+            timers_i2c0_timeout_disable();
+
             // Set ACK action to NACK (done reading)
             hri_sercomi2cm_set_CTRLB_ACKACT_bit(SERCOM2);
 
@@ -199,6 +236,9 @@ static void irq_handler(void){
         }
     }else if(hri_sercomi2cm_get_INTFLAG_MB_bit(SERCOM2)){
         if(hri_sercomi2cm_get_STATUS_RXNACK_bit(SERCOM2)){
+            // Disable timeout counter
+            timers_i2c0_timeout_disable();
+
             // MB bit may be set on NACK received during either TX or RX
             // This is an ERROR
             // Send STOP
@@ -215,11 +255,17 @@ static void irq_handler(void){
             // Otherwise, MB bit is set when data transmit is done
             
             if(txr_counter < queue[current]->write_count){
+                // Reset timeout counter
+                timers_i2c0_timeout_reset();
+
                 // There is another byte to write
                 hri_sercomi2cm_write_DATA_DATA_bf(SERCOM2, queue[current]->write_buf[txr_counter]);
                 txr_counter++;
                 // MB flag is cleared when DATA register is set (see pg 954 of datasheet)
             }else{
+                // Disable timeout counter
+                timers_i2c0_timeout_disable();
+
                 // There are no more bytes to write
                 // Move to read state
                 state = STATE_READ;
@@ -232,6 +278,9 @@ static void irq_handler(void){
     }else{
         // This is an ERROR interrupt
         
+        // Disable timeout counter
+        timers_i2c0_timeout_disable();
+
         // Send STOP
         hri_sercomi2cm_write_CTRLB_CMD_bf(SERCOM2, 0x03);
 
