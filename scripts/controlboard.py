@@ -1,4 +1,5 @@
 
+import traceback
 from typing import List
 import serial
 import time
@@ -53,15 +54,20 @@ class ControlBoard:
         self.__inverted: List[int] = [2] * 8
         self.__orientation_quat: Quaternion = Quaternion()
         self.__grav_vec: Vector3 = Vector3()
+        self.__comm_lost = False
 
-        self.__read_thread = threading.Thread(target=self.__read_thread, daemon=True)
+        self.__read_thread = threading.Thread(target=self.__read_thread_func, daemon=True)
         self.__read_thread.start()
-        self.__feed_thread = threading.Thread(target=self.__feed_thread, daemon=True)
+        self.__feed_thread = threading.Thread(target=self.__feed_thread_func, daemon=True)
         self.__feed_thread.start()
 
 
         self.set_mode(ControlBoard.Mode.RAW)
         self.set_inverted(False, False, False, False, False, False, False, False)
+
+    @property
+    def comm_lost(self) -> bool:
+        return self.__comm_lost
 
     def set_mode(self, mode: Mode) -> bool:
         with self.__state_lock:
@@ -269,12 +275,19 @@ class ControlBoard:
             self.__grav_vec.y = struct.unpack_from("<f", buffer=msg, offset=8)[0]
             self.__grav_vec.z = struct.unpack_from("<f", buffer=msg, offset=12)[0]
 
-    def __read_thread(self):
+    def __read_thread_func(self):
         parse_escaped = False
         parse_started = False
         data = bytearray()
         while True:
-            c = self.__ser.read(1)
+            c = b''
+            try:
+                c = self.__ser.read(1)
+            except (serial.SerialException, OSError) as e:
+                if not self.__comm_lost:
+                    print(flush=True)
+                    print("READ FAILED! COMMUNICATION WITH CONTROL BOARD LOST!", flush=True)
+                    self.__comm_lost = True
             if parse_escaped:
                 if c == ControlBoard.START_BYTE or c == ControlBoard.END_BYTE or c == ControlBoard.ESCAPE_BYTE:
                     data.extend(c)
@@ -294,20 +307,26 @@ class ControlBoard:
                     data.extend(c)
 
     def __write_msg(self, msg: bytes):
-        self.__ser.write(ControlBoard.START_BYTE)
-        for i in range(len(msg)):
-            c = msg[i:i+1]
-            if c == ControlBoard.START_BYTE or c == ControlBoard.END_BYTE or c == ControlBoard.ESCAPE_BYTE:
-                self.__ser.write(ControlBoard.ESCAPE_BYTE)
-            self.__ser.write(c)
-        crc = Crc16.calcbytes(msg, byteorder='big')
-        crc = crc.replace(ControlBoard.START_BYTE, ControlBoard.ESCAPE_BYTE + ControlBoard.START_BYTE)
-        crc = crc.replace(ControlBoard.ESCAPE_BYTE, ControlBoard.ESCAPE_BYTE + ControlBoard.ESCAPE_BYTE)
-        crc = crc.replace(ControlBoard.END_BYTE, ControlBoard.ESCAPE_BYTE + ControlBoard.END_BYTE)
-        self.__ser.write(crc)
-        self.__ser.write(ControlBoard.END_BYTE)
+        try:
+            self.__ser.write(ControlBoard.START_BYTE)
+            for i in range(len(msg)):
+                c = msg[i:i+1]
+                if c == ControlBoard.START_BYTE or c == ControlBoard.END_BYTE or c == ControlBoard.ESCAPE_BYTE:
+                    self.__ser.write(ControlBoard.ESCAPE_BYTE)
+                self.__ser.write(c)
+            crc = Crc16.calcbytes(msg, byteorder='big')
+            crc = crc.replace(ControlBoard.START_BYTE, ControlBoard.ESCAPE_BYTE + ControlBoard.START_BYTE)
+            crc = crc.replace(ControlBoard.ESCAPE_BYTE, ControlBoard.ESCAPE_BYTE + ControlBoard.ESCAPE_BYTE)
+            crc = crc.replace(ControlBoard.END_BYTE, ControlBoard.ESCAPE_BYTE + ControlBoard.END_BYTE)
+            self.__ser.write(crc)
+            self.__ser.write(ControlBoard.END_BYTE)
+        except (serial.SerialException, OSError) as e:
+            if not self.__comm_lost:
+                print(flush=True)
+                print("WRITE FAILED! COMMUNICATION WITH CONTROL BOARD LOST!", flush=True)
+                self.__comm_lost = True
 
-    def __feed_thread(self):
+    def __feed_thread_func(self):
         # Feed watchdog every 500ms
         # Watchdog on control board kills thrusters if not fed for 1500ms
         # to ensure motors do not continue running if the computer looses connection

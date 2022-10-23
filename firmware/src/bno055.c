@@ -233,7 +233,7 @@ static uint8_t axis_config;
 static bool reconfig;
 
 static uint8_t write_buf[WRITE_BUF_SIZE];
-static uint8_t read_buf[READ_BUF_SIZE];
+static volatile uint8_t read_buf[READ_BUF_SIZE];
 static i2c_trans trans;
 
 static uint8_t state;

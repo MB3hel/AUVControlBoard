@@ -29,6 +29,8 @@ if __name__ == "__main__":
     start_time = time.time()
     try:
         while True:
+            if(cb.comm_lost):
+                exit(2)
             quat = cb.get_orientation_quat()
             grav = cb.get_gravity_vector()
             print("({:05d}) QW: {:.4f}\tQX: {:.4f}\tQY: {:.4f}\tQZ: {:.4f}\tGX: {:.4f}\tGY: {:.4f}\t GZ: {:.4f}".format(
