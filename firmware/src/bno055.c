@@ -229,7 +229,8 @@
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static uint8_t axis_config;
+static uint8_t axis_remap;
+static uint8_t axis_sign;
 static bool reconfig;
 
 static uint8_t write_buf[WRITE_BUF_SIZE];
@@ -320,36 +321,8 @@ static bno055_data data;
 // Called when some event that may change state occurs
 void bno055_state_machine(uint8_t trigger){    
     
-    // -----------------------------------------------------------------------------------------------------------------
-    // Actions at END of state
-    // -----------------------------------------------------------------------------------------------------------------
-    // TODO: THESE CAN RUN WHEN THEY SHOULD NOT!!!
-    // TODO: MOVE THESE ELSEWHERE!!!
+    // Used for sensor data parsing
     int16_t tmp16;
-    switch(state){
-    case STATE_RD_GRAV:
-        tmp16 = ((int16_t)trans.read_buf[0]) | (((int16_t)trans.read_buf[1]) << 8);
-        data.grav_x = tmp16 / 100.0f;
-        tmp16 = ((int16_t)trans.read_buf[2]) | (((int16_t)trans.read_buf[3]) << 8);
-        data.grav_y = tmp16 / 100.0f;
-        tmp16 = ((int16_t)trans.read_buf[4]) | (((int16_t)trans.read_buf[5]) << 8);
-        data.grav_z = tmp16 / 100.0f;
-
-        // TODO: Fix this properly instead of an extra inversion here...
-        data.grav_z *= -1;
-        break;
-    case STATE_RD_QUAT:
-        tmp16 = (((uint16_t)trans.read_buf[1]) << 8) | ((uint16_t)trans.read_buf[0]);
-        data.quat_w = tmp16 / 16384.0;
-        tmp16 = (((uint16_t)trans.read_buf[3]) << 8) | ((uint16_t)trans.read_buf[2]);
-        data.quat_x = tmp16 / 16384.0;
-        tmp16 = (((uint16_t)trans.read_buf[5]) << 8) | ((uint16_t)trans.read_buf[4]);
-        data.quat_y = tmp16 / 16384.0;
-        tmp16 = (((uint16_t)trans.read_buf[7]) << 8) | ((uint16_t)trans.read_buf[6]);
-        data.quat_z = tmp16 / 16384.0;
-        break;
-    }
-    
 
     // -----------------------------------------------------------------------------------------------------------------
     // State changes
@@ -450,6 +423,17 @@ void bno055_state_machine(uint8_t trigger){
             break;
         case STATE_RD_GRAV:
             if(trigger == TRIGGER_I2C_DONE){
+                // Data read. Parse it.
+                // Note z negated because accelerometer data seems to be negated relative to the axes shown in datasheet
+                // The negation here undoes that.
+                tmp16 = ((int16_t)trans.read_buf[0]) | (((int16_t)trans.read_buf[1]) << 8);
+                data.grav_x = tmp16 / 100.0f;
+                tmp16 = ((int16_t)trans.read_buf[2]) | (((int16_t)trans.read_buf[3]) << 8);
+                data.grav_y = tmp16 / 100.0f;
+                tmp16 = ((int16_t)trans.read_buf[4]) | (((int16_t)trans.read_buf[5]) << 8);
+                data.grav_z = -tmp16 / 100.0f;
+
+                // Next state
                 state = STATE_DELAY;
                 delay = 50;
                 delay_next_state = STATE_RD_QUAT;
@@ -457,6 +441,17 @@ void bno055_state_machine(uint8_t trigger){
             break;
         case STATE_RD_QUAT:
             if(trigger == TRIGGER_I2C_DONE){
+                // Data read. Parse it.
+                tmp16 = (((uint16_t)trans.read_buf[1]) << 8) | ((uint16_t)trans.read_buf[0]);
+                data.quat_w = tmp16 / 16384.0;
+                tmp16 = (((uint16_t)trans.read_buf[3]) << 8) | ((uint16_t)trans.read_buf[2]);
+                data.quat_x = tmp16 / 16384.0;
+                tmp16 = (((uint16_t)trans.read_buf[5]) << 8) | ((uint16_t)trans.read_buf[4]);
+                data.quat_y = tmp16 / 16384.0;
+                tmp16 = (((uint16_t)trans.read_buf[7]) << 8) | ((uint16_t)trans.read_buf[6]);
+                data.quat_z = tmp16 / 16384.0;
+
+                // Next state
                 state = STATE_DELAY;
                 delay = 50;
                 delay_next_state = reconfig ? STATE_RECONFIG : STATE_RD_GRAV;
@@ -530,64 +525,14 @@ void bno055_state_machine(uint8_t trigger){
         break;
     case STATE_WR_AXIS_MAP:
         trans.write_buf[0] = BNO055_AXIS_MAP_CONFIG_ADDR;
-        switch(axis_config){
-        case BNO055_AXIS_REMAP_P0:
-            trans.write_buf[1] = 0x21;
-            break;
-        case BNO055_AXIS_REMAP_P1:
-            trans.write_buf[1] = 0x24;
-            break;
-        case BNO055_AXIS_REMAP_P2:
-            trans.write_buf[1] = 0x24;
-            break;
-        case BNO055_AXIS_REMAP_P3:
-            trans.write_buf[1] = 0x21;
-            break;
-        case BNO055_AXIS_REMAP_P4:
-            trans.write_buf[1] = 0x24;
-            break;
-        case BNO055_AXIS_REMAP_P5:
-            trans.write_buf[1] = 0x21;
-            break;
-        case BNO055_AXIS_REMAP_P6:
-            trans.write_buf[1] = 0x21;
-            break;
-        case BNO055_AXIS_REMAP_P7:
-            trans.write_buf[1] = 0x24;
-            break;
-        }
+        trans.write_buf[1] = axis_remap;
         trans.write_count = 2;
         trans.read_count = 0;
         i2c0_enqueue(&trans);
         break;
     case STATE_WR_AXIS_SIGN:
         trans.write_buf[0] = BNO055_AXIS_MAP_SIGN_ADDR;
-        switch(axis_config){
-        case BNO055_AXIS_REMAP_P0:
-            trans.write_buf[1] = 0x04;
-            break;
-        case BNO055_AXIS_REMAP_P1:
-            trans.write_buf[1] = 0x00;
-            break;
-        case BNO055_AXIS_REMAP_P2:
-            trans.write_buf[1] = 0x06;
-            break;
-        case BNO055_AXIS_REMAP_P3:
-            trans.write_buf[1] = 0x02;
-            break;
-        case BNO055_AXIS_REMAP_P4:
-            trans.write_buf[1] = 0x03;
-            break;
-        case BNO055_AXIS_REMAP_P5:
-            trans.write_buf[1] = 0x01;
-            break;
-        case BNO055_AXIS_REMAP_P6:
-            trans.write_buf[1] = 0x07;
-            break;
-        case BNO055_AXIS_REMAP_P7:
-            trans.write_buf[1] = 0x05;
-            break;
-        }
+        trans.write_buf[1] = axis_sign;
         trans.write_count = 2;
         trans.read_count = 0;
         i2c0_enqueue(&trans);
@@ -635,7 +580,8 @@ bool bno055_init(void){
     reconfig = false;
 
     // Setup initial config
-    axis_config = BNO055_AXIS_REMAP_P5;
+    axis_remap = BNO055_AXIS_REMAP(BNO055_AXIS_X, BNO055_AXIS_Y, BNO055_AXIS_Z);
+    axis_sign = BNO055_AXIS_SIGN(BNO055_AXIS_POS, BNO055_AXIS_POS, BNO055_AXIS_POS);
 
     // Setup transaction
     trans.address = BNO055_ADDR;
@@ -694,9 +640,10 @@ void bno055_check_i2c(void){
     trans.status = I2C_STATUS_IDLE;
 }
 
-void bno055_reconfig(uint8_t axis_remap){
+void bno055_reconfig(uint8_t new_axis_remap, uint8_t new_axis_sign){
     // Update config var
-    axis_config = axis_remap;
+    axis_remap = new_axis_remap;
+    axis_sign = new_axis_sign;
     // Set persistant flag to be handled next time in idle state
     reconfig = true;
 }

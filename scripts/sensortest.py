@@ -11,7 +11,7 @@ if __name__ == "__main__":
     try:
         print("Connecting to control board...", end="", flush=True)
         try:
-            cb = ControlBoard("/dev/ttyACM0")
+            cb = ControlBoard("/dev/ttyACM1")
             print("Done.", flush=True)
         except Exception as e:
             print("Fail.", flush=True)
@@ -31,11 +31,12 @@ if __name__ == "__main__":
         while True:
             if(cb.comm_lost):
                 exit(2)
-            quat = cb.get_orientation_quat()
+            pry = cb.get_orientation_pry()
+            pry.to_deg()
             grav = cb.get_gravity_vector()
-            print("({:05d}) QW: {:.4f}\tQX: {:.4f}\tQY: {:.4f}\tQZ: {:.4f}\tGX: {:.4f}\tGY: {:.4f}\t GZ: {:.4f}".format(
+            print("({:05d}) P: {:.4f}\tR: {:.4f}\tY: {:.4f}\tGX: {:.4f}\tGY: {:.4f}\t GZ: {:.4f}".format(
                 int((time.time() - start_time)*1000),
-                quat.w, quat.x, quat.y, quat.z,
+                pry.pitch, pry.roll, pry.yaw,
                 grav.x, grav.y, grav.z
             ))
             time.sleep(0.1)

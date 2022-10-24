@@ -16,15 +16,19 @@
 /// Macros
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define BNO055_AXIS_REMAP_P0        0
-#define BNO055_AXIS_REMAP_P1        1
-#define BNO055_AXIS_REMAP_P2        2
-#define BNO055_AXIS_REMAP_P3        3
-#define BNO055_AXIS_REMAP_P4        4
-#define BNO055_AXIS_REMAP_P5        5
-#define BNO055_AXIS_REMAP_P6        6
-#define BNO055_AXIS_REMAP_P7        7
+// Axes
+#define BNO055_AXIS_X       0b00
+#define BNO055_AXIS_Y       0b01
+#define BNO055_AXIS_Z       0b10
 
+// Axis signs
+#define BNO055_AXIS_POS     0b0
+#define BNO055_AXIS_NEG     0b1
+
+
+// Construct value for axis remap
+#define BNO055_AXIS_REMAP(x, y, z)      (((z & 0x3) << 4) | ((y & 0x3) << 2) | (x & 0x3))
+#define BNO055_AXIS_SIGN(x, y, z)       (((x & 0x1) << 2) | ((y & 0x1) << 1) | (z & 0x1))
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Typedefs
@@ -58,7 +62,7 @@ void bno055_check_i2c(void);
  * Reconfigure IMU
  * @param new_config New configuration for the IMU
  */
-void bno055_reconfig(uint8_t axis_remap);
+void bno055_reconfig(uint8_t new_axis_remap, uint8_t new_axis_sign);
 
 /**
  * Get BNO055 sensor data

@@ -1,5 +1,6 @@
 
 import traceback
+import math
 from typing import List
 import serial
 import time
@@ -24,6 +25,22 @@ class Vector3:
         self.x = x
         self.y = y
         self.z = z
+
+class PRY:
+    def __init__(self, pitch: float = 0.0, roll: float = 0.0, yaw: float = 0.0):
+        self.pitch = pitch
+        self.roll = roll
+        self.yaw = yaw
+    
+    def to_deg(self):
+        self.pitch *= 180.0 / math.pi
+        self.roll *= 180.0 / math.pi
+        self.yaw *= 180.0 / math.pi
+    
+    def to_rad(self):
+        self.pitch *= math.pi / 180.0
+        self.roll *= math.pi / 180.0
+        self.yaw *= math.pi / 180.0
 
 class ControlBoard:
     # Communication protocol special values
@@ -198,6 +215,28 @@ class ControlBoard:
     def get_orientation_quat(self) -> Quaternion:
         return Quaternion(self.__orientation_quat.w, self.__orientation_quat.x, 
                 self.__orientation_quat.y, self.__orientation_quat.z)
+
+    def get_orientation_pry(self) -> PRY:
+        q = self.__orientation_quat
+        # Pitch (about x axis)
+        sinr_cosp = 2 * (q.w * q.x + q.y * q.z)
+        cosr_cosp = 1 - 2 * (q.x * q.x + q.y * q.y)
+        pitch = math.atan2(sinr_cosp, cosr_cosp)
+
+        # roll (about y axis)
+        sinp = 2 * (q.w * q.y - q.z * q.x)
+        if (abs(sinp) >= 1):
+            roll = math.copysign(math.pi / 2, sinp)
+        else:
+            roll = math.asin(sinp)
+
+        # yaw (about z axis)
+        siny_cosp = 2 * (q.w * q.z + q.x * q.y)
+        cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z)
+        yaw = math.atan2(siny_cosp, cosy_cosp)
+
+        # Return all three values
+        return PRY(pitch, roll, yaw)
 
     def __print_bytes(self, msg: bytes):
         print("[", end="")
