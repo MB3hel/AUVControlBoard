@@ -68,6 +68,7 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
             }
             pccomm_write_msg(response, 12);
         }
+        // TODO: Handle axis config query
         return;
     }
     
@@ -184,6 +185,103 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         // RESET command (reset MCU)
         // R,E,S,E,T
         timers_reset_now();
+    }else if(data_startswith(msg, len, (uint8_t[]){'A', 'X', 'I', 'S'}, 4)){
+        // AXIS configuration  command
+        // A,X,I,S,[axis_x_remap],[axis_y_remap],[axis_z_remap],[axis_x_sign],[axis_y_sign],[axis_z_sign]
+        // axis_i_remap = 'x', 'y', or 'z' reconfigures axis i to be axis 'x', 'y', or 'z' respectively
+        // axis_i_sign = '+' or '-' configures sign of axis i
+        
+        // Ensure enough data
+        if(len < 10)
+            return;
+        
+        uint8_t remap_x, remap_y, remap_z;
+        uint8_t sign_x, sign_y, sign_z;
+        bool valid = true;
+        switch(msg[4]){
+        case 'x':
+        case 'X':
+            remap_x = BNO055_AXIS_X;
+            break;
+        case 'y':
+        case 'Y':
+            remap_x = BNO055_AXIS_Y;
+            break;
+        case 'z':
+        case 'Z':
+            remap_x = BNO055_AXIS_Z;
+            break;
+        default:
+            valid = false;
+            break;
+        }
+        switch(msg[5]){
+        case 'x':
+        case 'X':
+            remap_y = BNO055_AXIS_X;
+            break;
+        case 'y':
+        case 'Y':
+            remap_y = BNO055_AXIS_Y;
+            break;
+        case 'z':
+        case 'Z':
+            remap_y = BNO055_AXIS_Z;
+            break;
+        default:
+            valid = false;
+            break;
+        }
+        switch(msg[6]){
+        case 'x':
+        case 'X':
+            remap_z = BNO055_AXIS_X;
+            break;
+        case 'y':
+        case 'Y':
+            remap_z = BNO055_AXIS_Y;
+            break;
+        case 'z':
+        case 'Z':
+            remap_z = BNO055_AXIS_Z;
+            break;
+        default:
+            valid = false;
+            break;
+        }
+        switch(msg[7]){
+        case '+':
+            sign_x = BNO055_AXIS_POS;
+            break;
+        case '-':
+            sign_x = BNO055_AXIS_NEG;
+            break;
+        default:
+            valid = false;
+        }
+        switch(msg[8]){
+        case '+':
+            sign_y = BNO055_AXIS_POS;
+            break;
+        case '-':
+            sign_y = BNO055_AXIS_NEG;
+            break;
+        default:
+            valid = false;
+        }
+        switch(msg[9]){
+        case '+':
+            sign_z = BNO055_AXIS_POS;
+            break;
+        case '-':
+            sign_z = BNO055_AXIS_NEG;
+            break;
+        default:
+            valid = false;
+        }
+        if(valid)
+            bno055_reconfig(BNO055_AXIS_REMAP(remap_x, remap_y, remap_z),
+                    BNO055_AXIS_SIGN(sign_x, sign_y, sign_z));
     }
 }
 

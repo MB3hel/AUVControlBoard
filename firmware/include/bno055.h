@@ -70,3 +70,6 @@ void bno055_reconfig(uint8_t new_axis_remap, uint8_t new_axis_sign);
  * @return bno055 
  */
 bno055_data bno055_get(void);
+
+
+// TODO: Get axis config
