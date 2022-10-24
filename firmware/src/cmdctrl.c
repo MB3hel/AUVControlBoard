@@ -195,8 +195,8 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         if(len < 10)
             return;
         
-        uint8_t remap_x, remap_y, remap_z;
-        uint8_t sign_x, sign_y, sign_z;
+        uint8_t remap_x = 0, remap_y = 0, remap_z = 0;
+        uint8_t sign_x = 0, sign_y = 0, sign_z = 0;
         bool valid = true;
         switch(msg[4]){
         case 'x':

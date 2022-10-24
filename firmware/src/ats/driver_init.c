@@ -12,6 +12,7 @@
 #include <hal_init.h>
 
 struct timer_descriptor TIMER_0;
+struct timer_descriptor TIMER_1;
 
 struct wdt_descriptor WDT_0;
 
@@ -58,6 +59,19 @@ static void TIMER_0_init(void)
 	hri_gclk_write_PCHCTRL_reg(GCLK, TC0_GCLK_ID, CONF_GCLK_TC0_SRC | (1 << GCLK_PCHCTRL_CHEN_Pos));
 
 	timer_init(&TIMER_0, TC0, _tc_get_timer());
+}
+
+/**
+ * \brief Timer initialization function
+ *
+ * Enables Timer peripheral, clocks and initializes Timer driver
+ */
+static void TIMER_1_init(void)
+{
+	hri_mclk_set_APBAMASK_TC1_bit(MCLK);
+	hri_gclk_write_PCHCTRL_reg(GCLK, TC1_GCLK_ID, CONF_GCLK_TC1_SRC | (1 << GCLK_PCHCTRL_CHEN_Pos));
+
+	timer_init(&TIMER_1, TC1, _tc_get_timer());
 }
 
 void PWM_0_PORT_init(void)
@@ -259,6 +273,7 @@ void system_init(void)
 	I2C_0_PORT_init();
 
 	TIMER_0_init();
+	TIMER_1_init();
 	PWM_0_CLOCK_init();
 
 	PWM_0_PORT_init();

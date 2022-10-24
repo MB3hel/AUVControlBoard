@@ -47,7 +47,7 @@ void timers_reset_now(void);
 /**
  * Setup i2c0 timeout task
  * @param target Function to run ont timeout
- * @param timeout Timeout in ms
+ * @param timeout Timeout in us
  */
 void timers_i2c0_timeout_init(void (*target)(void), uint32_t timeout);
 

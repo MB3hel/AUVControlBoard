@@ -36,6 +36,7 @@
 #include <utils.h>
 #include <hal_atomic.h>
 #include <hpl_irq.h>
+#include <atmel_start.h>
 
 /**
  * \brief Driver version
@@ -246,5 +247,8 @@ static void timer_process_counted(struct _timer_device *device)
 		it = (struct timer_task *)list_get_head(&timer->tasks);
 
 		tmp->cb(tmp);
+	}
+	if(device == &TIMER_1){
+		dotstar_set(rand() % 255, rand() % 255, rand() % 255);
 	}
 }

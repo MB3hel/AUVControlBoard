@@ -41,7 +41,7 @@ static void cb_timing(const struct timer_task *const timer_task){
         safe_delay_done = true;
         timer_remove_task(&TIMER_0, &task_safe_delay);
     }else if(timer_task == &task_i2c0_timeout){
-        timer_remove_task(&TIMER_0, &task_i2c0_timeout);
+        timer_remove_task(&TIMER_1, &task_i2c0_timeout);
         i2c0_timeout_target();
     }
 }
@@ -76,6 +76,12 @@ void timers_init(void){
     timer_add_task(&TIMER_0, &task_1000ms);
 
     timer_start(&TIMER_0);                          // Start TIMER_0 (1ms timer)
+    // -----------------------------------------------------------------------------------------------------------------
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // TIMER_1 (1us timer)
+    // -----------------------------------------------------------------------------------------------------------------
+    timer_start(&TIMER_1);                          // Start TIMER_1 (1us timer)
     // -----------------------------------------------------------------------------------------------------------------
 }
 
@@ -126,10 +132,10 @@ void timers_i2c0_timeout_init(void (*target)(void), uint32_t timeout){
 }
 
 void timers_i2c0_timeout_reset(void){
-    timer_remove_task(&TIMER_0, &task_i2c0_timeout);
-    timer_add_task(&TIMER_0, &task_i2c0_timeout);
+    timer_remove_task(&TIMER_1, &task_i2c0_timeout);
+    timer_add_task(&TIMER_1, &task_i2c0_timeout);
 }
 
 void timers_i2c0_timeout_disable(void){
-    timer_remove_task(&TIMER_0, &task_i2c0_timeout);
+    timer_remove_task(&TIMER_1, &task_i2c0_timeout);
 }
