@@ -11,6 +11,7 @@
     - Includes an on-chip processor running sensor fusion algorithms and can provide useful information such as a gravity vector or an orientation in 3D space.
     - These features remove the need to develop sensor calibration, fusion, and interpretation algorithms in the control board firmware (simplifies firmware and accelerates development time)
     - Can also provide raw sensor data meaning custom algorithms are still possible if deemed necessary / beneficial at a later time
+    - *Note that the Stemma QT version has a different pinout. Keep this in mind if using this variant of the breakout board.*
 - Adafruit BMP280 Breakout
     - Pressure and temperature sensor
     - Not likely to be used if on-chip calibrations of BNO055 are used, however some sensor calibration algorithms take into account temperature and pressure. This is present in case this information is needed at a later date.
@@ -19,9 +20,15 @@
 
 ## Assembly
 
-Prototype is assembled on protoboard. Final assembled prototype is shown below.
+Prototype is assembled on protoboard. Final assembled prototype and pinout is shown below.
 
 ![](.//prototype_assembled_labeled.png)
+
+The default coordinate system as defined by the IMU is shown below. Note that this is a right hand coordinate system. The red arrows define axes. Rotation about these axes is in the right hand direction (indicated by green arrows). Notice that the green arrows are on top of the red axis arrows, thus a "left to right" arrow is left to right across the top of the axis.
+
+The axis configuration can be changed to match any mounting position of the control board on a robot. See the BNO055 datasheet pages 26 and 27 for more information (datasheet included in project `references` folder).
+
+![](.//prototype_axis.png)
 
 
 ### Assembly Instructions
