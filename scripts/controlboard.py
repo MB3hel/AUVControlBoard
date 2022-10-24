@@ -13,13 +13,6 @@ from crccheck.crc import Crc16CcittFalse as Crc16
 debug_prints = True
 
 
-class Quaternion:
-    def __init__(self, w: float = 0.0, x: float = 0.0, y: float = 0.0, z: float = 0.0):
-        self.w: float = w
-        self.x: float = x
-        self.y: float = y
-        self.z: float = z
-
 class Vector3:
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0):
         self.x = x
@@ -27,20 +20,27 @@ class Vector3:
         self.z = z
 
 class PRY:
-    def __init__(self, pitch: float = 0.0, roll: float = 0.0, yaw: float = 0.0):
+    def __init__(self, pitch: float = 0.0, roll: float = 0.0, yaw: float = 0.0, rad = False):
         self.pitch = pitch
         self.roll = roll
         self.yaw = yaw
+        self.rad = False
     
     def to_deg(self):
+        if not self.rad:
+            return
         self.pitch *= 180.0 / math.pi
         self.roll *= 180.0 / math.pi
         self.yaw *= 180.0 / math.pi
+        self.rad = False
     
     def to_rad(self):
+        if self.rad:
+            return
         self.pitch *= math.pi / 180.0
         self.roll *= math.pi / 180.0
         self.yaw *= math.pi / 180.0
+        self.rad = True
 
 class ControlBoard:
     # Communication protocol special values
@@ -69,7 +69,7 @@ class ControlBoard:
         self.__state_lock = threading.Lock()
         self.__mode: ControlBoard.Mode = ControlBoard.Mode.UNKNOWN
         self.__inverted: List[int] = [2] * 8
-        self.__orientation_quat: Quaternion = Quaternion()
+        self.__orientation: PRY = PRY()
         self.__grav_vec: Vector3 = Vector3()
         self.__comm_lost = False
 
@@ -211,32 +211,10 @@ class ControlBoard:
 
     def get_gravity_vector(self) -> Vector3:
         return Vector3(self.__grav_vec.x, self.__grav_vec.y, self.__grav_vec.z)
-    
-    def get_orientation_quat(self) -> Quaternion:
-        return Quaternion(self.__orientation_quat.w, self.__orientation_quat.x, 
-                self.__orientation_quat.y, self.__orientation_quat.z)
 
-    def get_orientation_pry(self) -> PRY:
-        q = self.__orientation_quat
-        # Pitch (about x axis)
-        sinr_cosp = 2 * (q.w * q.x + q.y * q.z)
-        cosr_cosp = 1 - 2 * (q.x * q.x + q.y * q.y)
-        pitch = math.atan2(sinr_cosp, cosr_cosp)
-
-        # roll (about y axis)
-        sinp = 2 * (q.w * q.y - q.z * q.x)
-        if (abs(sinp) >= 1):
-            roll = math.copysign(math.pi / 2, sinp)
-        else:
-            roll = math.asin(sinp)
-
-        # yaw (about z axis)
-        siny_cosp = 2 * (q.w * q.z + q.x * q.y)
-        cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z)
-        yaw = math.atan2(siny_cosp, cosy_cosp)
-
-        # Return all three values
-        return PRY(pitch, roll, yaw)
+    def get_orientation(self) -> PRY:
+        return PRY(self.__orientation.pitch, self.__orientation.roll, 
+                self.__orientation.yaw, self.__orientation.rad)
 
     def __print_bytes(self, msg: bytes):
         print("[", end="")
@@ -304,11 +282,11 @@ class ControlBoard:
                         self.__inverted[i] = True
                     else:
                         self.__inverted[i] = False
-        elif msg.startswith(b'QUAT'):
-            self.__orientation_quat.w = struct.unpack_from("<f", buffer=msg, offset=4)[0]
-            self.__orientation_quat.x = struct.unpack_from("<f", buffer=msg, offset=8)[0]
-            self.__orientation_quat.y = struct.unpack_from("<f", buffer=msg, offset=12)[0]
-            self.__orientation_quat.z = struct.unpack_from("<f", buffer=msg, offset=16)[0]
+        elif msg.startswith(b'EULER'):
+            self.__orientation.pitch = struct.unpack_from("<f", buffer=msg, offset=5)[0]
+            self.__orientation.roll = struct.unpack_from("<f", buffer=msg, offset=9)[0]
+            self.__orientation.yaw = struct.unpack_from("<f", buffer=msg, offset=13)[0]
+            self.__orientation.rad = False
         elif msg.startswith(b'GVEC'):
             self.__grav_vec.x = struct.unpack_from("<f", buffer=msg, offset=4)[0]
             self.__grav_vec.y = struct.unpack_from("<f", buffer=msg, offset=8)[0]

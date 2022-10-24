@@ -31,8 +31,7 @@ if __name__ == "__main__":
         while True:
             if(cb.comm_lost):
                 exit(2)
-            pry = cb.get_orientation_pry()
-            pry.to_deg()
+            pry = cb.get_orientation()
             grav = cb.get_gravity_vector()
             print("({:05d}) P: {:.4f}\tR: {:.4f}\tY: {:.4f}\tGX: {:.4f}\tGY: {:.4f}\t GZ: {:.4f}".format(
                 int((time.time() - start_time)*1000),

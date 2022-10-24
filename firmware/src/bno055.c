@@ -216,7 +216,7 @@
 #define STATE_WR_AXIS_SIGN      9           // Set axis signs
 #define STATE_SETMODE_IMU       10          // Set to imu mode
 #define STATE_RD_GRAV           11          // Read gravity vector
-#define STATE_RD_QUAT           12          // Read quaternion orientation
+#define STATE_RD_EULER          12          // Read euler orientation
 #define STATE_RECONFIG          13          // Enter config mode before reconfigure
 
 // State transition triggers
@@ -424,8 +424,6 @@ void bno055_state_machine(uint8_t trigger){
         case STATE_RD_GRAV:
             if(trigger == TRIGGER_I2C_DONE){
                 // Data read. Parse it.
-                // Note z negated because accelerometer data seems to be negated relative to the axes shown in datasheet
-                // The negation here undoes that.
                 tmp16 = ((int16_t)trans.read_buf[0]) | (((int16_t)trans.read_buf[1]) << 8);
                 data.grav_x = tmp16 / 100.0f;
                 tmp16 = ((int16_t)trans.read_buf[2]) | (((int16_t)trans.read_buf[3]) << 8);
@@ -436,20 +434,18 @@ void bno055_state_machine(uint8_t trigger){
                 // Next state
                 state = STATE_DELAY;
                 delay = 50;
-                delay_next_state = STATE_RD_QUAT;
+                delay_next_state = STATE_RD_EULER;
             }
             break;
-        case STATE_RD_QUAT:
+        case STATE_RD_EULER:
             if(trigger == TRIGGER_I2C_DONE){
                 // Data read. Parse it.
-                tmp16 = (((uint16_t)trans.read_buf[1]) << 8) | ((uint16_t)trans.read_buf[0]);
-                data.quat_w = tmp16 / 16384.0;
-                tmp16 = (((uint16_t)trans.read_buf[3]) << 8) | ((uint16_t)trans.read_buf[2]);
-                data.quat_x = tmp16 / 16384.0;
-                tmp16 = (((uint16_t)trans.read_buf[5]) << 8) | ((uint16_t)trans.read_buf[4]);
-                data.quat_y = tmp16 / 16384.0;
-                tmp16 = (((uint16_t)trans.read_buf[7]) << 8) | ((uint16_t)trans.read_buf[6]);
-                data.quat_z = tmp16 / 16384.0;
+                tmp16 = ((int16_t)trans.read_buf[0]) | (((int16_t)trans.read_buf[1]) << 8);
+                data.euler_yaw = tmp16 / 16.0f;
+                tmp16 = ((int16_t)trans.read_buf[2]) | (((int16_t)trans.read_buf[3]) << 8);
+                data.euler_roll = tmp16 / 16.0f;
+                tmp16 = ((int16_t)trans.read_buf[4]) | (((int16_t)trans.read_buf[5]) << 8);
+                data.euler_pitch = tmp16 / 16.0f;
 
                 // Next state
                 state = STATE_DELAY;
@@ -550,10 +546,10 @@ void bno055_state_machine(uint8_t trigger){
         trans.read_count = 6;
         i2c0_enqueue(&trans);
         break;
-    case STATE_RD_QUAT:
-        trans.write_buf[0] = BNO055_QUATERNION_DATA_W_LSB_ADDR;
+    case STATE_RD_EULER:
+        trans.write_buf[0] = BNO055_EULER_H_LSB_ADDR;
         trans.write_count = 1;
-        trans.read_count = 8;
+        trans.read_count = 6;
         i2c0_enqueue(&trans);
         break;
     case STATE_RECONFIG:
@@ -571,10 +567,9 @@ bool bno055_init(void){
     data.grav_x = 0.0f;
     data.grav_y = 0.0f;
     data.grav_z = 0.0f;
-    data.quat_w = 0.0f;
-    data.quat_x = 0.0f;
-    data.quat_y = 0.0f;
-    data.quat_z = 0.0f;
+    data.euler_pitch = 0.0f;
+    data.euler_roll = 0.0f;
+    data.euler_yaw = 0.0f;
 
     // Initial flags
     reconfig = false;
