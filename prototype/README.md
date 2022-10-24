@@ -13,6 +13,7 @@
     - Can also provide raw sensor data meaning custom algorithms are still possible if deemed necessary / beneficial at a later time
     - *Note that the Stemma QT version has a different pinout. Keep this in mind if using this variant of the breakout board.*
 - Adafruit BMP280 Breakout
+    - ***Not currently used by firmware, thus not usually populated.***
     - Pressure and temperature sensor
     - Not likely to be used if on-chip calibrations of BNO055 are used, however some sensor calibration algorithms take into account temperature and pressure. This is present in case this information is needed at a later date.
     - Can also be used to detect abnormal conditions (eg over temperature)
@@ -40,6 +41,8 @@ The axis configuration can be changed to match any mounting position of the cont
 ![](.//prototype_headers.png)
 
 2. Wire SDA and SCL wires from MCU board to each sensor as shown below (connect the two pins shown in each row).
+
+**NOTE: SHOULD ADD 10K PULLUP RESISTOR TO SDA AND SCL LINES**
 
 | Pin 1                      | Pin 2                    |
 | -------------------------- | ------------------------ |
