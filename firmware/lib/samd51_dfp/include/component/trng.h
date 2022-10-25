@@ -1,113 +1,172 @@
 /**
+ * \file
+ *
  * \brief Component description for TRNG
  *
- * Copyright (c) 2021 Microchip Technology Inc. and its subsidiaries.
+ * Copyright (c) 2019 Microchip Technology Inc.
  *
- * Subject to your compliance with these terms, you may use Microchip software and any derivatives
- * exclusively with Microchip products. It is your responsibility to comply with third party license
- * terms applicable to your use of third party software (including open source software) that may
- * accompany Microchip software.
+ * \asf_license_start
  *
- * THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS". NO WARRANTIES, WHETHER EXPRESS, IMPLIED OR STATUTORY,
- * APPLY TO THIS SOFTWARE, INCLUDING ANY IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY, AND
- * FITNESS FOR A PARTICULAR PURPOSE.
+ * \page License
  *
- * IN NO EVENT WILL MICROCHIP BE LIABLE FOR ANY INDIRECT, SPECIAL, PUNITIVE, INCIDENTAL OR CONSEQUENTIAL
- * LOSS, DAMAGE, COST OR EXPENSE OF ANY KIND WHATSOEVER RELATED TO THE SOFTWARE, HOWEVER CAUSED, EVEN IF
- * MICROCHIP HAS BEEN ADVISED OF THE POSSIBILITY OR THE DAMAGES ARE FORESEEABLE. TO THE FULLEST EXTENT
- * ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN ANY WAY RELATED TO THIS SOFTWARE WILL NOT
- * EXCEED THE AMOUNT OF FEES, IF ANY, THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the Licence at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * \asf_license_stop
  *
  */
 
-/* file generated from device description version 2021-04-16T09:24:38Z */
-#ifndef _SAMD51_TRNG_COMPONENT_H_
-#define _SAMD51_TRNG_COMPONENT_H_
+#ifndef _SAMD51_TRNG_COMPONENT_
+#define _SAMD51_TRNG_COMPONENT_
 
-/* ************************************************************************** */
-/*   SOFTWARE API DEFINITION FOR TRNG                                         */
-/* ************************************************************************** */
+/* ========================================================================== */
+/**  SOFTWARE API DEFINITION FOR TRNG */
+/* ========================================================================== */
+/** \addtogroup SAMD51_TRNG True Random Generator */
+/*@{*/
 
-/* -------- TRNG_CTRLA : (TRNG Offset: 0x00) (R/W 8) Control A -------- */
-#define TRNG_CTRLA_RESETVALUE                 _U_(0x00)                                            /**<  (TRNG_CTRLA) Control A  Reset Value */
+#define TRNG_U2242
+#define REV_TRNG                    0x110
 
-#define TRNG_CTRLA_ENABLE_Pos                 _U_(1)                                               /**< (TRNG_CTRLA) Enable Position */
-#define TRNG_CTRLA_ENABLE_Msk                 (_U_(0x1) << TRNG_CTRLA_ENABLE_Pos)                  /**< (TRNG_CTRLA) Enable Mask */
-#define TRNG_CTRLA_ENABLE(value)              (TRNG_CTRLA_ENABLE_Msk & ((value) << TRNG_CTRLA_ENABLE_Pos))
-#define TRNG_CTRLA_RUNSTDBY_Pos               _U_(6)                                               /**< (TRNG_CTRLA) Run in Standby Position */
-#define TRNG_CTRLA_RUNSTDBY_Msk               (_U_(0x1) << TRNG_CTRLA_RUNSTDBY_Pos)                /**< (TRNG_CTRLA) Run in Standby Mask */
-#define TRNG_CTRLA_RUNSTDBY(value)            (TRNG_CTRLA_RUNSTDBY_Msk & ((value) << TRNG_CTRLA_RUNSTDBY_Pos))
-#define TRNG_CTRLA_Msk                        _U_(0x42)                                            /**< (TRNG_CTRLA) Register Mask  */
+/* -------- TRNG_CTRLA : (TRNG Offset: 0x00) (R/W  8) Control A -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint8_t  :1;               /*!< bit:      0  Reserved                           */
+    uint8_t  ENABLE:1;         /*!< bit:      1  Enable                             */
+    uint8_t  :4;               /*!< bit:  2.. 5  Reserved                           */
+    uint8_t  RUNSTDBY:1;       /*!< bit:      6  Run in Standby                     */
+    uint8_t  :1;               /*!< bit:      7  Reserved                           */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint8_t reg;                 /*!< Type      used for register access              */
+} TRNG_CTRLA_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define TRNG_CTRLA_OFFSET           0x00         /**< \brief (TRNG_CTRLA offset) Control A */
+#define TRNG_CTRLA_RESETVALUE       _U_(0x00)    /**< \brief (TRNG_CTRLA reset_value) Control A */
 
-/* -------- TRNG_EVCTRL : (TRNG Offset: 0x04) (R/W 8) Event Control -------- */
-#define TRNG_EVCTRL_RESETVALUE                _U_(0x00)                                            /**<  (TRNG_EVCTRL) Event Control  Reset Value */
+#define TRNG_CTRLA_ENABLE_Pos       1            /**< \brief (TRNG_CTRLA) Enable */
+#define TRNG_CTRLA_ENABLE           (_U_(0x1) << TRNG_CTRLA_ENABLE_Pos)
+#define TRNG_CTRLA_RUNSTDBY_Pos     6            /**< \brief (TRNG_CTRLA) Run in Standby */
+#define TRNG_CTRLA_RUNSTDBY         (_U_(0x1) << TRNG_CTRLA_RUNSTDBY_Pos)
+#define TRNG_CTRLA_MASK             _U_(0x42)    /**< \brief (TRNG_CTRLA) MASK Register */
 
-#define TRNG_EVCTRL_DATARDYEO_Pos             _U_(0)                                               /**< (TRNG_EVCTRL) Data Ready Event Output Position */
-#define TRNG_EVCTRL_DATARDYEO_Msk             (_U_(0x1) << TRNG_EVCTRL_DATARDYEO_Pos)              /**< (TRNG_EVCTRL) Data Ready Event Output Mask */
-#define TRNG_EVCTRL_DATARDYEO(value)          (TRNG_EVCTRL_DATARDYEO_Msk & ((value) << TRNG_EVCTRL_DATARDYEO_Pos))
-#define TRNG_EVCTRL_Msk                       _U_(0x01)                                            /**< (TRNG_EVCTRL) Register Mask  */
+/* -------- TRNG_EVCTRL : (TRNG Offset: 0x04) (R/W  8) Event Control -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint8_t  DATARDYEO:1;      /*!< bit:      0  Data Ready Event Output            */
+    uint8_t  :7;               /*!< bit:  1.. 7  Reserved                           */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint8_t reg;                 /*!< Type      used for register access              */
+} TRNG_EVCTRL_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define TRNG_EVCTRL_OFFSET          0x04         /**< \brief (TRNG_EVCTRL offset) Event Control */
+#define TRNG_EVCTRL_RESETVALUE      _U_(0x00)    /**< \brief (TRNG_EVCTRL reset_value) Event Control */
 
-/* -------- TRNG_INTENCLR : (TRNG Offset: 0x08) (R/W 8) Interrupt Enable Clear -------- */
-#define TRNG_INTENCLR_RESETVALUE              _U_(0x00)                                            /**<  (TRNG_INTENCLR) Interrupt Enable Clear  Reset Value */
+#define TRNG_EVCTRL_DATARDYEO_Pos   0            /**< \brief (TRNG_EVCTRL) Data Ready Event Output */
+#define TRNG_EVCTRL_DATARDYEO       (_U_(0x1) << TRNG_EVCTRL_DATARDYEO_Pos)
+#define TRNG_EVCTRL_MASK            _U_(0x01)    /**< \brief (TRNG_EVCTRL) MASK Register */
 
-#define TRNG_INTENCLR_DATARDY_Pos             _U_(0)                                               /**< (TRNG_INTENCLR) Data Ready Interrupt Enable Position */
-#define TRNG_INTENCLR_DATARDY_Msk             (_U_(0x1) << TRNG_INTENCLR_DATARDY_Pos)              /**< (TRNG_INTENCLR) Data Ready Interrupt Enable Mask */
-#define TRNG_INTENCLR_DATARDY(value)          (TRNG_INTENCLR_DATARDY_Msk & ((value) << TRNG_INTENCLR_DATARDY_Pos))
-#define TRNG_INTENCLR_Msk                     _U_(0x01)                                            /**< (TRNG_INTENCLR) Register Mask  */
+/* -------- TRNG_INTENCLR : (TRNG Offset: 0x08) (R/W  8) Interrupt Enable Clear -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint8_t  DATARDY:1;        /*!< bit:      0  Data Ready Interrupt Enable        */
+    uint8_t  :7;               /*!< bit:  1.. 7  Reserved                           */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint8_t reg;                 /*!< Type      used for register access              */
+} TRNG_INTENCLR_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define TRNG_INTENCLR_OFFSET        0x08         /**< \brief (TRNG_INTENCLR offset) Interrupt Enable Clear */
+#define TRNG_INTENCLR_RESETVALUE    _U_(0x00)    /**< \brief (TRNG_INTENCLR reset_value) Interrupt Enable Clear */
 
-/* -------- TRNG_INTENSET : (TRNG Offset: 0x09) (R/W 8) Interrupt Enable Set -------- */
-#define TRNG_INTENSET_RESETVALUE              _U_(0x00)                                            /**<  (TRNG_INTENSET) Interrupt Enable Set  Reset Value */
+#define TRNG_INTENCLR_DATARDY_Pos   0            /**< \brief (TRNG_INTENCLR) Data Ready Interrupt Enable */
+#define TRNG_INTENCLR_DATARDY       (_U_(0x1) << TRNG_INTENCLR_DATARDY_Pos)
+#define TRNG_INTENCLR_MASK          _U_(0x01)    /**< \brief (TRNG_INTENCLR) MASK Register */
 
-#define TRNG_INTENSET_DATARDY_Pos             _U_(0)                                               /**< (TRNG_INTENSET) Data Ready Interrupt Enable Position */
-#define TRNG_INTENSET_DATARDY_Msk             (_U_(0x1) << TRNG_INTENSET_DATARDY_Pos)              /**< (TRNG_INTENSET) Data Ready Interrupt Enable Mask */
-#define TRNG_INTENSET_DATARDY(value)          (TRNG_INTENSET_DATARDY_Msk & ((value) << TRNG_INTENSET_DATARDY_Pos))
-#define TRNG_INTENSET_Msk                     _U_(0x01)                                            /**< (TRNG_INTENSET) Register Mask  */
+/* -------- TRNG_INTENSET : (TRNG Offset: 0x09) (R/W  8) Interrupt Enable Set -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint8_t  DATARDY:1;        /*!< bit:      0  Data Ready Interrupt Enable        */
+    uint8_t  :7;               /*!< bit:  1.. 7  Reserved                           */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint8_t reg;                 /*!< Type      used for register access              */
+} TRNG_INTENSET_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define TRNG_INTENSET_OFFSET        0x09         /**< \brief (TRNG_INTENSET offset) Interrupt Enable Set */
+#define TRNG_INTENSET_RESETVALUE    _U_(0x00)    /**< \brief (TRNG_INTENSET reset_value) Interrupt Enable Set */
 
-/* -------- TRNG_INTFLAG : (TRNG Offset: 0x0A) (R/W 8) Interrupt Flag Status and Clear -------- */
-#define TRNG_INTFLAG_RESETVALUE               _U_(0x00)                                            /**<  (TRNG_INTFLAG) Interrupt Flag Status and Clear  Reset Value */
+#define TRNG_INTENSET_DATARDY_Pos   0            /**< \brief (TRNG_INTENSET) Data Ready Interrupt Enable */
+#define TRNG_INTENSET_DATARDY       (_U_(0x1) << TRNG_INTENSET_DATARDY_Pos)
+#define TRNG_INTENSET_MASK          _U_(0x01)    /**< \brief (TRNG_INTENSET) MASK Register */
 
-#define TRNG_INTFLAG_DATARDY_Pos              _U_(0)                                               /**< (TRNG_INTFLAG) Data Ready Interrupt Flag Position */
-#define TRNG_INTFLAG_DATARDY_Msk              (_U_(0x1) << TRNG_INTFLAG_DATARDY_Pos)               /**< (TRNG_INTFLAG) Data Ready Interrupt Flag Mask */
-#define TRNG_INTFLAG_DATARDY(value)           (TRNG_INTFLAG_DATARDY_Msk & ((value) << TRNG_INTFLAG_DATARDY_Pos))
-#define TRNG_INTFLAG_Msk                      _U_(0x01)                                            /**< (TRNG_INTFLAG) Register Mask  */
+/* -------- TRNG_INTFLAG : (TRNG Offset: 0x0A) (R/W  8) Interrupt Flag Status and Clear -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union { // __I to avoid read-modify-write on write-to-clear register
+  struct {
+    __I uint8_t  DATARDY:1;        /*!< bit:      0  Data Ready Interrupt Flag          */
+    __I uint8_t  :7;               /*!< bit:  1.. 7  Reserved                           */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint8_t reg;                 /*!< Type      used for register access              */
+} TRNG_INTFLAG_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define TRNG_INTFLAG_OFFSET         0x0A         /**< \brief (TRNG_INTFLAG offset) Interrupt Flag Status and Clear */
+#define TRNG_INTFLAG_RESETVALUE     _U_(0x00)    /**< \brief (TRNG_INTFLAG reset_value) Interrupt Flag Status and Clear */
 
-/* -------- TRNG_DATA : (TRNG Offset: 0x20) ( R/ 32) Output Data -------- */
-#define TRNG_DATA_RESETVALUE                  _U_(0x00)                                            /**<  (TRNG_DATA) Output Data  Reset Value */
+#define TRNG_INTFLAG_DATARDY_Pos    0            /**< \brief (TRNG_INTFLAG) Data Ready Interrupt Flag */
+#define TRNG_INTFLAG_DATARDY        (_U_(0x1) << TRNG_INTFLAG_DATARDY_Pos)
+#define TRNG_INTFLAG_MASK           _U_(0x01)    /**< \brief (TRNG_INTFLAG) MASK Register */
 
-#define TRNG_DATA_DATA_Pos                    _U_(0)                                               /**< (TRNG_DATA) Output Data Position */
-#define TRNG_DATA_DATA_Msk                    (_U_(0xFFFFFFFF) << TRNG_DATA_DATA_Pos)              /**< (TRNG_DATA) Output Data Mask */
-#define TRNG_DATA_DATA(value)                 (TRNG_DATA_DATA_Msk & ((value) << TRNG_DATA_DATA_Pos))
-#define TRNG_DATA_Msk                         _U_(0xFFFFFFFF)                                      /**< (TRNG_DATA) Register Mask  */
+/* -------- TRNG_DATA : (TRNG Offset: 0x20) (R/  32) Output Data -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint32_t DATA:32;          /*!< bit:  0..31  Output Data                        */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint32_t reg;                /*!< Type      used for register access              */
+} TRNG_DATA_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define TRNG_DATA_OFFSET            0x20         /**< \brief (TRNG_DATA offset) Output Data */
+#define TRNG_DATA_RESETVALUE        _U_(0x00000000) /**< \brief (TRNG_DATA reset_value) Output Data */
 
-/** \brief TRNG register offsets definitions */
-#define TRNG_CTRLA_REG_OFST            (0x00)              /**< (TRNG_CTRLA) Control A Offset */
-#define TRNG_EVCTRL_REG_OFST           (0x04)              /**< (TRNG_EVCTRL) Event Control Offset */
-#define TRNG_INTENCLR_REG_OFST         (0x08)              /**< (TRNG_INTENCLR) Interrupt Enable Clear Offset */
-#define TRNG_INTENSET_REG_OFST         (0x09)              /**< (TRNG_INTENSET) Interrupt Enable Set Offset */
-#define TRNG_INTFLAG_REG_OFST          (0x0A)              /**< (TRNG_INTFLAG) Interrupt Flag Status and Clear Offset */
-#define TRNG_DATA_REG_OFST             (0x20)              /**< (TRNG_DATA) Output Data Offset */
+#define TRNG_DATA_DATA_Pos          0            /**< \brief (TRNG_DATA) Output Data */
+#define TRNG_DATA_DATA_Msk          (_U_(0xFFFFFFFF) << TRNG_DATA_DATA_Pos)
+#define TRNG_DATA_DATA(value)       (TRNG_DATA_DATA_Msk & ((value) << TRNG_DATA_DATA_Pos))
+#define TRNG_DATA_MASK              _U_(0xFFFFFFFF) /**< \brief (TRNG_DATA) MASK Register */
 
-#if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
-/** \brief TRNG register API structure */
-typedef struct
-{  /* True Random Generator */
-  __IO  uint8_t                        TRNG_CTRLA;         /**< Offset: 0x00 (R/W  8) Control A */
-  __I   uint8_t                        Reserved1[0x03];
-  __IO  uint8_t                        TRNG_EVCTRL;        /**< Offset: 0x04 (R/W  8) Event Control */
-  __I   uint8_t                        Reserved2[0x03];
-  __IO  uint8_t                        TRNG_INTENCLR;      /**< Offset: 0x08 (R/W  8) Interrupt Enable Clear */
-  __IO  uint8_t                        TRNG_INTENSET;      /**< Offset: 0x09 (R/W  8) Interrupt Enable Set */
-  __IO  uint8_t                        TRNG_INTFLAG;       /**< Offset: 0x0A (R/W  8) Interrupt Flag Status and Clear */
-  __I   uint8_t                        Reserved3[0x15];
-  __I   uint32_t                       TRNG_DATA;          /**< Offset: 0x20 (R/   32) Output Data */
-} trng_registers_t;
+/** \brief TRNG hardware registers */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef struct {
+  __IO TRNG_CTRLA_Type           CTRLA;       /**< \brief Offset: 0x00 (R/W  8) Control A */
+       RoReg8                    Reserved1[0x3];
+  __IO TRNG_EVCTRL_Type          EVCTRL;      /**< \brief Offset: 0x04 (R/W  8) Event Control */
+       RoReg8                    Reserved2[0x3];
+  __IO TRNG_INTENCLR_Type        INTENCLR;    /**< \brief Offset: 0x08 (R/W  8) Interrupt Enable Clear */
+  __IO TRNG_INTENSET_Type        INTENSET;    /**< \brief Offset: 0x09 (R/W  8) Interrupt Enable Set */
+  __IO TRNG_INTFLAG_Type         INTFLAG;     /**< \brief Offset: 0x0A (R/W  8) Interrupt Flag Status and Clear */
+       RoReg8                    Reserved3[0x15];
+  __I  TRNG_DATA_Type            DATA;        /**< \brief Offset: 0x20 (R/  32) Output Data */
+} Trng;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+/*@}*/
 
-#endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
-#endif /* _SAMD51_TRNG_COMPONENT_H_ */
+#endif /* _SAMD51_TRNG_COMPONENT_ */

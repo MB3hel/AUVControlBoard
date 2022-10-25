@@ -1,385 +1,414 @@
 /**
+ * \file
+ *
  * \brief Component description for PORT
  *
- * Copyright (c) 2021 Microchip Technology Inc. and its subsidiaries.
+ * Copyright (c) 2019 Microchip Technology Inc.
  *
- * Subject to your compliance with these terms, you may use Microchip software and any derivatives
- * exclusively with Microchip products. It is your responsibility to comply with third party license
- * terms applicable to your use of third party software (including open source software) that may
- * accompany Microchip software.
+ * \asf_license_start
  *
- * THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS". NO WARRANTIES, WHETHER EXPRESS, IMPLIED OR STATUTORY,
- * APPLY TO THIS SOFTWARE, INCLUDING ANY IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY, AND
- * FITNESS FOR A PARTICULAR PURPOSE.
+ * \page License
  *
- * IN NO EVENT WILL MICROCHIP BE LIABLE FOR ANY INDIRECT, SPECIAL, PUNITIVE, INCIDENTAL OR CONSEQUENTIAL
- * LOSS, DAMAGE, COST OR EXPENSE OF ANY KIND WHATSOEVER RELATED TO THE SOFTWARE, HOWEVER CAUSED, EVEN IF
- * MICROCHIP HAS BEEN ADVISED OF THE POSSIBILITY OR THE DAMAGES ARE FORESEEABLE. TO THE FULLEST EXTENT
- * ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN ANY WAY RELATED TO THIS SOFTWARE WILL NOT
- * EXCEED THE AMOUNT OF FEES, IF ANY, THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the Licence at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * \asf_license_stop
  *
  */
 
-/* file generated from device description version 2021-04-16T09:24:38Z */
-#ifndef _SAMD51_PORT_COMPONENT_H_
-#define _SAMD51_PORT_COMPONENT_H_
+#ifndef _SAMD51_PORT_COMPONENT_
+#define _SAMD51_PORT_COMPONENT_
 
-/* ************************************************************************** */
-/*   SOFTWARE API DEFINITION FOR PORT                                         */
-/* ************************************************************************** */
+/* ========================================================================== */
+/**  SOFTWARE API DEFINITION FOR PORT */
+/* ========================================================================== */
+/** \addtogroup SAMD51_PORT Port Module */
+/*@{*/
 
-/* -------- PORT_DIR : (PORT Offset: 0x00) (R/W 32) Data Direction -------- */
-#define PORT_DIR_RESETVALUE                   _U_(0x00)                                            /**<  (PORT_DIR) Data Direction  Reset Value */
+#define PORT_U2210
+#define REV_PORT                    0x220
 
-#define PORT_DIR_DIR_Pos                      _U_(0)                                               /**< (PORT_DIR) Port Data Direction Position */
-#define PORT_DIR_DIR_Msk                      (_U_(0xFFFFFFFF) << PORT_DIR_DIR_Pos)                /**< (PORT_DIR) Port Data Direction Mask */
-#define PORT_DIR_DIR(value)                   (PORT_DIR_DIR_Msk & ((value) << PORT_DIR_DIR_Pos))  
-#define PORT_DIR_Msk                          _U_(0xFFFFFFFF)                                      /**< (PORT_DIR) Register Mask  */
+/* -------- PORT_DIR : (PORT Offset: 0x00) (R/W 32) GROUP Data Direction -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint32_t DIR:32;           /*!< bit:  0..31  Port Data Direction                */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint32_t reg;                /*!< Type      used for register access              */
+} PORT_DIR_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define PORT_DIR_OFFSET             0x00         /**< \brief (PORT_DIR offset) Data Direction */
+#define PORT_DIR_RESETVALUE         _U_(0x00000000) /**< \brief (PORT_DIR reset_value) Data Direction */
 
-/* -------- PORT_DIRCLR : (PORT Offset: 0x04) (R/W 32) Data Direction Clear -------- */
-#define PORT_DIRCLR_RESETVALUE                _U_(0x00)                                            /**<  (PORT_DIRCLR) Data Direction Clear  Reset Value */
+#define PORT_DIR_DIR_Pos            0            /**< \brief (PORT_DIR) Port Data Direction */
+#define PORT_DIR_DIR_Msk            (_U_(0xFFFFFFFF) << PORT_DIR_DIR_Pos)
+#define PORT_DIR_DIR(value)         (PORT_DIR_DIR_Msk & ((value) << PORT_DIR_DIR_Pos))
+#define PORT_DIR_MASK               _U_(0xFFFFFFFF) /**< \brief (PORT_DIR) MASK Register */
 
-#define PORT_DIRCLR_DIRCLR_Pos                _U_(0)                                               /**< (PORT_DIRCLR) Port Data Direction Clear Position */
-#define PORT_DIRCLR_DIRCLR_Msk                (_U_(0xFFFFFFFF) << PORT_DIRCLR_DIRCLR_Pos)          /**< (PORT_DIRCLR) Port Data Direction Clear Mask */
-#define PORT_DIRCLR_DIRCLR(value)             (PORT_DIRCLR_DIRCLR_Msk & ((value) << PORT_DIRCLR_DIRCLR_Pos))
-#define PORT_DIRCLR_Msk                       _U_(0xFFFFFFFF)                                      /**< (PORT_DIRCLR) Register Mask  */
+/* -------- PORT_DIRCLR : (PORT Offset: 0x04) (R/W 32) GROUP Data Direction Clear -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint32_t DIRCLR:32;        /*!< bit:  0..31  Port Data Direction Clear          */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint32_t reg;                /*!< Type      used for register access              */
+} PORT_DIRCLR_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define PORT_DIRCLR_OFFSET          0x04         /**< \brief (PORT_DIRCLR offset) Data Direction Clear */
+#define PORT_DIRCLR_RESETVALUE      _U_(0x00000000) /**< \brief (PORT_DIRCLR reset_value) Data Direction Clear */
 
-/* -------- PORT_DIRSET : (PORT Offset: 0x08) (R/W 32) Data Direction Set -------- */
-#define PORT_DIRSET_RESETVALUE                _U_(0x00)                                            /**<  (PORT_DIRSET) Data Direction Set  Reset Value */
+#define PORT_DIRCLR_DIRCLR_Pos      0            /**< \brief (PORT_DIRCLR) Port Data Direction Clear */
+#define PORT_DIRCLR_DIRCLR_Msk      (_U_(0xFFFFFFFF) << PORT_DIRCLR_DIRCLR_Pos)
+#define PORT_DIRCLR_DIRCLR(value)   (PORT_DIRCLR_DIRCLR_Msk & ((value) << PORT_DIRCLR_DIRCLR_Pos))
+#define PORT_DIRCLR_MASK            _U_(0xFFFFFFFF) /**< \brief (PORT_DIRCLR) MASK Register */
 
-#define PORT_DIRSET_DIRSET_Pos                _U_(0)                                               /**< (PORT_DIRSET) Port Data Direction Set Position */
-#define PORT_DIRSET_DIRSET_Msk                (_U_(0xFFFFFFFF) << PORT_DIRSET_DIRSET_Pos)          /**< (PORT_DIRSET) Port Data Direction Set Mask */
-#define PORT_DIRSET_DIRSET(value)             (PORT_DIRSET_DIRSET_Msk & ((value) << PORT_DIRSET_DIRSET_Pos))
-#define PORT_DIRSET_Msk                       _U_(0xFFFFFFFF)                                      /**< (PORT_DIRSET) Register Mask  */
+/* -------- PORT_DIRSET : (PORT Offset: 0x08) (R/W 32) GROUP Data Direction Set -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint32_t DIRSET:32;        /*!< bit:  0..31  Port Data Direction Set            */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint32_t reg;                /*!< Type      used for register access              */
+} PORT_DIRSET_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define PORT_DIRSET_OFFSET          0x08         /**< \brief (PORT_DIRSET offset) Data Direction Set */
+#define PORT_DIRSET_RESETVALUE      _U_(0x00000000) /**< \brief (PORT_DIRSET reset_value) Data Direction Set */
 
-/* -------- PORT_DIRTGL : (PORT Offset: 0x0C) (R/W 32) Data Direction Toggle -------- */
-#define PORT_DIRTGL_RESETVALUE                _U_(0x00)                                            /**<  (PORT_DIRTGL) Data Direction Toggle  Reset Value */
+#define PORT_DIRSET_DIRSET_Pos      0            /**< \brief (PORT_DIRSET) Port Data Direction Set */
+#define PORT_DIRSET_DIRSET_Msk      (_U_(0xFFFFFFFF) << PORT_DIRSET_DIRSET_Pos)
+#define PORT_DIRSET_DIRSET(value)   (PORT_DIRSET_DIRSET_Msk & ((value) << PORT_DIRSET_DIRSET_Pos))
+#define PORT_DIRSET_MASK            _U_(0xFFFFFFFF) /**< \brief (PORT_DIRSET) MASK Register */
 
-#define PORT_DIRTGL_DIRTGL_Pos                _U_(0)                                               /**< (PORT_DIRTGL) Port Data Direction Toggle Position */
-#define PORT_DIRTGL_DIRTGL_Msk                (_U_(0xFFFFFFFF) << PORT_DIRTGL_DIRTGL_Pos)          /**< (PORT_DIRTGL) Port Data Direction Toggle Mask */
-#define PORT_DIRTGL_DIRTGL(value)             (PORT_DIRTGL_DIRTGL_Msk & ((value) << PORT_DIRTGL_DIRTGL_Pos))
-#define PORT_DIRTGL_Msk                       _U_(0xFFFFFFFF)                                      /**< (PORT_DIRTGL) Register Mask  */
+/* -------- PORT_DIRTGL : (PORT Offset: 0x0C) (R/W 32) GROUP Data Direction Toggle -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint32_t DIRTGL:32;        /*!< bit:  0..31  Port Data Direction Toggle         */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint32_t reg;                /*!< Type      used for register access              */
+} PORT_DIRTGL_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define PORT_DIRTGL_OFFSET          0x0C         /**< \brief (PORT_DIRTGL offset) Data Direction Toggle */
+#define PORT_DIRTGL_RESETVALUE      _U_(0x00000000) /**< \brief (PORT_DIRTGL reset_value) Data Direction Toggle */
 
-/* -------- PORT_OUT : (PORT Offset: 0x10) (R/W 32) Data Output Value -------- */
-#define PORT_OUT_RESETVALUE                   _U_(0x00)                                            /**<  (PORT_OUT) Data Output Value  Reset Value */
+#define PORT_DIRTGL_DIRTGL_Pos      0            /**< \brief (PORT_DIRTGL) Port Data Direction Toggle */
+#define PORT_DIRTGL_DIRTGL_Msk      (_U_(0xFFFFFFFF) << PORT_DIRTGL_DIRTGL_Pos)
+#define PORT_DIRTGL_DIRTGL(value)   (PORT_DIRTGL_DIRTGL_Msk & ((value) << PORT_DIRTGL_DIRTGL_Pos))
+#define PORT_DIRTGL_MASK            _U_(0xFFFFFFFF) /**< \brief (PORT_DIRTGL) MASK Register */
 
-#define PORT_OUT_OUT_Pos                      _U_(0)                                               /**< (PORT_OUT) PORT Data Output Value Position */
-#define PORT_OUT_OUT_Msk                      (_U_(0xFFFFFFFF) << PORT_OUT_OUT_Pos)                /**< (PORT_OUT) PORT Data Output Value Mask */
-#define PORT_OUT_OUT(value)                   (PORT_OUT_OUT_Msk & ((value) << PORT_OUT_OUT_Pos))  
-#define PORT_OUT_Msk                          _U_(0xFFFFFFFF)                                      /**< (PORT_OUT) Register Mask  */
+/* -------- PORT_OUT : (PORT Offset: 0x10) (R/W 32) GROUP Data Output Value -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint32_t OUT:32;           /*!< bit:  0..31  PORT Data Output Value             */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint32_t reg;                /*!< Type      used for register access              */
+} PORT_OUT_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define PORT_OUT_OFFSET             0x10         /**< \brief (PORT_OUT offset) Data Output Value */
+#define PORT_OUT_RESETVALUE         _U_(0x00000000) /**< \brief (PORT_OUT reset_value) Data Output Value */
 
-/* -------- PORT_OUTCLR : (PORT Offset: 0x14) (R/W 32) Data Output Value Clear -------- */
-#define PORT_OUTCLR_RESETVALUE                _U_(0x00)                                            /**<  (PORT_OUTCLR) Data Output Value Clear  Reset Value */
+#define PORT_OUT_OUT_Pos            0            /**< \brief (PORT_OUT) PORT Data Output Value */
+#define PORT_OUT_OUT_Msk            (_U_(0xFFFFFFFF) << PORT_OUT_OUT_Pos)
+#define PORT_OUT_OUT(value)         (PORT_OUT_OUT_Msk & ((value) << PORT_OUT_OUT_Pos))
+#define PORT_OUT_MASK               _U_(0xFFFFFFFF) /**< \brief (PORT_OUT) MASK Register */
 
-#define PORT_OUTCLR_OUTCLR_Pos                _U_(0)                                               /**< (PORT_OUTCLR) PORT Data Output Value Clear Position */
-#define PORT_OUTCLR_OUTCLR_Msk                (_U_(0xFFFFFFFF) << PORT_OUTCLR_OUTCLR_Pos)          /**< (PORT_OUTCLR) PORT Data Output Value Clear Mask */
-#define PORT_OUTCLR_OUTCLR(value)             (PORT_OUTCLR_OUTCLR_Msk & ((value) << PORT_OUTCLR_OUTCLR_Pos))
-#define PORT_OUTCLR_Msk                       _U_(0xFFFFFFFF)                                      /**< (PORT_OUTCLR) Register Mask  */
+/* -------- PORT_OUTCLR : (PORT Offset: 0x14) (R/W 32) GROUP Data Output Value Clear -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint32_t OUTCLR:32;        /*!< bit:  0..31  PORT Data Output Value Clear       */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint32_t reg;                /*!< Type      used for register access              */
+} PORT_OUTCLR_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define PORT_OUTCLR_OFFSET          0x14         /**< \brief (PORT_OUTCLR offset) Data Output Value Clear */
+#define PORT_OUTCLR_RESETVALUE      _U_(0x00000000) /**< \brief (PORT_OUTCLR reset_value) Data Output Value Clear */
 
-/* -------- PORT_OUTSET : (PORT Offset: 0x18) (R/W 32) Data Output Value Set -------- */
-#define PORT_OUTSET_RESETVALUE                _U_(0x00)                                            /**<  (PORT_OUTSET) Data Output Value Set  Reset Value */
+#define PORT_OUTCLR_OUTCLR_Pos      0            /**< \brief (PORT_OUTCLR) PORT Data Output Value Clear */
+#define PORT_OUTCLR_OUTCLR_Msk      (_U_(0xFFFFFFFF) << PORT_OUTCLR_OUTCLR_Pos)
+#define PORT_OUTCLR_OUTCLR(value)   (PORT_OUTCLR_OUTCLR_Msk & ((value) << PORT_OUTCLR_OUTCLR_Pos))
+#define PORT_OUTCLR_MASK            _U_(0xFFFFFFFF) /**< \brief (PORT_OUTCLR) MASK Register */
 
-#define PORT_OUTSET_OUTSET_Pos                _U_(0)                                               /**< (PORT_OUTSET) PORT Data Output Value Set Position */
-#define PORT_OUTSET_OUTSET_Msk                (_U_(0xFFFFFFFF) << PORT_OUTSET_OUTSET_Pos)          /**< (PORT_OUTSET) PORT Data Output Value Set Mask */
-#define PORT_OUTSET_OUTSET(value)             (PORT_OUTSET_OUTSET_Msk & ((value) << PORT_OUTSET_OUTSET_Pos))
-#define PORT_OUTSET_Msk                       _U_(0xFFFFFFFF)                                      /**< (PORT_OUTSET) Register Mask  */
+/* -------- PORT_OUTSET : (PORT Offset: 0x18) (R/W 32) GROUP Data Output Value Set -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint32_t OUTSET:32;        /*!< bit:  0..31  PORT Data Output Value Set         */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint32_t reg;                /*!< Type      used for register access              */
+} PORT_OUTSET_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define PORT_OUTSET_OFFSET          0x18         /**< \brief (PORT_OUTSET offset) Data Output Value Set */
+#define PORT_OUTSET_RESETVALUE      _U_(0x00000000) /**< \brief (PORT_OUTSET reset_value) Data Output Value Set */
 
-/* -------- PORT_OUTTGL : (PORT Offset: 0x1C) (R/W 32) Data Output Value Toggle -------- */
-#define PORT_OUTTGL_RESETVALUE                _U_(0x00)                                            /**<  (PORT_OUTTGL) Data Output Value Toggle  Reset Value */
+#define PORT_OUTSET_OUTSET_Pos      0            /**< \brief (PORT_OUTSET) PORT Data Output Value Set */
+#define PORT_OUTSET_OUTSET_Msk      (_U_(0xFFFFFFFF) << PORT_OUTSET_OUTSET_Pos)
+#define PORT_OUTSET_OUTSET(value)   (PORT_OUTSET_OUTSET_Msk & ((value) << PORT_OUTSET_OUTSET_Pos))
+#define PORT_OUTSET_MASK            _U_(0xFFFFFFFF) /**< \brief (PORT_OUTSET) MASK Register */
 
-#define PORT_OUTTGL_OUTTGL_Pos                _U_(0)                                               /**< (PORT_OUTTGL) PORT Data Output Value Toggle Position */
-#define PORT_OUTTGL_OUTTGL_Msk                (_U_(0xFFFFFFFF) << PORT_OUTTGL_OUTTGL_Pos)          /**< (PORT_OUTTGL) PORT Data Output Value Toggle Mask */
-#define PORT_OUTTGL_OUTTGL(value)             (PORT_OUTTGL_OUTTGL_Msk & ((value) << PORT_OUTTGL_OUTTGL_Pos))
-#define PORT_OUTTGL_Msk                       _U_(0xFFFFFFFF)                                      /**< (PORT_OUTTGL) Register Mask  */
+/* -------- PORT_OUTTGL : (PORT Offset: 0x1C) (R/W 32) GROUP Data Output Value Toggle -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint32_t OUTTGL:32;        /*!< bit:  0..31  PORT Data Output Value Toggle      */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint32_t reg;                /*!< Type      used for register access              */
+} PORT_OUTTGL_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define PORT_OUTTGL_OFFSET          0x1C         /**< \brief (PORT_OUTTGL offset) Data Output Value Toggle */
+#define PORT_OUTTGL_RESETVALUE      _U_(0x00000000) /**< \brief (PORT_OUTTGL reset_value) Data Output Value Toggle */
 
-/* -------- PORT_IN : (PORT Offset: 0x20) ( R/ 32) Data Input Value -------- */
-#define PORT_IN_RESETVALUE                    _U_(0x00)                                            /**<  (PORT_IN) Data Input Value  Reset Value */
+#define PORT_OUTTGL_OUTTGL_Pos      0            /**< \brief (PORT_OUTTGL) PORT Data Output Value Toggle */
+#define PORT_OUTTGL_OUTTGL_Msk      (_U_(0xFFFFFFFF) << PORT_OUTTGL_OUTTGL_Pos)
+#define PORT_OUTTGL_OUTTGL(value)   (PORT_OUTTGL_OUTTGL_Msk & ((value) << PORT_OUTTGL_OUTTGL_Pos))
+#define PORT_OUTTGL_MASK            _U_(0xFFFFFFFF) /**< \brief (PORT_OUTTGL) MASK Register */
 
-#define PORT_IN_IN_Pos                        _U_(0)                                               /**< (PORT_IN) PORT Data Input Value Position */
-#define PORT_IN_IN_Msk                        (_U_(0xFFFFFFFF) << PORT_IN_IN_Pos)                  /**< (PORT_IN) PORT Data Input Value Mask */
-#define PORT_IN_IN(value)                     (PORT_IN_IN_Msk & ((value) << PORT_IN_IN_Pos))      
-#define PORT_IN_Msk                           _U_(0xFFFFFFFF)                                      /**< (PORT_IN) Register Mask  */
+/* -------- PORT_IN : (PORT Offset: 0x20) (R/  32) GROUP Data Input Value -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint32_t IN:32;            /*!< bit:  0..31  PORT Data Input Value              */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint32_t reg;                /*!< Type      used for register access              */
+} PORT_IN_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define PORT_IN_OFFSET              0x20         /**< \brief (PORT_IN offset) Data Input Value */
+#define PORT_IN_RESETVALUE          _U_(0x00000000) /**< \brief (PORT_IN reset_value) Data Input Value */
 
-/* -------- PORT_CTRL : (PORT Offset: 0x24) (R/W 32) Control -------- */
-#define PORT_CTRL_RESETVALUE                  _U_(0x00)                                            /**<  (PORT_CTRL) Control  Reset Value */
+#define PORT_IN_IN_Pos              0            /**< \brief (PORT_IN) PORT Data Input Value */
+#define PORT_IN_IN_Msk              (_U_(0xFFFFFFFF) << PORT_IN_IN_Pos)
+#define PORT_IN_IN(value)           (PORT_IN_IN_Msk & ((value) << PORT_IN_IN_Pos))
+#define PORT_IN_MASK                _U_(0xFFFFFFFF) /**< \brief (PORT_IN) MASK Register */
 
-#define PORT_CTRL_SAMPLING_Pos                _U_(0)                                               /**< (PORT_CTRL) Input Sampling Mode Position */
-#define PORT_CTRL_SAMPLING_Msk                (_U_(0xFFFFFFFF) << PORT_CTRL_SAMPLING_Pos)          /**< (PORT_CTRL) Input Sampling Mode Mask */
-#define PORT_CTRL_SAMPLING(value)             (PORT_CTRL_SAMPLING_Msk & ((value) << PORT_CTRL_SAMPLING_Pos))
-#define PORT_CTRL_Msk                         _U_(0xFFFFFFFF)                                      /**< (PORT_CTRL) Register Mask  */
+/* -------- PORT_CTRL : (PORT Offset: 0x24) (R/W 32) GROUP Control -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint32_t SAMPLING:32;      /*!< bit:  0..31  Input Sampling Mode                */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint32_t reg;                /*!< Type      used for register access              */
+} PORT_CTRL_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define PORT_CTRL_OFFSET            0x24         /**< \brief (PORT_CTRL offset) Control */
+#define PORT_CTRL_RESETVALUE        _U_(0x00000000) /**< \brief (PORT_CTRL reset_value) Control */
 
-/* -------- PORT_WRCONFIG : (PORT Offset: 0x28) ( /W 32) Write Configuration -------- */
-#define PORT_WRCONFIG_RESETVALUE              _U_(0x00)                                            /**<  (PORT_WRCONFIG) Write Configuration  Reset Value */
+#define PORT_CTRL_SAMPLING_Pos      0            /**< \brief (PORT_CTRL) Input Sampling Mode */
+#define PORT_CTRL_SAMPLING_Msk      (_U_(0xFFFFFFFF) << PORT_CTRL_SAMPLING_Pos)
+#define PORT_CTRL_SAMPLING(value)   (PORT_CTRL_SAMPLING_Msk & ((value) << PORT_CTRL_SAMPLING_Pos))
+#define PORT_CTRL_MASK              _U_(0xFFFFFFFF) /**< \brief (PORT_CTRL) MASK Register */
 
-#define PORT_WRCONFIG_PINMASK_Pos             _U_(0)                                               /**< (PORT_WRCONFIG) Pin Mask for Multiple Pin Configuration Position */
-#define PORT_WRCONFIG_PINMASK_Msk             (_U_(0xFFFF) << PORT_WRCONFIG_PINMASK_Pos)           /**< (PORT_WRCONFIG) Pin Mask for Multiple Pin Configuration Mask */
-#define PORT_WRCONFIG_PINMASK(value)          (PORT_WRCONFIG_PINMASK_Msk & ((value) << PORT_WRCONFIG_PINMASK_Pos))
-#define PORT_WRCONFIG_PMUXEN_Pos              _U_(16)                                              /**< (PORT_WRCONFIG) Peripheral Multiplexer Enable Position */
-#define PORT_WRCONFIG_PMUXEN_Msk              (_U_(0x1) << PORT_WRCONFIG_PMUXEN_Pos)               /**< (PORT_WRCONFIG) Peripheral Multiplexer Enable Mask */
-#define PORT_WRCONFIG_PMUXEN(value)           (PORT_WRCONFIG_PMUXEN_Msk & ((value) << PORT_WRCONFIG_PMUXEN_Pos))
-#define PORT_WRCONFIG_INEN_Pos                _U_(17)                                              /**< (PORT_WRCONFIG) Input Enable Position */
-#define PORT_WRCONFIG_INEN_Msk                (_U_(0x1) << PORT_WRCONFIG_INEN_Pos)                 /**< (PORT_WRCONFIG) Input Enable Mask */
-#define PORT_WRCONFIG_INEN(value)             (PORT_WRCONFIG_INEN_Msk & ((value) << PORT_WRCONFIG_INEN_Pos))
-#define PORT_WRCONFIG_PULLEN_Pos              _U_(18)                                              /**< (PORT_WRCONFIG) Pull Enable Position */
-#define PORT_WRCONFIG_PULLEN_Msk              (_U_(0x1) << PORT_WRCONFIG_PULLEN_Pos)               /**< (PORT_WRCONFIG) Pull Enable Mask */
-#define PORT_WRCONFIG_PULLEN(value)           (PORT_WRCONFIG_PULLEN_Msk & ((value) << PORT_WRCONFIG_PULLEN_Pos))
-#define PORT_WRCONFIG_DRVSTR_Pos              _U_(22)                                              /**< (PORT_WRCONFIG) Output Driver Strength Selection Position */
-#define PORT_WRCONFIG_DRVSTR_Msk              (_U_(0x1) << PORT_WRCONFIG_DRVSTR_Pos)               /**< (PORT_WRCONFIG) Output Driver Strength Selection Mask */
-#define PORT_WRCONFIG_DRVSTR(value)           (PORT_WRCONFIG_DRVSTR_Msk & ((value) << PORT_WRCONFIG_DRVSTR_Pos))
-#define PORT_WRCONFIG_PMUX_Pos                _U_(24)                                              /**< (PORT_WRCONFIG) Peripheral Multiplexing Position */
-#define PORT_WRCONFIG_PMUX_Msk                (_U_(0xF) << PORT_WRCONFIG_PMUX_Pos)                 /**< (PORT_WRCONFIG) Peripheral Multiplexing Mask */
-#define PORT_WRCONFIG_PMUX(value)             (PORT_WRCONFIG_PMUX_Msk & ((value) << PORT_WRCONFIG_PMUX_Pos))
-#define PORT_WRCONFIG_WRPMUX_Pos              _U_(28)                                              /**< (PORT_WRCONFIG) Write PMUX Position */
-#define PORT_WRCONFIG_WRPMUX_Msk              (_U_(0x1) << PORT_WRCONFIG_WRPMUX_Pos)               /**< (PORT_WRCONFIG) Write PMUX Mask */
-#define PORT_WRCONFIG_WRPMUX(value)           (PORT_WRCONFIG_WRPMUX_Msk & ((value) << PORT_WRCONFIG_WRPMUX_Pos))
-#define PORT_WRCONFIG_WRPINCFG_Pos            _U_(30)                                              /**< (PORT_WRCONFIG) Write PINCFG Position */
-#define PORT_WRCONFIG_WRPINCFG_Msk            (_U_(0x1) << PORT_WRCONFIG_WRPINCFG_Pos)             /**< (PORT_WRCONFIG) Write PINCFG Mask */
-#define PORT_WRCONFIG_WRPINCFG(value)         (PORT_WRCONFIG_WRPINCFG_Msk & ((value) << PORT_WRCONFIG_WRPINCFG_Pos))
-#define PORT_WRCONFIG_HWSEL_Pos               _U_(31)                                              /**< (PORT_WRCONFIG) Half-Word Select Position */
-#define PORT_WRCONFIG_HWSEL_Msk               (_U_(0x1) << PORT_WRCONFIG_HWSEL_Pos)                /**< (PORT_WRCONFIG) Half-Word Select Mask */
-#define PORT_WRCONFIG_HWSEL(value)            (PORT_WRCONFIG_HWSEL_Msk & ((value) << PORT_WRCONFIG_HWSEL_Pos))
-#define PORT_WRCONFIG_Msk                     _U_(0xDF47FFFF)                                      /**< (PORT_WRCONFIG) Register Mask  */
+/* -------- PORT_WRCONFIG : (PORT Offset: 0x28) ( /W 32) GROUP Write Configuration -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint32_t PINMASK:16;       /*!< bit:  0..15  Pin Mask for Multiple Pin Configuration */
+    uint32_t PMUXEN:1;         /*!< bit:     16  Peripheral Multiplexer Enable      */
+    uint32_t INEN:1;           /*!< bit:     17  Input Enable                       */
+    uint32_t PULLEN:1;         /*!< bit:     18  Pull Enable                        */
+    uint32_t :3;               /*!< bit: 19..21  Reserved                           */
+    uint32_t DRVSTR:1;         /*!< bit:     22  Output Driver Strength Selection   */
+    uint32_t :1;               /*!< bit:     23  Reserved                           */
+    uint32_t PMUX:4;           /*!< bit: 24..27  Peripheral Multiplexing            */
+    uint32_t WRPMUX:1;         /*!< bit:     28  Write PMUX                         */
+    uint32_t :1;               /*!< bit:     29  Reserved                           */
+    uint32_t WRPINCFG:1;       /*!< bit:     30  Write PINCFG                       */
+    uint32_t HWSEL:1;          /*!< bit:     31  Half-Word Select                   */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint32_t reg;                /*!< Type      used for register access              */
+} PORT_WRCONFIG_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define PORT_WRCONFIG_OFFSET        0x28         /**< \brief (PORT_WRCONFIG offset) Write Configuration */
+#define PORT_WRCONFIG_RESETVALUE    _U_(0x00000000) /**< \brief (PORT_WRCONFIG reset_value) Write Configuration */
 
-/* -------- PORT_EVCTRL : (PORT Offset: 0x2C) (R/W 32) Event Input Control -------- */
-#define PORT_EVCTRL_RESETVALUE                _U_(0x00)                                            /**<  (PORT_EVCTRL) Event Input Control  Reset Value */
+#define PORT_WRCONFIG_PINMASK_Pos   0            /**< \brief (PORT_WRCONFIG) Pin Mask for Multiple Pin Configuration */
+#define PORT_WRCONFIG_PINMASK_Msk   (_U_(0xFFFF) << PORT_WRCONFIG_PINMASK_Pos)
+#define PORT_WRCONFIG_PINMASK(value) (PORT_WRCONFIG_PINMASK_Msk & ((value) << PORT_WRCONFIG_PINMASK_Pos))
+#define PORT_WRCONFIG_PMUXEN_Pos    16           /**< \brief (PORT_WRCONFIG) Peripheral Multiplexer Enable */
+#define PORT_WRCONFIG_PMUXEN        (_U_(0x1) << PORT_WRCONFIG_PMUXEN_Pos)
+#define PORT_WRCONFIG_INEN_Pos      17           /**< \brief (PORT_WRCONFIG) Input Enable */
+#define PORT_WRCONFIG_INEN          (_U_(0x1) << PORT_WRCONFIG_INEN_Pos)
+#define PORT_WRCONFIG_PULLEN_Pos    18           /**< \brief (PORT_WRCONFIG) Pull Enable */
+#define PORT_WRCONFIG_PULLEN        (_U_(0x1) << PORT_WRCONFIG_PULLEN_Pos)
+#define PORT_WRCONFIG_DRVSTR_Pos    22           /**< \brief (PORT_WRCONFIG) Output Driver Strength Selection */
+#define PORT_WRCONFIG_DRVSTR        (_U_(0x1) << PORT_WRCONFIG_DRVSTR_Pos)
+#define PORT_WRCONFIG_PMUX_Pos      24           /**< \brief (PORT_WRCONFIG) Peripheral Multiplexing */
+#define PORT_WRCONFIG_PMUX_Msk      (_U_(0xF) << PORT_WRCONFIG_PMUX_Pos)
+#define PORT_WRCONFIG_PMUX(value)   (PORT_WRCONFIG_PMUX_Msk & ((value) << PORT_WRCONFIG_PMUX_Pos))
+#define PORT_WRCONFIG_WRPMUX_Pos    28           /**< \brief (PORT_WRCONFIG) Write PMUX */
+#define PORT_WRCONFIG_WRPMUX        (_U_(0x1) << PORT_WRCONFIG_WRPMUX_Pos)
+#define PORT_WRCONFIG_WRPINCFG_Pos  30           /**< \brief (PORT_WRCONFIG) Write PINCFG */
+#define PORT_WRCONFIG_WRPINCFG      (_U_(0x1) << PORT_WRCONFIG_WRPINCFG_Pos)
+#define PORT_WRCONFIG_HWSEL_Pos     31           /**< \brief (PORT_WRCONFIG) Half-Word Select */
+#define PORT_WRCONFIG_HWSEL         (_U_(0x1) << PORT_WRCONFIG_HWSEL_Pos)
+#define PORT_WRCONFIG_MASK          _U_(0xDF47FFFF) /**< \brief (PORT_WRCONFIG) MASK Register */
 
-#define PORT_EVCTRL_PID0_Pos                  _U_(0)                                               /**< (PORT_EVCTRL) PORT Event Pin Identifier 0 Position */
-#define PORT_EVCTRL_PID0_Msk                  (_U_(0x1F) << PORT_EVCTRL_PID0_Pos)                  /**< (PORT_EVCTRL) PORT Event Pin Identifier 0 Mask */
-#define PORT_EVCTRL_PID0(value)               (PORT_EVCTRL_PID0_Msk & ((value) << PORT_EVCTRL_PID0_Pos))
-#define PORT_EVCTRL_EVACT0_Pos                _U_(5)                                               /**< (PORT_EVCTRL) PORT Event Action 0 Position */
-#define PORT_EVCTRL_EVACT0_Msk                (_U_(0x3) << PORT_EVCTRL_EVACT0_Pos)                 /**< (PORT_EVCTRL) PORT Event Action 0 Mask */
-#define PORT_EVCTRL_EVACT0(value)             (PORT_EVCTRL_EVACT0_Msk & ((value) << PORT_EVCTRL_EVACT0_Pos))
-#define   PORT_EVCTRL_EVACT0_OUT_Val          _U_(0x0)                                             /**< (PORT_EVCTRL) Event output to pin  */
-#define   PORT_EVCTRL_EVACT0_SET_Val          _U_(0x1)                                             /**< (PORT_EVCTRL) Set output register of pin on event  */
-#define   PORT_EVCTRL_EVACT0_CLR_Val          _U_(0x2)                                             /**< (PORT_EVCTRL) Clear output register of pin on event  */
-#define   PORT_EVCTRL_EVACT0_TGL_Val          _U_(0x3)                                             /**< (PORT_EVCTRL) Toggle output register of pin on event  */
-#define PORT_EVCTRL_EVACT0_OUT                (PORT_EVCTRL_EVACT0_OUT_Val << PORT_EVCTRL_EVACT0_Pos) /**< (PORT_EVCTRL) Event output to pin Position  */
-#define PORT_EVCTRL_EVACT0_SET                (PORT_EVCTRL_EVACT0_SET_Val << PORT_EVCTRL_EVACT0_Pos) /**< (PORT_EVCTRL) Set output register of pin on event Position  */
-#define PORT_EVCTRL_EVACT0_CLR                (PORT_EVCTRL_EVACT0_CLR_Val << PORT_EVCTRL_EVACT0_Pos) /**< (PORT_EVCTRL) Clear output register of pin on event Position  */
-#define PORT_EVCTRL_EVACT0_TGL                (PORT_EVCTRL_EVACT0_TGL_Val << PORT_EVCTRL_EVACT0_Pos) /**< (PORT_EVCTRL) Toggle output register of pin on event Position  */
-#define PORT_EVCTRL_PORTEI0_Pos               _U_(7)                                               /**< (PORT_EVCTRL) PORT Event Input Enable 0 Position */
-#define PORT_EVCTRL_PORTEI0_Msk               (_U_(0x1) << PORT_EVCTRL_PORTEI0_Pos)                /**< (PORT_EVCTRL) PORT Event Input Enable 0 Mask */
-#define PORT_EVCTRL_PORTEI0(value)            (PORT_EVCTRL_PORTEI0_Msk & ((value) << PORT_EVCTRL_PORTEI0_Pos))
-#define PORT_EVCTRL_PID1_Pos                  _U_(8)                                               /**< (PORT_EVCTRL) PORT Event Pin Identifier 1 Position */
-#define PORT_EVCTRL_PID1_Msk                  (_U_(0x1F) << PORT_EVCTRL_PID1_Pos)                  /**< (PORT_EVCTRL) PORT Event Pin Identifier 1 Mask */
-#define PORT_EVCTRL_PID1(value)               (PORT_EVCTRL_PID1_Msk & ((value) << PORT_EVCTRL_PID1_Pos))
-#define PORT_EVCTRL_EVACT1_Pos                _U_(13)                                              /**< (PORT_EVCTRL) PORT Event Action 1 Position */
-#define PORT_EVCTRL_EVACT1_Msk                (_U_(0x3) << PORT_EVCTRL_EVACT1_Pos)                 /**< (PORT_EVCTRL) PORT Event Action 1 Mask */
-#define PORT_EVCTRL_EVACT1(value)             (PORT_EVCTRL_EVACT1_Msk & ((value) << PORT_EVCTRL_EVACT1_Pos))
-#define PORT_EVCTRL_PORTEI1_Pos               _U_(15)                                              /**< (PORT_EVCTRL) PORT Event Input Enable 1 Position */
-#define PORT_EVCTRL_PORTEI1_Msk               (_U_(0x1) << PORT_EVCTRL_PORTEI1_Pos)                /**< (PORT_EVCTRL) PORT Event Input Enable 1 Mask */
-#define PORT_EVCTRL_PORTEI1(value)            (PORT_EVCTRL_PORTEI1_Msk & ((value) << PORT_EVCTRL_PORTEI1_Pos))
-#define PORT_EVCTRL_PID2_Pos                  _U_(16)                                              /**< (PORT_EVCTRL) PORT Event Pin Identifier 2 Position */
-#define PORT_EVCTRL_PID2_Msk                  (_U_(0x1F) << PORT_EVCTRL_PID2_Pos)                  /**< (PORT_EVCTRL) PORT Event Pin Identifier 2 Mask */
-#define PORT_EVCTRL_PID2(value)               (PORT_EVCTRL_PID2_Msk & ((value) << PORT_EVCTRL_PID2_Pos))
-#define PORT_EVCTRL_EVACT2_Pos                _U_(21)                                              /**< (PORT_EVCTRL) PORT Event Action 2 Position */
-#define PORT_EVCTRL_EVACT2_Msk                (_U_(0x3) << PORT_EVCTRL_EVACT2_Pos)                 /**< (PORT_EVCTRL) PORT Event Action 2 Mask */
-#define PORT_EVCTRL_EVACT2(value)             (PORT_EVCTRL_EVACT2_Msk & ((value) << PORT_EVCTRL_EVACT2_Pos))
-#define PORT_EVCTRL_PORTEI2_Pos               _U_(23)                                              /**< (PORT_EVCTRL) PORT Event Input Enable 2 Position */
-#define PORT_EVCTRL_PORTEI2_Msk               (_U_(0x1) << PORT_EVCTRL_PORTEI2_Pos)                /**< (PORT_EVCTRL) PORT Event Input Enable 2 Mask */
-#define PORT_EVCTRL_PORTEI2(value)            (PORT_EVCTRL_PORTEI2_Msk & ((value) << PORT_EVCTRL_PORTEI2_Pos))
-#define PORT_EVCTRL_PID3_Pos                  _U_(24)                                              /**< (PORT_EVCTRL) PORT Event Pin Identifier 3 Position */
-#define PORT_EVCTRL_PID3_Msk                  (_U_(0x1F) << PORT_EVCTRL_PID3_Pos)                  /**< (PORT_EVCTRL) PORT Event Pin Identifier 3 Mask */
-#define PORT_EVCTRL_PID3(value)               (PORT_EVCTRL_PID3_Msk & ((value) << PORT_EVCTRL_PID3_Pos))
-#define PORT_EVCTRL_EVACT3_Pos                _U_(29)                                              /**< (PORT_EVCTRL) PORT Event Action 3 Position */
-#define PORT_EVCTRL_EVACT3_Msk                (_U_(0x3) << PORT_EVCTRL_EVACT3_Pos)                 /**< (PORT_EVCTRL) PORT Event Action 3 Mask */
-#define PORT_EVCTRL_EVACT3(value)             (PORT_EVCTRL_EVACT3_Msk & ((value) << PORT_EVCTRL_EVACT3_Pos))
-#define PORT_EVCTRL_PORTEI3_Pos               _U_(31)                                              /**< (PORT_EVCTRL) PORT Event Input Enable 3 Position */
-#define PORT_EVCTRL_PORTEI3_Msk               (_U_(0x1) << PORT_EVCTRL_PORTEI3_Pos)                /**< (PORT_EVCTRL) PORT Event Input Enable 3 Mask */
-#define PORT_EVCTRL_PORTEI3(value)            (PORT_EVCTRL_PORTEI3_Msk & ((value) << PORT_EVCTRL_PORTEI3_Pos))
-#define PORT_EVCTRL_Msk                       _U_(0xFFFFFFFF)                                      /**< (PORT_EVCTRL) Register Mask  */
+/* -------- PORT_EVCTRL : (PORT Offset: 0x2C) (R/W 32) GROUP Event Input Control -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint32_t PID0:5;           /*!< bit:  0.. 4  PORT Event Pin Identifier 0        */
+    uint32_t EVACT0:2;         /*!< bit:  5.. 6  PORT Event Action 0                */
+    uint32_t PORTEI0:1;        /*!< bit:      7  PORT Event Input Enable 0          */
+    uint32_t PID1:5;           /*!< bit:  8..12  PORT Event Pin Identifier 1        */
+    uint32_t EVACT1:2;         /*!< bit: 13..14  PORT Event Action 1                */
+    uint32_t PORTEI1:1;        /*!< bit:     15  PORT Event Input Enable 1          */
+    uint32_t PID2:5;           /*!< bit: 16..20  PORT Event Pin Identifier 2        */
+    uint32_t EVACT2:2;         /*!< bit: 21..22  PORT Event Action 2                */
+    uint32_t PORTEI2:1;        /*!< bit:     23  PORT Event Input Enable 2          */
+    uint32_t PID3:5;           /*!< bit: 24..28  PORT Event Pin Identifier 3        */
+    uint32_t EVACT3:2;         /*!< bit: 29..30  PORT Event Action 3                */
+    uint32_t PORTEI3:1;        /*!< bit:     31  PORT Event Input Enable 3          */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint32_t reg;                /*!< Type      used for register access              */
+} PORT_EVCTRL_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define PORT_EVCTRL_OFFSET          0x2C         /**< \brief (PORT_EVCTRL offset) Event Input Control */
+#define PORT_EVCTRL_RESETVALUE      _U_(0x00000000) /**< \brief (PORT_EVCTRL reset_value) Event Input Control */
 
-/* -------- PORT_PMUX : (PORT Offset: 0x30) (R/W 8) Peripheral Multiplexing -------- */
-#define PORT_PMUX_RESETVALUE                  _U_(0x00)                                            /**<  (PORT_PMUX) Peripheral Multiplexing  Reset Value */
+#define PORT_EVCTRL_PID0_Pos        0            /**< \brief (PORT_EVCTRL) PORT Event Pin Identifier 0 */
+#define PORT_EVCTRL_PID0_Msk        (_U_(0x1F) << PORT_EVCTRL_PID0_Pos)
+#define PORT_EVCTRL_PID0(value)     (PORT_EVCTRL_PID0_Msk & ((value) << PORT_EVCTRL_PID0_Pos))
+#define PORT_EVCTRL_EVACT0_Pos      5            /**< \brief (PORT_EVCTRL) PORT Event Action 0 */
+#define PORT_EVCTRL_EVACT0_Msk      (_U_(0x3) << PORT_EVCTRL_EVACT0_Pos)
+#define PORT_EVCTRL_EVACT0(value)   (PORT_EVCTRL_EVACT0_Msk & ((value) << PORT_EVCTRL_EVACT0_Pos))
+#define   PORT_EVCTRL_EVACT0_OUT_Val      _U_(0x0)   /**< \brief (PORT_EVCTRL) Event output to pin */
+#define   PORT_EVCTRL_EVACT0_SET_Val      _U_(0x1)   /**< \brief (PORT_EVCTRL) Set output register of pin on event */
+#define   PORT_EVCTRL_EVACT0_CLR_Val      _U_(0x2)   /**< \brief (PORT_EVCTRL) Clear output register of pin on event */
+#define   PORT_EVCTRL_EVACT0_TGL_Val      _U_(0x3)   /**< \brief (PORT_EVCTRL) Toggle output register of pin on event */
+#define PORT_EVCTRL_EVACT0_OUT      (PORT_EVCTRL_EVACT0_OUT_Val    << PORT_EVCTRL_EVACT0_Pos)
+#define PORT_EVCTRL_EVACT0_SET      (PORT_EVCTRL_EVACT0_SET_Val    << PORT_EVCTRL_EVACT0_Pos)
+#define PORT_EVCTRL_EVACT0_CLR      (PORT_EVCTRL_EVACT0_CLR_Val    << PORT_EVCTRL_EVACT0_Pos)
+#define PORT_EVCTRL_EVACT0_TGL      (PORT_EVCTRL_EVACT0_TGL_Val    << PORT_EVCTRL_EVACT0_Pos)
+#define PORT_EVCTRL_PORTEI0_Pos     7            /**< \brief (PORT_EVCTRL) PORT Event Input Enable 0 */
+#define PORT_EVCTRL_PORTEI0         (_U_(0x1) << PORT_EVCTRL_PORTEI0_Pos)
+#define PORT_EVCTRL_PID1_Pos        8            /**< \brief (PORT_EVCTRL) PORT Event Pin Identifier 1 */
+#define PORT_EVCTRL_PID1_Msk        (_U_(0x1F) << PORT_EVCTRL_PID1_Pos)
+#define PORT_EVCTRL_PID1(value)     (PORT_EVCTRL_PID1_Msk & ((value) << PORT_EVCTRL_PID1_Pos))
+#define PORT_EVCTRL_EVACT1_Pos      13           /**< \brief (PORT_EVCTRL) PORT Event Action 1 */
+#define PORT_EVCTRL_EVACT1_Msk      (_U_(0x3) << PORT_EVCTRL_EVACT1_Pos)
+#define PORT_EVCTRL_EVACT1(value)   (PORT_EVCTRL_EVACT1_Msk & ((value) << PORT_EVCTRL_EVACT1_Pos))
+#define PORT_EVCTRL_PORTEI1_Pos     15           /**< \brief (PORT_EVCTRL) PORT Event Input Enable 1 */
+#define PORT_EVCTRL_PORTEI1         (_U_(0x1) << PORT_EVCTRL_PORTEI1_Pos)
+#define PORT_EVCTRL_PID2_Pos        16           /**< \brief (PORT_EVCTRL) PORT Event Pin Identifier 2 */
+#define PORT_EVCTRL_PID2_Msk        (_U_(0x1F) << PORT_EVCTRL_PID2_Pos)
+#define PORT_EVCTRL_PID2(value)     (PORT_EVCTRL_PID2_Msk & ((value) << PORT_EVCTRL_PID2_Pos))
+#define PORT_EVCTRL_EVACT2_Pos      21           /**< \brief (PORT_EVCTRL) PORT Event Action 2 */
+#define PORT_EVCTRL_EVACT2_Msk      (_U_(0x3) << PORT_EVCTRL_EVACT2_Pos)
+#define PORT_EVCTRL_EVACT2(value)   (PORT_EVCTRL_EVACT2_Msk & ((value) << PORT_EVCTRL_EVACT2_Pos))
+#define PORT_EVCTRL_PORTEI2_Pos     23           /**< \brief (PORT_EVCTRL) PORT Event Input Enable 2 */
+#define PORT_EVCTRL_PORTEI2         (_U_(0x1) << PORT_EVCTRL_PORTEI2_Pos)
+#define PORT_EVCTRL_PID3_Pos        24           /**< \brief (PORT_EVCTRL) PORT Event Pin Identifier 3 */
+#define PORT_EVCTRL_PID3_Msk        (_U_(0x1F) << PORT_EVCTRL_PID3_Pos)
+#define PORT_EVCTRL_PID3(value)     (PORT_EVCTRL_PID3_Msk & ((value) << PORT_EVCTRL_PID3_Pos))
+#define PORT_EVCTRL_EVACT3_Pos      29           /**< \brief (PORT_EVCTRL) PORT Event Action 3 */
+#define PORT_EVCTRL_EVACT3_Msk      (_U_(0x3) << PORT_EVCTRL_EVACT3_Pos)
+#define PORT_EVCTRL_EVACT3(value)   (PORT_EVCTRL_EVACT3_Msk & ((value) << PORT_EVCTRL_EVACT3_Pos))
+#define PORT_EVCTRL_PORTEI3_Pos     31           /**< \brief (PORT_EVCTRL) PORT Event Input Enable 3 */
+#define PORT_EVCTRL_PORTEI3         (_U_(0x1) << PORT_EVCTRL_PORTEI3_Pos)
+#define PORT_EVCTRL_MASK            _U_(0xFFFFFFFF) /**< \brief (PORT_EVCTRL) MASK Register */
 
-#define PORT_PMUX_PMUXE_Pos                   _U_(0)                                               /**< (PORT_PMUX) Peripheral Multiplexing for Even-Numbered Pin Position */
-#define PORT_PMUX_PMUXE_Msk                   (_U_(0xF) << PORT_PMUX_PMUXE_Pos)                    /**< (PORT_PMUX) Peripheral Multiplexing for Even-Numbered Pin Mask */
-#define PORT_PMUX_PMUXE(value)                (PORT_PMUX_PMUXE_Msk & ((value) << PORT_PMUX_PMUXE_Pos))
-#define   PORT_PMUX_PMUXE_A_Val               _U_(0x0)                                             /**< (PORT_PMUX) Peripheral function A selected  */
-#define   PORT_PMUX_PMUXE_B_Val               _U_(0x1)                                             /**< (PORT_PMUX) Peripheral function B selected  */
-#define   PORT_PMUX_PMUXE_C_Val               _U_(0x2)                                             /**< (PORT_PMUX) Peripheral function C selected  */
-#define   PORT_PMUX_PMUXE_D_Val               _U_(0x3)                                             /**< (PORT_PMUX) Peripheral function D selected  */
-#define   PORT_PMUX_PMUXE_E_Val               _U_(0x4)                                             /**< (PORT_PMUX) Peripheral function E selected  */
-#define   PORT_PMUX_PMUXE_F_Val               _U_(0x5)                                             /**< (PORT_PMUX) Peripheral function F selected  */
-#define   PORT_PMUX_PMUXE_G_Val               _U_(0x6)                                             /**< (PORT_PMUX) Peripheral function G selected  */
-#define   PORT_PMUX_PMUXE_H_Val               _U_(0x7)                                             /**< (PORT_PMUX) Peripheral function H selected  */
-#define   PORT_PMUX_PMUXE_I_Val               _U_(0x8)                                             /**< (PORT_PMUX) Peripheral function I selected  */
-#define   PORT_PMUX_PMUXE_J_Val               _U_(0x9)                                             /**< (PORT_PMUX) Peripheral function J selected  */
-#define   PORT_PMUX_PMUXE_K_Val               _U_(0xA)                                             /**< (PORT_PMUX) Peripheral function K selected  */
-#define   PORT_PMUX_PMUXE_L_Val               _U_(0xB)                                             /**< (PORT_PMUX) Peripheral function L selected  */
-#define   PORT_PMUX_PMUXE_M_Val               _U_(0xC)                                             /**< (PORT_PMUX) Peripheral function M selected  */
-#define   PORT_PMUX_PMUXE_N_Val               _U_(0xD)                                             /**< (PORT_PMUX) Peripheral function N selected  */
-#define PORT_PMUX_PMUXE_A                     (PORT_PMUX_PMUXE_A_Val << PORT_PMUX_PMUXE_Pos)       /**< (PORT_PMUX) Peripheral function A selected Position  */
-#define PORT_PMUX_PMUXE_B                     (PORT_PMUX_PMUXE_B_Val << PORT_PMUX_PMUXE_Pos)       /**< (PORT_PMUX) Peripheral function B selected Position  */
-#define PORT_PMUX_PMUXE_C                     (PORT_PMUX_PMUXE_C_Val << PORT_PMUX_PMUXE_Pos)       /**< (PORT_PMUX) Peripheral function C selected Position  */
-#define PORT_PMUX_PMUXE_D                     (PORT_PMUX_PMUXE_D_Val << PORT_PMUX_PMUXE_Pos)       /**< (PORT_PMUX) Peripheral function D selected Position  */
-#define PORT_PMUX_PMUXE_E                     (PORT_PMUX_PMUXE_E_Val << PORT_PMUX_PMUXE_Pos)       /**< (PORT_PMUX) Peripheral function E selected Position  */
-#define PORT_PMUX_PMUXE_F                     (PORT_PMUX_PMUXE_F_Val << PORT_PMUX_PMUXE_Pos)       /**< (PORT_PMUX) Peripheral function F selected Position  */
-#define PORT_PMUX_PMUXE_G                     (PORT_PMUX_PMUXE_G_Val << PORT_PMUX_PMUXE_Pos)       /**< (PORT_PMUX) Peripheral function G selected Position  */
-#define PORT_PMUX_PMUXE_H                     (PORT_PMUX_PMUXE_H_Val << PORT_PMUX_PMUXE_Pos)       /**< (PORT_PMUX) Peripheral function H selected Position  */
-#define PORT_PMUX_PMUXE_I                     (PORT_PMUX_PMUXE_I_Val << PORT_PMUX_PMUXE_Pos)       /**< (PORT_PMUX) Peripheral function I selected Position  */
-#define PORT_PMUX_PMUXE_J                     (PORT_PMUX_PMUXE_J_Val << PORT_PMUX_PMUXE_Pos)       /**< (PORT_PMUX) Peripheral function J selected Position  */
-#define PORT_PMUX_PMUXE_K                     (PORT_PMUX_PMUXE_K_Val << PORT_PMUX_PMUXE_Pos)       /**< (PORT_PMUX) Peripheral function K selected Position  */
-#define PORT_PMUX_PMUXE_L                     (PORT_PMUX_PMUXE_L_Val << PORT_PMUX_PMUXE_Pos)       /**< (PORT_PMUX) Peripheral function L selected Position  */
-#define PORT_PMUX_PMUXE_M                     (PORT_PMUX_PMUXE_M_Val << PORT_PMUX_PMUXE_Pos)       /**< (PORT_PMUX) Peripheral function M selected Position  */
-#define PORT_PMUX_PMUXE_N                     (PORT_PMUX_PMUXE_N_Val << PORT_PMUX_PMUXE_Pos)       /**< (PORT_PMUX) Peripheral function N selected Position  */
-#define PORT_PMUX_PMUXO_Pos                   _U_(4)                                               /**< (PORT_PMUX) Peripheral Multiplexing for Odd-Numbered Pin Position */
-#define PORT_PMUX_PMUXO_Msk                   (_U_(0xF) << PORT_PMUX_PMUXO_Pos)                    /**< (PORT_PMUX) Peripheral Multiplexing for Odd-Numbered Pin Mask */
-#define PORT_PMUX_PMUXO(value)                (PORT_PMUX_PMUXO_Msk & ((value) << PORT_PMUX_PMUXO_Pos))
-#define   PORT_PMUX_PMUXO_A_Val               _U_(0x0)                                             /**< (PORT_PMUX) Peripheral function A selected  */
-#define   PORT_PMUX_PMUXO_B_Val               _U_(0x1)                                             /**< (PORT_PMUX) Peripheral function B selected  */
-#define   PORT_PMUX_PMUXO_C_Val               _U_(0x2)                                             /**< (PORT_PMUX) Peripheral function C selected  */
-#define   PORT_PMUX_PMUXO_D_Val               _U_(0x3)                                             /**< (PORT_PMUX) Peripheral function D selected  */
-#define   PORT_PMUX_PMUXO_E_Val               _U_(0x4)                                             /**< (PORT_PMUX) Peripheral function E selected  */
-#define   PORT_PMUX_PMUXO_F_Val               _U_(0x5)                                             /**< (PORT_PMUX) Peripheral function F selected  */
-#define   PORT_PMUX_PMUXO_G_Val               _U_(0x6)                                             /**< (PORT_PMUX) Peripheral function G selected  */
-#define   PORT_PMUX_PMUXO_H_Val               _U_(0x7)                                             /**< (PORT_PMUX) Peripheral function H selected  */
-#define   PORT_PMUX_PMUXO_I_Val               _U_(0x8)                                             /**< (PORT_PMUX) Peripheral function I selected  */
-#define   PORT_PMUX_PMUXO_J_Val               _U_(0x9)                                             /**< (PORT_PMUX) Peripheral function J selected  */
-#define   PORT_PMUX_PMUXO_K_Val               _U_(0xA)                                             /**< (PORT_PMUX) Peripheral function K selected  */
-#define   PORT_PMUX_PMUXO_L_Val               _U_(0xB)                                             /**< (PORT_PMUX) Peripheral function L selected  */
-#define   PORT_PMUX_PMUXO_M_Val               _U_(0xC)                                             /**< (PORT_PMUX) Peripheral function M selected  */
-#define   PORT_PMUX_PMUXO_N_Val               _U_(0xD)                                             /**< (PORT_PMUX) Peripheral function N selected  */
-#define PORT_PMUX_PMUXO_A                     (PORT_PMUX_PMUXO_A_Val << PORT_PMUX_PMUXO_Pos)       /**< (PORT_PMUX) Peripheral function A selected Position  */
-#define PORT_PMUX_PMUXO_B                     (PORT_PMUX_PMUXO_B_Val << PORT_PMUX_PMUXO_Pos)       /**< (PORT_PMUX) Peripheral function B selected Position  */
-#define PORT_PMUX_PMUXO_C                     (PORT_PMUX_PMUXO_C_Val << PORT_PMUX_PMUXO_Pos)       /**< (PORT_PMUX) Peripheral function C selected Position  */
-#define PORT_PMUX_PMUXO_D                     (PORT_PMUX_PMUXO_D_Val << PORT_PMUX_PMUXO_Pos)       /**< (PORT_PMUX) Peripheral function D selected Position  */
-#define PORT_PMUX_PMUXO_E                     (PORT_PMUX_PMUXO_E_Val << PORT_PMUX_PMUXO_Pos)       /**< (PORT_PMUX) Peripheral function E selected Position  */
-#define PORT_PMUX_PMUXO_F                     (PORT_PMUX_PMUXO_F_Val << PORT_PMUX_PMUXO_Pos)       /**< (PORT_PMUX) Peripheral function F selected Position  */
-#define PORT_PMUX_PMUXO_G                     (PORT_PMUX_PMUXO_G_Val << PORT_PMUX_PMUXO_Pos)       /**< (PORT_PMUX) Peripheral function G selected Position  */
-#define PORT_PMUX_PMUXO_H                     (PORT_PMUX_PMUXO_H_Val << PORT_PMUX_PMUXO_Pos)       /**< (PORT_PMUX) Peripheral function H selected Position  */
-#define PORT_PMUX_PMUXO_I                     (PORT_PMUX_PMUXO_I_Val << PORT_PMUX_PMUXO_Pos)       /**< (PORT_PMUX) Peripheral function I selected Position  */
-#define PORT_PMUX_PMUXO_J                     (PORT_PMUX_PMUXO_J_Val << PORT_PMUX_PMUXO_Pos)       /**< (PORT_PMUX) Peripheral function J selected Position  */
-#define PORT_PMUX_PMUXO_K                     (PORT_PMUX_PMUXO_K_Val << PORT_PMUX_PMUXO_Pos)       /**< (PORT_PMUX) Peripheral function K selected Position  */
-#define PORT_PMUX_PMUXO_L                     (PORT_PMUX_PMUXO_L_Val << PORT_PMUX_PMUXO_Pos)       /**< (PORT_PMUX) Peripheral function L selected Position  */
-#define PORT_PMUX_PMUXO_M                     (PORT_PMUX_PMUXO_M_Val << PORT_PMUX_PMUXO_Pos)       /**< (PORT_PMUX) Peripheral function M selected Position  */
-#define PORT_PMUX_PMUXO_N                     (PORT_PMUX_PMUXO_N_Val << PORT_PMUX_PMUXO_Pos)       /**< (PORT_PMUX) Peripheral function N selected Position  */
-#define PORT_PMUX_Msk                         _U_(0xFF)                                            /**< (PORT_PMUX) Register Mask  */
+/* -------- PORT_PMUX : (PORT Offset: 0x30) (R/W  8) GROUP Peripheral Multiplexing -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint8_t  PMUXE:4;          /*!< bit:  0.. 3  Peripheral Multiplexing for Even-Numbered Pin */
+    uint8_t  PMUXO:4;          /*!< bit:  4.. 7  Peripheral Multiplexing for Odd-Numbered Pin */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint8_t reg;                 /*!< Type      used for register access              */
+} PORT_PMUX_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define PORT_PMUX_OFFSET            0x30         /**< \brief (PORT_PMUX offset) Peripheral Multiplexing */
+#define PORT_PMUX_RESETVALUE        _U_(0x00)    /**< \brief (PORT_PMUX reset_value) Peripheral Multiplexing */
 
-/* -------- PORT_PINCFG : (PORT Offset: 0x40) (R/W 8) Pin Configuration -------- */
-#define PORT_PINCFG_RESETVALUE                _U_(0x00)                                            /**<  (PORT_PINCFG) Pin Configuration  Reset Value */
+#define PORT_PMUX_PMUXE_Pos         0            /**< \brief (PORT_PMUX) Peripheral Multiplexing for Even-Numbered Pin */
+#define PORT_PMUX_PMUXE_Msk         (_U_(0xF) << PORT_PMUX_PMUXE_Pos)
+#define PORT_PMUX_PMUXE(value)      (PORT_PMUX_PMUXE_Msk & ((value) << PORT_PMUX_PMUXE_Pos))
+#define PORT_PMUX_PMUXO_Pos         4            /**< \brief (PORT_PMUX) Peripheral Multiplexing for Odd-Numbered Pin */
+#define PORT_PMUX_PMUXO_Msk         (_U_(0xF) << PORT_PMUX_PMUXO_Pos)
+#define PORT_PMUX_PMUXO(value)      (PORT_PMUX_PMUXO_Msk & ((value) << PORT_PMUX_PMUXO_Pos))
+#define PORT_PMUX_MASK              _U_(0xFF)    /**< \brief (PORT_PMUX) MASK Register */
 
-#define PORT_PINCFG_PMUXEN_Pos                _U_(0)                                               /**< (PORT_PINCFG) Peripheral Multiplexer Enable Position */
-#define PORT_PINCFG_PMUXEN_Msk                (_U_(0x1) << PORT_PINCFG_PMUXEN_Pos)                 /**< (PORT_PINCFG) Peripheral Multiplexer Enable Mask */
-#define PORT_PINCFG_PMUXEN(value)             (PORT_PINCFG_PMUXEN_Msk & ((value) << PORT_PINCFG_PMUXEN_Pos))
-#define PORT_PINCFG_INEN_Pos                  _U_(1)                                               /**< (PORT_PINCFG) Input Enable Position */
-#define PORT_PINCFG_INEN_Msk                  (_U_(0x1) << PORT_PINCFG_INEN_Pos)                   /**< (PORT_PINCFG) Input Enable Mask */
-#define PORT_PINCFG_INEN(value)               (PORT_PINCFG_INEN_Msk & ((value) << PORT_PINCFG_INEN_Pos))
-#define PORT_PINCFG_PULLEN_Pos                _U_(2)                                               /**< (PORT_PINCFG) Pull Enable Position */
-#define PORT_PINCFG_PULLEN_Msk                (_U_(0x1) << PORT_PINCFG_PULLEN_Pos)                 /**< (PORT_PINCFG) Pull Enable Mask */
-#define PORT_PINCFG_PULLEN(value)             (PORT_PINCFG_PULLEN_Msk & ((value) << PORT_PINCFG_PULLEN_Pos))
-#define PORT_PINCFG_DRVSTR_Pos                _U_(6)                                               /**< (PORT_PINCFG) Output Driver Strength Selection Position */
-#define PORT_PINCFG_DRVSTR_Msk                (_U_(0x1) << PORT_PINCFG_DRVSTR_Pos)                 /**< (PORT_PINCFG) Output Driver Strength Selection Mask */
-#define PORT_PINCFG_DRVSTR(value)             (PORT_PINCFG_DRVSTR_Msk & ((value) << PORT_PINCFG_DRVSTR_Pos))
-#define PORT_PINCFG_Msk                       _U_(0x47)                                            /**< (PORT_PINCFG) Register Mask  */
+/* -------- PORT_PINCFG : (PORT Offset: 0x40) (R/W  8) GROUP Pin Configuration -------- */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef union {
+  struct {
+    uint8_t  PMUXEN:1;         /*!< bit:      0  Peripheral Multiplexer Enable      */
+    uint8_t  INEN:1;           /*!< bit:      1  Input Enable                       */
+    uint8_t  PULLEN:1;         /*!< bit:      2  Pull Enable                        */
+    uint8_t  :3;               /*!< bit:  3.. 5  Reserved                           */
+    uint8_t  DRVSTR:1;         /*!< bit:      6  Output Driver Strength Selection   */
+    uint8_t  :1;               /*!< bit:      7  Reserved                           */
+  } bit;                       /*!< Structure used for bit  access                  */
+  uint8_t reg;                 /*!< Type      used for register access              */
+} PORT_PINCFG_Type;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#define PORT_PINCFG_OFFSET          0x40         /**< \brief (PORT_PINCFG offset) Pin Configuration */
+#define PORT_PINCFG_RESETVALUE      _U_(0x00)    /**< \brief (PORT_PINCFG reset_value) Pin Configuration */
 
-/** \brief PORT register offsets definitions */
-#define PORT_DIR_REG_OFST              (0x00)              /**< (PORT_DIR) Data Direction Offset */
-#define PORT_DIRCLR_REG_OFST           (0x04)              /**< (PORT_DIRCLR) Data Direction Clear Offset */
-#define PORT_DIRSET_REG_OFST           (0x08)              /**< (PORT_DIRSET) Data Direction Set Offset */
-#define PORT_DIRTGL_REG_OFST           (0x0C)              /**< (PORT_DIRTGL) Data Direction Toggle Offset */
-#define PORT_OUT_REG_OFST              (0x10)              /**< (PORT_OUT) Data Output Value Offset */
-#define PORT_OUTCLR_REG_OFST           (0x14)              /**< (PORT_OUTCLR) Data Output Value Clear Offset */
-#define PORT_OUTSET_REG_OFST           (0x18)              /**< (PORT_OUTSET) Data Output Value Set Offset */
-#define PORT_OUTTGL_REG_OFST           (0x1C)              /**< (PORT_OUTTGL) Data Output Value Toggle Offset */
-#define PORT_IN_REG_OFST               (0x20)              /**< (PORT_IN) Data Input Value Offset */
-#define PORT_CTRL_REG_OFST             (0x24)              /**< (PORT_CTRL) Control Offset */
-#define PORT_WRCONFIG_REG_OFST         (0x28)              /**< (PORT_WRCONFIG) Write Configuration Offset */
-#define PORT_EVCTRL_REG_OFST           (0x2C)              /**< (PORT_EVCTRL) Event Input Control Offset */
-#define PORT_PMUX_REG_OFST             (0x30)              /**< (PORT_PMUX) Peripheral Multiplexing Offset */
-#define PORT_PMUX0_REG_OFST            (0x30)              /**< (PORT_PMUX0) Peripheral Multiplexing Offset */
-#define PORT_PMUX1_REG_OFST            (0x31)              /**< (PORT_PMUX1) Peripheral Multiplexing Offset */
-#define PORT_PMUX2_REG_OFST            (0x32)              /**< (PORT_PMUX2) Peripheral Multiplexing Offset */
-#define PORT_PMUX3_REG_OFST            (0x33)              /**< (PORT_PMUX3) Peripheral Multiplexing Offset */
-#define PORT_PMUX4_REG_OFST            (0x34)              /**< (PORT_PMUX4) Peripheral Multiplexing Offset */
-#define PORT_PMUX5_REG_OFST            (0x35)              /**< (PORT_PMUX5) Peripheral Multiplexing Offset */
-#define PORT_PMUX6_REG_OFST            (0x36)              /**< (PORT_PMUX6) Peripheral Multiplexing Offset */
-#define PORT_PMUX7_REG_OFST            (0x37)              /**< (PORT_PMUX7) Peripheral Multiplexing Offset */
-#define PORT_PMUX8_REG_OFST            (0x38)              /**< (PORT_PMUX8) Peripheral Multiplexing Offset */
-#define PORT_PMUX9_REG_OFST            (0x39)              /**< (PORT_PMUX9) Peripheral Multiplexing Offset */
-#define PORT_PMUX10_REG_OFST           (0x3A)              /**< (PORT_PMUX10) Peripheral Multiplexing Offset */
-#define PORT_PMUX11_REG_OFST           (0x3B)              /**< (PORT_PMUX11) Peripheral Multiplexing Offset */
-#define PORT_PMUX12_REG_OFST           (0x3C)              /**< (PORT_PMUX12) Peripheral Multiplexing Offset */
-#define PORT_PMUX13_REG_OFST           (0x3D)              /**< (PORT_PMUX13) Peripheral Multiplexing Offset */
-#define PORT_PMUX14_REG_OFST           (0x3E)              /**< (PORT_PMUX14) Peripheral Multiplexing Offset */
-#define PORT_PMUX15_REG_OFST           (0x3F)              /**< (PORT_PMUX15) Peripheral Multiplexing Offset */
-#define PORT_PINCFG_REG_OFST           (0x40)              /**< (PORT_PINCFG) Pin Configuration Offset */
-#define PORT_PINCFG0_REG_OFST          (0x40)              /**< (PORT_PINCFG0) Pin Configuration Offset */
-#define PORT_PINCFG1_REG_OFST          (0x41)              /**< (PORT_PINCFG1) Pin Configuration Offset */
-#define PORT_PINCFG2_REG_OFST          (0x42)              /**< (PORT_PINCFG2) Pin Configuration Offset */
-#define PORT_PINCFG3_REG_OFST          (0x43)              /**< (PORT_PINCFG3) Pin Configuration Offset */
-#define PORT_PINCFG4_REG_OFST          (0x44)              /**< (PORT_PINCFG4) Pin Configuration Offset */
-#define PORT_PINCFG5_REG_OFST          (0x45)              /**< (PORT_PINCFG5) Pin Configuration Offset */
-#define PORT_PINCFG6_REG_OFST          (0x46)              /**< (PORT_PINCFG6) Pin Configuration Offset */
-#define PORT_PINCFG7_REG_OFST          (0x47)              /**< (PORT_PINCFG7) Pin Configuration Offset */
-#define PORT_PINCFG8_REG_OFST          (0x48)              /**< (PORT_PINCFG8) Pin Configuration Offset */
-#define PORT_PINCFG9_REG_OFST          (0x49)              /**< (PORT_PINCFG9) Pin Configuration Offset */
-#define PORT_PINCFG10_REG_OFST         (0x4A)              /**< (PORT_PINCFG10) Pin Configuration Offset */
-#define PORT_PINCFG11_REG_OFST         (0x4B)              /**< (PORT_PINCFG11) Pin Configuration Offset */
-#define PORT_PINCFG12_REG_OFST         (0x4C)              /**< (PORT_PINCFG12) Pin Configuration Offset */
-#define PORT_PINCFG13_REG_OFST         (0x4D)              /**< (PORT_PINCFG13) Pin Configuration Offset */
-#define PORT_PINCFG14_REG_OFST         (0x4E)              /**< (PORT_PINCFG14) Pin Configuration Offset */
-#define PORT_PINCFG15_REG_OFST         (0x4F)              /**< (PORT_PINCFG15) Pin Configuration Offset */
-#define PORT_PINCFG16_REG_OFST         (0x50)              /**< (PORT_PINCFG16) Pin Configuration Offset */
-#define PORT_PINCFG17_REG_OFST         (0x51)              /**< (PORT_PINCFG17) Pin Configuration Offset */
-#define PORT_PINCFG18_REG_OFST         (0x52)              /**< (PORT_PINCFG18) Pin Configuration Offset */
-#define PORT_PINCFG19_REG_OFST         (0x53)              /**< (PORT_PINCFG19) Pin Configuration Offset */
-#define PORT_PINCFG20_REG_OFST         (0x54)              /**< (PORT_PINCFG20) Pin Configuration Offset */
-#define PORT_PINCFG21_REG_OFST         (0x55)              /**< (PORT_PINCFG21) Pin Configuration Offset */
-#define PORT_PINCFG22_REG_OFST         (0x56)              /**< (PORT_PINCFG22) Pin Configuration Offset */
-#define PORT_PINCFG23_REG_OFST         (0x57)              /**< (PORT_PINCFG23) Pin Configuration Offset */
-#define PORT_PINCFG24_REG_OFST         (0x58)              /**< (PORT_PINCFG24) Pin Configuration Offset */
-#define PORT_PINCFG25_REG_OFST         (0x59)              /**< (PORT_PINCFG25) Pin Configuration Offset */
-#define PORT_PINCFG26_REG_OFST         (0x5A)              /**< (PORT_PINCFG26) Pin Configuration Offset */
-#define PORT_PINCFG27_REG_OFST         (0x5B)              /**< (PORT_PINCFG27) Pin Configuration Offset */
-#define PORT_PINCFG28_REG_OFST         (0x5C)              /**< (PORT_PINCFG28) Pin Configuration Offset */
-#define PORT_PINCFG29_REG_OFST         (0x5D)              /**< (PORT_PINCFG29) Pin Configuration Offset */
-#define PORT_PINCFG30_REG_OFST         (0x5E)              /**< (PORT_PINCFG30) Pin Configuration Offset */
-#define PORT_PINCFG31_REG_OFST         (0x5F)              /**< (PORT_PINCFG31) Pin Configuration Offset */
+#define PORT_PINCFG_PMUXEN_Pos      0            /**< \brief (PORT_PINCFG) Peripheral Multiplexer Enable */
+#define PORT_PINCFG_PMUXEN          (_U_(0x1) << PORT_PINCFG_PMUXEN_Pos)
+#define PORT_PINCFG_INEN_Pos        1            /**< \brief (PORT_PINCFG) Input Enable */
+#define PORT_PINCFG_INEN            (_U_(0x1) << PORT_PINCFG_INEN_Pos)
+#define PORT_PINCFG_PULLEN_Pos      2            /**< \brief (PORT_PINCFG) Pull Enable */
+#define PORT_PINCFG_PULLEN          (_U_(0x1) << PORT_PINCFG_PULLEN_Pos)
+#define PORT_PINCFG_DRVSTR_Pos      6            /**< \brief (PORT_PINCFG) Output Driver Strength Selection */
+#define PORT_PINCFG_DRVSTR          (_U_(0x1) << PORT_PINCFG_DRVSTR_Pos)
+#define PORT_PINCFG_MASK            _U_(0x47)    /**< \brief (PORT_PINCFG) MASK Register */
 
-#if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
-/** \brief GROUP register API structure */
-typedef struct
-{
-  __IO  uint32_t                       PORT_DIR;           /**< Offset: 0x00 (R/W  32) Data Direction */
-  __IO  uint32_t                       PORT_DIRCLR;        /**< Offset: 0x04 (R/W  32) Data Direction Clear */
-  __IO  uint32_t                       PORT_DIRSET;        /**< Offset: 0x08 (R/W  32) Data Direction Set */
-  __IO  uint32_t                       PORT_DIRTGL;        /**< Offset: 0x0C (R/W  32) Data Direction Toggle */
-  __IO  uint32_t                       PORT_OUT;           /**< Offset: 0x10 (R/W  32) Data Output Value */
-  __IO  uint32_t                       PORT_OUTCLR;        /**< Offset: 0x14 (R/W  32) Data Output Value Clear */
-  __IO  uint32_t                       PORT_OUTSET;        /**< Offset: 0x18 (R/W  32) Data Output Value Set */
-  __IO  uint32_t                       PORT_OUTTGL;        /**< Offset: 0x1C (R/W  32) Data Output Value Toggle */
-  __I   uint32_t                       PORT_IN;            /**< Offset: 0x20 (R/   32) Data Input Value */
-  __IO  uint32_t                       PORT_CTRL;          /**< Offset: 0x24 (R/W  32) Control */
-  __O   uint32_t                       PORT_WRCONFIG;      /**< Offset: 0x28 ( /W  32) Write Configuration */
-  __IO  uint32_t                       PORT_EVCTRL;        /**< Offset: 0x2C (R/W  32) Event Input Control */
-  __IO  uint8_t                        PORT_PMUX[16];      /**< Offset: 0x30 (R/W  8) Peripheral Multiplexing */
-  __IO  uint8_t                        PORT_PINCFG[32];    /**< Offset: 0x40 (R/W  8) Pin Configuration */
-  __I   uint8_t                        Reserved1[0x20];
-} port_group_registers_t;
+/** \brief PortGroup hardware registers */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef struct {
+  __IO PORT_DIR_Type             DIR;         /**< \brief Offset: 0x00 (R/W 32) Data Direction */
+  __IO PORT_DIRCLR_Type          DIRCLR;      /**< \brief Offset: 0x04 (R/W 32) Data Direction Clear */
+  __IO PORT_DIRSET_Type          DIRSET;      /**< \brief Offset: 0x08 (R/W 32) Data Direction Set */
+  __IO PORT_DIRTGL_Type          DIRTGL;      /**< \brief Offset: 0x0C (R/W 32) Data Direction Toggle */
+  __IO PORT_OUT_Type             OUT;         /**< \brief Offset: 0x10 (R/W 32) Data Output Value */
+  __IO PORT_OUTCLR_Type          OUTCLR;      /**< \brief Offset: 0x14 (R/W 32) Data Output Value Clear */
+  __IO PORT_OUTSET_Type          OUTSET;      /**< \brief Offset: 0x18 (R/W 32) Data Output Value Set */
+  __IO PORT_OUTTGL_Type          OUTTGL;      /**< \brief Offset: 0x1C (R/W 32) Data Output Value Toggle */
+  __I  PORT_IN_Type              IN;          /**< \brief Offset: 0x20 (R/  32) Data Input Value */
+  __IO PORT_CTRL_Type            CTRL;        /**< \brief Offset: 0x24 (R/W 32) Control */
+  __O  PORT_WRCONFIG_Type        WRCONFIG;    /**< \brief Offset: 0x28 ( /W 32) Write Configuration */
+  __IO PORT_EVCTRL_Type          EVCTRL;      /**< \brief Offset: 0x2C (R/W 32) Event Input Control */
+  __IO PORT_PMUX_Type            PMUX[16];    /**< \brief Offset: 0x30 (R/W  8) Peripheral Multiplexing */
+  __IO PORT_PINCFG_Type          PINCFG[32];  /**< \brief Offset: 0x40 (R/W  8) Pin Configuration */
+       RoReg8                    Reserved1[0x20];
+} PortGroup;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
-#define PORT_GROUP_NUMBER _U_(4)
+/** \brief PORT hardware registers */
+#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+typedef struct {
+       PortGroup                 Group[4];    /**< \brief Offset: 0x00 PortGroup groups [GROUPS] */
+} Port;
+#endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
-/** \brief PORT register API structure */
-typedef struct
-{  /* Port Module */
-        port_group_registers_t         GROUP[PORT_GROUP_NUMBER]; /**< Offset: 0x00  */
-} port_registers_t;
+/*@}*/
 
-
-#endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
-#endif /* _SAMD51_PORT_COMPONENT_H_ */
+#endif /* _SAMD51_PORT_COMPONENT_ */

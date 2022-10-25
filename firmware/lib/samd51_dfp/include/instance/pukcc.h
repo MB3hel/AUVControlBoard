@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \brief Low-level initialization functions called upon chip startup
+ * \brief Instance description for PUKCC
  *
  * Copyright (c) 2019 Microchip Technology Inc.
  *
@@ -27,22 +27,12 @@
  *
  */
 
-#ifndef _SYSTEM_SAMD51_H_INCLUDED_
-#define _SYSTEM_SAMD51_H_INCLUDED_
+#ifndef _SAMD51_PUKCC_INSTANCE_
+#define _SAMD51_PUKCC_INSTANCE_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/* ========== Instance parameters for PUKCC peripheral ========== */
+#define PUKCC_CLK_AHB_ID            20      
+#define PUKCC_RAM_ADDR_SIZE         12      
+#define PUKCC_ROM_ADDR_SIZE         16      
 
-#include <stdint.h>
-
-extern uint32_t SystemCoreClock;   /*!< System Clock Frequency (Core Clock)  */
-
-void SystemInit(void);
-void SystemCoreClockUpdate(void);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* SYSTEM_SAMD51_H_INCLUDED */
+#endif /* _SAMD51_PUKCC_INSTANCE_ */

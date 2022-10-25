@@ -3,6 +3,15 @@
 #include <samd/usb_samd_internal.h>
 #include <sam.h>
 
+#define USB_EP_size_to_gc(x)  ((x <= 8   )?0:\
+                               (x <= 16  )?1:\
+                               (x <= 32  )?2:\
+                               (x <= 64  )?3:\
+                               (x <= 128 )?4:\
+                               (x <= 256 )?5:\
+                               (x <= 512 )?6:\
+                                           7)
+
 #define NVMC_CALIBRATION_AREA_ADDR		(0x00800080)
 #define NVMC_CALIBRATION_AREA_DAT		(*((uint64_t*)(NVMC_CALIBRATION_AREA_ADDR)))
 
@@ -17,18 +26,18 @@ void usb_init(){
 	uint32_t pad_transn, pad_transp, pad_trim;
 
 	// Enable APBB clock to USB
-	MCLK_REGS->MCLK_APBBMASK |= MCLK_APBBMASK_USB(1);
+	MCLK->APBBMASK.bit.USB_ = 1;
 
 	// Select GCLK for USB peripheral (must be 48MHz) and enable it
-	GCLK_REGS->GCLK_PCHCTRL[USB_GCLK_ID] = 
-			GCLK_PCHCTRL_CHEN(1) | GCLK_PCHCTRL_GEN(USB_GCLK_GEN);
+	GCLK->PCHCTRL[USB_GCLK_ID].bit.GEN = USB_GCLK_GEN;
+	GCLK->PCHCTRL[USB_GCLK_ID].bit.CHEN = 1; 
 
 	// Reset USB device peripheral
-	USB_REGS->DEVICE.USB_CTRLA = USB_CTRLA_SWRST(1);
-	while (USB_REGS->DEVICE.USB_SYNCBUSY & USB_SYNCBUSY_SWRST_Msk);
+	USB->DEVICE.CTRLA.reg = USB_CTRLA_SWRST;
+	while (USB->DEVICE.SYNCBUSY.bit.SWRST);
 
-	USB_REGS->DEVICE.USB_CTRLA = USB_CTRLA_ENABLE(1) | USB_CTRLA_MODE_DEVICE;
-	while (USB_REGS->DEVICE.USB_SYNCBUSY & USB_SYNCBUSY_ENABLE_Msk);
+	USB->DEVICE.CTRLA.reg = USB_CTRLA_ENABLE | USB_CTRLA_MODE_DEVICE;
+	while (USB->DEVICE.SYNCBUSY.bit.ENABLE);
 
 	// Load calibration data from NVM Software Calibration Area
 	// See page 57-58 in datasheet and page 1033
@@ -45,15 +54,17 @@ void usb_init(){
 	if (pad_trim == 0b111) {
 		pad_trim = 0x06;
 	}
-	USB_REGS->DEVICE.USB_PADCAL = USB_PADCAL_TRANSN(pad_transn) | USB_PADCAL_TRANSP(pad_transp) | USB_PADCAL_TRIM(pad_trim);
+	USB->DEVICE.PADCAL.bit.TRANSN = pad_transn;
+	USB->DEVICE.PADCAL.bit.TRANSP = pad_transp;
+	USB->DEVICE.PADCAL.bit.TRIM = pad_trim;
 
 	// Set base address of base address of the main USB descriptor in RAM
 	// Lowest two bits must be zero (pg 1032 of datasheet)
-	memset(usb_endpoints, 0, usb_num_endpoints*sizeof(usb_descriptor_device_registers_t));
-	USB_REGS->DEVICE.USB_DESCADD = (uint32_t)(&usb_endpoints[0]);
+	memset(usb_endpoints, 0, usb_num_endpoints*sizeof(UsbDeviceDescriptor));
+	USB->DEVICE.DESCADD.reg = (uint32_t)(&usb_endpoints[0]);
 
 	// Enable initial set of interrupts
-	USB_REGS->DEVICE.USB_INTENSET = USB_DEVICE_INTENCLR_EORST(1);
+	USB->DEVICE.INTENSET.reg = USB_DEVICE_INTENCLR_EORST;
 
 	usb_reset();
 }
@@ -67,7 +78,8 @@ void usb_init(){
 
 void usb_reset(){
 	usb_endpoints[0].DeviceDescBank[0].ADDR.reg = (uint32_t) &ep0_buf_out;
-	usb_endpoints[0].DeviceDescBank[0].PCKSIZE.bit.SIZE=USB_EP_size_to_gc(USB_EP0_SIZE);
+	 usb_endpoints[0].DeviceDescBank[0].PCKSIZE.bit.SIZE = USB_EP_size_to_gc(USB_EP0_SIZE);
+	
 	usb_endpoints[0].DeviceDescBank[1].ADDR.reg = (uint32_t) &ep0_buf_in;
 	usb_endpoints[0].DeviceDescBank[1].PCKSIZE.bit.SIZE=USB_EP_size_to_gc(USB_EP0_SIZE);
 	usb_endpoints[0].DeviceDescBank[1].PCKSIZE.bit.AUTO_ZLP=1;

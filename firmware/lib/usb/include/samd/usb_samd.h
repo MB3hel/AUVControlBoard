@@ -5,7 +5,7 @@
 #include <usb.h>
 #include <sam.h>
 
-extern usb_descriptor_device_registers_t usb_endpoints[];
+extern UsbDeviceDescriptor usb_endpoints[];
 extern const uint8_t usb_num_endpoints;
 
 #define USB_ALIGN __attribute__((__aligned__(4)))

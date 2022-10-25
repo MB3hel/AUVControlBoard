@@ -1,35 +1,48 @@
 /**
- * \brief Instance header file for ATSAMD51P20A
+ * \file
  *
- * Copyright (c) 2021 Microchip Technology Inc. and its subsidiaries.
+ * \brief Instance description for RSTC
  *
- * Subject to your compliance with these terms, you may use Microchip software and any derivatives
- * exclusively with Microchip products. It is your responsibility to comply with third party license
- * terms applicable to your use of third party software (including open source software) that may
- * accompany Microchip software.
+ * Copyright (c) 2019 Microchip Technology Inc.
  *
- * THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS". NO WARRANTIES, WHETHER EXPRESS, IMPLIED OR STATUTORY,
- * APPLY TO THIS SOFTWARE, INCLUDING ANY IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY, AND
- * FITNESS FOR A PARTICULAR PURPOSE.
+ * \asf_license_start
  *
- * IN NO EVENT WILL MICROCHIP BE LIABLE FOR ANY INDIRECT, SPECIAL, PUNITIVE, INCIDENTAL OR CONSEQUENTIAL
- * LOSS, DAMAGE, COST OR EXPENSE OF ANY KIND WHATSOEVER RELATED TO THE SOFTWARE, HOWEVER CAUSED, EVEN IF
- * MICROCHIP HAS BEEN ADVISED OF THE POSSIBILITY OR THE DAMAGES ARE FORESEEABLE. TO THE FULLEST EXTENT
- * ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN ANY WAY RELATED TO THIS SOFTWARE WILL NOT
- * EXCEED THE AMOUNT OF FEES, IF ANY, THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
+ * \page License
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the Licence at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * \asf_license_stop
  *
  */
 
-/* file generated from device description version 2021-04-16T09:24:38Z */
 #ifndef _SAMD51_RSTC_INSTANCE_
 #define _SAMD51_RSTC_INSTANCE_
 
+/* ========== Register definition for RSTC peripheral ========== */
+#if (defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
+#define REG_RSTC_RCAUSE            (0x40000C00) /**< \brief (RSTC) Reset Cause */
+#define REG_RSTC_BKUPEXIT          (0x40000C02) /**< \brief (RSTC) Backup Exit Source */
+#else
+#define REG_RSTC_RCAUSE            (*(RoReg8 *)0x40000C00UL) /**< \brief (RSTC) Reset Cause */
+#define REG_RSTC_BKUPEXIT          (*(RoReg8 *)0x40000C02UL) /**< \brief (RSTC) Backup Exit Source */
+#endif /* (defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
-/* ========== Instance Parameter definitions for RSTC peripheral ========== */
-#define RSTC_BACKUP_IMPLEMENTED                  _UL_(1)    
-#define RSTC_HIB_IMPLEMENTED                     _UL_(1)    
-#define RSTC_NUMBER_OF_EXTWAKE                   _UL_(0)    /* number of external wakeup line */
-#define RSTC_NVMRST_IMPLEMENTED                  _UL_(1)    
-#define RSTC_INSTANCE_ID                         _UL_(3)    /* Instance index for RSTC */
+/* ========== Instance parameters for RSTC peripheral ========== */
+#define RSTC_BACKUP_IMPLEMENTED     1       
+#define RSTC_HIB_IMPLEMENTED        1       
+#define RSTC_NUMBER_OF_EXTWAKE      0        // number of external wakeup line
+#define RSTC_NVMRST_IMPLEMENTED     1       
 
 #endif /* _SAMD51_RSTC_INSTANCE_ */
