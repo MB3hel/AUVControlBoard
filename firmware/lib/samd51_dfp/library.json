@@ -1,0 +1,10 @@
+{
+    "name": "samd51_dfp",
+    "version": "3.5.95",
+    "description": "Device framework pack from Microchip for SAMD51",
+    "dependencies": {
+      "cmsis": "*"
+    },
+    "frameworks": "*",
+    "platforms": "*"
+  }

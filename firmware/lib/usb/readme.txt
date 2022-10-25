@@ -1,0 +1,1 @@
+Based on https://github.com/kevinmehall/usb, adapted to work with SAMD51 instead of SAMD21.

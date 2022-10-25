@@ -1,0 +1,15 @@
+{
+    "name": "usb",
+    "version": "1.0.0",
+    "description": "Minimalist portable USB device stack",
+    "repository":
+    {
+      "type": "git",
+      "url": "https://github.com/kevinmehall/usb.git"
+    },
+    "dependencies": {
+      "samd51_dfp": "*"
+    },
+    "frameworks": "*",
+    "platforms": "*"
+  }
