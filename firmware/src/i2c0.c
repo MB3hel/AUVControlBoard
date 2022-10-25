@@ -129,21 +129,11 @@ void i2c0_process(void){
             hri_sercomi2cm_clear_STATUS_ARBLOST_bit(SERCOM2);
             hri_sercomi2cm_clear_STATUS_RXNACK_bit(SERCOM2);
 
-            // TODO: BNO055 sometimes gets "stuck" retrying a transaction, but there is no
-            // TODO: Activity on the pins. Something happens that "breaks" i2c.
-            // TODO: Figure out why setting ADDR field would not start a transaction. This is what
-            // TODO: is happening. This seems to happen "randomly" within a transaction. Using an AD2
-            // TODO: to spy on the bus, it often happens partially through a read or after a STOP
-            // TODO: Is sent after a read. This likely has nothing to do with reading specifically.
-            // TODO: Most likely coincidence because the majority of time is spent on read transactions
-            // TODO: When only the BNO055 is in use (post configuration).
-            // TODO: Debug this and fix properly. This is just error detection / recovery.
-            // TODO: If the timeout happens too many times in a row (meaning several transactions
-            // TODO: in a row fail due to timeout) the bus is reset
-            // TODO: The problem seems to be most easily reproduced by moving around so IMU
-            // TODO: data is changing. This could just be coincidence though.
+            // Hardware I2C state machine seems to not handle some errors properly
+            // mostly related to induced noise. Thus, sometimes it gets "stuck"
+            // where no error is known from software, but there is no activity on i2c pins.
+            // If 5 transactions fail in a row, assume this is the case and reset i2c sercom.
             if(repeated_timeouts >= 5){
-                dotstar_set(rand() % 255, rand() % 255, rand() % 255);
                 hri_sercomi2cm_clear_CTRLA_ENABLE_bit(SERCOM2);
                 asm("nop");
                 hri_sercomi2cm_set_CTRLA_ENABLE_bit(SERCOM2);

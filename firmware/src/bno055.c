@@ -664,17 +664,15 @@ void bno055_delay_done(void){
 }
 
 void bno055_check_i2c(void){   
-    // Check if this I2C transaction was the one that finished
-    // It could either still be busy or idle
-    // If so, nothing should happen I2C0_DONE was set b/c another sensor's transaction finished
     if(trans.status == I2C_STATUS_SUCCESS){
+        trans.status = I2C_STATUS_IDLE;
         bno055_state_machine(TRIGGER_I2C_DONE);
     }else if(trans.status == I2C_STATUS_ERROR){
+        trans.status = I2C_STATUS_IDLE;
         bno055_state_machine(TRIGGER_I2C_ERROR);
-    }
+    }    
 
-    // Set this flag so transition does not occur when another sensor finishes
-    trans.status = I2C_STATUS_IDLE;
+    // If trans.status is BUSY or IDLE, this is not the transaction that finished
 }
 
 void bno055_reconfig(uint8_t axis_remap){

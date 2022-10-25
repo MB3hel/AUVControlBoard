@@ -40,3 +40,6 @@ void i2c0_perform(i2c_trans *trans);
  * POINTER MUST REMAIN VALID UNTIL STATUS IS NOT BUSY!
  */
 void i2c0_enqueue(i2c_trans *trans);
+
+
+void i2c0_debug(void);
