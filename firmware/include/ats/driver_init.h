@@ -24,8 +24,6 @@ extern "C" {
 #include <i2c_lite.h>
 #include <hal_timer.h>
 #include <hpl_tc_base.h>
-#include <hal_timer.h>
-#include <hpl_tc_base.h>
 #include <tcc_lite.h>
 #include <tcc_lite.h>
 
@@ -34,7 +32,6 @@ extern "C" {
 #include <hal_wdt.h>
 
 extern struct timer_descriptor TIMER_0;
-extern struct timer_descriptor TIMER_1;
 
 extern struct wdt_descriptor WDT_0;
 

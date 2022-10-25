@@ -28,7 +28,6 @@
 #include <flags.h>
 #include <timers.h>
 #include <atmel_start.h>
-#include <dotstar.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -74,9 +73,7 @@ void i2c0_init(void){
     // The counter is enabled in i2c0_process either WRITE or READ state
     // It is reset each time a transmit / receive finishes (irq handler)
     // except when no more to tx / rx in which case it is disabled
-    // Timeout is 100us. I2C data rate is 100kHz = 10us per bit
-    // This gives plenty of time to handle clock stretching
-    timers_i2c0_timeout_init(&i2c0_timeout, 100);
+    timers_i2c0_timeout_init(&i2c0_timeout, 5);
     repeated_timeouts = 0;
 
     // Initialize queue indices
@@ -217,8 +214,6 @@ void i2c0_enqueue(i2c_trans *trans){
 void i2c0_timeout(void){
     // Timeout counter is automatically disabled before this is called (see timers.c)
 
-
-    dotstar_set(rand() % 255, rand() % 255, rand() % 255);
     repeated_timeouts++;
 
     // Send STOP
