@@ -1,8 +1,0 @@
-{
-    "name": "cmsis",
-    "version": "5.4.0",
-    "description": "Cortex M headers from arm CMSIS.",
-    "dependencies": {},
-    "frameworks": "*",
-    "platforms": "*"
-  }

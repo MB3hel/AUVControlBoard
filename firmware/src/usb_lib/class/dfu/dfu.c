@@ -1,4 +1,4 @@
-#include "class/dfu/dfu.h"
+#include <class/dfu/dfu.h>
 
 DFU_State dfu_state = DFU_STATE_dfuIDLE;
 DFU_Status dfu_status = DFU_STATUS_OK;

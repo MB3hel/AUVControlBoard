@@ -1,4 +1,4 @@
-#include "usb.h"
+#include <usb_lib/usb.h>
 
 USB_SetupPacket usb_setup;
 __attribute__((__aligned__(4))) uint8_t ep0_buf_in[USB_EP0_SIZE];

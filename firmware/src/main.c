@@ -1,5 +1,10 @@
+/**
+ * Program entry point and main tree
+ * @file main.c
+ * @author Marcus Behel
+ */
 
-#include <usb.h>
+#include <usb_lib/usb.h>
 
 int main(){
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "usb.h"
-#include "dfu_standard.h"
+#include <usb.h>
+#include <class/dfu/dfu_standard.h>
 
 extern DFU_State dfu_state;
 extern DFU_Status dfu_status;

@@ -1,6 +1,5 @@
 #include <usb.h>
 #include <samd/usb_samd.h>
-#include <samd/usb_samd_internal.h>
 #include <sam.h>
 
 #define USB_EP_size_to_gc(x)  ((x <= 8   )?0:\
@@ -17,11 +16,6 @@
 
 #undef ENABLE
 
-// Which GCLK is 48MHz
-// TODO: Don't hard code this.
-// TODO: Come up with some way to pass as a parameter
-#define USB_GCLK_GEN                    1
-
 void usb_init(){
 	uint32_t pad_transn, pad_transp, pad_trim;
 
@@ -29,6 +23,7 @@ void usb_init(){
 	MCLK->APBBMASK.bit.USB_ = 1;
 
 	// Select GCLK for USB peripheral (must be 48MHz) and enable it
+	// Define USB_GCLK_GEN in build options
 	GCLK->PCHCTRL[USB_GCLK_ID].bit.GEN = USB_GCLK_GEN;
 	GCLK->PCHCTRL[USB_GCLK_ID].bit.CHEN = 1; 
 
@@ -78,8 +73,7 @@ void usb_init(){
 
 void usb_reset(){
 	usb_endpoints[0].DeviceDescBank[0].ADDR.reg = (uint32_t) &ep0_buf_out;
-	 usb_endpoints[0].DeviceDescBank[0].PCKSIZE.bit.SIZE = USB_EP_size_to_gc(USB_EP0_SIZE);
-	
+	usb_endpoints[0].DeviceDescBank[0].PCKSIZE.bit.SIZE = USB_EP_size_to_gc(USB_EP0_SIZE);
 	usb_endpoints[0].DeviceDescBank[1].ADDR.reg = (uint32_t) &ep0_buf_in;
 	usb_endpoints[0].DeviceDescBank[1].PCKSIZE.bit.SIZE=USB_EP_size_to_gc(USB_EP0_SIZE);
 	usb_endpoints[0].DeviceDescBank[1].PCKSIZE.bit.AUTO_ZLP=1;
@@ -186,11 +180,17 @@ inline usb_size usb_ep_out_length(uint8_t ep){
 
 inline void usb_detach(void) {
 	USB->DEVICE.CTRLB.bit.DETACH = 1;
-	NVIC_DisableIRQ(USB_IRQn);
+	NVIC_DisableIRQ(USB_0_IRQn);
+	NVIC_DisableIRQ(USB_1_IRQn);
+	NVIC_DisableIRQ(USB_2_IRQn);
+	NVIC_DisableIRQ(USB_3_IRQn);
 }
 
 inline void usb_attach(void) {
-	NVIC_EnableIRQ(USB_IRQn);
+	NVIC_EnableIRQ(USB_0_IRQn);
+	NVIC_EnableIRQ(USB_1_IRQn);
+	NVIC_EnableIRQ(USB_2_IRQn);
+	NVIC_EnableIRQ(USB_3_IRQn);
 	USB->DEVICE.CTRLB.bit.DETACH = 0;
 }
 
@@ -209,9 +209,9 @@ inline void usb_ep0_stall(void) {
 
 void usb_set_speed(USB_Speed speed) {
 	if (USB_SPEED_FULL == speed) {
-		USB->DEVICE.CTRLB.bit.SPDCONF = USB_DEVICE_CTRLB_SPDCONF_0_Val;
+		USB->DEVICE.CTRLB.bit.SPDCONF = USB_DEVICE_CTRLB_SPDCONF_FS_Val;
 	} else if(USB_SPEED_LOW == speed) {
-		USB->DEVICE.CTRLB.bit.SPDCONF = USB_DEVICE_CTRLB_SPDCONF_1_Val;
+		USB->DEVICE.CTRLB.bit.SPDCONF = USB_DEVICE_CTRLB_SPDCONF_LS_Val;
 	}
 }
 
@@ -223,7 +223,7 @@ USB_Speed usb_get_speed() {
 	}
 }
 
-void USB_Handler() {
+void USB_Handler_Common() {
 	uint32_t summary = USB->DEVICE.EPINTSMRY.reg;
 	uint32_t status = USB->DEVICE.INTFLAG.reg;
 
@@ -257,6 +257,22 @@ void USB_Handler() {
 	}
 
 	usb_cb_completion();
+}
+
+void USB_0_Handler(void){
+	USB_Handler_Common();
+}
+
+void USB_1_Handler(void){
+	USB_Handler_Common();
+}
+
+void USB_2_Handler(void){
+	USB_Handler_Common();
+}
+
+void USB_3_Handler(void){
+	USB_Handler_Common();
 }
 
 void* samd_serial_number_string_descriptor() {
