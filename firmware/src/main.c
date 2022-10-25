@@ -4,9 +4,9 @@
  * @author Marcus Behel
  */
 
-#include <usb_lib/usb.h>
+#include <clocks.h>
 
-int main(){
-
+int main(void){
+    clocks_init();
 }
 
