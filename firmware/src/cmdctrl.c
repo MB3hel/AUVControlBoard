@@ -205,19 +205,19 @@ uint8_t cmdctrl_get_mode(void){
 }
 
 void cmdctrl_send_sensors(void){
-    uint8_t msg[20];
+    uint8_t msg[17];
     bno055_data imu_dat = bno055_get();
 
     // Send IMU orientation (quaternion)
-    msg[0] = 'Q';
+    msg[0] = 'E';
     msg[1] = 'U';
-    msg[2] = 'A';
-    msg[3] = 'T';
-    conversions_float_to_data(imu_dat.quat_w, &msg[4], true);
-    conversions_float_to_data(imu_dat.quat_x, &msg[8], true);
-    conversions_float_to_data(imu_dat.quat_y, &msg[12], true);
-    conversions_float_to_data(imu_dat.quat_z, &msg[16], true);
-    pccomm_write_msg(msg, 20);
+    msg[2] = 'L';
+    msg[3] = 'E';
+    msg[4] = 'R';
+    conversions_float_to_data(imu_dat.euler_pitch, &msg[5], true);
+    conversions_float_to_data(imu_dat.euler_roll, &msg[9], true);
+    conversions_float_to_data(imu_dat.euler_yaw, &msg[13], true);
+    pccomm_write_msg(msg, 17);
 
     // Send IMU gravity vector
     msg[0] = 'G';

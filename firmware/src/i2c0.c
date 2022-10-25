@@ -143,6 +143,7 @@ void i2c0_process(void){
             // TODO: The problem seems to be most easily reproduced by moving around so IMU
             // TODO: data is changing. This could just be coincidence though.
             if(repeated_timeouts >= 5){
+                dotstar_set(rand() % 255, rand() % 255, rand() % 255);
                 hri_sercomi2cm_clear_CTRLA_ENABLE_bit(SERCOM2);
                 asm("nop");
                 hri_sercomi2cm_set_CTRLA_ENABLE_bit(SERCOM2);
