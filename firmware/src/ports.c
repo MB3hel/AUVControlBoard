@@ -101,8 +101,8 @@ void ports_init(void){
     ports_gpio_clear(P_DS_DAT);
 
     // USB DM pin
-    ports_pinfunc(P_USB_DM, MUX_PA24H_USB_DM);
+    // ports_pinfunc(P_USB_DM, MUX_PA24H_USB_DM);
 
-    // USB DP pin
-    ports_pinfunc(P_USB_DP, MUX_PA25H_USB_DP);
+    // // USB DP pin
+    // ports_pinfunc(P_USB_DP, MUX_PA25H_USB_DP);
 }
