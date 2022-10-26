@@ -8,64 +8,127 @@
 #include <ports.h>
 
 
+/**
+ * ItsyBitsy M4 Express has not external crystal, thus all clocks must
+ * ultimately come from the ultra low power internal 32.768 kHz oscillator
+ * (ULP32K)
+ * 
+ * Required clocks:
+ * 120 MHz clock for CPU
+ * 48 MHz clock for USB
+ * 32.768 kHz clock for "human" timing
+ * 
+ * See page 136 of datasheet for clock diagram
+ * 
+ * MCLK generates CPU clock and bus clocks (APB, AHB)
+ * GCLK 0 is always the source of MCLK (optional dividers for CPU, APB, AHB)
+ * Thus we need
+ * GCLK0 = 120 MHz
+ * 
+ * Choose (arbitrary GCLK numbers here)
+ * GCLK1 = 48 MHz
+ * GCLK3 = 32.768 kHz
+ * 
+ * Note: GCLK2 used to be used for 1MHz (DFLL / 48), but not needed so removed
+ * 
+ * The internal DFLL can generate 48 MHz clock from 32.768 kHz (ULP32K)
+ * The internal FDPLL0 can generate 120 MHz Clock from 32.768 kHz
+ * 
+ * (diagram generated with asciiflow.com)
+ *
+ *
+ *                                       ┌────────┐ 120M     ┌───────┐  120M    ┌───────┐
+ *                                  ┌───►│ FDPLL0 ├─────────►│ GCLK0 ├─────────►│ MCLK  │
+ *                                  │    └────────┘          └───────┘          └───────┘
+ *                                  │
+ *                                  │
+ *                                  │    ┌────────┐ 48M      ┌───────┐  48M
+ *                                  ├───►│  DFLL  ├─────────►│ GCLK1 ├─────────►
+ *                                  │    └────────┘          └───────┘
+ * ┌────────┐          ┌───────┐    │
+ * │ ULP32K ├─────────►│ GCLK3 ├────┘
+ * └────────┘32.768k   └───────┘ 32.768k
+ *
+ *
+ * 
+ * Some specific peripheral settings used below are chosen from atmel start
+ * Others are chosen based on what Arduino-samd core or micropython do
+ * 
+ */
 void clocks_init(void){
-    // TODO: Why???
-    NVMCTRL->CTRLA.bit.RWS = 0;
+    GCLK->CTRLA.bit.SWRST = 1;                                  // Reset GCLKs
+    while(GCLK->SYNCBUSY.bit.SWRST);                            // Wait for reset
 
-    GCLK->CTRLA.bit.SWRST = 1;                                          // Reset GCLKs
-    while( GCLK->SYNCBUSY.bit.SWRST);                                   // Wait for reset
+    // Configure GCLK3
+    GCLK->GENCTRL[3].reg = 
+        GCLK_GENCTRL_SRC_OSCULP32K |                            // Select ULP32K as source
+        GCLK_GENCTRL_GENEN;                                     // Enable GCLK
+    while(GCLK->SYNCBUSY.bit.GENCTRL3);                         // Wait for sync
 
-    // GCLK3 -> 32.768kHz from internal oscillator
-    GCLK->GENCTRL[3].bit.SRC = GCLK_GENCTRL_SRC_OSCULP32K_Val;          // GCLK 3 Sourced from internal 32k
-    GCLK->GENCTRL[3].bit.GENEN = 1;                                     // Enable GCLK 3
-    while(GCLK->SYNCBUSY.bit.GENCTRL3);                                 // Wait for sync
+    // Configure GCLK0 (temporary)
+    // Keeps CPU clock alive during other config
+    GCLK->GENCTRL[0].reg =  
+        GCLK_GENCTRL_SRC_OSCULP32K |                            // Select ULP32K as source
+        GCLK_GENCTRL_GENEN;                                     // Enable GCLK
+    while(GCLK->SYNCBUSY.bit.GENCTRL0);                         // Wait for sync
 
-    // OSCCTRL setup
-    MCLK->APBAMASK.bit.OSCCTRL_ = 1;                                    // Enable APB clock to OSCCTRL
+    // DFLL configuration (open loop mode)
+    GCLK->PCHCTRL[OSCCTRL_GCLK_ID_DFLL48].reg =                 // Configure clock to DFLL
+        GCLK_PCHCTRL_CHEN |                                     // Enable GCLK to DFLL
+        GCLK_PCHCTRL_GEN_GCLK3;                                 // GCLK3 as DFLL source
+    OSCCTRL->DFLLCTRLA.reg = 0x00;                              // Disable before config
+    OSCCTRL->DFLLMUL.reg = 
+        OSCCTRL_DFLLMUL_CSTEP(0x1) |                            // Coarse maximum step = 1
+        OSCCTRL_DFLLMUL_FSTEP(0x1) |                            // Fine maximum step = 1
+        OSCCTRL_DFLLMUL_MUL(0);                                 // Multiply factor = 0
+    while(OSCCTRL->DFLLSYNC.bit.DFLLMUL);                       // Wait for sync
+    OSCCTRL->DFLLCTRLB.reg = 0;                                 // Clear config
+    while(OSCCTRL->DFLLSYNC.bit.DFLLCTRLB);                     // Wait for sync
+    OSCCTRL->DFLLCTRLA.bit.ENABLE = 1;                          // Enable DFLL
+    while(OSCCTRL->DFLLSYNC.bit.ENABLE);                        // Wait for sync
+    OSCCTRL->DFLLVAL.reg = OSCCTRL->DFLLVAL.reg;                // Used to wait for sync before continuing
+    while(OSCCTRL->DFLLSYNC.bit.DFLLVAL);                       // Wait for sync
+    OSCCTRL->DFLLCTRLB.reg = 
+        OSCCTRL_DFLLCTRLB_WAITLOCK |                            // Fine lock
+        OSCCTRL_DFLLCTRLB_CCDIS;                                // Chill cycle disable (b/c Arduino core does it)
+    while(OSCCTRL->DFLLSYNC.bit.DFLLCTRLB);                     // Wait for sync
+    while(!OSCCTRL->STATUS.bit.DFLLRDY);                        // Wait for ready
 
-    // DFLL48M Config (reference clock = 32.768kHz)
-    GCLK->PCHCTRL[OSCCTRL_GCLK_ID_DFLL48].bit.GEN = 3;                  // Sourced from GCLK3
-    GCLK->PCHCTRL[OSCCTRL_GCLK_ID_DFLL48].bit.CHEN = 1;                 // Enable clock to DFLL48
-    OSCCTRL->DFLLMUL.bit.CSTEP = 1;                                     // Coarse max step
-    OSCCTRL->DFLLMUL.bit.FSTEP = 1;                                     // Fine max step
-    OSCCTRL->DFLLMUL.bit.MUL = 0;                                       // Multiply factor
-    while(OSCCTRL->DFLLSYNC.bit.DFLLMUL);                               // Wait for sync
-    OSCCTRL->DFLLCTRLB.bit.MODE = 0;                                    // Open loop mode
-    OSCCTRL->DFLLCTRLB.bit.WAITLOCK = 1;                                // Wait for lock before output
-    while(OSCCTRL->DFLLSYNC.bit.DFLLCTRLB);                             // Wait for sync
-    OSCCTRL->DFLLCTRLA.bit.RUNSTDBY = 1;                                // Enable run in standby mode
-    OSCCTRL->DFLLCTRLA.bit.ENABLE = 1;                                  // Enable DFLL48M
-    while(OSCCTRL->DFLLSYNC.bit.ENABLE);                                // Wait for sync
+    // Configure GCLK1
+    GCLK->GENCTRL[1].reg = 
+            GCLK_GENCTRL_SRC_DFLL |                             // Source from DFLL           
+            GCLK_GENCTRL_GENEN;                                 // Enable GCLK
+    while(GCLK->SYNCBUSY.bit.GENCTRL1);                         // Wait for sync
 
-    // GCLK1 -> 48MHz from DFLL48M
-    GCLK->GENCTRL[1].bit.SRC = GCLK_GENCTRL_SRC_DFLL_Val;               // GCLK1 sourced from DFLL
-    GCLK->GENCTRL[1].bit.GENEN = 1;                                     // Enable GCLK1
-    while(GCLK->SYNCBUSY.bit.GENCTRL1);                                 // Wait for sync
+    // FDPLL0 configuration for 120MHz
+    // See page 702 of datasheet for how to calculate
+    // loop divider ratio
+    // f_out = (3661 + 1 + 4/32) * 32768 = 120000512Hz
+    GCLK->PCHCTRL[OSCCTRL_GCLK_ID_FDPLL0].reg =                 // Configure clock to FDPLL0
+        GCLK_PCHCTRL_CHEN |                                     // Enable clock to FDPLL0
+        GCLK_PCHCTRL_GEN_GCLK3;                                 // Source from GCLK3
+    OSCCTRL->Dpll[0].DPLLRATIO.reg = 
+        OSCCTRL_DPLLRATIO_LDRFRAC(4) |                          // Loop divider ratio (frac part)
+        OSCCTRL_DPLLRATIO_LDR(3661);                            // Loop divider ratio (int part)
+    while(OSCCTRL->Dpll[0].DPLLSYNCBUSY.bit.DPLLRATIO);         // Wait for sync
+    OSCCTRL->Dpll[0].DPLLCTRLB.reg = 
+        OSCCTRL_DPLLCTRLB_REFCLK_GCLK |                         // Reference from GCLK (configured above)
+        OSCCTRL_DPLLCTRLB_LBYPASS;                              // Enable if low freq ref clock (see errata)
+    OSCCTRL->Dpll[0].DPLLCTRLA.reg = 
+        OSCCTRL_DPLLCTRLA_ENABLE;                               // Enable FDPLL0
+    while(OSCCTRL->Dpll[0].DPLLSYNCBUSY.bit.ENABLE);            // Wait for sync
+    while(!OSCCTRL->Dpll[0].DPLLSTATUS.bit.CLKRDY);             // Wait for ready
+    while(!OSCCTRL->Dpll[0].DPLLSTATUS.bit.LOCK);               // Wait for lock
 
-    // DPLL0 Config (reference clock = 32.768kHz)
-    GCLK->PCHCTRL[OSCCTRL_GCLK_ID_FDPLL0].reg = GCLK_PCHCTRL_CHEN       // Source from GCLK 3 and enable channel
-            | GCLK_PCHCTRL_GEN(3);
-    OSCCTRL->Dpll[0].DPLLRATIO.reg = OSCCTRL_DPLLRATIO_LDRFRAC(0x00) |  // Set ratio
-            OSCCTRL_DPLLRATIO_LDR((F_CPU - 500000) / 1000000);
-    
-    while(OSCCTRL->Dpll[0].DPLLSYNCBUSY.bit.DPLLRATIO);
-    
-    //MUST USE LBYPASS DUE TO BUG IN REV A OF SAMD51
-    OSCCTRL->Dpll[0].DPLLCTRLB.reg = OSCCTRL_DPLLCTRLB_REFCLK_GCLK | OSCCTRL_DPLLCTRLB_LBYPASS;
-    
-    OSCCTRL->Dpll[0].DPLLCTRLA.reg = OSCCTRL_DPLLCTRLA_ENABLE;
-    
-    while( OSCCTRL->Dpll[0].DPLLSTATUS.bit.CLKRDY == 0 || OSCCTRL->Dpll[0].DPLLSTATUS.bit.LOCK == 0 );    
+    // GCLK0 Configuration (120MHz now)
+    GCLK->GENCTRL[0].reg = 
+        GCLK_GENCTRL_SRC_DPLL0 |                                // Source from DPLL0
+        GCLK_GENCTRL_IDC |                                      // Better duty cycle for odd division factors
+        GCLK_GENCTRL_GENEN;                                     // Enable GCLK0
+    while(GCLK->SYNCBUSY.bit.GENCTRL0);                         // Wait for sync
 
-    ports_gpio_set(P_RED_LED);
+    // MCLK Configuration
+    MCLK->CPUDIV.reg = MCLK_CPUDIV_DIV_DIV1;                    // CPU clock = MCLK / 1 = 120MHz
 
-    // GCLK0 -> 120MHz from DPLL0
-    // GCLK0 is always the source for MCLK
-    GCLK->GENCTRL[0].bit.SRC = GCLK_GENCTRL_SRC_DPLL0_Val;              // GCLK0 soruced from DPLL0
-    GCLK->GENCTRL[0].bit.IDC = 1;                                       // Set IDC bit
-    GCLK->GENCTRL[0].bit.GENEN = 1;                                     // Enable GCLK0
-    while(GCLK->SYNCBUSY.bit.GENCTRL0);                                 // Wait for sync
-    MCLK->CPUDIV.reg = MCLK_CPUDIV_DIV_DIV1;                            // Configure MCLK divider for CPU clock
-
-    
+    // TODO: Setup peripheral clocks
 }
