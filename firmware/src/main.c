@@ -8,17 +8,38 @@
 #include <clocks.h>
 #include <ports.h>
 #include <stdint.h>
+#include <dotstar.h>
 
 
 int main(void){
-    ports_pinfunc(P_RED_LED, PORT_PINFUNC_GPIO);
-    ports_gpio_dir(P_RED_LED, PORT_GPIO_OUT);
-    ports_gpio_clear(P_RED_LED);
     clocks_init();
-    ports_gpio_set(P_RED_LED);
+    ports_init();
+    dotstar_init();
+
+    uint8_t state = 0;
     while(1){
-        ports_gpio_toggle(P_RED_LED);
-        delay_sec(1);
+        switch(state){
+        case 0:
+            dotstar_set(100, 0, 0);
+            break;
+        case 1:
+            dotstar_set(76, 20, 0);
+            break;
+        case 2:
+            dotstar_set(50, 50, 0);
+            break;
+        case 3:
+            dotstar_set(0, 100, 0);
+            break;
+        case 4:
+            dotstar_set(0, 0, 100);
+            break;
+        case 5:
+            dotstar_set(10, 0, 112);
+            break;
+        }
+        state = (state + 1) % 6;
+        delay_ms(250);
     }
 }
 

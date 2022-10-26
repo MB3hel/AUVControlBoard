@@ -8,6 +8,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -43,7 +44,7 @@
 #define PORT_GPIO_PULLUP            1
 #define PORT_GPIO_PULLDOWN          2
 
-// Output directions
+// Output directions (same as expected bool values)
 #define PORT_GPIO_LOW               0
 #define PORT_GPIO_HIGH              1
 
@@ -53,9 +54,12 @@
 #define PORT_GETPORT(def)               ((def & 0b11100000) >> 5)
 #define PORT_GETPIN(def)                (def & 0b00011111)
 
-// Project port definitions
-#define P_RED_LED                       PORT_DEFINE(PORT_A, 22)
-
+// -----------------------------------------------------------------------------
+// Project port definitions (pins used in this program)
+// -----------------------------------------------------------------------------
+#define P_DS_CLK                        PORT_DEFINE(PORT_B, 2)
+#define P_DS_DAT                        PORT_DEFINE(PORT_B, 3)
+// -----------------------------------------------------------------------------
 
 
 
@@ -63,18 +67,61 @@
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Set function for a pin (see datasheet p32 for specific meanings per pin)
+ * @param def Port / pin definition (PORT_DEF)
+ * @param pinfunc Function of the pin (PORT_PINFUNC_*)
+ */
 void ports_pinfunc(uint8_t def, int8_t pinfunc);
 
+/**
+ * Set direction for a gpio pin
+ * @param def Port / pin definition (PORT_DEF)
+ * @param dir PORT_GPIO_OUT or PORT_GPIO_IN
+ */
 void ports_gpio_dir(uint8_t def, uint8_t dir);
 
+/**
+ * Set pullup resistor for a gpio pin
+ * @param def Port / pin definition (PORT_DEF)
+ * @param pull PORT_GPIO_PULLOFF, PORT_GPIO_PULLUP, or PORT_GPIO_PULLDOWN
+ */
 void ports_gpio_pull(uint8_t def, uint8_t pull);
 
+/**
+ * Write output of gpio pin
+ * @param def Port / pin definition (PORT_DEF)
+ * @param out PORT_GPIO_LOW or PORT_GPIO_HIGH
+ */
 void ports_gpio_write(uint8_t def, uint8_t out);
 
+/**
+ * Set output of a pin (write HIGH)
+ * @param def Port / pin definition (PORT_DEF)
+ */
 void ports_gpio_set(uint8_t def);
 
+/**
+ * Clear output of a pin (write LOW)
+ * @param def Port / pin definition (PORT_DEF)
+ */
 void ports_gpio_clear(uint8_t def);
 
+/**
+ * Toggle output of a pin
+ * @param def Port / pin definition (PORT_DEF)
+ */
 void ports_gpio_toggle(uint8_t def);
 
+/**
+ * Read the value of a gpio pin
+ * @param def Port / pin definition (PORT_DEF)
+ * @return PORT_GPIO_LOW or PORT_GPIO_HIGH
+ */
 uint8_t ports_gpio_read(uint8_t def);
+
+/**
+ * Initialize ports & pins
+ * Sets up initial state for each used pin
+ */
+void ports_init(void);

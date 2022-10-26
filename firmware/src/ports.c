@@ -27,10 +27,14 @@ void ports_gpio_dir(uint8_t def, uint8_t dir){
     uint8_t port = PORT_GETPORT(def);
     uint8_t pin = PORT_GETPIN(def);
     if(dir == 0){
+        // Input pin
         PORT->Group[port].DIRCLR.reg = 0x1 << pin;
     }else{
+        // Output pin
         PORT->Group[port].DIRSET.reg = 0x1 << pin;
     }
+    // In both modes, enable input (allows reading OUT pin too)
+    PORT->Group[port].PINCFG[pin].bit.INEN = 1;
 }
 
 void ports_gpio_pull(uint8_t def, uint8_t pull){
@@ -83,4 +87,16 @@ uint8_t ports_gpio_read(uint8_t def){
     uint8_t port = PORT_GETPORT(def);
     uint8_t pin = PORT_GETPIN(def);
     return (PORT->Group[port].IN.reg & (0x1 << pin)) >> pin;
+}
+
+void ports_init(void){
+    // Dotstar CLK pin
+    ports_pinfunc(P_DS_CLK, PORT_PINFUNC_GPIO);
+    ports_gpio_dir(P_DS_CLK, PORT_GPIO_OUT);
+    ports_gpio_clear(P_DS_CLK);
+
+    // Dotstar DAT pin
+    ports_pinfunc(P_DS_DAT, PORT_PINFUNC_GPIO);
+    ports_gpio_dir(P_DS_DAT, PORT_GPIO_OUT);
+    ports_gpio_clear(P_DS_DAT);
 }
