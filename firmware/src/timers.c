@@ -45,6 +45,8 @@ void timers_tc0_init(void){
     while(TC0->COUNT16.SYNCBUSY.bit.COUNT);                         // Wait for sync
     TC0->COUNT16.CC[0].reg = TC0_CC0_OFFSET;                        // Initial interrupt time
     while(TC0->COUNT16.SYNCBUSY.bit.CC0);                           // Wait for sync
+    TC0->COUNT16.CC[1].reg = TC0_CC1_OFFSET;                        // Initial interrupt time
+    while(TC0->COUNT16.SYNCBUSY.bit.CC1);                           // Wait for sync
     TC0->COUNT16.INTFLAG.reg |= TC_INTFLAG_MASK;                    // Clear all interrupt flags
     TC0->COUNT16.INTENSET.bit.MC0 = 1;                              // Enable match channel 0 interrupt
     NVIC_EnableIRQ(TC0_IRQn);                                       // Enable TC0 Interrupt handler
@@ -192,5 +194,16 @@ void TC0_Handler(void){
         //       This won't be accessed again until next IRQ handler
         //       At which point it must have synchronized
         TC0->COUNT16.INTFLAG.reg |= TC_INTFLAG_MC0;                  // Clear flag
+    }
+    if(TC0->COUNT16.INTFLAG.bit.MC1){
+        // CC1 matched (10us interrupt rate)
+        // TODO: Implement things here later
+
+        // Configure to  interrupt again at configured period
+        TC0->COUNT16.CC[1].reg += TC0_CC1_OFFSET;                    // Adjust by offset
+        // NOTE: No need to wait for sync here and delay IRQ handler
+        //       This won't be accessed again until next IRQ handler
+        //       At which point it must have synchronized
+        TC0->COUNT16.INTFLAG.reg |= TC_INTFLAG_MC1;                  // Clear flag
     }
 }
