@@ -15,11 +15,31 @@ void delay_init(void){
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;             // Set trace enable bit to be able to use DWT
 }
 
-void delay_cycles(uint32_t cycles){
+void delay_us(uint32_t us){
+    uint32_t cycles = us * (SystemCoreClock / 1e6);
     DWT->CYCCNT = 0;                                            // Reset DWT Cycle Counter
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;                        // Enable cycle counter
     while(DWT->CYCCNT < cycles);
     DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk;                       // Disable cycle counter
+}
+
+void delay_ms(uint32_t ms){
+    uint32_t cycles = ms * (SystemCoreClock / 1e3);
+    DWT->CYCCNT = 0;                                            // Reset DWT Cycle Counter
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;                        // Enable cycle counter
+    while(DWT->CYCCNT < cycles);
+    DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk;                       // Disable cycle counter
+}
+
+void delay_sec(uint32_t sec){
+    // Clock is too fast to do delays longer than 35 seconds
+    // CYCCNT is 32-bit counter
+    // (2^32-1) / 120000000 = 35.8
+    // To make this more generic, just call delay_ms many times
+    // Overhead of function calls is small compared to the delay time
+    for(uint32_t i = sec; i > 0; --i){
+        delay_ms(1000);
+    }
 }
 
 /**

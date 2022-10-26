@@ -18,7 +18,7 @@ int main(void){
     ports_gpio_set(P_RED_LED);
     while(1){
         ports_gpio_toggle(P_RED_LED);
-        delay_cycles(CLOCKS_SEC_TO_CYCLES(1));
+        delay_sec(1);
     }
 }
 
