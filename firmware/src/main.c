@@ -11,6 +11,7 @@
 #include <dotstar.h>
 #include <flags.h>
 #include <timers.h>
+#include <pccomm.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -30,10 +31,11 @@ int main(void){
     ports_init();
     timers_init();
     dotstar_init();
-
+    dotstar_set(0, 0, 0);
+    pccomm_init();
 
     bool toggle = false;
-    dotstar_set(0, 0, 0);
+    
     while(1){
         if(FLAG_CHECK(flags_main, FLAG_MAIN_10MS)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_10MS);
@@ -76,9 +78,8 @@ int main(void){
             }
             toggle = !toggle;
             // -----------------------------------------------------------------
-        }else{
-            // TODO: Enter sleep mode
         }
+        pccomm_process();
     }
 }
 
