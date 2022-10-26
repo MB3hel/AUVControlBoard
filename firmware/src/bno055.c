@@ -7,6 +7,7 @@
 #include <util.h>
 #include <i2c0.h>
 #include <timers.h>
+#include <flags.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -463,6 +464,12 @@ void bno055_state_machine(uint8_t trigger){
     }
 
     
+    if(state == STATE_DELAY){
+        dotstar_set(0, 0, 255);
+    }else{
+        dotstar_set(0, 255, 0);
+    }
+
     // -----------------------------------------------------------------------------------------------------------------
     // Actions at START of state
     // -----------------------------------------------------------------------------------------------------------------
@@ -602,6 +609,8 @@ void bno055_state_machine(uint8_t trigger){
         trans.read_count = 0;
         i2c0_enqueue(&trans);
         break;
+    default:
+        dotstar_set(255, 0, 0);
     }
 }
 
@@ -632,6 +641,7 @@ bool bno055_init(void){
     i2c0_perform(&trans);
     if(trans.status == I2C_STATUS_ERROR)
         return false;
+    trans.status = I2C_STATUS_IDLE;
 
     // Delay between transactions or the chip won't respond
     timers_safe_delay(10);
@@ -644,8 +654,12 @@ bool bno055_init(void){
     i2c0_perform(&trans);
     if(trans.status == I2C_STATUS_ERROR)
         return false;
+    trans.status = I2C_STATUS_IDLE;
     if(read_buf[0] != BNO055_ID)
         return false;
+
+    // TODO: Remove this. Used during debugging.
+    FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_DONE);
     
     // Init done. Correct device is connected.
     // Delay after this transaction to ensure next one doesn't happen before sensor ready
@@ -670,7 +684,7 @@ void bno055_check_i2c(void){
     }else if(trans.status == I2C_STATUS_ERROR){
         trans.status = I2C_STATUS_IDLE;
         bno055_state_machine(TRIGGER_I2C_ERROR);
-    }    
+    }
 
     // If trans.status is BUSY or IDLE, this is not the transaction that finished
 }

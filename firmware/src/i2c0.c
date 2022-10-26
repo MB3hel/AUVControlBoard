@@ -184,8 +184,9 @@ void i2c0_perform(i2c_trans *trans){
 void i2c0_enqueue(i2c_trans *trans){
     // This should never happen
     // If it does, either queue is too small or i2c is too slow
-    if(count == QUEUE_SIZE)
+    if(count == QUEUE_SIZE){
         return;
+    }
     
     // Add trans to queue
     trans->status = I2C_STATUS_BUSY;
