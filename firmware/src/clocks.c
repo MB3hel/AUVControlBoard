@@ -6,7 +6,21 @@
 #include <clocks.h>
 #include <sam.h>
 #include <ports.h>
+#include <core_cm4.h>
 
+/**
+ * Setup for delays using CYCCNT register from M4 arm core
+ */
+void delay_init(void){
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;             // Set trace enable bit to be able to use DWT
+}
+
+void delay_cycles(uint32_t cycles){
+    DWT->CYCCNT = 0;                                            // Reset DWT Cycle Counter
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;                        // Enable cycle counter
+    while(DWT->CYCCNT < cycles);
+    DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk;                       // Disable cycle counter
+}
 
 /**
  * ItsyBitsy M4 Express has not external crystal, thus all clocks must
@@ -130,5 +144,8 @@ void clocks_init(void){
     // MCLK Configuration
     MCLK->CPUDIV.reg = MCLK_CPUDIV_DIV_DIV1;                    // CPU clock = MCLK / 1 = 120MHz
 
-    // TODO: Setup peripheral clocks
+    // Update this variable (in case used elsewhere)
+    SystemCoreClock = 120000000;
+
+    delay_init();
 }
