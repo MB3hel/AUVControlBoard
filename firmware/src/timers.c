@@ -7,7 +7,7 @@
 #include <clocks.h>
 #include <flags.h>
 #include <sam.h>
-#include <stdlib.h>
+#include <util.h>
 #include <dotstar.h>
 
 
@@ -56,7 +56,7 @@ void timers_tc0_init(void){
     TC0->COUNT32.CTRLA.bit.RUNSTDBY = 1;                            // Run in standby mode
     TC0->COUNT32.CTRLA.bit.MODE = TC_CTRLA_MODE_COUNT32_Val;        // Put timer in 32-bit mode
     
-    TC0->COUNT32.CTRLBCLR.bit.DIR = 1;                              // Clear count direction bit (set to 0) = count up
+    TC0->COUNT32.CTRLBCLR.reg = TC_CTRLBSET_MASK;                   // Zero CTRLB register
     while(TC0->COUNT32.SYNCBUSY.bit.CTRLB);                         // Wait for sync
 
     TC0->COUNT32.COUNT.reg = 0;                                     // Start from 0
@@ -67,6 +67,8 @@ void timers_tc0_init(void){
     
     TC1->COUNT32.CC[1].reg = TC0_CC1_OFFSET;                        // Set initial CC0 value
     while(TC0->COUNT32.SYNCBUSY.bit.CC1);                           // Wait for sync
+
+    TC0->COUNT32.INTFLAG.reg |= TC_INTFLAG_MASK;                    // Clear all interrupt flags
 
     TC0->COUNT32.INTENSET.bit.MC0 = 1;                              // Enable match channel 0 interrupt
     TC0->COUNT32.INTENSET.bit.MC1 = 1;                              // Enable match channel 1 interrupt
@@ -179,7 +181,6 @@ void timers_init(void){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void TC0_Handler(void){
-    dotstar_set(0, rand() % 255, 0);
     if(TC0->COUNT32.INTFLAG.bit.MC0){
         // CC0 matched (1ms interrupt rate)
 
