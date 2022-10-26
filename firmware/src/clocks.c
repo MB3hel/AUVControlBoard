@@ -94,6 +94,8 @@ void delay_sec(uint32_t sec){
  * 
  */
 void clocks_init(void){
+    NVMCTRL->CTRLA.bit.RWS = 0;
+
     GCLK->CTRLA.bit.SWRST = 1;                                  // Reset GCLKs
     while(GCLK->SYNCBUSY.bit.SWRST);                            // Wait for reset
 

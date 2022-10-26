@@ -1,18 +1,30 @@
 
 #include <pccomm.h>
 
+#include <sam.h>
+#include <clocks.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
 #include "tusb.h"
-#include "bsp/board.h"
-
 
 static void cdc_task(void);
 
 void pccomm_init(void){
+    GCLK->PCHCTRL[USB_GCLK_ID].bit.GEN = CLOCKS_GCLK_48M;
+    GCLK->PCHCTRL[USB_GCLK_ID].bit.CHEN = 1;
+    
+    MCLK->AHBMASK.bit.USB_ = 1;
+    MCLK->APBBMASK.bit.USB_ = 1;
+
+    NVIC_EnableIRQ(USB_0_IRQn);
+    NVIC_EnableIRQ(USB_1_IRQn);
+    NVIC_EnableIRQ(USB_2_IRQn);
+    NVIC_EnableIRQ(USB_3_IRQn);
+
     tud_init(BOARD_TUD_RHPORT);
 }
 
@@ -71,4 +83,22 @@ static void cdc_task(void)
       }
     }
   }
+}
+
+
+
+void USB_0_Handler (void){
+    tud_int_handler(0);
+}
+
+void USB_1_Handler (void){
+    tud_int_handler(0);
+}
+
+void USB_2_Handler (void){
+    tud_int_handler(0);
+}
+
+void USB_3_Handler (void){
+    tud_int_handler(0);
 }

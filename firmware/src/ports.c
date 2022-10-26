@@ -99,4 +99,10 @@ void ports_init(void){
     ports_pinfunc(P_DS_DAT, PORT_PINFUNC_GPIO);
     ports_gpio_dir(P_DS_DAT, PORT_GPIO_OUT);
     ports_gpio_clear(P_DS_DAT);
+
+    // USB DM pin
+    ports_pinfunc(P_USB_DM, MUX_PA24H_USB_DM);
+
+    // USB DP pin
+    ports_pinfunc(P_USB_DP, MUX_PA25H_USB_DP);
 }
