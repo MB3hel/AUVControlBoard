@@ -32,6 +32,7 @@ int main(void){
 
 
     bool toggle = false;
+    dotstar_set(0, 0, 0);
     while(1){
         if(FLAG_CHECK(flags_main, FLAG_MAIN_10MS)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_10MS);
@@ -68,9 +69,9 @@ int main(void){
             // -----------------------------------------------------------------
             // Blink dotstar LED
             if(toggle){
-                dotstar_set(32, 0, 0);
-            }else{
                 dotstar_set(0, 0, 0);
+            }else{
+                dotstar_set(32, 0, 0);
             }
             toggle = !toggle;
             // -----------------------------------------------------------------
