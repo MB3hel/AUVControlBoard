@@ -5,7 +5,10 @@
 
 #include <timers.h>
 #include <clocks.h>
+#include <flags.h>
 #include <sam.h>
+#include <stdlib.h>
+#include <dotstar.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -14,6 +17,17 @@
 
 #define TC0_CC0_OFFSET          15000                               // 15MHz / 15000 = 1000Hz IRQ rate (1ms period)
 #define TC0_CC1_OFFSET          150                                 // 15MHz / 150 = 100kHz IRQ rate (10us period)
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Globals
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+static unsigned int counter_10ms;                                   // Used for 10ms timing
+static unsigned int counter_20ms;                                   // Used for 20ms timing
+static unsigned int counter_50ms;                                   // Used for 50ms timing
+static unsigned int counter_100ms;                                  // Used for 100ms timing
+static unsigned int counter_1000ms;                                 // Used for 1000ms timing
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -37,7 +51,8 @@ void timers_tc0_init(void){
         TC_CTRLA_CAPTMODE0_DEFAULT_Val;                             // Default capture mode (Ch1)
     TC0->COUNT32.CTRLA.bit.CAPTEN0 = 0;                             // Disable capture (Ch0)
     TC0->COUNT32.CTRLA.bit.CAPTEN1 = 0;                             // Disable capture (Ch1)
-    TC0->COUNT32.CTRLA.bit.PRESCALER = TC_CTRLA_PRESCALER_DIV8;     // 120MHz / 8 = 15MHz count rate
+    TC0->COUNT32.CTRLA.bit.PRESCALER = 
+        TC_CTRLA_PRESCALER_DIV8_Val;                                // 120MHz / 8 = 15MHz count rate
     TC0->COUNT32.CTRLA.bit.RUNSTDBY = 1;                            // Run in standby mode
     TC0->COUNT32.CTRLA.bit.MODE = TC_CTRLA_MODE_COUNT32_Val;        // Put timer in 32-bit mode
     
@@ -137,13 +152,25 @@ void timers_init(void){
     // Not used
     // -----------------------------------------------------------------------------------------------------------------
 
+    // -----------------------------------------------------------------------------------------------------------------
+    // Initialize counter
+    // -----------------------------------------------------------------------------------------------------------------
+    counter_10ms = 0;
+    counter_100ms = 0;
+    counter_1000ms = 0;
+    // -----------------------------------------------------------------------------------------------------------------
+
+
+    // -----------------------------------------------------------------------------------------------------------------
     // Init each timer
+    // -----------------------------------------------------------------------------------------------------------------
     timers_tc0_init();
     timers_tc1_init();
     timers_tc2_init();
     timers_tc3_init();
     timers_tcc0_init();
     timers_tcc1_init();
+    // -----------------------------------------------------------------------------------------------------------------
 }
 
 
@@ -152,8 +179,51 @@ void timers_init(void){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void TC0_Handler(void){
+    dotstar_set(0, rand() % 255, 0);
     if(TC0->COUNT32.INTFLAG.bit.MC0){
         // CC0 matched (1ms interrupt rate)
-        // TODO: Is this even useful???
+
+        // Handle counters
+        counter_10ms++;
+        if(counter_10ms == 10){
+            counter_10ms = 0;
+            FLAG_SET(flags_main, FLAG_MAIN_10MS);
+        }
+        counter_20ms++;
+        if(counter_20ms == 20){
+            counter_20ms = 0;
+            FLAG_SET(flags_main, FLAG_MAIN_20MS);
+        }
+        counter_50ms++;
+        if(counter_50ms == 50){
+            counter_50ms = 0;
+            FLAG_SET(flags_main, FLAG_MAIN_50MS);
+        }
+        counter_100ms++;
+        if(counter_100ms == 100){
+            counter_100ms = 0;
+            FLAG_SET(flags_main, FLAG_MAIN_100MS);
+        }
+        counter_1000ms++;
+        if(counter_1000ms == 10){
+            counter_1000ms = 0;
+            FLAG_SET(flags_main, FLAG_MAIN_1000MS);
+        }
+
+        TC0->COUNT32.CC[0].reg += TC0_CC0_OFFSET;                    // Adjust by offset
+        // NOTE: No need to wait for sync here and delay IRQ handler
+        //       This won't be accessed again until next IRQ handler
+        //       At which point it must have synchronized
+        TC0->COUNT32.INTFLAG.reg |= TC_INTFLAG_MC0;                  // Clear flag
+    }
+    if(TC0->COUNT32.INTFLAG.bit.MC1){
+        // CC1 matched (10us interrupt rate)
+        // No counters on this one for now
+
+        TC0->COUNT32.CC[1].reg += TC0_CC1_OFFSET;                    // Adjust by offset
+        // NOTE: No need to wait for sync here and delay IRQ handler
+        //       This won't be accessed again until next IRQ handler
+        //       At which point it must have synchronized
+        TC0->COUNT32.INTFLAG.reg |= TC_INTFLAG_MC1;                  // Clear flag
     }
 }

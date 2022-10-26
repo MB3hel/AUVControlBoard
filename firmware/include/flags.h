@@ -22,7 +22,11 @@
 
 
 // Flags in flags_main field
-// TODO
+#define FLAG_MAIN_10MS              0b0000000000000001
+#define FLAG_MAIN_20MS              0b0000000000000010
+#define FLAG_MAIN_50MS              0b0000000000000100
+#define FLAG_MAIN_100MS             0b0000000000001000
+#define FLAG_MAIN_1000MS            0b0000000000010000
 
 // Defined in main.c
 extern volatile uint16_t flags_main;
