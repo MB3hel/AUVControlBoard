@@ -8,6 +8,7 @@
 #include <i2c0.h>
 #include <timers.h>
 #include <flags.h>
+#include <pccomm.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -613,6 +614,11 @@ void bno055_state_machine(uint8_t trigger){
         dotstar_set(255, 255, 255);
         break;
     }
+}
+
+// TODO: Remove this
+void bno055_debug(void){
+    pccomm_write_msg((uint8_t[]){'B', 'N', 'O', '0', '5', '5', state}, 7);
 }
 
 bool bno055_init(void){

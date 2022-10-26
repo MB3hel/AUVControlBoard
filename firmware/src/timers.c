@@ -126,7 +126,7 @@ void timers_i2c0_timeout_init(void (*target)(void), uint32_t timeout){
     task_i2c0_timeout.mode = TIMER_TASK_ONE_SHOT;
 }
 
-void timers_i2c0_timeout_reset(void){
+void timers_i2c0_timeout_enable(void){
     timer_remove_task(&TIMER_0, &task_i2c0_timeout);
     timer_add_task(&TIMER_0, &task_i2c0_timeout);
 }
