@@ -82,7 +82,7 @@ int main(void){
     cmdctrl_init();                                 // Initialize cmd & ctrl system
     i2c0_init();                                    // Initialize i2c0
     timers_init();                                  // Initialize timers
-    timers_wdt_enable();                            // Enable WDT now
+    // timers_wdt_enable();                            // Enable WDT now
 
     timers_safe_delay(500);                         // Wait ~500ms for sensors to power on
 

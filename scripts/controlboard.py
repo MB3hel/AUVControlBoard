@@ -10,6 +10,7 @@ from crccheck.crc import Crc16CcittFalse as Crc16
 
 
 debug_prints = True
+log_rx = False
 
 
 class Quaternion:
@@ -228,6 +229,9 @@ class ControlBoard:
 
         # Done with crc data
         msg = msg[:-2]
+
+        if log_rx:
+            print(msg)
 
         # Handle the message
         if msg.startswith(b'MODE'):

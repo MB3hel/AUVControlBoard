@@ -610,7 +610,8 @@ void bno055_state_machine(uint8_t trigger){
         i2c0_enqueue(&trans);
         break;
     default:
-        dotstar_set(255, 0, 0);
+        dotstar_set(255, 255, 255);
+        break;
     }
 }
 
