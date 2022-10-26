@@ -1,7 +1,7 @@
 /**
- * Clock configuration
+ * Port configuration
  * 
- * @file clocks.h
+ * @file ports.h
  * @author Marcus Behel
  */
 
