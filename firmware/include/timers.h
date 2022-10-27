@@ -23,3 +23,9 @@
  * Initialize all timers
  */
 void timers_init(void);
+
+/**
+ * Set thruster speeds using PWM signals
+ * @param speeds Array of 8 speeds (-1.0 to 1.0)
+ */
+void timers_thruster_pwm_set(float *speeds);

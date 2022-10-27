@@ -61,6 +61,14 @@
 #define P_DS_DAT                        PORT_DEFINE(PORT_B, 3)
 #define P_USB_DM                        PORT_DEFINE(PORT_A, 24)
 #define P_USB_DP                        PORT_DEFINE(PORT_A, 25)
+#define P_THR1_PWM                      PORT_DEFINE(PORT_A, 22)
+#define P_THR2_PWM                      PORT_DEFINE(PORT_A, 23)
+#define P_THR3_PWM                      PORT_DEFINE(PORT_A, 21)
+#define P_THR4_PWM                      PORT_DEFINE(PORT_A, 20)
+#define P_THR5_PWM                      PORT_DEFINE(PORT_A, 19)
+#define P_THR6_PWM                      PORT_DEFINE(PORT_A, 18)
+#define P_THR7_PWM                      PORT_DEFINE(PORT_A, 17)
+#define P_THR8_PWM                      PORT_DEFINE(PORT_A, 16)
 // -----------------------------------------------------------------------------
 
 
