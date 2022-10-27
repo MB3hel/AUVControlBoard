@@ -10,6 +10,7 @@
 #include <timers.h>
 #include <flags.h>
 #include <util.h>
+#include <dotstar.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -65,10 +66,6 @@ void usb_process(void){
     static bool parse_escaped = false;
 
     tud_task();                                                     // TinyUSB task for device 
-    
-    // Write stuff in buffer
-    // TODO: Get rid of this
-    tud_cdc_write_flush();
 
     // Parse a finite number of received bytes
     if (tud_cdc_connected() && tud_cdc_available()){
@@ -170,10 +167,7 @@ uint32_t usb_getmsg(uint8_t *dest){
 }
 
 void usb_writemsg(uint8_t *msg, uint32_t len){
-    // TODO: Probably need another buffer here or need to increase TinyUSB buffer size
-    //       Messages can be max length of 128, but TX buffer is only 64...
-    if(len > tud_cdc_write_available())
-        tud_cdc_write_flush();
+    // TODO: Handle FIFO too full (write returns count smaller than requested)
 
     tud_cdc_write_char(START_BYTE);
     for(uint32_t i = 0; i < len; ++i){
@@ -194,6 +188,10 @@ void usb_writemsg(uint8_t *msg, uint32_t len){
     tud_cdc_write_char(low_byte);
 
     tud_cdc_write_char(END_BYTE);
+
+    // Typically, TinyUSB will only send data once the FIFO is the equal to the bulk packet size
+    // Calling this will cause a transfer to start now if one isn't already in progress
+    tud_cdc_write_flush();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -221,7 +219,7 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
             // THIS IS SPECIFIC TO ITSY BITSY M4!!!
             #define DOUBLE_TAP_MAGIC             0xf01669efUL
             #define BOOT_DOUBLE_TAP_ADDRESS     (HSRAM_ADDR + HSRAM_SIZE - 4)
-            unsigned long *a = (unsigned long *)BOOT_DOUBLE_TAP_ADDRESS;
+            volatile unsigned long *a = (unsigned long *)BOOT_DOUBLE_TAP_ADDRESS;
             *a = DOUBLE_TAP_MAGIC;
 
             // Reset the system now
@@ -232,6 +230,10 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
 
 void tud_cdc_rx_cb(uint8_t itf){
     // Run when CDC receives data from host
+}
+
+void tud_cdc_tx_complete_cb(uint8_t itf){
+    // Run when transmit complete (no data in write fifo)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

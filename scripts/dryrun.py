@@ -23,12 +23,12 @@ if __name__ == "__main__":
             print("Fail.", flush=True)
             exit(1)
 
-        print("Setting motor inversions...", end="", flush=True)
-        if cb.set_inverted(True, True, False, False, True, False, False, True):
-            print("Done.", flush=True)
-        else:
-            print("Fail.", flush=True)
-            exit(1)
+        # print("Setting motor inversions...", end="", flush=True)
+        # if cb.set_inverted(True, True, False, False, True, False, False, True):
+        #     print("Done.", flush=True)
+        # else:
+        #     print("Fail.", flush=True)
+        #     exit(1)
     except KeyboardInterrupt:
         print("")
         print("Interrupted by user")
