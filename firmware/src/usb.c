@@ -22,17 +22,17 @@ void usb_init(void){
     MCLK->AHBMASK.bit.USB_ = 1;                                     // Enable AHB clock to USB
     MCLK->APBBMASK.bit.USB_ = 1;                                    // Enable APB clock to USB
 
-	NVIC_SetPriority(USB_0_IRQn, 0UL);                              // Give USB interrupts highest priority
-	NVIC_SetPriority(USB_1_IRQn, 0UL);                              // Give USB interrupts highest priority
-	NVIC_SetPriority(USB_2_IRQn, 0UL);                              // Give USB interrupts highest priority
-	NVIC_SetPriority(USB_3_IRQn, 0UL);                              // Give USB interrupts highest priority
+    NVIC_SetPriority(USB_0_IRQn, 0UL);                              // Give USB interrupts highest priority
+    NVIC_SetPriority(USB_1_IRQn, 0UL);                              // Give USB interrupts highest priority
+    NVIC_SetPriority(USB_2_IRQn, 0UL);                              // Give USB interrupts highest priority
+    NVIC_SetPriority(USB_3_IRQn, 0UL);                              // Give USB interrupts highest priority
 
     NVIC_EnableIRQ(USB_0_IRQn);                                     // Enable interrupt handlers for USB
     NVIC_EnableIRQ(USB_1_IRQn);                                     // Enable interrupt handlers for USB
     NVIC_EnableIRQ(USB_2_IRQn);                                     // Enable interrupt handlers for USB
     NVIC_EnableIRQ(USB_3_IRQn);                                     // Enable interrupt handlers for USB
 
-	tud_init(BOARD_TUD_RHPORT);                                     // Initialize TinyUSB
+    tud_init(BOARD_TUD_RHPORT);                                     // Initialize TinyUSB
 }
 
 void usb_process(void){
@@ -69,10 +69,10 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
             // Special things to reboot to bootloader instead of main program
             // Must match bootloader. Taken from Adafruit/ArduinoCore-samd Reset.cpp
             // THIS IS SPECIFIC TO ITSY BITSY M4!!!
-            #define DOUBLE_TAP_MAGIC 			0xf01669efUL
-	        #define BOOT_DOUBLE_TAP_ADDRESS     (HSRAM_ADDR + HSRAM_SIZE - 4)
+            #define DOUBLE_TAP_MAGIC             0xf01669efUL
+            #define BOOT_DOUBLE_TAP_ADDRESS     (HSRAM_ADDR + HSRAM_SIZE - 4)
             unsigned long *a = (unsigned long *)BOOT_DOUBLE_TAP_ADDRESS;
-	        *a = DOUBLE_TAP_MAGIC;
+            *a = DOUBLE_TAP_MAGIC;
 
             // Reset the system now
             TIMERS_WDT_RESET_NOW();
