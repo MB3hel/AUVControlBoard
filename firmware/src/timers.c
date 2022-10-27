@@ -109,6 +109,22 @@ void timers_tcc2_init(void){
 
 }
 
+/**
+ * Initialize WDT
+ * Note: Counts at fixed 1024Hz rate on this chip
+ */
+void timers_wdt_init(void){
+    MCLK->APBAMASK.bit.WDT_ = 1;                                    // Enable APB clock to WDT
+
+    WDT->CTRLA.bit.ENABLE = 0;                                      // Disable before config
+    while(WDT->SYNCBUSY.bit.ENABLE);                                // Wait for sync
+    WDT->CTRLA.bit.WEN = 0;                                         // Disable window mode
+    while(WDT->SYNCBUSY.bit.WEN);                                   // Wait for sync
+    WDT->CONFIG.bit.PER = WDT_CONFIG_PER_CYC2048_Val;               // 2048 cycles = 2 seconds
+    WDT->CTRLA.bit.ENABLE = 1;                                      // Enable WDT
+    while(WDT->SYNCBUSY.bit.ENABLE);                                // Wait for sync
+}
+
 void timers_init(void){
     // -----------------------------------------------------------------------------------------------------------------
     // GCLK config (shared between some timers)
@@ -140,9 +156,9 @@ void timers_init(void){
     timers_tc3_init();
     timers_tcc0_init();
     timers_tcc1_init();
+    timers_wdt_init();
     // -----------------------------------------------------------------------------------------------------------------
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// IRQ Handlers

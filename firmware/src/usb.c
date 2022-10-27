@@ -7,6 +7,7 @@
 #include <sam.h>
 #include <clocks.h>
 #include <tusb.h>
+#include <timers.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -57,6 +58,18 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
     // DTR = Data Terminal Ready
     // RTS = Ready to Send
     // DRT usually set when terminal connected
+
+    // sam-ba upload protocol uses a 1200bps "touch" to trigger a reset
+    // Handle this as expected
+    // Not strictly necessary, but prevents having to press reset button to program
+    if (!dtr && itf == 0) {
+        cdc_line_coding_t coding;
+        tud_cdc_get_line_coding(&coding);
+        if (coding.bit_rate == 1200){
+            // TODO: Figure out how to boot to bootloader instead of normal program
+            TIMERS_WDT_RESET_NOW();
+        }
+    }
 }
 
 void tud_cdc_rx_cb(uint8_t itf){
