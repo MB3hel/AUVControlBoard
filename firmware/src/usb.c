@@ -170,6 +170,7 @@ inline static void __attribute__((always_inline)) usb_writeone(uint8_t c) {
     // If the write fails, the FIFO is full
     // Really this shouldn't happen. If it does, the FIFO size should probably
     // be increased in tusb_config.h
+    // FIFO should at least be the size of one message. Probably multiple.
     // This will block until write succeeds
     while(tud_cdc_write_char(c) == 0){
         // Write failed.
