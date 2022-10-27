@@ -14,6 +14,7 @@
 #include <usb.h>
 #include <util.h>
 #include <conversions.h>
+#include <cmdctrl.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -40,8 +41,8 @@ int main(void){
     timers_init();                                              // Initialize timers
     dotstar_init();                                             // Initialize dotstar
     conversions_init();                                         // Initialize conversions
+    cmdctrl_init();                                             // Initialize command & control
     usb_init();                                                 // Initialize USB
-    dotstar_set(0, 0, 0);                                       // Turn off LED after init
 
     // -----------------------------------------------------------------------------------------------------------------
     // Main loop
@@ -77,7 +78,7 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
             // Runs every 100ms
             // ---------------------------------------------------------------------------------------------------------
-            // Nothing here
+            cmdctrl_update_led();
             // ---------------------------------------------------------------------------------------------------------
         }
         if(FLAG_CHECK(flags_main, FLAG_MAIN_1000MS)){
@@ -94,17 +95,8 @@ int main(void){
             // Runs when a message is in the usb message queue
             // ---------------------------------------------------------------------------------------------------------
             msg_len = usb_getmsg(msg);
-            if(data_matches(msg, msg_len, (uint8_t[]){'O', 'N'}, 2)){
-                dotstar_set(32, 0, 0);
-            }else if(data_matches(msg, msg_len, (uint8_t[]){'O', 'F', 'F'}, 3)){
-                dotstar_set(0, 0, 0);
-            }else if(data_matches(msg, msg_len, (uint8_t[]){'P', 'O', 'S'}, 3)){
-                timers_thruster_pwm_set((float[]){1, 1, 1, 1, 1, 1, 1, 1});
-            }else if(data_matches(msg, msg_len, (uint8_t[]){'N', 'E', 'G'}, 3)){
-                timers_thruster_pwm_set((float[]){-1, -1, -1, -1, -1, -1, -1, -1});
-            }else if(data_matches(msg, msg_len, (uint8_t[]){'S', 'T', 'O', 'P'}, 4)){
-                timers_thruster_pwm_set((float[]){0, 0, 0, 0, 0, 0, 0, 0});
-            }
+            if(msg_len > 0)
+                cmdctrl_handle_msg(msg, msg_len);
             // ---------------------------------------------------------------------------------------------------------
 
         }
