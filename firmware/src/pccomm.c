@@ -3,6 +3,7 @@
 
 #include <sam.h>
 #include <clocks.h>
+#include <ports.h>
 
 #include "tusb.h"
 
@@ -14,18 +15,6 @@ void pccomm_init(void){
     
     MCLK->AHBMASK.bit.USB_ = 1;
     MCLK->APBBMASK.bit.USB_ = 1;
-
-	// Set up the USB DP/DN pins
-    PORT->Group[0].PINCFG[PIN_PA24H_USB_DM].bit.PMUXEN = 1;
-    PORT->Group[0].PMUX[PIN_PA24H_USB_DM / 2].reg &=
-        ~(0xF << (4 * (PIN_PA24H_USB_DM & 0x01u)));
-    PORT->Group[0].PMUX[PIN_PA24H_USB_DM / 2].reg |=
-        MUX_PA24H_USB_DM << (4 * (PIN_PA24H_USB_DM & 0x01u));
-    PORT->Group[0].PINCFG[PIN_PA25H_USB_DP].bit.PMUXEN = 1;
-    PORT->Group[0].PMUX[PIN_PA25H_USB_DP / 2].reg &=
-        ~(0xF << (4 * (PIN_PA25H_USB_DP & 0x01u)));
-    PORT->Group[0].PMUX[PIN_PA25H_USB_DP / 2].reg |=
-        MUX_PA25H_USB_DP << (4 * (PIN_PA25H_USB_DP & 0x01u));
 
 	NVIC_SetPriority(USB_0_IRQn, 0UL);
 	NVIC_SetPriority(USB_1_IRQn, 0UL);

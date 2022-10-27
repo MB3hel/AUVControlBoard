@@ -12,7 +12,7 @@ void ports_pinfunc(uint8_t def, int8_t pinfunc){
     if(pinfunc == PORT_PINFUNC_GPIO){
         PORT->Group[port].PINCFG[pin].bit.PMUXEN = 0;
     }else{
-        PORT->Group[port].PINCFG[pin].bit.PMUXEN = 0;
+        PORT->Group[port].PINCFG[pin].bit.PMUXEN = 1;
         if(PORT_GETPIN(def) & 0x1){
             // Odd pin (pmux group pin / 2 = pin >> 1)
             PORT->Group[port].PMUX[pin >> 1].bit.PMUXO = pinfunc;
@@ -101,8 +101,8 @@ void ports_init(void){
     ports_gpio_clear(P_DS_DAT);
 
     // USB DM pin
-    // ports_pinfunc(P_USB_DM, MUX_PA24H_USB_DM);
+    ports_pinfunc(P_USB_DM, MUX_PA24H_USB_DM);    
 
-    // // USB DP pin
-    // ports_pinfunc(P_USB_DP, MUX_PA25H_USB_DP);
+    // USB DP pin
+    ports_pinfunc(P_USB_DP, MUX_PA25H_USB_DP);
 }
