@@ -27,6 +27,9 @@ volatile uint16_t flags_main = 0;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(void){
+    // -------------------------------------------------------------------------
+    // Initialization
+    // -------------------------------------------------------------------------
     clocks_init();
     ports_init();
     timers_init();
@@ -35,7 +38,12 @@ int main(void){
 
     bool toggle = false;
     dotstar_set(0, 0, 0);
+
+    // -------------------------------------------------------------------------
+    // Main loop
+    // -------------------------------------------------------------------------
     while(1){
+        // Handle flags
         if(FLAG_CHECK(flags_main, FLAG_MAIN_10MS)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_10MS);
             // -----------------------------------------------------------------
@@ -43,28 +51,32 @@ int main(void){
             // -----------------------------------------------------------------
             TIMERS_WDT_FEED();
             // -----------------------------------------------------------------
-        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_20MS)){
+        }
+        if(FLAG_CHECK(flags_main, FLAG_MAIN_20MS)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_20MS);
             // -----------------------------------------------------------------
             // Runs every 20ms
             // -----------------------------------------------------------------
             // Nothing here
             // -----------------------------------------------------------------
-        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_50MS)){
+        }
+        if(FLAG_CHECK(flags_main, FLAG_MAIN_50MS)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_50MS);
             // -----------------------------------------------------------------
             // Runs every 50ms
             // -----------------------------------------------------------------
             // Nothing here
             // -----------------------------------------------------------------
-        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_100MS)){
+        }
+        if(FLAG_CHECK(flags_main, FLAG_MAIN_100MS)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_100MS);
             // -----------------------------------------------------------------
             // Runs every 100ms
             // -----------------------------------------------------------------
             // Nothing here
             // -----------------------------------------------------------------
-        }else if(FLAG_CHECK(flags_main, FLAG_MAIN_1000MS)){
+        }
+        if(FLAG_CHECK(flags_main, FLAG_MAIN_1000MS)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_1000MS);
             // -----------------------------------------------------------------
             // Runs every 1000ms
@@ -78,6 +90,8 @@ int main(void){
             toggle = !toggle;
             // -----------------------------------------------------------------
         }
+
+        // Always process usb (allows tinyusb to handle events)
         usb_process();
     }
 }

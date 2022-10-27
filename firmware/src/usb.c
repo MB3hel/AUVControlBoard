@@ -8,6 +8,32 @@
 #include <clocks.h>
 #include <tusb.h>
 #include <timers.h>
+#include <flags.h>
+#include <util.h>
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Macros
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define MSG_QUEUE_SZ                6                               // Max number of messages in message queue
+#define MAX_MSG_LEN                 128                             // Max number of bytes in one message
+
+#define START_BYTE                  253                             // Communication  protocol start byte
+#define END_BYTE                    254                             // Communication protocol end byte
+#define ESCAPE_BYTE                 255                             // Communication protocol end byte
+
+// Write c into the current message in the queue
+#define WRITE_CURR_MSG(c)           msg_queue[msg_queue_widx][msg_queue_pos[msg_queue_widx]++] = (c)
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Globals
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+static uint8_t msg_queue[MSG_QUEUE_SZ][MAX_MSG_LEN+2];              // Holds complete received messages & crcs
+static uint32_t msg_queue_pos[MSG_QUEUE_SZ];                        // Size of messages in each spot of queue
+static uint32_t msg_queue_widx;                                     // Index in queue to place next message at
+static uint32_t msg_queue_ridx;                                     // Index in queue to read next message from
+static uint32_t msg_queue_count;                                    // Number of complete messages in queue
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -36,15 +62,74 @@ void usb_init(void){
 }
 
 void usb_process(void){
+    static bool parse_started = false;
+    static bool parse_escaped = false;
+
     tud_task();                                                     // TinyUSB task for device 
     
-    // Handle data from CDC interface (echo)
-    if (tud_cdc_connected()){
-        if(tud_cdc_available()){
-            char buf[64];
-            uint32_t count = tud_cdc_read(buf, sizeof(buf));
-            tud_cdc_write(buf, count);
-            tud_cdc_write_flush();
+    // Parse a finite number of received bytes
+    if (tud_cdc_connected() && tud_cdc_available()){
+        uint8_t buf[64];
+        uint32_t count = tud_cdc_read(buf, 64);
+        // Only add data to message queue if it is not full
+        // It should never fill up, but just in case.
+        // If it fills up, probably needs to be larger
+        if(msg_queue_count < MSG_QUEUE_SZ){
+            for(uint32_t i = 0; i < count; ++i){
+                // Handle one byte
+                // This implements the parser
+                if(parse_escaped){
+                    // Previous was escape byte
+                    // Handle valid escape sequences
+                    // Ignore invalid escaped bytes
+                    if(buf[i] == START_BYTE || buf[i] == END_BYTE || buf[i] == ESCAPE_BYTE)
+                        WRITE_CURR_MSG(buf[i]);
+                    parse_escaped = false;
+                }else if(parse_started){
+                    switch(buf[i]){
+                    case START_BYTE:
+                        // Got second start byte.
+                        // Discard previous data (never got end byte)
+                        msg_queue_pos[msg_queue_widx] = 0;
+                        break;
+                    case END_BYTE:
+                        // Got a complete message.
+                        if(msg_queue_pos[msg_queue_widx] >= 3){
+                            // Must have at least one data byte + crc
+                            volatile uint8_t *crc_data = &msg_queue[msg_queue_widx][msg_queue_pos[msg_queue_widx] - 2];
+                            uint16_t read_crc = (crc_data[0] << 8) | crc_data[1];
+                            uint16_t calc_crc = crc16_ccitt(msg_queue[msg_queue_widx], msg_queue_pos[msg_queue_widx] - 2);
+                            if(read_crc == calc_crc){
+                                // Valid message. Move widx to next spot in queue.
+                                msg_queue_widx++;
+                                if(msg_queue_widx >= MSG_QUEUE_SZ)
+                                    msg_queue_widx = 0;
+                                msg_queue_count++;
+
+                                // Indicate to main tree that there is a message it should process
+                                FLAG_SET(flags_main, FLAG_MAIN_USBMSG);
+                            }else{
+                                // Not a valid message. Clear queue spot
+                                msg_queue_pos[msg_queue_widx] = 0;
+                            }
+                        }else{
+                            // Not a valid message. Clear queue spot
+                            msg_queue_pos[msg_queue_widx] = 0;
+                        }
+                        parse_started = false;
+                        parse_escaped = false;
+                        break;
+                    case ESCAPE_BYTE:
+                        parse_escaped = true;
+                        break;
+                    default:
+                        WRITE_CURR_MSG(buf[i]);
+                        break;
+                    }
+                }else if(buf[i] == START_BYTE){
+                    parse_started = true;
+                }
+            }
         }
     }
 }
@@ -62,6 +147,9 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
     // sam-ba upload protocol uses a 1200bps "touch" to trigger a reset
     // Handle this as expected
     // Not strictly necessary, but prevents having to press reset button to program
+    // 1200bps "touch" means opening the port at 1200bps then closing it again (quickly)
+    // Nothing is implemented here with timing. It just boots to bootloader when
+    // a 1200bps connection is closed
     if (!dtr && itf == 0) {
         cdc_line_coding_t coding;
         tud_cdc_get_line_coding(&coding);
