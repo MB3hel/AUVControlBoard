@@ -66,6 +66,10 @@ void usb_process(void){
 
     tud_task();                                                     // TinyUSB task for device 
     
+    // Write stuff in buffer
+    // TODO: Get rid of this
+    tud_cdc_write_flush();
+
     // Parse a finite number of received bytes
     if (tud_cdc_connected() && tud_cdc_available()){
         uint8_t buf[64];
@@ -163,6 +167,33 @@ uint32_t usb_getmsg(uint8_t *dest){
     }
 
     return res;
+}
+
+void usb_writemsg(uint8_t *msg, uint32_t len){
+    // TODO: Probably need another buffer here or need to increase TinyUSB buffer size
+    //       Messages can be max length of 128, but TX buffer is only 64...
+    if(len > tud_cdc_write_available())
+        tud_cdc_write_flush();
+
+    tud_cdc_write_char(START_BYTE);
+    for(uint32_t i = 0; i < len; ++i){
+        if(msg[i] == START_BYTE || msg[i] == END_BYTE || msg[i] == ESCAPE_BYTE)
+            tud_cdc_write_char(ESCAPE_BYTE);
+        tud_cdc_write_char(msg[i]);
+    }
+
+    // Calculate and add crc
+    uint16_t crc = crc16_ccitt(msg, len);
+    uint8_t high_byte = (crc >> 8) & 0xFF;
+    uint8_t low_byte = crc & 0xFF;
+    if(high_byte == START_BYTE || high_byte == END_BYTE || high_byte == ESCAPE_BYTE)
+        tud_cdc_write_char(ESCAPE_BYTE);
+    tud_cdc_write_char(high_byte);
+    if(low_byte == START_BYTE || low_byte == END_BYTE || low_byte == ESCAPE_BYTE)
+        tud_cdc_write_char(ESCAPE_BYTE);
+    tud_cdc_write_char(low_byte);
+
+    tud_cdc_write_char(END_BYTE);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
