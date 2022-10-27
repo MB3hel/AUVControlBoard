@@ -98,6 +98,12 @@ int main(void){
                 dotstar_set(32, 0, 0);
             }else if(data_matches(msg, msg_len, (uint8_t[]){'O', 'F', 'F'}, 3)){
                 dotstar_set(0, 0, 0);
+            }else if(data_matches(msg, msg_len, (uint8_t[]){'P', 'O', 'S'}, 3)){
+                timers_thruster_pwm_set((float[]){1, 1, 1, 1, 1, 1, 1, 1});
+            }else if(data_matches(msg, msg_len, (uint8_t[]){'N', 'E', 'G'}, 3)){
+                timers_thruster_pwm_set((float[]){-1, -1, -1, -1, -1, -1, -1, -1});
+            }else if(data_matches(msg, msg_len, (uint8_t[]){'S', 'T', 'O', 'P'}, 4)){
+                timers_thruster_pwm_set((float[]){0, 0, 0, 0, 0, 0, 0, 0});
             }
             // ---------------------------------------------------------------------------------------------------------
 
