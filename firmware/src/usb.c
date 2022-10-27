@@ -16,7 +16,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define MSG_QUEUE_SZ                6                               // Max number of messages in message queue
-#define MAX_MSG_LEN                 128                             // Max number of bytes in one message
 
 #define START_BYTE                  253                             // Communication  protocol start byte
 #define END_BYTE                    254                             // Communication protocol end byte
@@ -29,7 +28,7 @@
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static uint8_t msg_queue[MSG_QUEUE_SZ][MAX_MSG_LEN+2];              // Holds complete received messages & crcs
+static uint8_t msg_queue[MSG_QUEUE_SZ][USB_MAX_MSG_LEN+2];              // Holds complete received messages & crcs
 static uint32_t msg_queue_pos[MSG_QUEUE_SZ];                        // Size of messages in each spot of queue
 static uint32_t msg_queue_widx;                                     // Index in queue to place next message at
 static uint32_t msg_queue_ridx;                                     // Index in queue to read next message from
@@ -132,6 +131,38 @@ void usb_process(void){
             }
         }
     }
+}
+
+uint32_t usb_getmsg(uint8_t *dest){
+    uint32_t res;
+    if(msg_queue_count == 0){
+        // Nothing to get
+        return 0;
+    }
+
+    // Copy next available message
+    // Note: Exclude last two bytes because these are crc
+    memcpy(dest, msg_queue[msg_queue_ridx], msg_queue_pos[msg_queue_ridx] - 2);
+
+    // Clear this spot in queue (so next write will start at index 0)
+    res = msg_queue_pos[msg_queue_ridx] - 2;
+    msg_queue_pos[msg_queue_ridx] = 0;
+
+    // Increment ridx (rolling over as needed)
+    msg_queue_ridx++;
+    if(msg_queue_ridx == MSG_QUEUE_SZ)
+        msg_queue_ridx = 0;
+
+    // Decrement counter
+    msg_queue_count--;
+
+    if(msg_queue_count != 0){
+        // Still message(s) in the queue
+        // Indicate to main tree that there is a message it should process
+        FLAG_SET(flags_main, FLAG_MAIN_USBMSG);
+    }
+
+    return res;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
