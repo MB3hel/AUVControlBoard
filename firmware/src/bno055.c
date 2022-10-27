@@ -463,13 +463,6 @@ void bno055_state_machine(uint8_t trigger){
         return;
     }
 
-    
-    if(state == STATE_DELAY){
-        dotstar_set(0, 0, 255);
-    }else{
-        dotstar_set(0, 255, 0);
-    }
-
     // -----------------------------------------------------------------------------------------------------------------
     // Actions at START of state
     // -----------------------------------------------------------------------------------------------------------------
@@ -608,9 +601,6 @@ void bno055_state_machine(uint8_t trigger){
         trans.write_count = 2;
         trans.read_count = 0;
         i2c0_enqueue(&trans);
-        break;
-    default:
-        dotstar_set(255, 255, 255);
         break;
     }
 }

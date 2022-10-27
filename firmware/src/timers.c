@@ -94,8 +94,11 @@ void timers_enable_bno055_delay(uint32_t delay){
     task_bno055.cb = cb_timing;
     task_bno055.interval = delay;
     task_bno055.mode = TIMER_TASK_ONE_SHOT;
-    timer_remove_task(&TIMER_0, &task_bno055);
-    timer_add_task(&TIMER_0, &task_bno055);
+    while(timer_add_task(&TIMER_0, &task_bno055) != ERR_NONE){
+        delay_us(50);
+        timer_remove_task(&TIMER_0, &task_bno055);
+        delay_us(50);
+    }
 }
 
 void timers_safe_delay(uint32_t delayms){
