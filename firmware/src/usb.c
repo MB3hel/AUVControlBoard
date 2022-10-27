@@ -166,14 +166,30 @@ uint32_t usb_getmsg(uint8_t *dest){
     return res;
 }
 
-void usb_writemsg(uint8_t *msg, uint32_t len){
-    // TODO: Handle FIFO too full (write returns count smaller than requested)
+inline static void __attribute__((always_inline)) usb_writeone(uint8_t c) {
+    // If the write fails, the FIFO is full
+    // Really this shouldn't happen. If it does, the FIFO size should probably
+    // be increased in tusb_config.h
+    // This will block until write succeeds
+    while(tud_cdc_write_char(c) == 0){
+        // Write failed.
+        // Typically, TinyUSB will only send data once the FIFO reaches the bulk packet size
+        // Calling this will cause a transfer to start now if one isn't already in progress
+        // If a transfer is in progress (or there is no data to transfer), this function will return 0
+        // Otherwise, it returns the number of bytes removed from the FIFO
+        // Wait until a transfer can be started to continue writing
+        while(tud_cdc_write_flush() == 0)
+            delay_ms(1);        // Delay will feed watchdog inside this loop
+        TIMERS_WDT_FEED();      // Don't reset the system while here
+    }
+}
 
-    tud_cdc_write_char(START_BYTE);
+void usb_writemsg(uint8_t *msg, uint32_t len){
+    usb_writeone(START_BYTE);
     for(uint32_t i = 0; i < len; ++i){
         if(msg[i] == START_BYTE || msg[i] == END_BYTE || msg[i] == ESCAPE_BYTE)
-            tud_cdc_write_char(ESCAPE_BYTE);
-        tud_cdc_write_char(msg[i]);
+            usb_writeone(ESCAPE_BYTE);
+        usb_writeone(msg[i]);
     }
 
     // Calculate and add crc
@@ -181,16 +197,18 @@ void usb_writemsg(uint8_t *msg, uint32_t len){
     uint8_t high_byte = (crc >> 8) & 0xFF;
     uint8_t low_byte = crc & 0xFF;
     if(high_byte == START_BYTE || high_byte == END_BYTE || high_byte == ESCAPE_BYTE)
-        tud_cdc_write_char(ESCAPE_BYTE);
-    tud_cdc_write_char(high_byte);
+        usb_writeone(ESCAPE_BYTE);
+    usb_writeone(high_byte);
     if(low_byte == START_BYTE || low_byte == END_BYTE || low_byte == ESCAPE_BYTE)
-        tud_cdc_write_char(ESCAPE_BYTE);
-    tud_cdc_write_char(low_byte);
+        usb_writeone(ESCAPE_BYTE);
+    usb_writeone(low_byte);
 
-    tud_cdc_write_char(END_BYTE);
+    usb_writeone(END_BYTE);
 
-    // Typically, TinyUSB will only send data once the FIFO is the equal to the bulk packet size
+    // Typically, TinyUSB will only send data once the FIFO reaches the bulk packet size
     // Calling this will cause a transfer to start now if one isn't already in progress
+    // If a transfer is in progress (or there is no data to transfer), this function will return 0
+    // Otherwise, it returns the number of bytes removed from the FIFO to start the transfer
     tud_cdc_write_flush();
 }
 
@@ -234,6 +252,8 @@ void tud_cdc_rx_cb(uint8_t itf){
 
 void tud_cdc_tx_complete_cb(uint8_t itf){
     // Run when transmit complete (no data in write fifo)
+    // When this happens, attempt to start another transfer (prevents data sitting in TX FIFO)
+    tud_cdc_write_flush();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

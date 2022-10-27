@@ -7,6 +7,8 @@
 #include <sam.h>
 #include <ports.h>
 #include <core_cm4.h>
+#include <timers.h>
+#include <flags.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
@@ -23,7 +25,11 @@ void delay_us(uint32_t us){
     uint32_t cycles = us * (SystemCoreClock / 1e6);
     DWT->CYCCNT = 0;                                            // Reset DWT Cycle Counter
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;                        // Enable cycle counter
-    while(DWT->CYCCNT < cycles);
+    while(DWT->CYCCNT < cycles){
+        // Don't let watchdog reset system during delay
+        if(FLAG_CHECK(flags_main, FLAG_MAIN_10MS))
+            TIMERS_WDT_FEED();
+    }
     DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk;                       // Disable cycle counter
 }
 
@@ -31,7 +37,11 @@ void delay_ms(uint32_t ms){
     uint32_t cycles = ms * (SystemCoreClock / 1e3);
     DWT->CYCCNT = 0;                                            // Reset DWT Cycle Counter
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;                        // Enable cycle counter
-    while(DWT->CYCCNT < cycles);
+    while(DWT->CYCCNT < cycles){
+        // Don't let watchdog reset system during delay
+        if(FLAG_CHECK(flags_main, FLAG_MAIN_10MS))
+            TIMERS_WDT_FEED();
+    }
     DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk;                       // Disable cycle counter
 }
 
