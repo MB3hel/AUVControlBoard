@@ -13,6 +13,7 @@
 #include <timers.h>
 #include <usb.h>
 #include <util.h>
+#include <conversions.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,6 +39,7 @@ int main(void){
     ports_init();                                               // Initialize ports
     timers_init();                                              // Initialize timers
     dotstar_init();                                             // Initialize dotstar
+    conversions_init();                                         // Initialize conversions
     usb_init();                                                 // Initialize USB
     dotstar_set(0, 0, 0);                                       // Turn off LED after init
 
