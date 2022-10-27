@@ -66,7 +66,15 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
         cdc_line_coding_t coding;
         tud_cdc_get_line_coding(&coding);
         if (coding.bit_rate == 1200){
-            // TODO: Figure out how to boot to bootloader instead of normal program
+            // Special things to reboot to bootloader instead of main program
+            // Must match bootloader. Taken from Adafruit/ArduinoCore-samd Reset.cpp
+            // THIS IS SPECIFIC TO ITSY BITSY M4!!!
+            #define DOUBLE_TAP_MAGIC 			0xf01669efUL
+	        #define BOOT_DOUBLE_TAP_ADDRESS     (HSRAM_ADDR + HSRAM_SIZE - 4)
+            unsigned long *a = (unsigned long *)BOOT_DOUBLE_TAP_ADDRESS;
+	        *a = DOUBLE_TAP_MAGIC;
+
+            // Reset the system now
             TIMERS_WDT_RESET_NOW();
         }
     }
