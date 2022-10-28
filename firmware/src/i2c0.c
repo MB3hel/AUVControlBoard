@@ -16,6 +16,8 @@
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+i2c_trans *i2c0_curr_trans;
+
 static volatile uint32_t transaction_counter; 
 
 
@@ -58,6 +60,9 @@ void i2c0_init(void){
     SERCOM2->I2CM.CTRLA.bit.ENABLE = 1;                             // Enable SERCOM
     while(SERCOM2->I2CM.SYNCBUSY.bit.ENABLE);                       // Wait for sync
     SERCOM2->I2CM.STATUS.bit.BUSSTATE = 0x01;                       // Force bus to IDLE state
+
+    // Set to indicate that a transaction can be started now
+    FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE); 
 }
 
 bool i2c0_start(i2c_trans *trans){

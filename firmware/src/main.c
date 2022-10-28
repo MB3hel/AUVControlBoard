@@ -107,8 +107,23 @@ int main(void){
             if(msg_len > 0)
                 cmdctrl_handle_msg(msg, msg_len);
             // ---------------------------------------------------------------------------------------------------------
-
         }
+        if(FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_DONE)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_DONE);
+            // ---------------------------------------------------------------------------------------------------------
+            // Runs when i2c0 finishes a transaction
+            // ---------------------------------------------------------------------------------------------------------
+            /*
+            if(i2c0_curr_trans == bno055_trans){
+                bno055_i2c_done();
+            }else if(i2c0_curr_trans == depth_trans){
+                depth_i2c_done();
+            }
+            */
+            // ---------------------------------------------------------------------------------------------------------
+        }
+
+        // TODO: Some sort of fair cycle between sensors on i2c0
 
         // Always process usb (allows tinyusb to handle events)
         usb_process();

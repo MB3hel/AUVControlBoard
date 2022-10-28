@@ -20,7 +20,7 @@
 // Pointer to current transaction
 // When I2C0_DONE flag is set, this points to transaction that was just finished
 // It will change when i2c0_start is called
-i2c_trans *i2c0_curr_trans;
+extern i2c_trans *i2c0_curr_trans;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
