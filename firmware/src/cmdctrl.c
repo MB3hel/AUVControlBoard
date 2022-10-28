@@ -19,6 +19,7 @@
 const static uint8_t MSG_SET_MODE_PFX[] = {'M', 'O', 'D', 'E'};
 const static uint8_t MSG_SET_TINV_PFX[] = {'T', 'I', 'N', 'V'};
 const static uint8_t MSG_SET_RAW_PFX[] = {'R', 'A', 'W'};
+const static uint8_t MSG_SET_LOCAL_PFX[] = {'L', 'O', 'C', 'A', 'L'};
 
 const static uint8_t MSG_GET_MODE_CMD[] = {'?', 'M', 'O', 'D', 'E'};
 const static uint8_t MSG_GET_TINV_CMD[] = {'?', 'T', 'I', 'N', 'V'};
@@ -95,6 +96,7 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         speeds[6] = conversions_data_to_float(&msg[27], true);
         speeds[7] = conversions_data_to_float(&msg[31], true);
 
+        // Update motor speeds
         motor_control_watchdog_feed();
         motor_control_raw(speeds[0], speeds[1], speeds[2], speeds[3], speeds[4],
                 speeds[5], speeds[6], speeds[7]);
@@ -136,6 +138,27 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
             response[4 + i] = motor_control_tinv[i];
         }
         usb_writemsg(response, 12);
+    }else if(MSG_STARTS_WITH(MSG_SET_LOCAL_PFX)){
+        // LOCAL speed set command (only works in LOCAL mode)
+        // L,O,C,A,L,[x],[y],[z],[pitch],[roll],[yaw]
+        // Each speed (x, y, z, pitch, roll, yaw) is a float (32-bit) from -1.0 to 1.0
+        float x, y, z, pitch, roll, yaw;
+
+        // Ensure enough data
+        if(len < 29)
+            return;
+
+        // Get speeds from message
+        x = conversions_data_to_float(&msg[5], true);
+        y = conversions_data_to_float(&msg[9], true);
+        z = conversions_data_to_float(&msg[13], true);
+        pitch = conversions_data_to_float(&msg[17], true);
+        roll = conversions_data_to_float(&msg[21], true);
+        yaw = conversions_data_to_float(&msg[25], true);
+
+        // Update motor speeds
+        motor_control_watchdog_feed();
+        motor_control_local(x, y, z, pitch, roll, yaw);
     }
 }
 
