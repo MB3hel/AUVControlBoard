@@ -27,8 +27,10 @@ void delay_us(uint32_t us){
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;                        // Enable cycle counter
     while(DWT->CYCCNT < cycles){
         // Don't let watchdog reset system during delay
-        if(FLAG_CHECK(flags_main, FLAG_MAIN_10MS))
+        if(FLAG_CHECK(flags_main, FLAG_MAIN_10MS)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_10MS);
             TIMERS_WDT_FEED();
+        }
     }
     DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk;                       // Disable cycle counter
 }
@@ -39,8 +41,10 @@ void delay_ms(uint32_t ms){
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;                        // Enable cycle counter
     while(DWT->CYCCNT < cycles){
         // Don't let watchdog reset system during delay
-        if(FLAG_CHECK(flags_main, FLAG_MAIN_10MS))
+        if(FLAG_CHECK(flags_main, FLAG_MAIN_10MS)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_10MS);
             TIMERS_WDT_FEED();
+        }
     }
     DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk;                       // Disable cycle counter
 }

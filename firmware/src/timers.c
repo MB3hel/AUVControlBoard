@@ -18,6 +18,14 @@
 #define TC0_CC0_OFFSET          15000                               // 15MHz / 15000 = 1000Hz IRQ rate (1ms period)
 #define TC0_CC1_OFFSET          150                                 // 15MHz / 150 = 100kHz IRQ rate (10us period)
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Globals
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+static void (*i2c0_timeout_target)(void);
+static uint32_t i2c0_timeout_dur;
+static uint32_t i2c0_timeout_count;
+static bool i2c0_timeout_enabled;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
@@ -236,6 +244,21 @@ void timers_thruster_pwm_set(float *speeds){
     while(TCC1->SYNCBUSY.bit.CC0);
 }
 
+void timers_i2c0_timeout_init(void (*target)(void), uint32_t timeout){
+    i2c0_timeout_target = target;
+    i2c0_timeout_dur = timeout / 10;
+}
+
+void timers_i2c0_timeout_reset(void){
+    i2c0_timeout_count = i2c0_timeout_dur;
+    i2c0_timeout_enabled = true;
+}
+
+void timers_i2c0_timeout_disable(void){
+    i2c0_timeout_enabled = false;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// IRQ Handlers
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -289,7 +312,12 @@ void TC0_Handler(void){
     }
     if(TC0->COUNT16.INTFLAG.bit.MC1){
         // CC1 matched (10us interrupt rate)
-        // TODO: Implement things here later
+        if(i2c0_timeout_enabled){
+            i2c0_timeout_count--;
+            if(i2c0_timeout_count == 0){
+                i2c0_timeout_target();
+            }
+        }
 
         // Configure to  interrupt again at configured period
         TC0->COUNT16.CC[1].reg += TC0_CC1_OFFSET;                    // Adjust by offset

@@ -3,6 +3,20 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define I2C_STATUS_SUCCESS          0           // Transaction finished successfully
+#define I2C_STATUS_ERROR            1           // Transaction finished unsuccessfully
+#define I2C_STATUS_BUSY             2           // Transaction in progress
+#define I2C_STATUS_IDLE             3           // Transaction finished and now idle
+
+typedef struct {
+    uint8_t address;
+    uint8_t *write_buf;
+    uint32_t write_count;
+    volatile uint8_t *read_buf;
+    uint32_t read_count;
+    uint8_t status;
+} i2c_trans;
+
 /**
  * Seed pseudorandom number generator
  */

@@ -16,6 +16,7 @@
 #include <conversions.h>
 #include <cmdctrl.h>
 #include <motor_control.h>
+#include <i2c0.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,6 +46,7 @@ int main(void){
     motor_control_init();                                       // Initialize motor control
     cmdctrl_init();                                             // Initialize command & control
     usb_init();                                                 // Initialize USB
+    i2c0_init();                                                // Initialize I2C0
 
     // -----------------------------------------------------------------------------------------------------------------
     // Main loop
