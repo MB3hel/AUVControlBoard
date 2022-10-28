@@ -61,6 +61,13 @@ void delay_sec(uint32_t sec){
 }
 
 /**
+ * Setup peripheral clocks
+ */
+void clocks_init_peripheral(void){
+    // TODO
+}
+
+/**
  * ItsyBitsy M4 Express has not external crystal, thus all clocks must
  * ultimately come from the ultra low power internal 32.768 kHz oscillator
  * (ULP32K)
@@ -186,6 +193,8 @@ void clocks_init(void){
 
     // Update this variable (in case used elsewhere)
     SystemCoreClock = 120000000;
+
+    clocks_init_peripheral();
 
     delay_init();
 }
