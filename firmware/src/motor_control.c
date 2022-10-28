@@ -122,10 +122,6 @@ void motor_control_raw(float s1, float s2, float s3, float s4, float s5, float s
             speeds[i] = -1.0;
     }
     timers_thruster_pwm_set(speeds);
-
-    // Just updated speed.
-    // Reset watchdog timeout
-    motor_control_watchdog_feed();
 }
 
 void motor_control_local(float x, float y, float z, float pitch, float roll, float yaw){

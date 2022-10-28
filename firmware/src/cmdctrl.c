@@ -17,9 +17,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const static uint8_t MSG_SET_MODE_PFX[] = {'M', 'O', 'D', 'E'};
+const static uint8_t MSG_SET_TINV_PFX[] = {'T', 'I', 'N', 'V'};
 const static uint8_t MSG_SET_RAW_PFX[] = {'R', 'A', 'W'};
 
 const static uint8_t MSG_GET_MODE_CMD[] = {'?', 'M', 'O', 'D', 'E'};
+const static uint8_t MSG_GET_TINV_CMD[] = {'?', 'T', 'I', 'N', 'V'};
 
 const static uint8_t MSG_FEED_MWDT_CMD[] = {'W', 'D', 'G', 'F'};
 
@@ -27,6 +29,9 @@ static unsigned int mode;
 
 // Cached global mode motion target
 // static float global_x, global_y, global_z, global_pitch, global_roll, global_yaw;
+// TODO: Cache local and raw settings
+// TODO: Re-apply settings when TINV changed
+// TODO: Re-apply settings when motor watchdog re-enabled
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
@@ -92,6 +97,7 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         speeds[6] = conversions_data_to_float(&msg[27], true);
         speeds[7] = conversions_data_to_float(&msg[31], true);
 
+        motor_control_watchdog_feed();
         motor_control_raw(speeds[0], speeds[1], speeds[2], speeds[3], speeds[4],
                 speeds[5], speeds[6], speeds[7]);
     }else if(MSG_EQUALS(MSG_GET_MODE_CMD)){
@@ -113,6 +119,25 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         // Motor watchdog feed command
         // W,D,G,F
         motor_control_watchdog_feed();
+    }else if(MSG_STARTS_WITH(MSG_SET_TINV_PFX)){
+        // Set thruster inversion command
+        // TINV[i1][i2][i3][i4][i5][i6][i7][i8]
+        // Each "i" is a 1 or 0 where 1 = inverted, 0 = not inverted
+        // Ensure enough data
+        if(len < 12)
+            return;
+        
+        // Parse inversions
+        for(uint32_t i = 0; i < 8; ++i){
+            motor_control_tinv[i] = msg[i + 4];
+        }
+    }else if(MSG_EQUALS(MSG_GET_TINV_CMD)){
+        // Query thruster inversions
+        uint8_t *response = (uint8_t[]){'T', 'I', 'N', 'V', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'};
+        for(uint32_t i = 0; i < 8; ++i){
+            response[4 + i] = motor_control_tinv[i];
+        }
+        usb_writemsg(response, 12);
     }
 }
 
