@@ -15,6 +15,7 @@
 #include <util.h>
 #include <conversions.h>
 #include <cmdctrl.h>
+#include <motor_control.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -41,6 +42,7 @@ int main(void){
     timers_init();                                              // Initialize timers
     dotstar_init();                                             // Initialize dotstar
     conversions_init();                                         // Initialize conversions
+    motor_control_init();                                       // Initialize motor control
     cmdctrl_init();                                             // Initialize command & control
     usb_init();                                                 // Initialize USB
 
@@ -79,6 +81,11 @@ int main(void){
             // Runs every 100ms
             // ---------------------------------------------------------------------------------------------------------
             cmdctrl_update_led();
+            
+            // Handle motor watchdog
+            if(motor_control_watchdog_count()){
+                cmdctrl_motors_killed();
+            }
             // ---------------------------------------------------------------------------------------------------------
         }
         if(FLAG_CHECK(flags_main, FLAG_MAIN_1000MS)){
@@ -106,3 +113,7 @@ int main(void){
     }
 }
 
+void cmdctrl_motors_killed(void){
+    // Send message telling the computer that the watchdog killed motors
+    usb_writemsg((uint8_t[]){'W', 'D', 'G', 'K'}, 4);
+}
