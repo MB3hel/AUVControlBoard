@@ -113,17 +113,9 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
             // Runs when i2c0 finishes a transaction
             // ---------------------------------------------------------------------------------------------------------
-            /*
-            if(i2c0_curr_trans == bno055_trans){
-                bno055_i2c_done();
-            }else if(i2c0_curr_trans == depth_trans){
-                depth_i2c_done();
-            }
-            */
+            // TODO Do something
             // ---------------------------------------------------------------------------------------------------------
         }
-
-        // TODO: Some sort of fair cycle between sensors on i2c0
 
         // Always process usb (allows tinyusb to handle events)
         usb_process();

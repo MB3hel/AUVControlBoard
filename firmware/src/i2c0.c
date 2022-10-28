@@ -70,8 +70,7 @@ bool i2c0_start(i2c_trans *trans){
     // Have to disable interrupts to prevent scenarios where
     // transaction finishes (by IRQ handler) while running below code
     __disable_irq();
-    // If curr_trans is null or curr_trans is not busy, i2c0 is idle and can start a transaction
-    if(i2c0_curr_trans == NULL || i2c0_curr_trans->status != I2C_STATUS_BUSY){
+    if(I2C0_IDLE){
         i2c0_curr_trans = trans;
         i2c0_curr_trans->status = I2C_STATUS_BUSY;
         
