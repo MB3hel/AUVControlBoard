@@ -112,8 +112,3 @@ int main(void){
         usb_process();
     }
 }
-
-void cmdctrl_motors_killed(void){
-    // Send message telling the computer that the watchdog killed motors
-    usb_writemsg((uint8_t[]){'W', 'D', 'G', 'K'}, 4);
-}

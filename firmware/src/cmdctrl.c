@@ -29,9 +29,7 @@ static unsigned int mode;
 
 // Cached global mode motion target
 // static float global_x, global_y, global_z, global_pitch, global_roll, global_yaw;
-// TODO: Cache local and raw settings
-// TODO: Re-apply settings when TINV changed
-// TODO: Re-apply settings when motor watchdog re-enabled
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
@@ -154,6 +152,20 @@ void cmdctrl_update_led(void){
         break;
     }
 }
+
+void cmdctrl_motors_killed(void){
+    // Clear cached states when motors killed
+    // global_x = 0.0f;
+    // global_y = 0.0f;
+    // global_z = 0.0f;
+    // global_pitch = 0.0f;
+    // global_roll = 0.0f;
+    // global_yaw = 0.0f;
+    
+    // Send message telling the computer that the watchdog killed motors
+    usb_writemsg((uint8_t[]){'W', 'D', 'G', 'K'}, 4);
+}
+
 
 void cmdctrl_send_sensors(void){
     // uint8_t msg[17];
