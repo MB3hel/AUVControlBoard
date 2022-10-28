@@ -67,7 +67,7 @@ void clocks_init_peripheral(void){
     // GCLK to peripherals config (shared between some peripherals)
     // See page 156 (table 14-9) in datasheet for which are shared
 
-    // TC0 and TC1 shared (120MHz)
+    // TC0 and TC1 shared (120MHz)                                  
     GCLK->PCHCTRL[TC0_GCLK_ID].bit.GEN = CLOCKS_GCLK_120M;          // Select 120MHz GCLK for ref
     GCLK->PCHCTRL[TC0_GCLK_ID].bit.CHEN = 1;                        // Enable channel
 
@@ -79,6 +79,10 @@ void clocks_init_peripheral(void){
     // Used for I2C0 on SERCOM2
     GCLK->PCHCTRL[SERCOM2_GCLK_ID_SLOW].bit.GEN = CLOCKS_GCLK_32K;  // Select 32k GCLK
     GCLK->PCHCTRL[SERCOM2_GCLK_ID_SLOW].bit.CHEN = 1;               // Enable channel
+
+    // SERCOM2 Core clock (used for I2C0)
+    GCLK->PCHCTRL[SERCOM2_GCLK_ID_CORE].bit.GEN = CLOCKS_GCLK_48M;  // Select 48MHz GCLK
+    GCLK->PCHCTRL[SERCOM2_GCLK_ID_CORE].bit.CHEN = 1;               // Enable channel
 
     // Clock to USB (must be 48MHz)
     GCLK->PCHCTRL[USB_GCLK_ID].bit.GEN = CLOCKS_GCLK_48M;           // Select 48MHz clock for USB

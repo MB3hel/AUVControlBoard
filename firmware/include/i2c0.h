@@ -17,8 +17,10 @@
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Pointer to transaction that is done (only valid after I2C0_DONE FLAG set before new transaction started)
-i2c_trans *i2c0_done_trans;
+// Pointer to current transaction
+// When I2C0_DONE flag is set, this points to transaction that was just finished
+// It will change when i2c0_start is called
+i2c_trans *i2c0_curr_trans;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -31,8 +33,8 @@ i2c_trans *i2c0_done_trans;
 void i2c0_init(void);
 
 /**
- * Start a transaction
+ * Start a transaction. Note that a STOP condition  will not occur between write and read phases
  * @param trans The transaction to start. Object pointed to must remain in scope
  *              for duration of the transaction.
  */
-void i2c0_start(i2c_trans *trans);
+bool i2c0_start(i2c_trans *trans);
