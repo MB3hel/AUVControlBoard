@@ -41,10 +41,6 @@ static uint32_t msg_queue_count;                                    // Number of
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void usb_init(void){
-    // Note: USB requires 48MHz clock
-    GCLK->PCHCTRL[USB_GCLK_ID].bit.GEN = CLOCKS_GCLK_48M;           // Select 48MHz clock for USB
-    GCLK->PCHCTRL[USB_GCLK_ID].bit.CHEN = 1;                        // Enable clock to USB
-    
     MCLK->AHBMASK.bit.USB_ = 1;                                     // Enable AHB clock to USB
     MCLK->APBBMASK.bit.USB_ = 1;                                    // Enable APB clock to USB
 

@@ -64,7 +64,25 @@ void delay_sec(uint32_t sec){
  * Setup peripheral clocks
  */
 void clocks_init_peripheral(void){
-    // TODO
+    // GCLK to peripherals config (shared between some peripherals)
+    // See page 156 (table 14-9) in datasheet for which are shared
+
+    // TC0 and TC1 shared (120MHz)
+    GCLK->PCHCTRL[TC0_GCLK_ID].bit.GEN = CLOCKS_GCLK_120M;          // Select 120MHz GCLK for ref
+    GCLK->PCHCTRL[TC0_GCLK_ID].bit.CHEN = 1;                        // Enable channel
+
+    // TCC0 and TCC1 shared (48Mhz)
+    GCLK->PCHCTRL[TCC0_GCLK_ID].bit.GEN = CLOCKS_GCLK_48M;          // Select 48MHz GCLK for ref
+    GCLK->PCHCTRL[TCC0_GCLK_ID].bit.CHEN = 1;                       // Enable channel
+
+    // Slow clock to all SERCOMs and some other things
+    // Used for I2C0 on SERCOM2
+    GCLK->PCHCTRL[SERCOM2_GCLK_ID_SLOW].bit.GEN = CLOCKS_GCLK_32K;  // Select 32k GCLK
+    GCLK->PCHCTRL[SERCOM2_GCLK_ID_SLOW].bit.CHEN = 1;               // Enable channel
+
+    // Clock to USB (must be 48MHz)
+    GCLK->PCHCTRL[USB_GCLK_ID].bit.GEN = CLOCKS_GCLK_48M;           // Select 48MHz clock for USB
+    GCLK->PCHCTRL[USB_GCLK_ID].bit.CHEN = 1;                        // Enable clock to USB
 }
 
 /**

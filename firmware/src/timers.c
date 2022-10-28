@@ -16,7 +16,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define TC0_CC0_OFFSET          15000                               // 15MHz / 15000 = 1000Hz IRQ rate (1ms period)
-#define TC0_CC1_OFFSET          150                                 // 15MHz / 150 = 100kHz IRQ rate (10us period)
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -24,9 +23,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * TC0: General timing
- * CC0 Generates interrupt every 1ms
- * CC1 Generates interrupt every 10us
+ * TC0
+ * CC0 General timing (1ms interrupt period)
+ * CC1 (NYI) Used for I2C0 timeout
  */
 void timers_tc0_init(void){
     TC0->COUNT16.CTRLA.bit.ENABLE = 0;                              // Disable TC0
@@ -46,20 +45,22 @@ void timers_tc0_init(void){
     while(TC0->COUNT16.SYNCBUSY.bit.COUNT);                         // Wait for sync
     TC0->COUNT16.CC[0].reg = TC0_CC0_OFFSET;                        // Initial interrupt time
     while(TC0->COUNT16.SYNCBUSY.bit.CC0);                           // Wait for sync
-    TC0->COUNT16.CC[1].reg = TC0_CC1_OFFSET;                        // Initial interrupt time
-    while(TC0->COUNT16.SYNCBUSY.bit.CC1);                           // Wait for sync
+    // TODO: Set CC[1] when implemented
     TC0->COUNT16.INTFLAG.reg |= TC_INTFLAG_MASK;                    // Clear all interrupt flags
     TC0->COUNT16.INTENSET.bit.MC0 = 1;                              // Enable match channel 0 interrupt
+    // TODO: Enable MC1 interrupt when implemented
     NVIC_EnableIRQ(TC0_IRQn);                                       // Enable TC0 Interrupt handler
     TC0->COUNT16.CTRLA.bit.ENABLE = 1;                              // Enable TC0
     while(TC0->COUNT16.SYNCBUSY.bit.ENABLE);                        // Wait for sync
 }
 
 /**
- * TC1: Unused
+ * TC1
+ * CC0 (NYI) Used for BNO055 delay
+ * CC1 (NYI) Used for depth sensor delay
  */
 void timers_tc1_init(void){
-    
+    // TODO: Implement timer config eventually
 }
 
 /**
@@ -160,31 +161,9 @@ void timers_wdt_init(void){
 }
 
 void timers_init(void){
-    // -----------------------------------------------------------------------------------------------------------------
-    // GCLK config (shared between some timers)
-    // -----------------------------------------------------------------------------------------------------------------
-    // See page 156 (table 14-9) in datasheet for which are shared
-    // Also note that 32-bit mode PAIRS TWO TCS
-    // See page 1549 of datasheet for details
+    // NOTE THAT A TC in 32-BIT MODE IS ACHEIVED USING TWO TC's
+    // SEE PAGE 1549 OF DATASHEET FOR DETAILS
 
-    // TC0 and TC1 shared (120MHz)
-    GCLK->PCHCTRL[TC0_GCLK_ID].bit.GEN = CLOCKS_GCLK_120M;          // Select 120MHz GCLK for ref
-    GCLK->PCHCTRL[TC0_GCLK_ID].bit.CHEN = 1;                        // Enable channel
-
-    // TC2 and TC3 shared
-    // Not used
-
-    // TCC0 and TCC1 shared (48Mhz)
-    GCLK->PCHCTRL[TCC0_GCLK_ID].bit.GEN = CLOCKS_GCLK_48M;          // Select 48MHz GCLK for ref
-    GCLK->PCHCTRL[TCC0_GCLK_ID].bit.CHEN = 1;                       // Enable channel
-
-    // TCC2 not shared (no TCC3 on this chip)
-    // Not used
-    // -----------------------------------------------------------------------------------------------------------------
-
-    // -----------------------------------------------------------------------------------------------------------------
-    // Init each timer
-    // -----------------------------------------------------------------------------------------------------------------
     timers_tc0_init();
     timers_tc1_init();
     timers_tc2_init();
@@ -192,7 +171,6 @@ void timers_init(void){
     timers_tcc0_init();
     timers_tcc1_init();
     timers_wdt_init();
-    // -----------------------------------------------------------------------------------------------------------------
 }
 
 void timers_thruster_pwm_set(float *speeds){
@@ -287,15 +265,5 @@ void TC0_Handler(void){
         //       This won't be accessed again until next IRQ handler
         //       At which point it must have synchronized
         TC0->COUNT16.INTFLAG.reg |= TC_INTFLAG_MC0;                  // Clear flag
-    }
-    if(TC0->COUNT16.INTFLAG.bit.MC1){
-        // CC1 matched (10us interrupt rate)
-
-        // Configure to  interrupt again at configured period
-        TC0->COUNT16.CC[1].reg += TC0_CC1_OFFSET;                    // Adjust by offset
-        // NOTE: No need to wait for sync here and delay IRQ handler
-        //       This won't be accessed again until next IRQ handler
-        //       At which point it must have synchronized
-        TC0->COUNT16.INTFLAG.reg |= TC_INTFLAG_MC1;                  // Clear flag
     }
 }
