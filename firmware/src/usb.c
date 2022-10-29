@@ -239,6 +239,7 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
 
             // Reset the system now
             TIMERS_WDT_RESET_NOW();
+            dotstar_set(0, 0, 255);
         }
     }
 }

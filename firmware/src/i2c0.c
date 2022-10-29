@@ -158,6 +158,7 @@ static void irq_handler(void){
             // Send ACK and start read of next byte
             SERCOM2->I2CM.CTRLB.bit.ACKACT = 0;
             SERCOM2->I2CM.CTRLB.bit.CMD = 0x02;
+            while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);
             
             // SB flag is cleared when CMD bitfield is set so no need to clear manually
         }else{
