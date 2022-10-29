@@ -17,7 +17,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define TC0_CC0_OFFSET          15000                               // 15MHz / 15000 = 1000Hz IRQ rate (1ms period)
-#define TC0_CC1_OFFSET          150                                 // 15MHz / 150 = 100kHz IRQ rate (10us period)
+#define TC1_CC0_OFFSET          150                                 // 15MHz / 150 = 100kHz IRQ rate (10us period)
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -33,9 +33,7 @@ static volatile uint32_t bno055_delay_count = 0;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * TC0
- * CC0 General timing (1ms interrupt period)
- * CC1 General timing (10us interrupt period)
+ * TC0 General timing (1ms)
  */
 void timers_tc0_init(void){
     TC0->COUNT16.CTRLA.bit.ENABLE = 0;                              // Disable TC0
@@ -51,16 +49,13 @@ void timers_tc0_init(void){
             TC_CTRLA_PRESCALER_DIV8_Val;                            // 120MHz / 8 / 15MHz
     TC0->COUNT16.CTRLA.bit.PRESCSYNC = 
             TC_CTRLA_PRESCSYNC_GCLK;                                // Use GCLK presync method
-    TC0->COUNT16.WAVE.bit.WAVEGEN = TC_WAVE_WAVEGEN_NFRQ_Val;       // Normal mode (don't reset at CC0 value)
+    TC0->COUNT16.WAVE.bit.WAVEGEN = TC_WAVE_WAVEGEN_MFRQ_Val;       // Reset count when CC[0] reached
     TC0->COUNT16.COUNT.reg = 0;                                     // Zero count
     while(TC0->COUNT16.SYNCBUSY.bit.COUNT);                         // Wait for sync
     TC0->COUNT16.CC[0].reg = TC0_CC0_OFFSET;                        // Initial interrupt time
     while(TC0->COUNT16.SYNCBUSY.bit.CC0);                           // Wait for sync
-    TC0->COUNT16.CC[1].reg = TC0_CC1_OFFSET;                        // Initial interrupt time
-    while(TC0->COUNT16.SYNCBUSY.bit.CC1);                           // Wait for sync
     TC0->COUNT16.INTENCLR.reg |= TC_INTENCLR_MASK;                  // Disable all interrupts
     TC0->COUNT16.INTENSET.bit.MC0 = 1;                              // Enable match channel 0 interrupt
-    TC0->COUNT16.INTENSET.bit.MC1 = 1;                              // Enable match channel 1 interrupt
     TC0->COUNT16.INTFLAG.reg |= TC_INTFLAG_MASK;                    // Clear all interrupt flags
     NVIC_EnableIRQ(TC0_IRQn);                                       // Enable TC0 Interrupt handler
     TC0->COUNT16.CTRLA.bit.ENABLE = 1;                              // Enable TC0
@@ -68,10 +63,33 @@ void timers_tc0_init(void){
 }
 
 /**
- * TC1 Unused
+ * TC1: General timing (10us)
  */
 void timers_tc1_init(void){
-    
+    TC1->COUNT16.CTRLA.bit.ENABLE = 0;                              // Disable TC1
+    while(TC1->COUNT16.SYNCBUSY.bit.ENABLE);                        // Wait for sync
+    MCLK->APBAMASK.bit.TC1_ = 1;                                    // Enable APB clock to TC1
+    TC1->COUNT16.CTRLA.reg = TC_CTRLA_SWRST;                        // Rest TC1
+    while(TC1->COUNT16.SYNCBUSY.bit.SWRST);                         // Wait for reset
+    TC1->COUNT16.CTRLA.bit.MODE = 
+            TC_CTRLA_MODE_COUNT16_Val;                              // 16-bit mode
+    TC1->COUNT16.WAVE.bit.WAVEGEN = 
+            TC_WAVE_WAVEGEN_NFRQ_Val;                               // Normal Frequency mode (count resets at max)
+    TC1->COUNT16.CTRLA.bit.PRESCALER = 
+            TC_CTRLA_PRESCALER_DIV8_Val;                            // 120MHz / 8 / 15MHz
+    TC1->COUNT16.CTRLA.bit.PRESCSYNC = 
+            TC_CTRLA_PRESCSYNC_GCLK;                                // Use GCLK presync method
+    TC1->COUNT16.WAVE.bit.WAVEGEN = TC_WAVE_WAVEGEN_MFRQ_Val;       // Reset count when CC[0] reached
+    TC1->COUNT16.COUNT.reg = 0;                                     // Zero count
+    while(TC1->COUNT16.SYNCBUSY.bit.COUNT);                         // Wait for sync
+    TC1->COUNT16.CC[0].reg = TC1_CC0_OFFSET;                        // Initial interrupt time
+    while(TC1->COUNT16.SYNCBUSY.bit.CC0);                           // Wait for sync
+    TC1->COUNT16.INTENCLR.reg |= TC_INTENCLR_MASK;                  // Disable all interrupts
+    TC1->COUNT16.INTENSET.bit.MC0 = 1;                              // Enable match channel 0 interrupt
+    TC1->COUNT16.INTFLAG.reg |= TC_INTFLAG_MASK;                    // Clear all interrupt flags
+    NVIC_EnableIRQ(TC1_IRQn);                                       // Enable TC1 Interrupt handler
+    TC1->COUNT16.CTRLA.bit.ENABLE = 1;                              // Enable TC1
+    while(TC1->COUNT16.SYNCBUSY.bit.ENABLE);                        // Wait for sync
 }
 
 /**
@@ -282,27 +300,23 @@ void TC0_Handler(void){
             FLAG_SET(flags_main, FLAG_MAIN_1000MS);
             ctr1000ms = 1000;
         }
-
-        // Configure to  interrupt again at configured period
-        TC0->COUNT16.CC[0].reg += TC0_CC0_OFFSET;                    // Adjust by offset
-        // NOTE: No need to wait for sync here and delay IRQ handler
-        //       This won't be accessed again until next IRQ handler
-        //       At which point it must have synchronized
-        TC0->COUNT16.INTFLAG.reg |= TC_INTFLAG_MC0;                  // Clear flag
     }
-    if(TC0->COUNT16.INTFLAG.bit.MC1){
+
+    // Clear all flags
+    TC0->COUNT16.INTFLAG.reg |= TC_INTFLAG_MASK;
+}
+
+void TC1_Handler(void){
+    if(TC1->COUNT16.INTFLAG.bit.MC1){
         // CC1 matched (10us period)
+
         if(i2c0_timeout_count > 0){
             i2c0_timeout_count--;
             if(i2c0_timeout_count == 0)
                 FLAG_SET(flags_main, FLAG_MAIN_I2C0_TIMEOUT);
         }
-
-        // Configure to  interrupt again at configured period
-        TC0->COUNT16.CC[1].reg += TC0_CC1_OFFSET;                    // Adjust by offset
-        // NOTE: No need to wait for sync here and delay IRQ handler
-        //       This won't be accessed again until next IRQ handler
-        //       At which point it must have synchronized
-        TC0->COUNT16.INTFLAG.reg |= TC_INTFLAG_MC1;                  // Clear flag
     }
+
+    // Clear all flags
+    TC1->COUNT16.INTFLAG.reg |= TC_INTFLAG_MASK;
 }
