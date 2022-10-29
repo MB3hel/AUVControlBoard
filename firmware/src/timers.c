@@ -25,7 +25,7 @@
 /**
  * TC0
  * CC0 General timing (1ms interrupt period)
- * CC1 Unused (reserved for i2c0 timeout if needed in future)
+ * CC1 (NYI) i2c0 timeout
  */
 void timers_tc0_init(void){
     TC0->COUNT16.CTRLA.bit.ENABLE = 0;                              // Disable TC0
@@ -46,6 +46,7 @@ void timers_tc0_init(void){
     TC0->COUNT16.CC[0].reg = TC0_CC0_OFFSET;                        // Initial interrupt time
     while(TC0->COUNT16.SYNCBUSY.bit.CC0);                           // Wait for sync
     TC0->COUNT16.INTENSET.bit.MC0 = 1;                              // Enable match channel 0 interrupt
+    // TC0->COUNT16.INTENCLR.bit.MC1 = 1;                           // Disable match channel 1 interrupt
     TC0->COUNT16.INTFLAG.reg |= TC_INTFLAG_MASK;                    // Clear all interrupt flags
     NVIC_EnableIRQ(TC0_IRQn);                                       // Enable TC0 Interrupt handler
     TC0->COUNT16.CTRLA.bit.ENABLE = 1;                              // Enable TC0
@@ -74,6 +75,7 @@ void timers_tc1_init(void){
     TC1->COUNT16.COUNT.reg = 0;                                     // Zero count
     while(TC1->COUNT16.SYNCBUSY.bit.COUNT);                         // Wait for sync
     TC1->COUNT16.INTENCLR.bit.MC0 = 1;                              // Disable match channel 0 interrupt
+    TC1->COUNT16.INTENCLR.bit.MC1 = 1;                              // Disable match channel 1 interrupt
     TC1->COUNT16.INTFLAG.reg |= TC_INTFLAG_MASK;                    // Clear all interrupt flags
     NVIC_EnableIRQ(TC1_IRQn);                                       // Enable TC1 Interrupt handler
     TC1->COUNT16.CTRLA.bit.ENABLE = 1;                              // Enable TC1
