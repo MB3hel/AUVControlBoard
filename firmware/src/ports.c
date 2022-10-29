@@ -4,6 +4,7 @@
  */
 
 #include <ports.h>
+#include <clocks.h>
 #include <sam.h>
 
 void ports_pinfunc(uint8_t def, int8_t pinfunc){
@@ -115,6 +116,25 @@ void ports_init(void){
     ports_pinfunc(P_THR6_PWM, MUX_PA18F_TCC1_WO2);
     ports_pinfunc(P_THR7_PWM, MUX_PA17F_TCC1_WO1);
     ports_pinfunc(P_THR8_PWM, MUX_PA16F_TCC1_WO0);
+
+    // Sometimes, a sensor may be holding SDA low when MCU is reset
+    // In this case, I2C can't init properly
+    // To fix this, send clock pulses until SDA released
+    ports_pinfunc(P_I2C0_SDA, PORT_PINFUNC_GPIO);
+    ports_pinfunc(P_I2C0_SCL, PORT_PINFUNC_GPIO);
+    ports_gpio_dir(P_I2C0_SDA, PORT_GPIO_IN);
+    ports_gpio_dir(P_I2C0_SCL, PORT_GPIO_IN);
+    while(!ports_gpio_read(P_I2C0_SDA)){
+        // Drive clock low
+        ports_gpio_dir(P_I2C0_SCL, PORT_GPIO_OUT);
+        ports_gpio_clear(P_I2C0_SCL);
+        delay_us(10);
+
+        // Let clock float high (wait for clock stretching)
+        ports_gpio_dir(P_I2C0_SCL, PORT_GPIO_IN);
+        while(ports_gpio_read(P_I2C0_SCL));
+        delay_us(10);
+    }
 
     // I2C0 pins
     ports_pinfunc(P_I2C0_SDA, MUX_PA12C_SERCOM2_PAD0);

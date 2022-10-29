@@ -56,10 +56,8 @@ int main(void){
     trans.read_buf = rbuf;
     trans.address = 0x28;
     trans.write_buf[0] = 0x00;
-    trans.write_buf[1] = 0x00;
-    trans.write_count = 2;
-    trans.read_count = 2;
-    FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_DONE);
+    trans.write_count = 1;
+    trans.read_count = 1;
     i2c0_start(&trans);
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -96,7 +94,7 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
             // Runs every 100ms
             // ---------------------------------------------------------------------------------------------------------
-            // cmdctrl_update_led();
+            cmdctrl_update_led();
             
             // Handle motor watchdog
             if(motor_control_watchdog_count()){
@@ -127,10 +125,8 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
             // Runs when i2c0 finishes a transaction
             // ---------------------------------------------------------------------------------------------------------
-            if(trans.status == I2C_STATUS_SUCCESS)
-                dotstar_set(0, 0, 255);
-            else if(trans.status == I2C_STATUS_ERROR)
-                dotstar_set(0, 255, 255);
+            delay_ms(100);
+            i2c0_start(&trans);
             // ---------------------------------------------------------------------------------------------------------
         }
 

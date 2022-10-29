@@ -49,7 +49,7 @@ void i2c0_init(void){
     SERCOM2->I2CM.CTRLA.bit.MODE = 0x05;                            // I2C Master mode
     SERCOM2->I2CM.CTRLA.bit.SPEED = 0x00;                           // Standard I2C mode
     SERCOM2->I2CM.BAUD.reg = BAUD_VAL;                              // Set baud
-    SERCOM2->I2CM.INTFLAG.reg = 0;                                  // Clear all interrupt flags
+    SERCOM2->I2CM.INTFLAG.reg |= SERCOM_I2CM_INTFLAG_MASK;          // Clear all interrupt flags
     SERCOM2->I2CM.INTENSET.bit.MB = 1;                              // Enable MB interrupt
     SERCOM2->I2CM.INTENSET.bit.SB = 1;                              // Enable SB interrupt
     SERCOM2->I2CM.INTENSET.bit.ERROR = 1;                           // Enable ERROR interrupt

@@ -31,4 +31,3 @@ void timers_init(void);
  * @param speeds Array of 8 speeds (-1.0 to 1.0)
  */
 void timers_thruster_pwm_set(float *speeds);
-
