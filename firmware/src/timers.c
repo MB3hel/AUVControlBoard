@@ -68,7 +68,7 @@ void timers_tc1_init(void){
     TC1->COUNT16.WAVE.bit.WAVEGEN = 
             TC_WAVE_WAVEGEN_NFRQ_Val;                               // Normal Frequency mode (count resets at max)
     TC1->COUNT16.CTRLA.bit.PRESCALER = 
-            TC_CTRLA_PRESCALER_DIV256_Val;                          // 120MHz / 1024 = 117.1875kHz
+            TC_CTRLA_PRESCALER_DIV1024_Val;                         // 120MHz / 1024 = 117.1875kHz
     TC1->COUNT16.CTRLA.bit.PRESCSYNC = 
             TC_CTRLA_PRESCSYNC_GCLK;                                // Use GCLK presync method
     TC1->COUNT16.COUNT.reg = 0;                                     // Zero count
@@ -303,5 +303,6 @@ void TC1_Handler(void){
         // CC0 matched (bno055 delay)
         FLAG_SET(flags_main, FLAG_MAIN_BNO055_DELAY);               // Set flag
         TC1->COUNT16.INTENCLR.bit.MC0 = 1;                          // Disable interrupt
+        TC1->COUNT16.INTFLAG.reg |= TC_INTFLAG_MC0;                 // Clear flag
     }
 }
