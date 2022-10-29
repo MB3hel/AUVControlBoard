@@ -49,10 +49,10 @@ void i2c0_init(void){
     SERCOM2->I2CM.CTRLA.bit.MODE = 0x05;                            // I2C Master mode
     SERCOM2->I2CM.CTRLA.bit.SPEED = 0x00;                           // Standard I2C mode
     SERCOM2->I2CM.BAUD.reg = BAUD_VAL;                              // Set baud
-    SERCOM2->I2CM.INTFLAG.reg = 
-            SERCOM_I2CM_INTFLAG_MB |                                // Enable MB interrupt
-            SERCOM_I2CM_INTFLAG_SB |                                // Enable SB interrupt
-            SERCOM_I2CM_INTFLAG_ERROR;                              // Enable ERROR interrupt
+    SERCOM2->I2CM.INTFLAG.reg = 0;                                  // Clear all interrupt flags
+    SERCOM2->I2CM.INTENSET.bit.MB = 1;                              // Enable MB interrupt
+    SERCOM2->I2CM.INTENSET.bit.SB = 1;                              // Enable SB interrupt
+    SERCOM2->I2CM.INTENSET.bit.ERROR = 1;                           // Enable ERROR interrupt
     NVIC_EnableIRQ(SERCOM2_0_IRQn);                                 // Enable SERCOM2 IRQ Handlers
     NVIC_EnableIRQ(SERCOM2_1_IRQn);                                 // Enable SERCOM2 IRQ Handlers
     NVIC_EnableIRQ(SERCOM2_2_IRQn);                                 // Enable SERCOM2 IRQ Handlers
@@ -74,12 +74,24 @@ bool i2c0_start(i2c_trans *trans){
         i2c0_curr_trans = trans;
         i2c0_curr_trans->status = I2C_STATUS_BUSY;
         
-        // Start write phase by setting ADDR register
-        // MB interrupt will occur when ready to transmit first byte
-        // use transaction_counter to track number of bytes transmitted
-        // LSB of address used to indicated write (0) or read (1)
-        transaction_counter = 0;
-        SERCOM2->I2CM.ADDR.bit.ADDR = i2c0_curr_trans->address << 1 | 0b0;
+        if(trans->write_count > 0){
+            // Start write phase by setting ADDR register
+            // MB interrupt will occur when ready to transmit first byte
+            // use transaction_counter to track number of bytes transmitted
+            // LSB of address used to indicated write (0) or read (1)
+            transaction_counter = 0;
+            SERCOM2->I2CM.ADDR.bit.ADDR = i2c0_curr_trans->address << 1 | 0b0;
+        }else if (trans->read_count > 0){
+            // Start read phase. This will write address
+            // SB interrupt will occur after first byte received
+            // transaction counter will track number of bytes received
+            transaction_counter = 0;
+            SERCOM2->I2CM.ADDR.bit.ADDR = i2c0_curr_trans->address << 1 | 0b1;
+        }else{
+            // Transaction completed successfully
+            i2c0_curr_trans->status = I2C_STATUS_SUCCESS;
+            FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
+        }
     }
     __enable_irq();
     return res;
@@ -115,28 +127,35 @@ static void irq_handler(void){
         }else{
             // No more data to write.
 
-            // Start read phase. This will write address after a repeated start
-            // Repeated start b/c no stop done before this (intentional)
-            // SB interrupt will occur after first byte received
-            // transaction counter will track number of bytes received
-            transaction_counter = 0;
-            SERCOM2->I2CM.ADDR.bit.ADDR = i2c0_curr_trans->address << 1 | 0b1;
+            if(i2c0_curr_trans->read_count > 0){
+                // Start read phase. This will write address after a repeated start
+                // Repeated start b/c no stop done before this (intentional)
+                // SB interrupt will occur after first byte received
+                // transaction counter will track number of bytes received
+                transaction_counter = 0;
+                SERCOM2->I2CM.ADDR.bit.ADDR = i2c0_curr_trans->address << 1 | 0b1;
+            }else{
+                // No data to read. Stop transaction now.
+                // Send STOP
+                SERCOM2->I2CM.CTRLB.bit.CMD = 0x03;
+                while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);
+
+                // Transaction completed successfully
+                i2c0_curr_trans->status = I2C_STATUS_SUCCESS;
+                FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
+            }
         }
 
     }else if(SERCOM2->I2CM.INTFLAG.bit.SB){
         // SB bit is set once a byte has been received
         
         // Copy read byte
-        // Note: If read_count is zero, need to not copy into read_buffer
-        //       hence why this if statement exists
-        if(transaction_counter < i2c0_curr_trans->read_count){
-            i2c0_curr_trans->read_buf[transaction_counter] = SERCOM2->I2CM.DATA.reg;
-            transaction_counter++;
-        }
+        i2c0_curr_trans->read_buf[transaction_counter] = SERCOM2->I2CM.DATA.reg;
+        transaction_counter++;
 
         if(transaction_counter < i2c0_curr_trans->read_count){
             // Another byte should be read
-            
+
             // Send ACK and start read of next byte
             SERCOM2->I2CM.CTRLB.bit.ACKACT = 0;
             SERCOM2->I2CM.CTRLB.bit.CMD = 0x02;
@@ -159,7 +178,7 @@ static void irq_handler(void){
 
     }else if(SERCOM2->I2CM.INTFLAG.bit.ERROR){
         // ERROR bit is set when an error occurs
-        
+
         // Send STOP
         SERCOM2->I2CM.CTRLB.bit.CMD = 0x03;
         while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);

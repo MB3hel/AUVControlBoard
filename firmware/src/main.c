@@ -31,8 +31,6 @@ volatile uint16_t flags_main = 0;
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO: hard fault handler
-
 int main(void){
     uint8_t msg[USB_MAX_MSG_LEN];
     uint32_t msg_len;
@@ -49,6 +47,20 @@ int main(void){
     cmdctrl_init();                                             // Initialize command & control
     usb_init();                                                 // Initialize USB
     i2c0_init();                                                // Initialize I2C
+
+    uint8_t wbuf[8];
+    uint8_t rbuf[8];
+
+    i2c_trans trans;
+    trans.write_buf = wbuf;
+    trans.read_buf = rbuf;
+    trans.address = 0x28;
+    trans.write_buf[0] = 0x00;
+    trans.write_buf[1] = 0x00;
+    trans.write_count = 2;
+    trans.read_count = 2;
+    FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_DONE);
+    i2c0_start(&trans);
 
     // -----------------------------------------------------------------------------------------------------------------
     // Main loop
@@ -84,7 +96,7 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
             // Runs every 100ms
             // ---------------------------------------------------------------------------------------------------------
-            cmdctrl_update_led();
+            // cmdctrl_update_led();
             
             // Handle motor watchdog
             if(motor_control_watchdog_count()){
@@ -115,11 +127,22 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
             // Runs when i2c0 finishes a transaction
             // ---------------------------------------------------------------------------------------------------------
-            // TODO Do something
+            if(trans.status == I2C_STATUS_SUCCESS)
+                dotstar_set(0, 0, 255);
+            else if(trans.status == I2C_STATUS_ERROR)
+                dotstar_set(0, 255, 255);
             // ---------------------------------------------------------------------------------------------------------
         }
 
         // Always process usb (allows tinyusb to handle events)
         usb_process();
     }
+}
+
+/**
+ * HardFault Handler
+ */
+void HardFault_Handler(void){
+    dotstar_set(255, 0, 0);                                     // LED red to indicate hard fault
+    while(1);                                                   // Block forever. WDT should reset system.
 }

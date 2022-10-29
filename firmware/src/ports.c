@@ -106,7 +106,7 @@ void ports_init(void){
     // USB DP pin
     ports_pinfunc(P_USB_DP, MUX_PA25H_USB_DP);
 
-    // Thruster PWM
+    // Thruster PWM pins
     ports_pinfunc(P_THR1_PWM, MUX_PA22G_TCC0_WO2);
     ports_pinfunc(P_THR2_PWM, MUX_PA23G_TCC0_WO3);
     ports_pinfunc(P_THR3_PWM, MUX_PA21G_TCC0_WO1);
@@ -115,4 +115,8 @@ void ports_init(void){
     ports_pinfunc(P_THR6_PWM, MUX_PA18F_TCC1_WO2);
     ports_pinfunc(P_THR7_PWM, MUX_PA17F_TCC1_WO1);
     ports_pinfunc(P_THR8_PWM, MUX_PA16F_TCC1_WO0);
+
+    // I2C0 pins
+    ports_pinfunc(P_I2C0_SDA, MUX_PA12C_SERCOM2_PAD0);
+    ports_pinfunc(P_I2C0_SCL, MUX_PA13C_SERCOM2_PAD1);
 }

@@ -69,6 +69,8 @@
 #define P_THR6_PWM                      PORT_DEFINE(PORT_A, 18)
 #define P_THR7_PWM                      PORT_DEFINE(PORT_A, 17)
 #define P_THR8_PWM                      PORT_DEFINE(PORT_A, 16)
+#define P_I2C0_SDA                      PORT_DEFINE(PORT_A, 12)
+#define P_I2C0_SCL                      PORT_DEFINE(PORT_A, 13)
 // -----------------------------------------------------------------------------
 
 
