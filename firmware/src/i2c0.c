@@ -10,7 +10,7 @@
 #include <sam.h>
 
 // Timeout to transmit or receive one byte (in us)
-#define I2C0_TIMEOUT_DUR    500
+#define I2C0_TIMEOUT_DUR    1000
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Globals
@@ -66,10 +66,7 @@ void i2c0_init(void){
 
 bool i2c0_start(i2c_trans *trans){
     bool res = false;
-    // Have to disable interrupts to prevent scenarios where
-    // transaction finishes (by IRQ handler) while running below code
-    __disable_irq();
-    if(I2C0_IDLE){
+    if(I2C0_IDLE){        
         i2c0_curr_trans = trans;
         i2c0_curr_trans->status = I2C_STATUS_BUSY;
         
@@ -78,14 +75,14 @@ bool i2c0_start(i2c_trans *trans){
             // MB interrupt will occur when ready to transmit first byte
             // use transaction_counter to track number of bytes transmitted
             // LSB of address used to indicated write (0) or read (1)
-            timers_i2c0_timeout_start(I2C0_TIMEOUT_DUR);
+            timers_i2c0_timeout(I2C0_TIMEOUT_DUR);
             transaction_counter = 0;
             SERCOM2->I2CM.ADDR.bit.ADDR = i2c0_curr_trans->address << 1 | 0b0;
         }else if (trans->read_count > 0){
             // Start read phase. This will write address
             // SB interrupt will occur after first byte received
             // transaction counter will track number of bytes received
-            timers_i2c0_timeout_start(I2C0_TIMEOUT_DUR);
+            timers_i2c0_timeout(I2C0_TIMEOUT_DUR);
             transaction_counter = 0;
             SERCOM2->I2CM.ADDR.bit.ADDR = i2c0_curr_trans->address << 1 | 0b1;
         }else{
@@ -94,13 +91,10 @@ bool i2c0_start(i2c_trans *trans){
             FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
         }
     }
-    __enable_irq();
     return res;
 }
 
 void i2c0_timeout(void){
-    dotstar_set(rand() % 255, rand() % 255, rand() % 255);
-
     // Send STOP
     SERCOM2->I2CM.CTRLB.bit.CMD = 0x03;
     while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);
@@ -119,7 +113,7 @@ static void irq_handler(void){
         // MB bit is set when NACK received during either TX or RX phase.
         // In either case, this is an error
 
-        timers_i2c0_timeout_cancel();
+        timers_i2c0_timeout(0);
 
         // Send STOP
         SERCOM2->I2CM.CTRLB.bit.CMD = 0x03;
@@ -137,16 +131,16 @@ static void irq_handler(void){
         if(transaction_counter < i2c0_curr_trans->write_count){
             // There is another byte to write
 
-            timers_i2c0_timeout_start(I2C0_TIMEOUT_DUR);
+            timers_i2c0_timeout(I2C0_TIMEOUT_DUR);
             SERCOM2->I2CM.DATA.bit.DATA = i2c0_curr_trans->write_buf[transaction_counter];
             transaction_counter++;
             // MB flag is cleared when DATA reg is set so no need to clear manually
         }else{
             // No more data to write.
 
-            timers_i2c0_timeout_cancel();
-
             if(i2c0_curr_trans->read_count > 0){
+                timers_i2c0_timeout(I2C0_TIMEOUT_DUR);
+
                 // Start read phase. This will write address after a repeated start
                 // Repeated start b/c no stop done before this (intentional)
                 // SB interrupt will occur after first byte received
@@ -154,6 +148,8 @@ static void irq_handler(void){
                 transaction_counter = 0;
                 SERCOM2->I2CM.ADDR.bit.ADDR = i2c0_curr_trans->address << 1 | 0b1;
             }else{
+                timers_i2c0_timeout(0);
+
                 // No data to read. Stop transaction now.
                 // Send STOP
                 SERCOM2->I2CM.CTRLB.bit.CMD = 0x03;
@@ -175,7 +171,7 @@ static void irq_handler(void){
         if(transaction_counter < i2c0_curr_trans->read_count){
             // Another byte should be read
 
-            timers_i2c0_timeout_start(I2C0_TIMEOUT_DUR);
+            timers_i2c0_timeout(I2C0_TIMEOUT_DUR);
 
             // Send ACK and start read of next byte
             SERCOM2->I2CM.CTRLB.bit.ACKACT = 0;
@@ -186,7 +182,7 @@ static void irq_handler(void){
         }else{
             // Done reading
 
-            timers_i2c0_timeout_cancel();
+            timers_i2c0_timeout(0);
 
             // Send NACK and STOP
             SERCOM2->I2CM.CTRLB.bit.ACKACT = 1;
@@ -203,7 +199,7 @@ static void irq_handler(void){
     }else if(SERCOM2->I2CM.INTFLAG.bit.ERROR){
         // ERROR bit is set when an error occurs
 
-        timers_i2c0_timeout_cancel();
+        timers_i2c0_timeout(0);
 
         // Send STOP
         SERCOM2->I2CM.CTRLB.bit.CMD = 0x03;

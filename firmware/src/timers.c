@@ -25,8 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 static volatile uint32_t i2c0_timeout_count = 0;
-static volatile bool i2c0_timeout_enabled = false;
-
 static volatile uint32_t bno055_delay_count = 0;
 
 
@@ -231,13 +229,8 @@ void timers_bno055_delay(uint32_t delay){
     bno055_delay_count = delay;
 }
 
-void timers_i2c0_timeout_start(uint32_t us){
+void timers_i2c0_timeout(uint32_t us){
     i2c0_timeout_count = us / 10;
-    i2c0_timeout_enabled = true;
-}
-
-void timers_i2c0_timeout_cancel(void){
-    i2c0_timeout_enabled = false;                                  // Disable interrupt
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -299,13 +292,11 @@ void TC0_Handler(void){
     }
     if(TC0->COUNT16.INTFLAG.bit.MC1){
         // CC1 matched (10us period)
-        if(i2c0_timeout_enabled){
+        if(i2c0_timeout_count > 0){
             i2c0_timeout_count--;
-            if(i2c0_timeout_count == 0){
-                i2c0_timeout_enabled = false;
+            if(i2c0_timeout_count == 0)
                 FLAG_SET(flags_main, FLAG_MAIN_I2C0_TIMEOUT);
-            }
-        } 
+        }
 
         // Configure to  interrupt again at configured period
         TC0->COUNT16.CC[1].reg += TC0_CC1_OFFSET;                    // Adjust by offset

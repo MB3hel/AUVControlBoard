@@ -39,12 +39,8 @@ void timers_thruster_pwm_set(float *speeds);
 void timers_bno055_delay(uint32_t delay);
 
 /**
- * Start timeout for I2C0
- * @param us Number of us to wait for (nearest 10)
+ * Set timeout for I2C0
+ * @param us Number of us to wait for. Set to 0 to disable.
  */
-void timers_i2c0_timeout_start(uint32_t us);
+void timers_i2c0_timeout(uint32_t us);
 
-/**
- * Cancel timeout for I2C0
- */
-void timers_i2c0_timeout_cancel(void);
