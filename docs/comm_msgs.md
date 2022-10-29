@@ -1,5 +1,4 @@
-
-# Commands and Messages
+# Communication Messages
 
 The following are the messages sent to the control board or received from the control board and what they mean / do. These messages are the *payload* in the message format described on the [Communication Protocol](./comm_protocol.md) page. Note that all characters are ASCII encoded unless enclosed within square brackets. A literal square bracket is escaped with a backslash. A literal backslash is also escaped with a backslash. Tokens inside square brackets are described per message below.
 
