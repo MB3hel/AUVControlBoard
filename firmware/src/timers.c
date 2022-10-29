@@ -240,6 +240,7 @@ void timers_bno055_delay(uint32_t delay){
     while(TC1->COUNT16.SYNCBUSY.bit.CTRLB);                         // Wait for sync 
     TC1->COUNT16.CC[0].reg = TC1->COUNT16.COUNT.reg +               // Set interrupt time to delay ms in future
             ((delay * 1171875) / 10000);
+    TC1->COUNT16.INTFLAG.reg |= TC_INTFLAG_MC0;                     // Clear interrupt flag
     TC1->COUNT16.INTENSET.bit.MC0 = 1;                              // Enable interrupt
 }
 
