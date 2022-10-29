@@ -48,6 +48,8 @@ void i2c0_init(void){
     SERCOM2->I2CM.CTRLA.bit.SDAHOLD = 0x03;                         // Max hold time
     SERCOM2->I2CM.CTRLA.bit.MODE = 0x05;                            // I2C Master mode
     SERCOM2->I2CM.CTRLA.bit.SPEED = 0x00;                           // Standard I2C mode
+    SERCOM2->I2CM.CTRLB.bit.QCEN = 0;                               // Disable quick command
+    SERCOM2->I2CM.CTRLB.bit.SMEN = 0;                               // Disable smart mode
     SERCOM2->I2CM.BAUD.reg = BAUD_VAL;                              // Set baud
     SERCOM2->I2CM.INTFLAG.reg |= SERCOM_I2CM_INTFLAG_MASK;          // Clear all interrupt flags
     SERCOM2->I2CM.INTENSET.bit.MB = 1;                              // Enable MB interrupt
