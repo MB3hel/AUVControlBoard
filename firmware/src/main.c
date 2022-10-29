@@ -17,6 +17,7 @@
 #include <cmdctrl.h>
 #include <motor_control.h>
 #include <i2c0.h>
+#include <bno055.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -30,6 +31,27 @@ volatile uint16_t flags_main = 0;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Blink LED on sensor error
+ */
+void sensor_error(void){
+    bool toggle = false;
+    while(1){
+        if(FLAG_CHECK(flags_main, FLAG_MAIN_1000MS)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_1000MS);
+            toggle = !toggle;
+            if(toggle)
+                dotstar_set(255, 32, 0);
+            else
+                dotstar_set(0, 0, 0);
+        }else if (FLAG_CHECK(flags_main, FLAG_MAIN_10MS)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_10MS);
+            TIMERS_WDT_FEED();
+        }
+        usb_process();
+    }
+}
 
 int main(void){
     uint8_t msg[USB_MAX_MSG_LEN];
@@ -47,18 +69,11 @@ int main(void){
     cmdctrl_init();                                             // Initialize command & control
     usb_init();                                                 // Initialize USB
     i2c0_init();                                                // Initialize I2C
-
-    uint8_t wbuf[8];
-    uint8_t rbuf[8];
-
-    i2c_trans trans;
-    trans.write_buf = wbuf;
-    trans.read_buf = rbuf;
-    trans.address = 0x28;
-    trans.write_buf[0] = 0x00;
-    trans.write_count = 1;
-    trans.read_count = 1;
-    i2c0_start(&trans);
+    
+    // Initialize sensors
+    if(!bno055_init()){
+        sensor_error();
+    }
 
     // -----------------------------------------------------------------------------------------------------------------
     // Main loop
@@ -125,8 +140,8 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
             // Runs when i2c0 finishes a transaction
             // ---------------------------------------------------------------------------------------------------------
-            delay_ms(100);
-            i2c0_start(&trans);
+            if(i2c0_curr_trans == &bno055_trans)
+                bno055_i2c_done();
             // ---------------------------------------------------------------------------------------------------------
         }
 

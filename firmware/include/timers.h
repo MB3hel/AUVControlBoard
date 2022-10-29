@@ -31,3 +31,9 @@ void timers_init(void);
  * @param speeds Array of 8 speeds (-1.0 to 1.0)
  */
 void timers_thruster_pwm_set(float *speeds);
+
+/**
+ * Start BNO055 delay
+ * @param delay Duration in ms to delay for
+ */
+void timers_bno055_delay(uint32_t delay);
