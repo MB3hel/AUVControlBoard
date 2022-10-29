@@ -6,6 +6,7 @@
 #include <bno055.h>
 #include <i2c0.h>
 #include <flags.h>
+#include <timers.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -229,6 +230,9 @@
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+static uint8_t axis_config;
+static bool reconfig;
+
 static uint8_t wbuf[16];
 static volatile uint8_t rbuf[16];
 
@@ -238,6 +242,8 @@ static uint8_t state;
 
 static uint32_t delay;
 static uint8_t delay_next_state;
+
+static bno055_data data;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -316,10 +322,306 @@ static uint8_t delay_next_state;
  */
 // Called when some event that may change state occurs
 static void bno055_state_machine(uint8_t trigger){
-    // TODO
+    int16_t tmp16;
+    
+    // -----------------------------------------------------------------------------------------------------------------
+    // State changes
+    // -----------------------------------------------------------------------------------------------------------------
+    
+    // Store original state
+    uint8_t orig_state = state;
+
+    if(trigger == TRIGGER_I2C_ERROR){
+        // Repeat same state after 10ms
+        delay = 10;
+        delay_next_state = state;
+        state = STATE_DELAY;
+    }else{
+        // State transitions
+        switch(state){
+        case STATE_DELAY:
+            // Transition out of delay state when delay done
+            if(trigger == TRIGGER_DELAY_DONE){
+                state = delay_next_state;
+            }
+            break;
+        case STATE_NONE:
+            // Always transition to next state
+            // This is just used to start the state machine
+            state = STATE_SETMODE_CFG;
+            break;
+        case STATE_SETMODE_CFG:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 30;
+                delay_next_state = STATE_RESET;
+            }
+            break;
+        case STATE_RESET:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 30;
+                delay_next_state = STATE_RD_ID;
+            }
+            break;
+        case STATE_RD_ID:
+            if(trigger == TRIGGER_I2C_DONE){
+                if(bno055_trans.read_buf[0] != BNO055_ID){
+                    // Invalid id. Read again until correct id.
+                    state = STATE_DELAY;
+                    delay = 10;
+                    delay_next_state = STATE_RD_ID;
+                }else{
+                    // Valid id. Move to next state
+                    state = STATE_DELAY;
+                    delay = 10;
+                    delay_next_state = STATE_WR_PWR_MODE;
+                }
+            }
+            break;
+        case STATE_WR_PWR_MODE:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 10;
+                delay_next_state = STATE_WR_PAGE_ID;
+            }
+            break;
+        case STATE_WR_PAGE_ID:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 10;
+                delay_next_state = STATE_WR_SYSTRIGGER;
+            }
+            break;
+        case STATE_WR_SYSTRIGGER:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 10;
+                delay_next_state = STATE_WR_AXIS_MAP;
+            }
+            break;
+        case STATE_WR_AXIS_MAP:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 10;
+                delay_next_state = STATE_WR_AXIS_SIGN;
+            }
+            break;
+        case STATE_WR_AXIS_SIGN:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 10;
+                delay_next_state = STATE_SETMODE_IMU;
+            }
+            break;
+        case STATE_SETMODE_IMU:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 20;
+                delay_next_state = STATE_RD_GRAV;
+            }
+            break;
+        case STATE_RD_GRAV:
+            if(trigger == TRIGGER_I2C_DONE){
+                tmp16 = ((int16_t)bno055_trans.read_buf[0]) | (((int16_t)bno055_trans.read_buf[1]) << 8);
+                data.grav_x = tmp16 / 100.0f;
+                tmp16 = ((int16_t)bno055_trans.read_buf[2]) | (((int16_t)bno055_trans.read_buf[3]) << 8);
+                data.grav_y = tmp16 / 100.0f;
+                tmp16 = ((int16_t)bno055_trans.read_buf[4]) | (((int16_t)bno055_trans.read_buf[5]) << 8);
+                data.grav_z = tmp16 / 100.0f;
+
+                state = STATE_DELAY;
+                delay = 50;
+                delay_next_state = STATE_RD_EULER;
+            }
+            break;
+        case STATE_RD_EULER:
+            if(trigger == TRIGGER_I2C_DONE){
+                tmp16 = ((int16_t)bno055_trans.read_buf[0]) | (((int16_t)bno055_trans.read_buf[1]) << 8);
+                data.euler_yaw = tmp16 / 16.0f;
+                tmp16 = ((int16_t)bno055_trans.read_buf[2]) | (((int16_t)bno055_trans.read_buf[3]) << 8);
+                data.euler_roll = tmp16 / 16.0f;
+                tmp16 = ((int16_t)bno055_trans.read_buf[4]) | (((int16_t)bno055_trans.read_buf[5]) << 8);
+                data.euler_pitch = tmp16 / 16.0f;
+
+                state = STATE_DELAY;
+                delay = 50;
+                delay_next_state = reconfig ? STATE_RECONFIG : STATE_RD_GRAV;
+                reconfig = false;
+            }
+            break;
+        case STATE_RECONFIG:
+            if(trigger == TRIGGER_I2C_DONE){
+                state = STATE_DELAY;
+                delay = 30;
+                delay_next_state = STATE_WR_AXIS_MAP;
+            }
+            break;
+        }
+    }
+
+    if((state == orig_state)){
+        // No state transition occurred
+        return;
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Actions at START of state
+    // -----------------------------------------------------------------------------------------------------------------
+
+    switch(state){
+    case STATE_DELAY:
+        timers_bno055_delay(delay);
+        break;
+    case STATE_SETMODE_CFG:
+        bno055_trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
+        bno055_trans.write_buf[1] = OPMODE_CFG;
+        bno055_trans.write_count = 2;
+        bno055_trans.read_count = 0;
+        i2c0_start(&bno055_trans);
+        break;
+    case STATE_RESET:
+        bno055_trans.write_buf[0] = BNO055_SYS_TRIGGER_ADDR;
+        bno055_trans.write_buf[1] = 0x20;
+        bno055_trans.write_count = 2;
+        bno055_trans.read_count = 0;
+        i2c0_start(&bno055_trans);
+        break;
+    case STATE_RD_ID:
+        bno055_trans.write_buf[0] = BNO055_CHIP_ID_ADDR;
+        bno055_trans.write_count = 1;
+        bno055_trans.read_count = 1;
+        i2c0_start(&bno055_trans);
+        break;
+    case STATE_WR_PWR_MODE:
+        bno055_trans.write_buf[0] = BNO055_PWR_MODE_ADDR;
+        bno055_trans.write_buf[1] = 0x00; // Normal power mode
+        bno055_trans.write_count = 2;
+        bno055_trans.read_count = 0;
+        i2c0_start(&bno055_trans);
+        break;
+    case STATE_WR_PAGE_ID:
+        bno055_trans.write_buf[0] = BNO055_PAGE_ID_ADDR;
+        bno055_trans.write_buf[1] = 0x00;
+        bno055_trans.write_count = 2;
+        bno055_trans.read_count = 0;
+        i2c0_start(&bno055_trans);
+        break;
+    case STATE_WR_SYSTRIGGER:
+        bno055_trans.write_buf[0] = BNO055_SYS_TRIGGER_ADDR;
+        bno055_trans.write_buf[1] = 0x00;
+        bno055_trans.write_count = 2;
+        bno055_trans.read_count = 0;
+        i2c0_start(&bno055_trans);
+        break;
+    case STATE_WR_AXIS_MAP:
+        bno055_trans.write_buf[0] = BNO055_AXIS_MAP_CONFIG_ADDR;
+        switch(axis_config){
+        case BNO055_AXIS_REMAP_P0:
+            bno055_trans.write_buf[1] = 0x21;
+            break;
+        case BNO055_AXIS_REMAP_P1:
+            bno055_trans.write_buf[1] = 0x24;
+            break;
+        case BNO055_AXIS_REMAP_P2:
+            bno055_trans.write_buf[1] = 0x24;
+            break;
+        case BNO055_AXIS_REMAP_P3:
+            bno055_trans.write_buf[1] = 0x21;
+            break;
+        case BNO055_AXIS_REMAP_P4:
+            bno055_trans.write_buf[1] = 0x24;
+            break;
+        case BNO055_AXIS_REMAP_P5:
+            bno055_trans.write_buf[1] = 0x21;
+            break;
+        case BNO055_AXIS_REMAP_P6:
+            bno055_trans.write_buf[1] = 0x21;
+            break;
+        case BNO055_AXIS_REMAP_P7:
+            bno055_trans.write_buf[1] = 0x24;
+            break;
+        }
+        bno055_trans.write_count = 2;
+        bno055_trans.read_count = 0;
+        i2c0_start(&bno055_trans);
+        break;
+    case STATE_WR_AXIS_SIGN:
+        bno055_trans.write_buf[0] = BNO055_AXIS_MAP_SIGN_ADDR;
+        switch(axis_config){
+        case BNO055_AXIS_REMAP_P0:
+            bno055_trans.write_buf[1] = 0x04;
+            break;
+        case BNO055_AXIS_REMAP_P1:
+            bno055_trans.write_buf[1] = 0x00;
+            break;
+        case BNO055_AXIS_REMAP_P2:
+            bno055_trans.write_buf[1] = 0x06;
+            break;
+        case BNO055_AXIS_REMAP_P3:
+            bno055_trans.write_buf[1] = 0x02;
+            break;
+        case BNO055_AXIS_REMAP_P4:
+            bno055_trans.write_buf[1] = 0x03;
+            break;
+        case BNO055_AXIS_REMAP_P5:
+            bno055_trans.write_buf[1] = 0x01;
+            break;
+        case BNO055_AXIS_REMAP_P6:
+            bno055_trans.write_buf[1] = 0x07;
+            break;
+        case BNO055_AXIS_REMAP_P7:
+            bno055_trans.write_buf[1] = 0x05;
+            break;
+        }
+        bno055_trans.write_count = 2;
+        bno055_trans.read_count = 0;
+        i2c0_start(&bno055_trans);
+        break;
+    case STATE_SETMODE_IMU:
+        bno055_trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
+        bno055_trans.write_buf[1] = OPMODE_IMU;
+        bno055_trans.write_count = 2;
+        bno055_trans.read_count = 0;
+        i2c0_start(&bno055_trans);
+        break;
+    case STATE_RD_GRAV:
+        bno055_trans.write_buf[0] = BNO055_GRAVITY_DATA_X_LSB_ADDR;
+        bno055_trans.write_count = 1;
+        bno055_trans.read_count = 6;
+        i2c0_start(&bno055_trans);
+        break;
+    case STATE_RD_EULER:
+        bno055_trans.write_buf[0] = BNO055_EULER_H_LSB_ADDR;
+        bno055_trans.write_count = 1;
+        bno055_trans.read_count = 6;
+        i2c0_start(&bno055_trans);
+        break;
+    case STATE_RECONFIG:
+        bno055_trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
+        bno055_trans.write_buf[1] = OPMODE_CFG;
+        bno055_trans.write_count = 2;
+        bno055_trans.read_count = 0;
+        i2c0_start(&bno055_trans);
+        break;
+    }
 }
 
 bool bno055_init(void){
+    // Initial data
+    data.grav_x = 0.0f;
+    data.grav_y = 0.0f;
+    data.grav_z = 0.0f;
+    data.euler_pitch = 0.0f;
+    data.euler_roll = 0.0f;
+    data.euler_yaw = 0.0f;
+
+    // Initial flags
+    reconfig = false;
+
+    // Setup initial config
+    axis_config = BNO055_AXIS_REMAP_P5;
+    
     // Setup transaction
     bno055_trans.address = 0x28;
     bno055_trans.write_buf = wbuf;
