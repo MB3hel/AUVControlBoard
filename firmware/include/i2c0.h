@@ -44,3 +44,8 @@ void i2c0_init(void);
  *              for duration of the transaction.
  */
 bool i2c0_start(i2c_trans *trans);
+
+/**
+ * Call from timer IRQ Handler when timeout occurs
+ */
+void i2c0_timeout(void);

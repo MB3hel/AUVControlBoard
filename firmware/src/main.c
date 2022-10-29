@@ -69,10 +69,9 @@ int main(void){
     cmdctrl_init();                                             // Initialize command & control
     usb_init();                                                 // Initialize USB
     i2c0_init();                                                // Initialize I2C
-
-    // Initialize sensors
-    if(!bno055_init()){
-        sensor_error();
+    delay_ms(100);                                              // Give sensors time to power on    
+    if(!bno055_init()){                                         // Attempt BNO055 Init
+        sensor_error();                                         // Error if no BNO055
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -152,6 +151,14 @@ int main(void){
             bno055_delay_done();
             // ---------------------------------------------------------------------------------------------------------
         }
+        if(FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_TIMEOUT)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_TIMEOUT);
+            // ---------------------------------------------------------------------------------------------------------
+            // Runs when i2c0 timeout occurs
+            // ---------------------------------------------------------------------------------------------------------
+            i2c0_timeout();
+            // ---------------------------------------------------------------------------------------------------------
+        }
 
         // Always process usb (allows tinyusb to handle events)
         usb_process();
@@ -159,9 +166,33 @@ int main(void){
 }
 
 /**
- * HardFault Handler
+ * Hard Fault Handler
  */
 void HardFault_Handler(void){
+    dotstar_set(255, 0, 0);                                     // LED red to indicate hard fault
+    while(1);                                                   // Block forever. WDT should reset system.
+}
+
+/**
+ * Memory Management Fault Handler
+ */
+void MemManagement_Handler(void){
+    dotstar_set(255, 0, 0);                                     // LED red to indicate hard fault
+    while(1);                                                   // Block forever. WDT should reset system.
+}
+
+/**
+ * Bus Fault Handler
+ */
+void BusFault_Handler(void){
+    dotstar_set(255, 0, 0);                                     // LED red to indicate hard fault
+    while(1);                                                   // Block forever. WDT should reset system.
+}
+
+/**
+ * Usage Fault Handler
+ */
+void UsageFault_Handler(void){
     dotstar_set(255, 0, 0);                                     // LED red to indicate hard fault
     while(1);                                                   // Block forever. WDT should reset system.
 }
