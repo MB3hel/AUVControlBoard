@@ -20,7 +20,7 @@ The ItsyBitsy M4 includes an RGB LED. This LED's color is used indicate operatin
 - YELLOW = RAW mode
 - BLUE-PURPLE = LOCAL mode
 - ORANGE = GLOBAL mode
-- GREEN = STABILITY_ASSIST mode
+- CYAN = STABILITY_ASSIST mode
 
 
 ## Configuration

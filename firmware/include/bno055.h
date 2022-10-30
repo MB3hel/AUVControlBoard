@@ -59,3 +59,8 @@ void bno055_i2c_done(void);
  * Call from main when delay done
  */
 void bno055_delay_done(void);
+
+/**
+ * Get current IMU data
+ */
+bno055_data bno055_get(void);

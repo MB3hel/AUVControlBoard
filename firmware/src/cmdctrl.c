@@ -10,6 +10,7 @@
 #include <dotstar.h>
 #include <usb.h>
 #include <motor_control.h>
+#include <bno055.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -20,6 +21,7 @@ const static uint8_t MSG_SET_MODE_PFX[] = {'M', 'O', 'D', 'E'};
 const static uint8_t MSG_SET_TINV_PFX[] = {'T', 'I', 'N', 'V'};
 const static uint8_t MSG_SET_RAW_PFX[] = {'R', 'A', 'W'};
 const static uint8_t MSG_SET_LOCAL_PFX[] = {'L', 'O', 'C', 'A', 'L'};
+const static uint8_t MSG_SET_GLOBAL_PFX[] = {'G', 'L', 'O', 'B', 'A', 'L'};
 
 const static uint8_t MSG_GET_MODE_CMD[] = {'?', 'M', 'O', 'D', 'E'};
 const static uint8_t MSG_GET_TINV_CMD[] = {'?', 'T', 'I', 'N', 'V'};
@@ -29,7 +31,8 @@ const static uint8_t MSG_FEED_MWDT_CMD[] = {'W', 'D', 'G', 'F'};
 static unsigned int mode;
 
 // Cached global mode motion target
-// static float global_x, global_y, global_z, global_pitch, global_roll, global_yaw;
+// Need to store last setting because periodic recalculations are required in case of orientation changes
+static float global_x, global_y, global_z, global_pitch, global_roll, global_yaw;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,12 +41,12 @@ static unsigned int mode;
 
 void cmdctrl_init(void){
     // Zero cached target initially
-    // global_x = 0.0f;
-    // global_y = 0.0f;
-    // global_z = 0.0f;
-    // global_pitch = 0.0f;
-    // global_roll = 0.0f;
-    // global_yaw = 0.0f;
+    global_x = 0.0f;
+    global_y = 0.0f;
+    global_z = 0.0f;
+    global_pitch = 0.0f;
+    global_roll = 0.0f;
+    global_yaw = 0.0f;
 
     // Default to RAW control mode
     mode = CMDCTRL_MODE_RAW;
@@ -159,6 +162,29 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         // Update motor speeds
         motor_control_watchdog_feed();
         motor_control_local(x, y, z, pitch, roll, yaw);
+    }else if(MSG_STARTS_WITH(MSG_SET_GLOBAL_PFX)){
+        // GLOBAL speed set command (only works in LOCAL mode)
+        // G,L,O,B,A,L,[x],[y],[z],[pitch],[roll],[yaw]
+        // Each speed (x, y, z, pitch, roll, yaw) is a float (32-bit) from -1.0 to 1.0
+
+        // Ensure enough data
+        if(len < 30)
+            return;
+
+        // Get speeds from message
+        global_x = conversions_data_to_float(&msg[6], true);
+        global_y = conversions_data_to_float(&msg[10], true);
+        global_z = conversions_data_to_float(&msg[14], true);
+        global_pitch = conversions_data_to_float(&msg[18], true);
+        global_roll = conversions_data_to_float(&msg[22], true);
+        global_yaw = conversions_data_to_float(&msg[26], true);
+
+        // Get sensor data
+        bno055_data imu_dat = bno055_get();
+
+        // Update motor speeds
+        motor_control_global(global_x, global_y, global_z, global_pitch, global_roll, 
+                global_yaw, imu_dat.grav_x, imu_dat.grav_y, imu_dat.grav_z);
     }
 }
 
@@ -171,19 +197,19 @@ void cmdctrl_update_led(void){
         dotstar_set(10, 0, 100);
         break;
     case CMDCTRL_MODE_GLOBAL:
-        dotstar_set(120, 50, 0);
+        dotstar_set(150, 50, 0);
         break;
     }
 }
 
 void cmdctrl_motors_killed(void){
     // Clear cached states when motors killed
-    // global_x = 0.0f;
-    // global_y = 0.0f;
-    // global_z = 0.0f;
-    // global_pitch = 0.0f;
-    // global_roll = 0.0f;
-    // global_yaw = 0.0f;
+    global_x = 0.0f;
+    global_y = 0.0f;
+    global_z = 0.0f;
+    global_pitch = 0.0f;
+    global_roll = 0.0f;
+    global_yaw = 0.0f;
     
     // Send message telling the computer that the watchdog killed motors
     usb_writemsg((uint8_t[]){'W', 'D', 'G', 'K'}, 4);
@@ -217,18 +243,18 @@ void cmdctrl_send_sensors(void){
 }
 
 void cmdctrl_update_motors(void){
-    // bno055_data imu_dat;
+    bno055_data imu_dat;
 
-    // // Some modes use sensors. In these modes, periodically recalculate
-    // // using latest sensor data and a cached speed
-    // switch(cmdctrl_mode){
-    // case CMDCTRL_MODE_GLOBAL:
-    //     // Get sensor data
-    //     imu_dat = bno055_get();
+    // Some modes use sensors. In these modes, periodically recalculate
+    // using latest sensor data and a cached speed
+    switch(mode){
+    case CMDCTRL_MODE_GLOBAL:
+        // Get sensor data
+        imu_dat = bno055_get();
 
-    //     // Update motor speeds
-    //     motor_control_global(global_x, global_y, global_z, global_pitch, global_roll, 
-    //             global_yaw, imu_dat.grav_x, imu_dat.grav_y, imu_dat.grav_z);
-    //     break;
-    // }
+        // Update motor speeds
+        motor_control_global(global_x, global_y, global_z, global_pitch, global_roll, 
+                global_yaw, imu_dat.grav_x, imu_dat.grav_y, imu_dat.grav_z);
+        break;
+    }
 }

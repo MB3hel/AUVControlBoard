@@ -11,7 +11,7 @@ from crccheck.crc import Crc16CcittFalse as Crc16
 
 
 debug_prints = True
-print_all_msgs = True
+print_all_msgs = False
 
 
 class Vector3:

@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
         #           x       y       z     pitch    roll    yaw        
         target = [  0.3,      0,    0,      0,      0,      0   ]
-        print("Setting local vector {}...".format(target), flush=True)
+        print("Setting global vector {}...".format(target), flush=True)
         cb.set_global(target[0], target[1], target[2], target[3], target[4], target[5])
         input("Press enter to stop running...")
         cb.set_global(0, 0, 0, 0, 0, 0)

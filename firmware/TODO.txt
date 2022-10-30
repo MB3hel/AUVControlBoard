@@ -1,4 +1,4 @@
-- Finish global mode
+- Instead of periodically recalculating speeds in global mode, use a timer. This way, if setpoint is changing rapidly from computer recalculate will be skipped.
 - Configuration of axes via commands
 - Better read rate on BNO055
 - Command to start / stop periodically sending IMU data to computer

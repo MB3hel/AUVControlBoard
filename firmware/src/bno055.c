@@ -659,3 +659,6 @@ void bno055_delay_done(void){
     bno055_state_machine(TRIGGER_DELAY_DONE);
 }
 
+bno055_data bno055_get(void){
+    return data;
+}
