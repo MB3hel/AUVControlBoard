@@ -1,0 +1,8 @@
+- Finish global mode
+- Configuration of axes via commands
+- Better read rate on BNO055
+- Command to start / stop periodically sending IMU data to computer
+- Depth sensor code (and i2c0 sharing)
+- Command to start / stop periodically sending depth data to computer
+- Stability assist mode
+- Possible communication protocol changes (ACK of commands to control board)
