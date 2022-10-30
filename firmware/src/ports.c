@@ -142,7 +142,13 @@ void ports_i2c0_fix_sda_low(void){
     ports_gpio_dir(P_I2C0_SCL, PORT_GPIO_IN);
 
     // Send clock pulses until the SDA line is released
+    // Max of 100 clock cycles. If it doesn't work after 100 cycles
+    // it isn't going to. Let i2c transactions fail due to timeout.
+    uint32_t attempts = 0;
     while(!ports_gpio_read(P_I2C0_SDA)){
+        if(attempts++ >= 100)
+            break;
+
         // Drive clock low
         ports_gpio_dir(P_I2C0_SCL, PORT_GPIO_OUT);
         ports_gpio_clear(P_I2C0_SCL);
