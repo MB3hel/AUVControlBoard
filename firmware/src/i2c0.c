@@ -9,6 +9,7 @@
 #include <timers.h>
 #include <sam.h>
 #include <usb.h>
+#include <ports.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -45,6 +46,8 @@ void i2c0_init(void){
     #define FGCLK               48000000                            // In Hz
     #define BAUD_VAL (FGCLK / 2 / FSCL) - (FGCLK / 1000000 * TRISE / 2000) - 5
 
+    ports_i2c0_fix_sda_low();                                       // In case sensor is holding SDA low after MCU reset
+
     MCLK->APBBMASK.bit.SERCOM2_ = 1;                                // Enable APB clock to SERCOM2
 
     SERCOM2->I2CM.CTRLA.bit.ENABLE = 0;                             // Disable I2C0
@@ -72,9 +75,8 @@ void i2c0_init(void){
 
 bool i2c0_start(i2c_trans *trans){
     bool res = false;
-    if(I2C0_IDLE){ 
-
-        dotstar_set(255, 0, 0);
+    if(I2C0_IDLE){
+        usb_writemsg((uint8_t[]){'S', 'T', 'A', 'R', 'T'}, 5);
 
         // If previous transaction did not timeout, reset the timeout counter
         // This counter is supposed to count number of timeouts in a row
@@ -121,12 +123,18 @@ void i2c0_timeout(void){
     if(timeouts >= 5){
         SERCOM2->I2CM.CTRLA.bit.ENABLE = 0;                     // Disable bus
         while(SERCOM2->I2CM.SYNCBUSY.bit.ENABLE);               // Wait for sync
+        ports_i2c0_fix_sda_low();                               // Sometimes gets stuck with SDA low
         SERCOM2->I2CM.CTRLA.bit.ENABLE = 1;                     // Enable bus
         while(SERCOM2->I2CM.SYNCBUSY.bit.ENABLE);               // Wait for sync
         timeouts = 0;                                           // Reset counter
+        SERCOM2->I2CM.STATUS.bit.BUSERR = 1;                    // Clear BUSERR error bit
+        SERCOM2->I2CM.STATUS.bit.ARBLOST = 1;                   // Clear ARBLOST error bit
+        SERCOM2->I2CM.STATUS.bit.RXNACK = 1;                    // Clear RXNACK error bit
+        SERCOM2->I2CM.STATUS.bit.BUSSTATE = 0x1;                // Force back to IDLE state
+    
+        usb_writemsg((uint8_t[]){'R', 'E', 'S', 'E', 'T'}, 5);
     }
 
-    dotstar_set(0, 0, 255);
 
     // Transaction has now finished with error status
     i2c0_curr_trans->status = I2C_STATUS_TIMEOUT;
@@ -237,8 +245,6 @@ static void irq_handler(void){
 
     }else if(SERCOM2->I2CM.INTFLAG.bit.ERROR){
         // ERROR bit is set when an error occurs
-
-        usb_writemsg((uint8_t[]){'I', '2', 'C', '0', 'H', 'E', 'R', 'E'}, 8);
 
         timers_i2c0_timeout(0);
 

@@ -2,7 +2,7 @@
 /**
  * @file i2c0.h
  * 
- * Implementation for i2c0 asynchronous master with queued transactions
+ * Implementation for i2c0 master
  * 
  * @author Marcus Behel
  */

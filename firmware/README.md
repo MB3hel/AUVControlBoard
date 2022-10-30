@@ -31,6 +31,17 @@ Both the [control board firmware](./firmware/) and the [hardware test](./hwtest/
 - `samd51g19a_flash_wbld.ld`: Linker script modified for ItsyBitsy M4 with UF2 bootloader
 
 
+## Debugging
+
+Debugging while developing the firmware is a little difficult. The ItsyBitsy M4 has no builtin debugger. SWD pins are exposed on the header, but this requires an external debugger. Platformio supports J-LINK and Atmel-ICE debuggers for the ItsyBitsy M4. A CMSIS-DAP debugger could probably work with a [custom debug setup](https://docs.platformio.org/en/latest/plus/debug-tools/custom.html) using OpenOCD.
+
+The main challenge is access to a debugger (J-LINK and Atmel-ICE are both expensive). Large amounts of the firmware have been developed without access to an external debugger. The following methods could be useful
+
+- First, the red LED on pin 13 is not available. This pin is used for thruster PWM. However, you may notice it blink when the board resets. This can be useful to tell when the board resets.
+- The RGB LED (dotstar) is usable though. Typically, the cmdctrl block controls the LED color. If you want to use it for debugging, comment out the call to `cmdctrl_update_led` in `main`. This LED is *very* useful for debugging because the code for it is bit banged and synchronous (blocking). Thus, it is known that the led color will be set when `dotstar_set` is called before the code continues executing.
+- The USB communication with the PC can also be used, however note that if the main loop is stalled the USB will not communicate. Messages are **not** fully sent before the code continues. However, messages are queued in order. If using this for debugging, it is recommended to use the `readmsg.py` script in the demo scripts directory.
+- Additionally, there are several unused GPIO pins. Pins 3 and 4 are easy to clip a lead onto. Setting these as outputs and writing them high / low when something occurs can provide information. Using a logic analyzer, this can be particularly helpful to analyze timing.
+
 ## Code Description
 
 ### Overall Development Approach

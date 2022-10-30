@@ -136,3 +136,8 @@ uint8_t ports_gpio_read(uint8_t def);
  * Sets up initial state for each used pin
  */
 void ports_init(void);
+
+/**
+ * Bitbang the SCL line to fix the SDA line being held low by a sensor
+ */
+void ports_i2c0_fix_sda_low(void);

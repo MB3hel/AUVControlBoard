@@ -117,13 +117,31 @@ void ports_init(void){
     ports_pinfunc(P_THR7_PWM, MUX_PA17F_TCC1_WO1);
     ports_pinfunc(P_THR8_PWM, MUX_PA16F_TCC1_WO0);
 
+    // I2C0 pins
+    ports_pinfunc(P_I2C0_SDA, MUX_PA12C_SERCOM2_PAD0);
+    ports_pinfunc(P_I2C0_SCL, MUX_PA13C_SERCOM2_PAD1);
+}
+
+void ports_i2c0_fix_sda_low(void){
     // Sometimes, a sensor may be holding SDA low when MCU is reset
     // In this case, I2C can't init properly
     // To fix this, send clock pulses until SDA released
+
+    // Not that for I2C there are pullup resistors on each line
+    // Thus, lines should be driven low (outputs), but when they should go
+    // high they should be left floating as inputs. Additionally, slaves
+    // can stretch the clock. This means the slaves (sensors) may hold the line
+    // low after the master releases the line. Thust, the master must wait for
+    // the salve to release the line allowing it to float high.
+
+    // Temporarily put pins in GPIO mode (bitbang the clock)
+    // Delay of 10us = 100000kHz data rate = max for I2C standard mode
     ports_pinfunc(P_I2C0_SDA, PORT_PINFUNC_GPIO);
     ports_pinfunc(P_I2C0_SCL, PORT_PINFUNC_GPIO);
     ports_gpio_dir(P_I2C0_SDA, PORT_GPIO_IN);
     ports_gpio_dir(P_I2C0_SCL, PORT_GPIO_IN);
+
+    // Send clock pulses until the SDA line is released
     while(!ports_gpio_read(P_I2C0_SDA)){
         // Drive clock low
         ports_gpio_dir(P_I2C0_SCL, PORT_GPIO_OUT);
@@ -136,7 +154,7 @@ void ports_init(void){
         delay_us(10);
     }
 
-    // I2C0 pins
+    // Put back into I2C mode
     ports_pinfunc(P_I2C0_SDA, MUX_PA12C_SERCOM2_PAD0);
     ports_pinfunc(P_I2C0_SCL, MUX_PA13C_SERCOM2_PAD1);
 }
