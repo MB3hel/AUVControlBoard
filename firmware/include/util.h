@@ -7,9 +7,12 @@
 #define NULL    0
 #endif
 
+// I2C transaction status codes
 #define I2C_STATUS_SUCCESS          0           // Transaction finished successfully
-#define I2C_STATUS_ERROR            1           // Transaction finished unsuccessfully
-#define I2C_STATUS_BUSY             2           // Transaction in progress
+#define I2C_STATUS_BUSY             1           // Transaction in progress
+#define I2C_STATUS_ERROR            2           // Transaction finished unsuccessfully
+#define I2C_STATUS_TIMEOUT          3           // Transaction timed out (error)
+
 
 typedef struct {
     uint8_t address;
@@ -17,7 +20,7 @@ typedef struct {
     uint32_t write_count;
     volatile uint8_t *read_buf;
     uint32_t read_count;
-    uint8_t status;
+    volatile uint8_t status;
 } i2c_trans;
 
 /**

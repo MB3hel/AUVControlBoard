@@ -10,6 +10,7 @@
 #include <util.h>
 #include <dotstar.h>
 #include <i2c0.h>
+#include <usb.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -63,33 +64,10 @@ void timers_tc0_init(void){
 }
 
 /**
- * TC1: General timing (10us)
+ * TC1: Unused
  */
 void timers_tc1_init(void){
-    TC1->COUNT16.CTRLA.bit.ENABLE = 0;                              // Disable TC1
-    while(TC1->COUNT16.SYNCBUSY.bit.ENABLE);                        // Wait for sync
-    MCLK->APBAMASK.bit.TC1_ = 1;                                    // Enable APB clock to TC1
-    TC1->COUNT16.CTRLA.reg = TC_CTRLA_SWRST;                        // Rest TC1
-    while(TC1->COUNT16.SYNCBUSY.bit.SWRST);                         // Wait for reset
-    TC1->COUNT16.CTRLA.bit.MODE = 
-            TC_CTRLA_MODE_COUNT16_Val;                              // 16-bit mode
-    TC1->COUNT16.WAVE.bit.WAVEGEN = 
-            TC_WAVE_WAVEGEN_NFRQ_Val;                               // Normal Frequency mode (count resets at max)
-    TC1->COUNT16.CTRLA.bit.PRESCALER = 
-            TC_CTRLA_PRESCALER_DIV8_Val;                            // 120MHz / 8 / 15MHz
-    TC1->COUNT16.CTRLA.bit.PRESCSYNC = 
-            TC_CTRLA_PRESCSYNC_GCLK;                                // Use GCLK presync method
-    TC1->COUNT16.WAVE.bit.WAVEGEN = TC_WAVE_WAVEGEN_MFRQ_Val;       // Reset count when CC[0] reached
-    TC1->COUNT16.COUNT.reg = 0;                                     // Zero count
-    while(TC1->COUNT16.SYNCBUSY.bit.COUNT);                         // Wait for sync
-    TC1->COUNT16.CC[0].reg = TC1_CC0_OFFSET;                        // Initial interrupt time
-    while(TC1->COUNT16.SYNCBUSY.bit.CC0);                           // Wait for sync
-    TC1->COUNT16.INTENCLR.reg |= TC_INTENCLR_MASK;                  // Disable all interrupts
-    TC1->COUNT16.INTENSET.bit.MC0 = 1;                              // Enable match channel 0 interrupt
-    TC1->COUNT16.INTFLAG.reg |= TC_INTFLAG_MASK;                    // Clear all interrupt flags
-    NVIC_EnableIRQ(TC1_IRQn);                                       // Enable TC1 Interrupt handler
-    TC1->COUNT16.CTRLA.bit.ENABLE = 1;                              // Enable TC1
-    while(TC1->COUNT16.SYNCBUSY.bit.ENABLE);                        // Wait for sync
+    
 }
 
 /**
@@ -247,8 +225,8 @@ void timers_bno055_delay(uint32_t delay){
     bno055_delay_count = delay;
 }
 
-void timers_i2c0_timeout(uint32_t us){
-    i2c0_timeout_count = us / 10;
+void timers_i2c0_timeout(uint32_t ms){
+    i2c0_timeout_count = ms;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -279,6 +257,12 @@ void TC0_Handler(void){
                 FLAG_SET(flags_main, FLAG_MAIN_BNO055_DELAY);
         }
 
+        if(i2c0_timeout_count > 0){
+            i2c0_timeout_count--;
+            if(i2c0_timeout_count == 0)
+                FLAG_SET(flags_main, FLAG_MAIN_I2C0_TIMEOUT);
+        }
+
         // Handle counters at zero
         if(ctr10ms == 0){
             FLAG_SET(flags_main, FLAG_MAIN_10MS);
@@ -306,17 +290,3 @@ void TC0_Handler(void){
     TC0->COUNT16.INTFLAG.reg |= TC_INTFLAG_MASK;
 }
 
-void TC1_Handler(void){
-    if(TC1->COUNT16.INTFLAG.bit.MC1){
-        // CC1 matched (10us period)
-
-        if(i2c0_timeout_count > 0){
-            i2c0_timeout_count--;
-            if(i2c0_timeout_count == 0)
-                FLAG_SET(flags_main, FLAG_MAIN_I2C0_TIMEOUT);
-        }
-    }
-
-    // Clear all flags
-    TC1->COUNT16.INTFLAG.reg |= TC_INTFLAG_MASK;
-}

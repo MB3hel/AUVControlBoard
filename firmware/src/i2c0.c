@@ -8,9 +8,13 @@
 #include <flags.h>
 #include <timers.h>
 #include <sam.h>
+#include <usb.h>
 
-// Timeout to transmit or receive one byte (in us)
-#define I2C0_TIMEOUT_DUR    1000
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Macros
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define I2C0_TIMEOUT    2               // ms
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Globals
@@ -19,6 +23,7 @@
 i2c_trans *i2c0_curr_trans;
 
 static volatile uint32_t transaction_counter; 
+static uint32_t timeouts;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -28,6 +33,7 @@ static volatile uint32_t transaction_counter;
 void i2c0_init(void){
     // Initial values
     transaction_counter = 0;
+    timeouts = 0;
 
     // Determined per formulas on page 916 of datasheet
     // Standard mode with BAUDLOW = 0
@@ -66,7 +72,16 @@ void i2c0_init(void){
 
 bool i2c0_start(i2c_trans *trans){
     bool res = false;
-    if(I2C0_IDLE){        
+    if(I2C0_IDLE){ 
+
+        dotstar_set(255, 0, 0);
+
+        // If previous transaction did not timeout, reset the timeout counter
+        // This counter is supposed to count number of timeouts in a row
+        if(i2c0_curr_trans != NULL && i2c0_curr_trans->status != I2C_STATUS_TIMEOUT){
+            timeouts = 0;
+        }
+
         i2c0_curr_trans = trans;
         i2c0_curr_trans->status = I2C_STATUS_BUSY;
         
@@ -75,14 +90,14 @@ bool i2c0_start(i2c_trans *trans){
             // MB interrupt will occur when ready to transmit first byte
             // use transaction_counter to track number of bytes transmitted
             // LSB of address used to indicated write (0) or read (1)
-            timers_i2c0_timeout(I2C0_TIMEOUT_DUR);
+            timers_i2c0_timeout(I2C0_TIMEOUT);
             transaction_counter = 0;
             SERCOM2->I2CM.ADDR.bit.ADDR = i2c0_curr_trans->address << 1 | 0b0;
         }else if (trans->read_count > 0){
             // Start read phase. This will write address
             // SB interrupt will occur after first byte received
             // transaction counter will track number of bytes received
-            timers_i2c0_timeout(I2C0_TIMEOUT_DUR);
+            timers_i2c0_timeout(I2C0_TIMEOUT);
             transaction_counter = 0;
             SERCOM2->I2CM.ADDR.bit.ADDR = i2c0_curr_trans->address << 1 | 0b1;
         }else{
@@ -95,12 +110,26 @@ bool i2c0_start(i2c_trans *trans){
 }
 
 void i2c0_timeout(void){
-    // Send STOP
-    SERCOM2->I2CM.CTRLB.bit.CMD = 0x03;
-    while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);
+    timeouts++;
+
+    // Sometimes, noise on the bus during transactions (from something such as touching pins)
+    // has caused the bus to "freeze" where both lines are high, but no activity occurs (even when)
+    // a transaction is attempted). This is seemingly undetectable by software (no status or error bits
+    // get set when this occurs). Thus, if 5 transactions in a row time out, assume this is the case.
+    // This is solved by disabling and re-enabling the I2C bus. Presumably, this resets the hardware state
+    // machine in the SERCOM peripheral.
+    if(timeouts >= 5){
+        SERCOM2->I2CM.CTRLA.bit.ENABLE = 0;                     // Disable bus
+        while(SERCOM2->I2CM.SYNCBUSY.bit.ENABLE);               // Wait for sync
+        SERCOM2->I2CM.CTRLA.bit.ENABLE = 1;                     // Enable bus
+        while(SERCOM2->I2CM.SYNCBUSY.bit.ENABLE);               // Wait for sync
+        timeouts = 0;                                           // Reset counter
+    }
+
+    dotstar_set(0, 0, 255);
 
     // Transaction has now finished with error status
-    i2c0_curr_trans->status = I2C_STATUS_ERROR;
+    i2c0_curr_trans->status = I2C_STATUS_TIMEOUT;
     FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
 }
 
@@ -109,6 +138,16 @@ void i2c0_timeout(void){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 static void irq_handler(void){  
+    // Don't handle interrupts unless a transaction is in progress
+    // If transaction not in progress, clear flags and return
+    // If interrupts occur when no transaction is in progress, they mean nothing
+    // Handling them could cause undesired behavior (such as handling an ERROR interrupt
+    // due to noise on an idle line).
+    if(I2C0_IDLE){
+        SERCOM2->I2CM.INTFLAG.reg |= SERCOM_I2CM_INTFLAG_MASK;
+        return;
+    }
+
     if(SERCOM2->I2CM.INTFLAG.bit.MB && SERCOM2->I2CM.STATUS.bit.RXNACK){
         // MB bit is set when NACK received during either TX or RX phase.
         // In either case, this is an error
@@ -131,7 +170,8 @@ static void irq_handler(void){
         if(transaction_counter < i2c0_curr_trans->write_count){
             // There is another byte to write
 
-            timers_i2c0_timeout(I2C0_TIMEOUT_DUR);
+            timers_i2c0_timeout(I2C0_TIMEOUT);
+
             SERCOM2->I2CM.DATA.bit.DATA = i2c0_curr_trans->write_buf[transaction_counter];
             transaction_counter++;
             // MB flag is cleared when DATA reg is set so no need to clear manually
@@ -139,12 +179,11 @@ static void irq_handler(void){
             // No more data to write.
 
             if(i2c0_curr_trans->read_count > 0){
-                timers_i2c0_timeout(I2C0_TIMEOUT_DUR);
-
                 // Start read phase. This will write address after a repeated start
                 // Repeated start b/c no stop done before this (intentional)
                 // SB interrupt will occur after first byte received
                 // transaction counter will track number of bytes received
+                timers_i2c0_timeout(I2C0_TIMEOUT);
                 transaction_counter = 0;
                 SERCOM2->I2CM.ADDR.bit.ADDR = i2c0_curr_trans->address << 1 | 0b1;
             }else{
@@ -171,7 +210,7 @@ static void irq_handler(void){
         if(transaction_counter < i2c0_curr_trans->read_count){
             // Another byte should be read
 
-            timers_i2c0_timeout(I2C0_TIMEOUT_DUR);
+            timers_i2c0_timeout(I2C0_TIMEOUT);
 
             // Send ACK and start read of next byte
             SERCOM2->I2CM.CTRLB.bit.ACKACT = 0;
@@ -198,6 +237,8 @@ static void irq_handler(void){
 
     }else if(SERCOM2->I2CM.INTFLAG.bit.ERROR){
         // ERROR bit is set when an error occurs
+
+        usb_writemsg((uint8_t[]){'I', '2', 'C', '0', 'H', 'E', 'R', 'E'}, 8);
 
         timers_i2c0_timeout(0);
 

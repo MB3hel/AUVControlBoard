@@ -635,7 +635,7 @@ bool bno055_init(void){
     i2c0_start(&bno055_trans);
     while(!FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_DONE));
     FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_DONE);
-    if(bno055_trans.status == I2C_STATUS_ERROR)
+    if(bno055_trans.status != I2C_STATUS_SUCCESS)
         return false;
     if(bno055_trans.read_buf[0] != BNO055_ID)
         return false;

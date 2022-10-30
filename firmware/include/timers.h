@@ -40,7 +40,7 @@ void timers_bno055_delay(uint32_t delay);
 
 /**
  * Set timeout for I2C0
- * @param us Number of us to wait for. Set to 0 to disable.
+ * @param ms Timeout in ms
  */
-void timers_i2c0_timeout(uint32_t us);
+void timers_i2c0_timeout(uint32_t ms);
 

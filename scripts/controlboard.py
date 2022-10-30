@@ -11,6 +11,7 @@ from crccheck.crc import Crc16CcittFalse as Crc16
 
 
 debug_prints = True
+print_all_msgs = True
 
 
 class Vector3:
@@ -245,6 +246,9 @@ class ControlBoard:
 
         # Done with crc data
         msg = msg[:-2]
+
+        if print_all_msgs:
+            print(msg)
 
         # Handle the message
         if msg.startswith(b'MODE'):
