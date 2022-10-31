@@ -187,6 +187,13 @@ static void irq_handler(void){
             // No more data to write.
 
             if(i2c0_curr_trans->read_count > 0){
+
+                if(i2c0_curr_trans->stop_after_write){
+                    SERCOM2->I2CM.CTRLB.bit.ACKACT = 1;
+                    SERCOM2->I2CM.CTRLB.bit.CMD = 0x03;
+                    while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);
+                }
+
                 // Start read phase. This will write address after a repeated start
                 // Repeated start b/c no stop done before this (intentional)
                 // SB interrupt will occur after first byte received

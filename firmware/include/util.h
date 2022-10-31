@@ -21,6 +21,7 @@ typedef struct {
     volatile uint8_t *read_buf;
     uint32_t read_count;
     volatile uint8_t status;
+    bool stop_after_write;
 } i2c_trans;
 
 /**

@@ -626,6 +626,7 @@ bool bno055_init(void){
     bno055_trans.address = BNO055_ADDR;
     bno055_trans.write_buf = wbuf;
     bno055_trans.read_buf = rbuf;
+    bno055_trans.stop_after_write = false;
 
     // Read chip ID register to ensure there is a device at the correct address and that it is the correct device
     // Block until this transaction finishes

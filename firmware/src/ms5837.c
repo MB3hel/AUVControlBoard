@@ -255,6 +255,7 @@ bool ms5837_init(void){
     ms5837_trans.address = MS5837_ADDR;
     ms5837_trans.write_buf = wbuf;
     ms5837_trans.read_buf = rbuf;
+    ms5837_trans.stop_after_write = true;
 
     // Set initial state and start state machine
     state = STATE_NONE;
