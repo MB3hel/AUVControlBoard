@@ -31,6 +31,10 @@
 #define FLAG_MAIN_I2C0_DONE         0b0000000001000000                  // Set when i2c0 finishes a transaction
 #define FLAG_MAIN_BNO055_DELAY      0b0000000010000000                  // Set when bno055 delay done
 #define FLAG_MAIN_I2C0_TIMEOUT      0b0000000100000000                  // Set when i2c0 timeout done
+#define FLAG_MAIN_BNO055_WANTI2C    0b0000001000000000                  // Set when bno055 wants i2c bus
+#define FLAG_MAIN_MS5837_DELAY      0b0000010000000000                  // Set when ms5837 delay done
+#define FLAG_MAIN_MS5837_WANTI2C    0b0000100000000000                  // Set when ms5837 wants i2c bus
+
 
 // Defined in main.c
 extern volatile uint16_t flags_main;

@@ -18,6 +18,7 @@
 #include <motor_control.h>
 #include <i2c0.h>
 #include <bno055.h>
+#include <ms5837.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -53,10 +54,67 @@ void sensor_error(void){
     }
 }
 
+/**
+ * Starts i2c0 transactions as needed. Handles multiple sensors in such a way
+ * that no sensor will be resource starved.
+ * This is achieved by checking sensors in a fixed order, but starting at different points
+ * Checking always starts after the sensor that just finished a transaction (not from the start of the list)
+ * This ensures that any sensor will at most have to wait for every other sensor to complete one transaction
+ * before it gets the bus.
+ */
+void i2c0_manager(void){
+    #define BNO055      0
+    #define MS5837      1
+    #define NDEVICES    2
+
+    static uint8_t idx = 0;
+
+    if(FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_DONE)){
+        FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_DONE);
+        // ---------------------------------------------------------------------------------------------------------
+        // Runs when i2c0 finishes a transaction
+        // ---------------------------------------------------------------------------------------------------------
+        if(i2c0_curr_trans == &bno055_trans)
+            bno055_i2c_done();
+        else if(i2c0_curr_trans == &ms5837_trans)
+            ms5837_i2c_done();
+        idx++;
+        if(idx >= NDEVICES)
+            idx = 0;
+        // ---------------------------------------------------------------------------------------------------------
+    }
+
+    if(I2C0_IDLE){
+        uint8_t tmp = idx;
+        do{
+            switch(tmp){
+            case BNO055:
+                if(FLAG_CHECK(flags_main, FLAG_MAIN_BNO055_WANTI2C)){
+                    FLAG_CLEAR(flags_main, FLAG_MAIN_BNO055_WANTI2C);
+                    i2c0_start(&bno055_trans);
+                }
+                break;
+            case MS5837:
+                if(FLAG_CHECK(flags_main, FLAG_MAIN_MS5837_WANTI2C)){
+                    FLAG_CLEAR(flags_main, FLAG_MAIN_MS5837_WANTI2C);
+                    i2c0_start(&ms5837_trans);
+                }
+                break;
+            }
+            tmp++;
+            if(tmp >= NDEVICES)
+                tmp = 0;
+        }while(tmp != idx);
+    }
+}
+
 int main(void){
-    uint8_t msg[USB_MAX_MSG_LEN];
-    uint32_t msg_len;
+
+    uint8_t msg[USB_MAX_MSG_LEN];                               // Holds message received from usb
+    uint32_t msg_len;                                           // Length of message received from usb
     
+
+
     // -----------------------------------------------------------------------------------------------------------------
     // Initialization
     // -----------------------------------------------------------------------------------------------------------------
@@ -73,6 +131,11 @@ int main(void){
     if(!bno055_init()){                                         // Attempt BNO055 Init
         sensor_error();                                         // Error if no BNO055
     }
+    // if(!ms5837_init()){                                         // Attempt MS5837 Init
+    //     // TODO: Allow any mode but global if depth 
+    //     //       sensor not connected.
+    //     sensor_error();                                         // Error if no MS5837
+    // }
 
     // -----------------------------------------------------------------------------------------------------------------
     // Main loop
@@ -134,15 +197,6 @@ int main(void){
                 cmdctrl_handle_msg(msg, msg_len);
             // ---------------------------------------------------------------------------------------------------------
         }
-        if(FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_DONE)){
-            FLAG_CLEAR(flags_main, FLAG_MAIN_I2C0_DONE);
-            // ---------------------------------------------------------------------------------------------------------
-            // Runs when i2c0 finishes a transaction
-            // ---------------------------------------------------------------------------------------------------------
-            if(i2c0_curr_trans == &bno055_trans)
-                bno055_i2c_done();
-            // ---------------------------------------------------------------------------------------------------------
-        }
         if(FLAG_CHECK(flags_main, FLAG_MAIN_BNO055_DELAY)){
             FLAG_CLEAR(flags_main, FLAG_MAIN_BNO055_DELAY);
             // ---------------------------------------------------------------------------------------------------------
@@ -159,6 +213,11 @@ int main(void){
             i2c0_timeout();
             // ---------------------------------------------------------------------------------------------------------
         }
+
+        // Always run i2c0 resource manager
+        // The resource manager starts transactions for multiple sensors
+        // in such a way that no sensor will be resource starved
+        i2c0_manager();
 
         // Always process usb (allows tinyusb to handle events)
         usb_process();

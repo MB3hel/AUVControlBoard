@@ -478,41 +478,41 @@ static void bno055_state_machine(uint8_t trigger){
         bno055_trans.write_buf[1] = OPMODE_CFG;
         bno055_trans.write_count = 2;
         bno055_trans.read_count = 0;
-        i2c0_start(&bno055_trans);
+        FLAG_SET(flags_main, FLAG_MAIN_BNO055_WANTI2C);
         break;
     case STATE_RESET:
         bno055_trans.write_buf[0] = BNO055_SYS_TRIGGER_ADDR;
         bno055_trans.write_buf[1] = 0x20;
         bno055_trans.write_count = 2;
         bno055_trans.read_count = 0;
-        i2c0_start(&bno055_trans);
+        FLAG_SET(flags_main, FLAG_MAIN_BNO055_WANTI2C);
         break;
     case STATE_RD_ID:
         bno055_trans.write_buf[0] = BNO055_CHIP_ID_ADDR;
         bno055_trans.write_count = 1;
         bno055_trans.read_count = 1;
-        i2c0_start(&bno055_trans);
+        FLAG_SET(flags_main, FLAG_MAIN_BNO055_WANTI2C);
         break;
     case STATE_WR_PWR_MODE:
         bno055_trans.write_buf[0] = BNO055_PWR_MODE_ADDR;
         bno055_trans.write_buf[1] = 0x00; // Normal power mode
         bno055_trans.write_count = 2;
         bno055_trans.read_count = 0;
-        i2c0_start(&bno055_trans);
+        FLAG_SET(flags_main, FLAG_MAIN_BNO055_WANTI2C);
         break;
     case STATE_WR_PAGE_ID:
         bno055_trans.write_buf[0] = BNO055_PAGE_ID_ADDR;
         bno055_trans.write_buf[1] = 0x00;
         bno055_trans.write_count = 2;
         bno055_trans.read_count = 0;
-        i2c0_start(&bno055_trans);
+        FLAG_SET(flags_main, FLAG_MAIN_BNO055_WANTI2C);
         break;
     case STATE_WR_SYSTRIGGER:
         bno055_trans.write_buf[0] = BNO055_SYS_TRIGGER_ADDR;
         bno055_trans.write_buf[1] = 0x00;
         bno055_trans.write_count = 2;
         bno055_trans.read_count = 0;
-        i2c0_start(&bno055_trans);
+        FLAG_SET(flags_main, FLAG_MAIN_BNO055_WANTI2C);
         break;
     case STATE_WR_AXIS_MAP:
         bno055_trans.write_buf[0] = BNO055_AXIS_MAP_CONFIG_ADDR;
@@ -544,7 +544,7 @@ static void bno055_state_machine(uint8_t trigger){
         }
         bno055_trans.write_count = 2;
         bno055_trans.read_count = 0;
-        i2c0_start(&bno055_trans);
+        FLAG_SET(flags_main, FLAG_MAIN_BNO055_WANTI2C);
         break;
     case STATE_WR_AXIS_SIGN:
         bno055_trans.write_buf[0] = BNO055_AXIS_MAP_SIGN_ADDR;
@@ -576,33 +576,33 @@ static void bno055_state_machine(uint8_t trigger){
         }
         bno055_trans.write_count = 2;
         bno055_trans.read_count = 0;
-        i2c0_start(&bno055_trans);
+        FLAG_SET(flags_main, FLAG_MAIN_BNO055_WANTI2C);
         break;
     case STATE_SETMODE_IMU:
         bno055_trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
         bno055_trans.write_buf[1] = OPMODE_IMU;
         bno055_trans.write_count = 2;
         bno055_trans.read_count = 0;
-        i2c0_start(&bno055_trans);
+        FLAG_SET(flags_main, FLAG_MAIN_BNO055_WANTI2C);
         break;
     case STATE_RD_GRAV:
         bno055_trans.write_buf[0] = BNO055_GRAVITY_DATA_X_LSB_ADDR;
         bno055_trans.write_count = 1;
         bno055_trans.read_count = 6;
-        i2c0_start(&bno055_trans);
+        FLAG_SET(flags_main, FLAG_MAIN_BNO055_WANTI2C);
         break;
     case STATE_RD_EULER:
         bno055_trans.write_buf[0] = BNO055_EULER_H_LSB_ADDR;
         bno055_trans.write_count = 1;
         bno055_trans.read_count = 6;
-        i2c0_start(&bno055_trans);
+        FLAG_SET(flags_main, FLAG_MAIN_BNO055_WANTI2C);
         break;
     case STATE_RECONFIG:
         bno055_trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
         bno055_trans.write_buf[1] = OPMODE_CFG;
         bno055_trans.write_count = 2;
         bno055_trans.read_count = 0;
-        i2c0_start(&bno055_trans);
+        FLAG_SET(flags_main, FLAG_MAIN_BNO055_WANTI2C);
         break;
     }
 }
