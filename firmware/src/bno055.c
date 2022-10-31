@@ -233,8 +233,8 @@
 static uint8_t axis_config;
 static bool reconfig;
 
-static uint8_t wbuf[16];
-static volatile uint8_t rbuf[16];
+static uint8_t wbuf[WRITE_BUF_SIZE];
+static volatile uint8_t rbuf[READ_BUF_SIZE];
 
 i2c_trans bno055_trans;
 
@@ -623,7 +623,7 @@ bool bno055_init(void){
     axis_config = BNO055_AXIS_REMAP_P5;
     
     // Setup transaction
-    bno055_trans.address = 0x28;
+    bno055_trans.address = BNO055_ADDR;
     bno055_trans.write_buf = wbuf;
     bno055_trans.read_buf = rbuf;
 

@@ -39,6 +39,12 @@ void timers_thruster_pwm_set(float *speeds);
 void timers_bno055_delay(uint32_t delay);
 
 /**
+ * Start MS5837 delay
+ * @param delay Duration in ms to delay for
+ */
+void timers_ms5837_delay(uint32_t delay);
+
+/**
  * Set timeout for I2C0
  * @param ms Timeout in ms
  */

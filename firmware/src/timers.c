@@ -27,6 +27,7 @@
 
 static volatile uint32_t i2c0_timeout_count = 0;
 static volatile uint32_t bno055_delay_count = 0;
+static volatile uint32_t ms5837_delay_count = 0;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -225,6 +226,10 @@ void timers_bno055_delay(uint32_t delay){
     bno055_delay_count = delay;
 }
 
+void timers_ms5837_delay(uint32_t delay){
+    ms5837_delay_count = delay;
+}
+
 void timers_i2c0_timeout(uint32_t ms){
     i2c0_timeout_count = ms;
 }
@@ -255,6 +260,12 @@ void TC0_Handler(void){
             bno055_delay_count--;
             if(bno055_delay_count == 0)
                 FLAG_SET(flags_main, FLAG_MAIN_BNO055_DELAY);
+        }
+
+        if(ms5837_delay_count > 0){
+            ms5837_delay_count--;
+            if(ms5837_delay_count == 0)
+                FLAG_SET(flags_main, FLAG_MAIN_MS5837_DELAY);
         }
 
         if(i2c0_timeout_count > 0){

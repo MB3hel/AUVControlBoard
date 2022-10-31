@@ -6,3 +6,4 @@
 - Command to start / stop periodically sending depth data to computer
 - Stability assist mode
 - Possible communication protocol changes (ACK of commands to control board)
+- Calibration of depth sensor (initial in-air reading for zero depth)

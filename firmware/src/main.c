@@ -129,13 +129,15 @@ int main(void){
     i2c0_init();                                                // Initialize I2C
     delay_ms(100);                                              // Give sensors time to power on    
     if(!bno055_init()){                                         // Attempt BNO055 Init
+        // TODO: Allow local and raw to work if IMU
+        //       is not connected
         sensor_error();                                         // Error if no BNO055
     }
-    // if(!ms5837_init()){                                         // Attempt MS5837 Init
-    //     // TODO: Allow any mode but global if depth 
-    //     //       sensor not connected.
-    //     sensor_error();                                         // Error if no MS5837
-    // }
+    if(!ms5837_init()){                                         // Attempt MS5837 Init
+        // TODO: Allow any mode but stability if depth 
+        //       sensor not connected.
+        sensor_error();                                         // Error if no MS5837
+    }
 
     // -----------------------------------------------------------------------------------------------------------------
     // Main loop
@@ -203,6 +205,14 @@ int main(void){
             // Runs when bno055 delay finishes
             // ---------------------------------------------------------------------------------------------------------
             bno055_delay_done();
+            // ---------------------------------------------------------------------------------------------------------
+        }
+        if(FLAG_CHECK(flags_main, FLAG_MAIN_MS5837_DELAY)){
+            FLAG_CLEAR(flags_main, FLAG_MAIN_MS5837_DELAY);
+            // ---------------------------------------------------------------------------------------------------------
+            // Runs when ms5837 delay finishes
+            // ---------------------------------------------------------------------------------------------------------
+            ms5837_delay_done();
             // ---------------------------------------------------------------------------------------------------------
         }
         if(FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_TIMEOUT)){
