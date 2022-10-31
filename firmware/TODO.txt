@@ -7,3 +7,6 @@
 - Stability assist mode
 - Possible communication protocol changes (ACK of commands to control board)
 - Calibration of depth sensor (initial in-air reading for zero depth)
+- Move BNO055 existence verification to state machine
+- Add status query to read sensor status (connected / not connected)
+- Firmware should work without sensor(s) connected excluding modes using the sensor(s)

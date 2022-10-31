@@ -133,11 +133,7 @@ int main(void){
         //       is not connected
         sensor_error();                                         // Error if no BNO055
     }
-    if(!ms5837_init()){                                         // Attempt MS5837 Init
-        // TODO: Allow any mode but stability if depth 
-        //       sensor not connected.
-        sensor_error();                                         // Error if no MS5837
-    }
+    ms5837_init();                                              // Initialize MS5837
 
     // -----------------------------------------------------------------------------------------------------------------
     // Main loop

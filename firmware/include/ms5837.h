@@ -38,3 +38,19 @@ void ms5837_delay_done(void);
  */
 float ms5837_get(void);
 
+/**
+ * Trigger a data read from the depth sensor
+ */
+void ms5837_read(void);
+
+/**
+ * Check if the depth sensor is connected (and a valid sensor)
+ * @return true once connected. Otherwise false.
+ */
+bool ms5837_connected(void);
+
+/**
+ * Reset the state machine and sensor
+ */
+void ms5837_reset(void);
+
