@@ -13,6 +13,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define MS5837_ADDR                     0x76
+#define MS5837_30BA_VER                 0x1A   // Sensor version ID for 30BA
 
 #define MS5837_CMD_RESET                0x1E
 #define MS5837_CMD_ADC_READ             0x00
@@ -67,34 +68,64 @@ static bool reset;
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * crc4 function as defined in sensor datasheet (p10)
+ */
+static uint8_t crc4(uint16_t *data){
+    uint32_t count;
+    uint32_t remainder = 0;
+    uint8_t bit;
+    data[0] = (data[0] & 0x0FFFF);
+    data[7] = 0;
+    for(count = 0; count < 16; ++count){
+        if(count & 0x1)  remainder ^= (uint16_t)(data[count >> 1] & 0x00FF);
+        else             remainder ^= (uint16_t)(data[count >> 1] >> 8);
+        for(bit = 8; bit > 0; --bit){
+            if(remainder & 0x8000)  remainder = (remainder << 1) ^ 0x3000;
+            else                    remainder = remainder << 1;
+        }
+    }
+    remainder = (remainder >> 12) & 0x000F;
+    return remainder ^ 0x00;
+}
+
 // State Machine diagram generated using asciiflow.com
 /*
- *               │init || reset
- *               │                                      trigger(delay_ms)
- *        ┌──────▼──────┐                             ────────────────────►
- *        │    RESET    │
- *        └──────┬──────┘                           Note: i2c_error causes
- *               │i2c_done(10)                      a repeat of any state after 10ms
- *               │
- *        ┌──────▼──────┐  i2c_done,!valid
- *        │  READ_PROM  ├───────────────────┐      valid means crc check passes
- *        └──────┬──────┘                   │      and sensor version / id is
- * i2c_done,valid│                          │      correct
- *               │                          │
- *        ┌──────▼──────┐            ┌──────▼──────┐
- *  ┌─────►   CONV_D1   │            │ BAD_SENSOR  │
- *  │     └──────┬──────┘            └─────────────┘
- *  │            │i2c_done(20)
- *  │            │
- *  │     ┌──────▼──────┐
- *  │     │  READ_ADC   │
- *  │     └──────┬──────┘
- *  │            │i2c_done(20)
- *  └────────────┘
+ *                            │init || reset
+ *                            │                                      trigger(delay_ms)
+ *                     ┌──────▼──────┐                             ────────────────────►
+ *                     │    RESET    │
+ *                     └──────┬──────┘                           Note: i2c_error causes
+ *                            │i2c_done(10)                      a repeat of any state after 1
+ *                            │                  i==6                                         0ms
+ *              ┌─────►┌──────▼──────┐  i2c_done,!valid
+ * i2c_done,i!=6│      │ READ_PROM_i ├───────────────────┐      valid means crc check passes
+ *              └──────┤ i=0,1,...,6 │                   │      and sensor version / id is
+ *                     └──────┬──────┘                   │      correct
+ *              i2c_done,valid│                          │
+ *                       i==6 │                          │
+ *                     ┌──────▼──────┐            ┌──────▼──────┐
+ *               ┌─────►    IDLE     │            │ BAD_SENSOR  │
+ *               │     └──────┬──────┘            └─────────────┘
+ *               │            │read
+ *               │            │
+ *               │     ┌──────▼──────┐
+ *               │     │   CONV_D1   │
+ *               │     └──────┬──────┘
+ *               │            │i2c_done(20)
+ *               │            │
+ *               │     ┌──────▼──────┐
+ *               │     │  READ_ADC   │
+ *               │     └──────┬──────┘
+ *               │            │i2c_done
+ *               └────────────┘
  */
 static void ms5837_state_machine(uint8_t trigger){
     // Store original state
     uint8_t orig_state = state;
+    bool repeat_state = false;
+    static uint32_t prom_read_i;
+    static uint16_t prom_data[8];                                   // 7 actual words. Last set to 0 for CRC stuff
 
     // -----------------------------------------------------------------------------------------------------------------
     // State changes
@@ -128,13 +159,26 @@ static void ms5837_state_machine(uint8_t trigger){
                 state = STATE_DELAY;
                 delay = 10;
                 delay_next_state = STATE_READ_PROM;
+                prom_read_i = 0;
             }
             break;
         case STATE_READ_PROM:
-            if(trigger == TRIGGER_I2C_DONE){
-                bool valid = false; // TODO
+            if(trigger == TRIGGER_I2C_DONE && prom_read_i == 6){
+                // Valid if CRC matches AND sensor version is expected
+                uint8_t crc_read = prom_data[0] >> 12;
+                uint8_t crc_calc = crc4(prom_data);
+                uint8_t sensor_ver = (prom_data[0] >> 5) & 0x7F;
+                bool valid = (crc_read == crc_calc) && (sensor_ver == MS5837_30BA_VER);
                 state = valid ? STATE_CONV_D1 : STATE_BAD_SENSOR;
                 connected = valid;
+            }else if(trigger == TRIGGER_I2C_DONE){
+                // Store word for later
+                prom_data[prom_read_i] = (ms5837_trans.read_buf[0] << 8) | ms5837_trans.read_buf[1];
+
+                // Read next byte
+                prom_read_i++;
+                state = STATE_READ_PROM;
+                repeat_state = true;
             }
             break;
         case STATE_CONV_D1:
@@ -155,7 +199,7 @@ static void ms5837_state_machine(uint8_t trigger){
         }
     }
 
-    if((state == orig_state)){
+    if((state == orig_state) && !repeat_state){
         // No state transition occurred
         return;
     }
@@ -176,9 +220,9 @@ static void ms5837_state_machine(uint8_t trigger){
         FLAG_SET(flags_main, FLAG_MAIN_MS5837_WANTI2C);
         break;
     case STATE_READ_PROM:
-        ms5837_trans.write_buf[0] = MS5837_CMD_PROM_READ;
+        ms5837_trans.write_buf[0] = MS5837_CMD_PROM_READ + prom_read_i * 2;
         ms5837_trans.write_count = 1;
-        ms5837_trans.read_count = 0;
+        ms5837_trans.read_count = 2;
         FLAG_SET(flags_main, FLAG_MAIN_MS5837_WANTI2C);
         break;
     case STATE_CONV_D1:

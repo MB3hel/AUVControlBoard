@@ -1,5 +1,7 @@
 /**
  * BNO055 Depth Sensor Driver
+ * ONLY SUPPORTS 30BA variant as of now
+ * Could be adapted later (changes calculations)
  * 
  * @file ms5837.h
  * @author Marcus Behel

@@ -1,4 +1,3 @@
-- Depth sensor read PROM is 8 transactions, not 1...
 - Instead of periodically recalculating speeds in global mode, use a timer. This way, if setpoint is changing rapidly from computer recalculate will be skipped.
 - Configuration of axes via commands
 - Better read rate on BNO055
