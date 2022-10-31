@@ -7,6 +7,7 @@
 #include <flags.h>
 #include <i2c0.h>
 #include <timers.h>
+#include <usb.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -75,7 +76,7 @@ static uint8_t crc4(uint16_t *data){
     uint32_t count;
     uint32_t remainder = 0;
     uint8_t bit;
-    data[0] = (data[0] & 0x0FFFF);
+    data[0] = (data[0] & 0x0FFF);
     data[7] = 0;
     for(count = 0; count < 16; ++count){
         if(count & 0x1)  remainder ^= (uint16_t)(data[count >> 1] & 0x00FF);
@@ -169,6 +170,10 @@ static void ms5837_state_machine(uint8_t trigger){
                 uint8_t crc_calc = crc4(prom_data);
                 uint8_t sensor_ver = (prom_data[0] >> 5) & 0x7F;
                 bool valid = (crc_read == crc_calc) && (sensor_ver == MS5837_30BA_VER);
+                if(crc_read == crc_calc)
+                    dotstar_set(0, 0, 255);
+                else
+                    dotstar_set(255, 0, 0);
                 state = valid ? STATE_CONV_D1 : STATE_BAD_SENSOR;
                 connected = valid;
             }else if(trigger == TRIGGER_I2C_DONE){
