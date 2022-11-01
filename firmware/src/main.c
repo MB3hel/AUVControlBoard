@@ -74,11 +74,13 @@ void i2c0_manager(void){
         // ---------------------------------------------------------------------------------------------------------
         // Runs when i2c0 finishes a transaction
         // ---------------------------------------------------------------------------------------------------------
-        if(i2c0_curr_trans == &bno055_trans)
+        if(i2c0_curr_trans == &bno055_trans){
             bno055_i2c_done();
-        else if(i2c0_curr_trans == &ms5837_trans)
+            idx = BNO055 + 1;
+        }else if(i2c0_curr_trans == &ms5837_trans){
             ms5837_i2c_done();
-        idx++;
+            idx = MS5837 + 1;
+        }
         if(idx >= NDEVICES)
             idx = 0;
         // ---------------------------------------------------------------------------------------------------------
@@ -86,25 +88,28 @@ void i2c0_manager(void){
 
     if(I2C0_IDLE){
         uint8_t tmp = idx;
+        bool exit = false;
         do{
             switch(tmp){
             case BNO055:
                 if(FLAG_CHECK(flags_main, FLAG_MAIN_BNO055_WANTI2C)){
                     FLAG_CLEAR(flags_main, FLAG_MAIN_BNO055_WANTI2C);
                     i2c0_start(&bno055_trans);
+                    exit = true;
                 }
                 break;
             case MS5837:
                 if(FLAG_CHECK(flags_main, FLAG_MAIN_MS5837_WANTI2C)){
                     FLAG_CLEAR(flags_main, FLAG_MAIN_MS5837_WANTI2C);
                     i2c0_start(&ms5837_trans);
+                    exit = true;
                 }
                 break;
             }
             tmp++;
             if(tmp >= NDEVICES)
                 tmp = 0;
-        }while(tmp != idx);
+        }while(tmp != idx && !exit);
     }
 }
 
@@ -128,11 +133,11 @@ int main(void){
     usb_init();                                                 // Initialize USB
     i2c0_init();                                                // Initialize I2C
     delay_ms(100);                                              // Give sensors time to power on    
-    // if(!bno055_init()){                                         // Attempt BNO055 Init
-    //     // TODO: Allow local and raw to work if IMU
-    //     //       is not connected
-    //     sensor_error();                                         // Error if no BNO055
-    // }
+    if(!bno055_init()){                                         // Attempt BNO055 Init
+        // TODO: Allow local and raw to work if IMU
+        //       is not connected
+        sensor_error();                                         // Error if no BNO055
+    }
     ms5837_init();                                              // Initialize MS5837
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -169,7 +174,7 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
             // Runs every 100ms
             // ---------------------------------------------------------------------------------------------------------
-            cmdctrl_update_led();
+            // cmdctrl_update_led();
             
             // Handle motor watchdog
             if(motor_control_watchdog_count()){

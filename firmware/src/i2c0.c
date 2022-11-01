@@ -74,10 +74,7 @@ void i2c0_init(void){
 }
 
 bool i2c0_start(i2c_trans *trans){
-    bool res = false;
     if(I2C0_IDLE){
-        usb_writemsg((uint8_t[]){'S', 'T', 'A', 'R', 'T'}, 5);
-
         // If previous transaction did not timeout, reset the timeout counter
         // This counter is supposed to count number of timeouts in a row
         if(i2c0_curr_trans != NULL && i2c0_curr_trans->status != I2C_STATUS_TIMEOUT){
@@ -107,8 +104,9 @@ bool i2c0_start(i2c_trans *trans){
             i2c0_curr_trans->status = I2C_STATUS_SUCCESS;
             FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
         }
+        return true;
     }
-    return res;
+    return false;
 }
 
 void i2c0_timeout(void){
