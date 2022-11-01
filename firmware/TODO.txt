@@ -1,8 +1,9 @@
 - Instead of periodically recalculating speeds in global mode, use a timer. This way, if setpoint is changing rapidly from computer recalculate will be skipped.
 - Configuration of axes via commands
-- Better read rate on BNO055
 - Command to start / stop periodically sending IMU data to computer
+    - Also command to read IMU data once
 - Command to start / stop periodically sending depth data to computer
+    - Also command to read depth data once
 - Stability assist mode
 - Possible communication protocol changes (ACK of commands to control board)
 - Calibration of depth sensor (initial in-air reading for zero depth)
