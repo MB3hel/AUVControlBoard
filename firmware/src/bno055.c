@@ -448,7 +448,7 @@ static void bno055_state_machine(uint8_t trigger){
                 data.grav_z = tmp16 / 100.0f;
 
                 state = STATE_DELAY;
-                delay = 50;
+                delay = 15;
                 delay_next_state = STATE_RD_EULER;
             }
             break;
@@ -462,7 +462,7 @@ static void bno055_state_machine(uint8_t trigger){
                 data.euler_pitch = tmp16 / 16.0f;
 
                 state = STATE_DELAY;
-                delay = 50;
+                delay = 15;
                 delay_next_state = reconfig ? STATE_RECONFIG : STATE_RD_GRAV;
                 reconfig = false;
             }
