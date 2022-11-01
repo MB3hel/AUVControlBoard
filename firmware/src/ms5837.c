@@ -19,6 +19,18 @@
 #define MS5837_CMD_RESET                0x1E
 #define MS5837_CMD_ADC_READ             0x00
 #define MS5837_CMD_PROM_READ            0xA0
+#define MS5837_CMD_CONVERT_D1_OSR256    0x40
+#define MS5837_CMD_CONVERT_D1_OSR512    0x42
+#define MS5837_CMD_CONVERT_D1_OSR1024   0x44
+#define MS5837_CMD_CONVERT_D1_OSR2048   0x46
+#define MS5837_CMD_CONVERT_D1_OSR4096   0x48
+#define MS5837_CMD_CONVERT_D1_OSR8192   0x4A
+#define MS5837_CMD_CONVERT_D2_OSR256    0x50
+#define MS5837_CMD_CONVERT_D2_OSR512    0x52
+#define MS5837_CMD_CONVERT_D2_OSR1024   0x54
+#define MS5837_CMD_CONVERT_D2_OSR2048   0x56
+#define MS5837_CMD_CONVERT_D2_OSR4096   0x58
+
 #define MS5837_CMD_CONVERT_D1_8192      0x4A
 #define MS5837_CMD_CONVERT_D2_8192      0x5A
 
@@ -101,8 +113,8 @@ static uint8_t crc4(uint16_t *data){
  *                            │                  i==6                                         0ms
  *              ┌─────►┌──────▼──────┐  i2c_done,!valid
  * i2c_done,i!=6│      │ READ_PROM_i ├───────────────────┐      valid means crc check passes
- *              └──────┤ i=0,1,...,6 │                   │      and sensor version / id is
- *                     └──────┬──────┘                   │      correct
+ *              └──────┤ i=0,1,...,6 │                   │      
+ *                     └──────┬──────┘                   │      
  *              i2c_done,valid│                          │
  *                       i==6 │                          │
  *                     ┌──────▼──────┐            ┌──────▼──────┐
@@ -165,17 +177,13 @@ static void ms5837_state_machine(uint8_t trigger){
             break;
         case STATE_READ_PROM:
             if(trigger == TRIGGER_I2C_DONE && prom_read_i == 6){
-                // Valid if CRC matches AND sensor version is expected
+                prom_data[prom_read_i] = (ms5837_trans.read_buf[0] << 8) | ms5837_trans.read_buf[1];
+
+                // Valid if CRC matches 
                 uint8_t crc_read = prom_data[0] >> 12;
                 uint8_t crc_calc = crc4(prom_data);
-                uint8_t sensor_ver = (prom_data[0] >> 5) & 0x7F;
-                bool valid = (crc_read == crc_calc) && (sensor_ver == MS5837_30BA_VER);
-                if(crc_read == crc_calc)
-                    dotstar_set(0, 0, 255);
-                else
-                    dotstar_set(255, 0, 0);
-                state = valid ? STATE_CONV_D1 : STATE_BAD_SENSOR;
-                connected = valid;
+                state = (crc_read == crc_calc) ? STATE_CONV_D1 : STATE_BAD_SENSOR;
+                connected = (crc_read == crc_calc);
             }else if(trigger == TRIGGER_I2C_DONE){
                 // Store word for later
                 prom_data[prom_read_i] = (ms5837_trans.read_buf[0] << 8) | ms5837_trans.read_buf[1];
@@ -280,16 +288,20 @@ float ms5837_get(void){
     return depth;
 }
 
-void ms5837_reset(void){
-    // Use a flag because it may not be possible to transition states now
-    // In that case, this should override normal state transitions
-    reset = true;
-
-    // If the current state performs no actions
-    // this can be triggered now
-    // Can't do this if waiting on i2c or delay though
-    // In those cases, the reset will trigger when i2c or delay finishes
-    if(state == STATE_BAD_SENSOR){
-        ms5837_state_machine(TRIGGER_NONE);
-    }
+bool ms5837_connected(void){
+    return connected;
 }
+
+// void ms5837_reset(void){
+//     // Use a flag because it may not be possible to transition states now
+//     // In that case, this should override normal state transitions
+//     reset = true;
+
+//     // If the current state performs no actions
+//     // this can be triggered now
+//     // Can't do this if waiting on i2c or delay though
+//     // In those cases, the reset will trigger when i2c or delay finishes
+//     if(state == STATE_BAD_SENSOR){
+//         ms5837_state_machine(TRIGGER_NONE);
+//     }
+// }

@@ -10,3 +10,4 @@
 - Move BNO055 existence verification to state machine
 - Add status query to read sensor status (connected / not connected)
 - Firmware should work without sensor(s) connected excluding modes using the sensor(s)
+- MS5837 fluid density settings

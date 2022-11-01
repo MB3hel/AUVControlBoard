@@ -54,5 +54,5 @@ bool ms5837_connected(void);
 /**
  * Reset the state machine and sensor
  */
-void ms5837_reset(void);
+// void ms5837_reset(void);
 
