@@ -10,3 +10,7 @@
 - Firmware should work without sensor(s) connected excluding modes using the sensor(s)
     - If a sensor is disconnected while in a mode using it, exit the mode and signal pc
 - MS5837 fluid density settings
+- Add pullup resistors to SDA and SCL lines on prototype boards
+- Add gpio to be able to reset BNO055 to prototype boards
+- Determine if MS5837 needs to be reset when i2c times out
+- Explicitly set unit sel register on BNO055
