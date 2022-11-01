@@ -277,7 +277,7 @@ static void ms5837_state_machine(uint8_t trigger){
             break;
         case STATE_READ_ADC_D1:
             if(trigger == TRIGGER_I2C_DONE){
-                d1 = (ms5837_trans.read_buf[0] << 16) | (ms5837_trans.read_buf[1] << 8) | ms5837_trans.read_buf[0];
+                d1 = (ms5837_trans.read_buf[0] << 16) | (ms5837_trans.read_buf[1] << 8) | ms5837_trans.read_buf[2];
                 state = STATE_CONV_D2;
             }
             break;
@@ -289,7 +289,7 @@ static void ms5837_state_machine(uint8_t trigger){
             }
         case STATE_READ_ADC_D2:
             if(trigger == TRIGGER_I2C_DONE){
-                d2 = (ms5837_trans.read_buf[0] << 16) | (ms5837_trans.read_buf[1] << 8) | ms5837_trans.read_buf[0];
+                d2 = (ms5837_trans.read_buf[0] << 16) | (ms5837_trans.read_buf[1] << 8) | ms5837_trans.read_buf[2];
                 calculate();
 
                 state = STATE_DELAY;
