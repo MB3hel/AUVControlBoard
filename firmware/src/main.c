@@ -128,11 +128,11 @@ int main(void){
     usb_init();                                                 // Initialize USB
     i2c0_init();                                                // Initialize I2C
     delay_ms(100);                                              // Give sensors time to power on    
-    if(!bno055_init()){                                         // Attempt BNO055 Init
-        // TODO: Allow local and raw to work if IMU
-        //       is not connected
-        sensor_error();                                         // Error if no BNO055
-    }
+    // if(!bno055_init()){                                         // Attempt BNO055 Init
+    //     // TODO: Allow local and raw to work if IMU
+    //     //       is not connected
+    //     sensor_error();                                         // Error if no BNO055
+    // }
     ms5837_init();                                              // Initialize MS5837
 
     // -----------------------------------------------------------------------------------------------------------------

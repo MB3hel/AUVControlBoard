@@ -30,9 +30,7 @@
 #define MS5837_CMD_CONVERT_D2_OSR1024   0x54
 #define MS5837_CMD_CONVERT_D2_OSR2048   0x56
 #define MS5837_CMD_CONVERT_D2_OSR4096   0x58
-
-#define MS5837_CMD_CONVERT_D1_8192      0x4A
-#define MS5837_CMD_CONVERT_D2_8192      0x5A
+#define MS5837_CMD_CONVERT_D2_OSR8192   0x5A
 
 // Buffer settings
 #define WRITE_BUF_SIZE          16          // max number of write bytes per transaction
@@ -44,8 +42,10 @@
 #define STATE_RESET             2           // Write reset command
 #define STATE_READ_PROM         3           // Read PROM
 #define STATE_CONV_D1           4           // Write D1 convert command (pressure)
-#define STATE_READ_ADC          5           // Write read adc command and read data
-#define STATE_BAD_SENSOR        6           // Dead end state for invalid sensor version / id
+#define STATE_READ_ADC_D1       5           // Write read adc command and read data
+#define STATE_CONV_D2           6           // Write D2 convert command (temperature)
+#define STATE_READ_ADC_D2       7           // Write read adc command and read data
+#define STATE_BAD_SENSOR        8           // Dead end state for invalid sensor version / id
 
 // State transition triggers
 #define TRIGGER_NONE            0
@@ -63,23 +63,92 @@ static uint8_t wbuf[WRITE_BUF_SIZE];
 static volatile uint8_t rbuf[READ_BUF_SIZE];
 i2c_trans ms5837_trans;
 
+static ms5837_data data;
+
 static uint8_t state;
 static uint32_t delay;
 static uint8_t delay_next_state;
 
-static float depth;
+// Raw data
+static uint32_t d1, d2;
+static uint16_t prom_data[8];
+
 static bool connected;
 
-// Flags that trigger "abnormal" transitions at the next trigger of the state machine
-// These will not trigger immediately, but when the current state finishes interrupting
-// normal flow of the state machine. However, if the state machine is in an idle state
-// (a state where no action is in progress), these should also trigger an immediate
-// transition (TRIGGER_NONE).
-static bool reset;
+// TODO: Make this configurable via pc command
+// freshwater = 997.0f
+// saltwater = 1029.0f
+const static float fluid_density = 997.0f;
+
+// TODO: Make this configurable via pc command
+const static float atm_pressure = 101325.0f;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Perform calculations
+ * See pages 11-12 of sensor datasheet
+ */
+static void calculate(void){
+    int32_t dT = 0;
+	int64_t SENS = 0;
+	int64_t OFF = 0;
+    int32_t TEMP, TEMP100_DIV_100;
+    int32_t P;
+	int32_t SENSi = 0;
+	int32_t OFFi = 0;
+	int32_t Ti = 0;
+	int64_t OFF2 = 0;
+	int64_t SENS2 = 0;
+
+	// Calculate temperature
+	dT = d2 - ((uint32_t)prom_data[5]) * 256l;
+    TEMP = 2000l + ((int64_t)dT) * prom_data[6] / 8388608LL;
+    
+    // Calculate temperature compensated pressure
+    SENS = ((int64_t)prom_data[1]) * 32768l + (((int64_t)prom_data[3]) * dT) / 256l;
+    OFF = ((int64_t)prom_data[2]) * 65536l + (((int64_t)prom_data[4]) * dT) / 128l;
+    
+    // Skip this because it would just be recalculated in second order
+    // P = (d1 * SENS / (2097152l) - OFF) / 8192l;
+	
+
+    // -------------------------------------------------------------------------
+	// Second order compensation
+	// -------------------------------------------------------------------------
+    TEMP100_DIV_100 = TEMP / 100;
+    if(TEMP100_DIV_100 < 20){
+        // Low temperature
+        Ti = (3 * ((int64_t)dT) * ((int64_t)dT)) / 8589934592ll;
+        OFFi = (3 * (TEMP - 2000) * (TEMP - 2000)) / 2;
+        SENSi = (5 * (TEMP - 2000) * (TEMP - 2000)) / 8;
+        if(TEMP100_DIV_100 < -15){
+            // Very low temperature
+            OFFi = OFFi + 7 * (TEMP + 1500l) * (TEMP + 1500l);
+            SENSi = SENSi + 4 * (TEMP + 1500l) * (TEMP + 1500l);
+        }
+    }else{
+        // High temperature
+        Ti = 2 * (dT * dT) / 137438953472ll;
+        OFFi = ((TEMP - 2000) * (TEMP - 2000)) / 16;
+        SENSi = 0;
+    }
+
+	OFF2 = OFF-OFFi;
+	SENS2 = SENS-SENSi;
+
+	TEMP = (TEMP-Ti);
+	P = ((d1 * SENS2) / 2097152l - OFF2) / 8192l;
+
+    // P in mbar * 10
+    // TEMP in celsius * 100
+    // 1mbar = 100Pa -> P * 10 = Pa
+    data.pressure_mbar = P / 10.0f;
+    data.temperature_c = TEMP / 100.0f;
+    data.depth_m = ((P * 10.0f) - atm_pressure) / (fluid_density * 9.80665);
+}
 
 /**
  * crc4 function as defined in sensor datasheet (p10)
@@ -113,42 +182,47 @@ static uint8_t crc4(uint16_t *data){
  *                            │                  i==6                                         0ms
  *              ┌─────►┌──────▼──────┐  i2c_done,!valid
  * i2c_done,i!=6│      │ READ_PROM_i ├───────────────────┐      valid means crc check passes
- *              └──────┤ i=0,1,...,6 │                   │      
- *                     └──────┬──────┘                   │      
+ *              └──────┤ i=0,1,...,6 │                   │
+ *                     └──────┬──────┘                   │
  *              i2c_done,valid│                          │
  *                       i==6 │                          │
  *                     ┌──────▼──────┐            ┌──────▼──────┐
- *               ┌─────►    IDLE     │            │ BAD_SENSOR  │
- *               │     └──────┬──────┘            └─────────────┘
- *               │            │read
- *               │            │
- *               │     ┌──────▼──────┐
- *               │     │   CONV_D1   │
- *               │     └──────┬──────┘
- *               │            │i2c_done(20)
- *               │            │
- *               │     ┌──────▼──────┐
- *               │     │  READ_ADC   │
- *               │     └──────┬──────┘
- *               │            │i2c_done
- *               └────────────┘
+ *                     │    IDLE     │            │ BAD_SENSOR  │
+ *                     └──────┬──────┘            └─────────────┘
+ *                            │read
+ *                            │
+ *                     ┌──────▼──────┐
+ *                ┌───►│   CONV_D1   │
+ *                │    └──────┬──────┘
+ *                │           │i2c_done(20)
+ *                │           │
+ *                │    ┌──────▼──────┐
+ *                │    │ READ_ADC_D1 │
+ *                │    └──────┬──────┘
+ *                │           │i2c_done
+ *                │           │
+ *                │    ┌──────▼──────┐
+ *                │    │   CONV_D2   │
+ *                │    └──────┬──────┘
+ *                │           │i2c_done(20)
+ *                │           │
+ *                │    ┌──────▼──────┐
+ *                │    │ READ_ADC_D2 │
+ *                │    └──────┬──────┘
+ *                │           │i2c_done(20)
+ *                └───────────┘
  */
 static void ms5837_state_machine(uint8_t trigger){
     // Store original state
     uint8_t orig_state = state;
     bool repeat_state = false;
     static uint32_t prom_read_i;
-    static uint16_t prom_data[8];                                   // 7 actual words. Last set to 0 for CRC stuff
 
     // -----------------------------------------------------------------------------------------------------------------
     // State changes
     // -----------------------------------------------------------------------------------------------------------------
     
-    if(reset){
-        // Handle "abnormal" triggers first
-        state = STATE_RESET;
-        reset = false;
-    }else if(trigger == TRIGGER_I2C_ERROR){
+    if(trigger == TRIGGER_I2C_ERROR){
         // Repeat same state after 10ms
         delay = 10;
         delay_next_state = state;
@@ -198,17 +272,30 @@ static void ms5837_state_machine(uint8_t trigger){
             if(trigger == TRIGGER_I2C_DONE){
                 state = STATE_DELAY;
                 delay = 20;                                         // Max conversion time in datasheet
-                delay_next_state = STATE_READ_ADC;
+                delay_next_state = STATE_READ_ADC_D1;
             }
             break;
-        case STATE_READ_ADC:
+        case STATE_READ_ADC_D1:
             if(trigger == TRIGGER_I2C_DONE){
-                // TODO: Handle read data
+                d1 = (ms5837_trans.read_buf[0] << 16) | (ms5837_trans.read_buf[1] << 8) | ms5837_trans.read_buf[0];
+                state = STATE_CONV_D2;
+            }
+            break;
+        case STATE_CONV_D2:
+            if(trigger == TRIGGER_I2C_DONE){
                 state = STATE_DELAY;
-                delay = 20;                                         // Defines rate of reads
+                delay = 20;                                         // Max conversion time in datasheet
+                delay_next_state = STATE_READ_ADC_D2;
+            }
+        case STATE_READ_ADC_D2:
+            if(trigger == TRIGGER_I2C_DONE){
+                d2 = (ms5837_trans.read_buf[0] << 16) | (ms5837_trans.read_buf[1] << 8) | ms5837_trans.read_buf[0];
+                calculate();
+
+                state = STATE_DELAY;
+                delay = 20;                                         // Defines sensor read rate
                 delay_next_state = STATE_CONV_D1;
             }
-            break;
         }
     }
 
@@ -239,12 +326,24 @@ static void ms5837_state_machine(uint8_t trigger){
         FLAG_SET(flags_main, FLAG_MAIN_MS5837_WANTI2C);
         break;
     case STATE_CONV_D1:
-        ms5837_trans.write_buf[0] = MS5837_CMD_CONVERT_D1_8192;
+        ms5837_trans.write_buf[0] = MS5837_CMD_CONVERT_D1_OSR1024;
         ms5837_trans.write_count = 1;
         ms5837_trans.read_count = 0;
         FLAG_SET(flags_main, FLAG_MAIN_MS5837_WANTI2C);
         break;
-    case STATE_READ_ADC:
+    case STATE_READ_ADC_D1:
+        ms5837_trans.write_buf[0] = MS5837_CMD_ADC_READ;
+        ms5837_trans.write_count = 1;
+        ms5837_trans.read_count = 3;
+        FLAG_SET(flags_main, FLAG_MAIN_MS5837_WANTI2C);
+        break;
+    case STATE_CONV_D2:
+        ms5837_trans.write_buf[0] = MS5837_CMD_CONVERT_D2_OSR1024;
+        ms5837_trans.write_count = 1;
+        ms5837_trans.read_count = 0;
+        FLAG_SET(flags_main, FLAG_MAIN_MS5837_WANTI2C);
+        break;
+    case STATE_READ_ADC_D2:
         ms5837_trans.write_buf[0] = MS5837_CMD_ADC_READ;
         ms5837_trans.write_count = 1;
         ms5837_trans.read_count = 3;
@@ -255,8 +354,9 @@ static void ms5837_state_machine(uint8_t trigger){
 
 bool ms5837_init(void){
     // Initial data
-    depth = 999;
-    reset = false;
+    data.depth_m = 999;
+    data.temperature_c = 999;
+    data.pressure_mbar = 999;
     connected = false;
     
     // Setup transaction
@@ -284,24 +384,11 @@ void ms5837_delay_done(void){
     ms5837_state_machine(TRIGGER_DELAY_DONE);
 }
 
-float ms5837_get(void){
-    return depth;
+ms5837_data ms5837_get(void){
+    return data;
 }
 
 bool ms5837_connected(void){
     return connected;
 }
 
-// void ms5837_reset(void){
-//     // Use a flag because it may not be possible to transition states now
-//     // In that case, this should override normal state transitions
-//     reset = true;
-
-//     // If the current state performs no actions
-//     // this can be triggered now
-//     // Can't do this if waiting on i2c or delay though
-//     // In those cases, the reset will trigger when i2c or delay finishes
-//     if(state == STATE_BAD_SENSOR){
-//         ms5837_state_machine(TRIGGER_NONE);
-//     }
-// }
