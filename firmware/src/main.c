@@ -34,27 +34,6 @@ volatile uint16_t flags_main = 0;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Blink LED on sensor error
- */
-void sensor_error(void){
-    bool toggle = false;
-    while(1){
-        if(FLAG_CHECK(flags_main, FLAG_MAIN_1000MS)){
-            FLAG_CLEAR(flags_main, FLAG_MAIN_1000MS);
-            toggle = !toggle;
-            if(toggle)
-                dotstar_set(255, 32, 0);
-            else
-                dotstar_set(0, 0, 0);
-        }else if (FLAG_CHECK(flags_main, FLAG_MAIN_10MS)){
-            FLAG_CLEAR(flags_main, FLAG_MAIN_10MS);
-            TIMERS_WDT_FEED();
-        }
-        usb_process();
-    }
-}
-
-/**
  * Starts i2c0 transactions as needed. Handles multiple sensors in such a way
  * that no sensor will be resource starved.
  * This is achieved by checking sensors in a fixed order, but starting at different points
@@ -133,11 +112,7 @@ int main(void){
     usb_init();                                                 // Initialize USB
     i2c0_init();                                                // Initialize I2C
     delay_ms(100);                                              // Give sensors time to power on    
-    if(!bno055_init()){                                         // Attempt BNO055 Init
-        // TODO: Allow local and raw to work if IMU
-        //       is not connected
-        sensor_error();                                         // Error if no BNO055
-    }
+    bno055_init();                                              // Initialize BNO055
     ms5837_init();                                              // Initialize MS5837
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -174,7 +149,7 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
             // Runs every 100ms
             // ---------------------------------------------------------------------------------------------------------
-            // cmdctrl_update_led();
+            cmdctrl_update_led();
             
             // Handle motor watchdog
             if(motor_control_watchdog_count()){

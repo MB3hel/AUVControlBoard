@@ -48,7 +48,7 @@ extern i2c_trans bno055_trans;
 /**
  * Initialize BNO055
  */
-bool bno055_init(void);
+void bno055_init(void);
 
 /**
  * Call from main when i2c transaction done
@@ -64,3 +64,8 @@ void bno055_delay_done(void);
  * Get current IMU data
  */
 bno055_data bno055_get(void);
+
+/**
+ * Check if BNO055 IMU connected
+ */
+bool bno055_connected(void);
