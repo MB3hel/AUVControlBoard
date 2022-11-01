@@ -287,6 +287,7 @@ static void ms5837_state_machine(uint8_t trigger){
                 delay = 20;                                         // Max conversion time in datasheet
                 delay_next_state = STATE_READ_ADC_D2;
             }
+            break;
         case STATE_READ_ADC_D2:
             if(trigger == TRIGGER_I2C_DONE){
                 d2 = (ms5837_trans.read_buf[0] << 16) | (ms5837_trans.read_buf[1] << 8) | ms5837_trans.read_buf[2];
@@ -296,6 +297,7 @@ static void ms5837_state_machine(uint8_t trigger){
                 delay = 20;                                         // Defines sensor read rate
                 delay_next_state = STATE_CONV_D1;
             }
+            break;
         }
     }
 
