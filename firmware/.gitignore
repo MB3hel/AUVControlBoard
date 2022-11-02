@@ -7,6 +7,8 @@
 .vscode
 compile_commands.json
 
+.cache/
+
 # Swap
 [._]*.s[a-v][a-z]
 !*.svg  # comment out if you don't need vector files

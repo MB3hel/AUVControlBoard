@@ -166,8 +166,9 @@ void ports_i2c0_fix_sda_low(void){
     ports_pinfunc(P_I2C0_SDA, MUX_PA12C_SERCOM2_PAD0);
     ports_pinfunc(P_I2C0_SCL, MUX_PA13C_SERCOM2_PAD1);
 
-    // Note: Some sensors need to be reset to start responding again after this
-    // Trigger them to reset now
-    ms5837_reset();
+    // Note: Some sensors need to be reset to start responding again after fixing SDA
+    // Trigger them to reset now if SDA was actually held low
+    if(attempts > 0)
+        ms5837_reset();
 
 }

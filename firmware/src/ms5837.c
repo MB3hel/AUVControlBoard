@@ -232,6 +232,7 @@ static void ms5837_state_machine(uint8_t trigger){
         reset = false;
         connected = false;
         state = STATE_RESET;
+        repeat_state = true;  // just in case it was already in reset state
 
         // Change this to prevent normal transitions from happening
         trigger = TRIGGER_NONE;
