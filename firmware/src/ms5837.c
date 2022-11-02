@@ -75,6 +75,11 @@ static uint16_t prom_data[8];
 
 static bool connected;
 
+// Flags that will disrupt normal state machine transitions
+// These will not trigger anything now, but will be handled the next time
+// something is triggered (eg i2c_done or delay_done)
+static bool reset;
+
 // TODO: Make this configurable via pc command
 // freshwater = 997.0f
 // saltwater = 1029.0f
@@ -222,6 +227,16 @@ static void ms5837_state_machine(uint8_t trigger){
     // State changes
     // -----------------------------------------------------------------------------------------------------------------
     
+    if(reset){
+        // This should override normal state transitions if set
+        reset = false;
+        connected = false;
+        state = STATE_RESET;
+
+        // Change this to prevent normal transitions from happening
+        trigger = TRIGGER_NONE;
+    }
+
     if(trigger == TRIGGER_I2C_ERROR){
         // Repeat same state after 10ms
         delay = 10;
@@ -392,5 +407,9 @@ ms5837_data ms5837_get(void){
 
 bool ms5837_connected(void){
     return connected;
+}
+
+void ms5837_reset(void){
+    reset = true;
 }
 

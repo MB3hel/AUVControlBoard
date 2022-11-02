@@ -56,3 +56,9 @@ ms5837_data ms5837_get(void);
  * @return true once connected. Otherwise false.
  */
 bool ms5837_connected(void);
+
+/**
+ * Reset depth sensor and state machine
+ * Necessary if SDA line becomes held low or this sensor will stop responding
+ */
+void ms5837_reset(void);

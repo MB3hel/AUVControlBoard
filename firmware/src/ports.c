@@ -6,6 +6,8 @@
 #include <ports.h>
 #include <clocks.h>
 #include <sam.h>
+#include <ms5837.h>
+
 
 void ports_pinfunc(uint8_t def, int8_t pinfunc){
     uint8_t port = PORT_GETPORT(def);
@@ -163,4 +165,9 @@ void ports_i2c0_fix_sda_low(void){
     // Put back into I2C mode
     ports_pinfunc(P_I2C0_SDA, MUX_PA12C_SERCOM2_PAD0);
     ports_pinfunc(P_I2C0_SCL, MUX_PA13C_SERCOM2_PAD1);
+
+    // Note: Some sensors need to be reset to start responding again after this
+    // Trigger them to reset now
+    ms5837_reset();
+
 }
