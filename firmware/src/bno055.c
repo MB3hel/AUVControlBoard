@@ -477,7 +477,7 @@ static void bno055_state_machine(uint8_t trigger){
         }
     }
 
-    if((state == orig_state)){
+    if(state == orig_state){
         // No state transition occurred
         return;
     }

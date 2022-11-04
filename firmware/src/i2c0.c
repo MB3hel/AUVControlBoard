@@ -129,13 +129,14 @@ void i2c0_timeout(void){
         SERCOM2->I2CM.STATUS.bit.ARBLOST = 1;                   // Clear ARBLOST error bit
         SERCOM2->I2CM.STATUS.bit.RXNACK = 1;                    // Clear RXNACK error bit
         SERCOM2->I2CM.STATUS.bit.BUSSTATE = 0x1;                // Force back to IDLE state
-    
-        usb_writemsg((uint8_t[]){'R', 'E', 'S', 'E', 'T'}, 5);
     }
 
 
     // Transaction has now finished with error status
     i2c0_curr_trans->status = I2C_STATUS_TIMEOUT;
+    SERCOM2->I2CM.CTRLB.bit.CMD = 0x03;
+    while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);
+    SERCOM2->I2CM.STATUS.bit.BUSSTATE = 0x01;
     FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
 }
 
@@ -166,6 +167,7 @@ static void irq_handler(void){
 
         // Transaction has now finished with error status
         i2c0_curr_trans->status = I2C_STATUS_ERROR;
+        SERCOM2->I2CM.STATUS.bit.BUSSTATE = 0x01;
         FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
 
         // Manually clear interrupt flag in this case
@@ -209,6 +211,7 @@ static void irq_handler(void){
 
                 // Transaction completed successfully
                 i2c0_curr_trans->status = I2C_STATUS_SUCCESS;
+                SERCOM2->I2CM.STATUS.bit.BUSSTATE = 0x01;
                 FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
             }
         }
@@ -243,6 +246,7 @@ static void irq_handler(void){
 
             // Transaction completed successfully
             i2c0_curr_trans->status = I2C_STATUS_SUCCESS;
+            SERCOM2->I2CM.STATUS.bit.BUSSTATE = 0x01;
             FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
 
             // SB flag is cleared when CMD bitfield is set so no need to clear manually
@@ -259,6 +263,7 @@ static void irq_handler(void){
 
         // Transaction has now finished with error status
         i2c0_curr_trans->status = I2C_STATUS_ERROR;
+        SERCOM2->I2CM.STATUS.bit.BUSSTATE = 0x01;
         FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
 
         // Manually clear interrupt flag in this case
