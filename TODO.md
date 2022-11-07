@@ -39,6 +39,7 @@
 
 # Docs
 - User Guide
+    - Document robot coordinate system
     - Document each control mode (what it is, intended use cases, features, etc)
     - Document IMU configuration, options, and type of data
     - Document depth sensor configuration, options, and type of data
