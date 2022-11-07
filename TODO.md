@@ -7,7 +7,6 @@
 - Implement depth hold PID, pitch hold PID, and roll hold PID for stability assist mode.
 - Implement yaw hold PID for stability assist mode.
 
-
 ## Communication
 - Implement reset command
 - Implement sensor restart command. This command should reset sensor drivers to allow newly connected sensors to be detected without a hard reset which would drop USB communication.
@@ -16,7 +15,6 @@
     - Get = computer requesting information from control board
     - Status = Information sent from control board to computer unprompted
 - All "set" messages respond with an ACK message (somehow indicating what the acknowledge is for). Should also include a status code.
-
 
 ## Sensors
 - IMU (BNO055)
@@ -33,6 +31,10 @@
     - Command to start / stop reading sensor data periodically
 - Query sensor status from PC messages (indicates status of depth and IMU)
 
+
+# Interface Scripts
+- Change to work with ACK messages (once implemented)
+- Support all new things
 
 
 # Docs
