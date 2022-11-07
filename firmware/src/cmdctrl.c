@@ -11,6 +11,7 @@
 #include <usb.h>
 #include <motor_control.h>
 #include <bno055.h>
+#include <ms5837.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -213,33 +214,6 @@ void cmdctrl_motors_killed(void){
     
     // Send message telling the computer that the watchdog killed motors
     usb_writemsg((uint8_t[]){'W', 'D', 'G', 'K'}, 4);
-}
-
-
-void cmdctrl_send_sensors(void){
-    // uint8_t msg[17];
-    // bno055_data imu_dat = bno055_get();
-
-    // // Send IMU orientation (quaternion)
-    // msg[0] = 'E';
-    // msg[1] = 'U';
-    // msg[2] = 'L';
-    // msg[3] = 'E';
-    // msg[4] = 'R';
-    // conversions_float_to_data(imu_dat.euler_pitch, &msg[5], true);
-    // conversions_float_to_data(imu_dat.euler_roll, &msg[9], true);
-    // conversions_float_to_data(imu_dat.euler_yaw, &msg[13], true);
-    // pccomm_write_msg(msg, 17);
-
-    // // Send IMU gravity vector
-    // msg[0] = 'G';
-    // msg[1] = 'V';
-    // msg[2] = 'E';
-    // msg[3] = 'C';
-    // conversions_float_to_data(imu_dat.grav_x, &msg[4], true);
-    // conversions_float_to_data(imu_dat.grav_y, &msg[8], true);
-    // conversions_float_to_data(imu_dat.grav_z, &msg[12], true);
-    // pccomm_write_msg(msg, 16);
 }
 
 void cmdctrl_update_motors(void){
