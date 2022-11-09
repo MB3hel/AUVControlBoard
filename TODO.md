@@ -1,7 +1,6 @@
 # Firmware
 
 ## Control Modes
-- Remove mode set command. Mode should just change when a speed set command for that mode is issued. Still allow getting the mode though.
 - GLOBAL and STABILITY_ASSIST modes should not work if required sensors are not connected
 - Instead of periodically recalculating speeds in global and stability assist mode, use a timer. This way, if setpoint is changing rapidly from computer recalculate will be skipped.
 - Implement PID controller
@@ -25,13 +24,11 @@
     - Command to start / stop reading sensor data periodically
     - Implement calibration status register read
     - Command to read calibration status from IMU
-    - If too many i2c errors in a row, assume the sensor is no longer connected and reset state machine
 - Depth Sensor (MS5837)
     - Configure fluid density via messages from PC
     - Calibrate via messages from PC
     - Command to read sensor data once
     - Command to start / stop reading sensor data periodically
-    - If too many i2c errors in a row, assume the sensor is no longer connected and reset state machine
 - Query sensor status from PC messages (indicates status of depth and IMU)
 
 

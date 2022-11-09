@@ -172,26 +172,20 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         if(len < 30)
             return;
 
-        // GLOBAL mode requires IMU to be connected
-        // If no IMU, send error response and do not set in this mode
-        if(!bno055_connected()){
-            usb_writemsg((uint8_t[]){'E', 'R', 'R', 'I', 'M', 'U'}, 6);
-        }else{
-            // Get speeds from message
-            global_x = conversions_data_to_float(&msg[6], true);
-            global_y = conversions_data_to_float(&msg[10], true);
-            global_z = conversions_data_to_float(&msg[14], true);
-            global_pitch = conversions_data_to_float(&msg[18], true);
-            global_roll = conversions_data_to_float(&msg[22], true);
-            global_yaw = conversions_data_to_float(&msg[26], true);
+        // Get speeds from message
+        global_x = conversions_data_to_float(&msg[6], true);
+        global_y = conversions_data_to_float(&msg[10], true);
+        global_z = conversions_data_to_float(&msg[14], true);
+        global_pitch = conversions_data_to_float(&msg[18], true);
+        global_roll = conversions_data_to_float(&msg[22], true);
+        global_yaw = conversions_data_to_float(&msg[26], true);
 
-            // Get sensor data
-            bno055_data imu_dat = bno055_get();
+        // Get sensor data
+        bno055_data imu_dat = bno055_get();
 
-            // Update motor speeds
-            motor_control_global(global_x, global_y, global_z, global_pitch, global_roll, 
-                    global_yaw, imu_dat.grav_x, imu_dat.grav_y, imu_dat.grav_z);
-        }
+        // Update motor speeds
+        motor_control_global(global_x, global_y, global_z, global_pitch, global_roll, 
+                global_yaw, imu_dat.grav_x, imu_dat.grav_y, imu_dat.grav_z);
     }
 }
 
@@ -231,8 +225,6 @@ void cmdctrl_update_motors(void){
     case CMDCTRL_MODE_GLOBAL:
         // Get sensor data
         imu_dat = bno055_get();
-
-        // TODO: IMU connected check
 
         // Update motor speeds
         motor_control_global(global_x, global_y, global_z, global_pitch, global_roll, 
