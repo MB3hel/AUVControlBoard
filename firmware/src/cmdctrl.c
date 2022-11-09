@@ -26,6 +26,7 @@ const static uint8_t MSG_SET_GLOBAL_PFX[] = {'G', 'L', 'O', 'B', 'A', 'L'};
 
 const static uint8_t MSG_GET_MODE_CMD[] = {'?', 'M', 'O', 'D', 'E'};
 const static uint8_t MSG_GET_TINV_CMD[] = {'?', 'T', 'I', 'N', 'V'};
+const static uint8_t MSG_GET_SENS_STAT[] = {'?', 'S', 'S', 'T', 'A', 'T'};
 
 const static uint8_t MSG_FEED_MWDT_CMD[] = {'W', 'D', 'G', 'F'};
 
@@ -56,8 +57,6 @@ void cmdctrl_init(void){
 void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
     #define MSG_STARTS_WITH(x)      data_startswith(msg, len, x, sizeof(x))
     #define MSG_EQUALS(x)           data_matches(msg, len, x, sizeof(x))
-
-    // TODO: Thruster inversions, local mode set, global mode set, thruster inversion query, reset command
 
     if(MSG_STARTS_WITH(MSG_SET_MODE_PFX)){
         // MODE set command
@@ -186,6 +185,15 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         // Update motor speeds
         motor_control_global(global_x, global_y, global_z, global_pitch, global_roll, 
                 global_yaw, imu_dat.grav_x, imu_dat.grav_y, imu_dat.grav_z);
+    }else if(MSG_EQUALS(MSG_GET_SENS_STAT)){
+        // SENSOR STATUS query
+        
+        // S,S,T,A,T,[IMU_CONNECTED],[DEPTH_CONNECTED]
+        // connected statuses are 1 for connected or 0 for not connected
+        uint8_t *response = (uint8_t[]){'S', 'S', 'T', 'A', 'T', 0, 0};
+        response[5] = bno055_connected() ? 1 : 0;
+        response[6] = ms5837_connected() ? 1 : 0;
+        usb_writemsg(response, 7);
     }
 }
 

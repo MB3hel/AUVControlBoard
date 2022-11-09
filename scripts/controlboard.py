@@ -72,7 +72,10 @@ class ControlBoard:
         self.__inverted: List[int] = [2] * 8
         self.__orientation: PRY = PRY()
         self.__grav_vec: Vector3 = Vector3()
+        self.__imu_connected = False
+        self.__depth_connected = False
         self.__comm_lost = False
+        self.__sstat_query_done = False
 
         self.__read_thread = threading.Thread(target=self.__read_thread_func, daemon=True)
         self.__read_thread.start()
@@ -80,12 +83,29 @@ class ControlBoard:
         self.__feed_thread.start()
 
 
-        self.set_mode(ControlBoard.Mode.RAW)
-        self.set_inverted(False, False, False, False, False, False, False, False)
+        time.sleep(0.1)
+
+
+        if not self.set_mode(ControlBoard.Mode.RAW):
+            raise Exception("Failed to set initial mode!")
+        if not self.set_inverted(False, False, False, False, False, False, False, False):
+            raise Exception("Failed to set initial thruster inversions!")
+        if not self.refresh_sensor_status():
+            raise Exception("Failed to query sensor status!")
 
     @property
     def comm_lost(self) -> bool:
         return self.__comm_lost
+    
+    @property
+    def imu_connected(self) -> bool:
+        with self.__state_lock:
+            return self.__imu_connected
+    
+    @property
+    def depth_connected(self) -> bool:
+        with self.__state_lock:
+            return self.__depth_connected
 
     def set_mode(self, mode: Mode) -> bool:
         with self.__state_lock:
@@ -174,6 +194,18 @@ class ControlBoard:
             for i in range(8):
                 ret.append(self.__inverted[i] == 1)
             return ret
+    
+    def refresh_sensor_status(self):
+        self.__sstat_query_done = False
+        self.__write_msg(b'?SSTAT')
+        start_time = time.time()
+        while True:
+            with self.__state_lock:
+                if self.__sstat_query_done:
+                    return True
+            if time.time() - start_time > 3.0:
+                return False
+            time.sleep(0.05)
 
     def set_raw(self, s1: float, s2: float, s3: float, s4: float, s5: float, s6: float, s7: float, s8: float):
         msg = bytearray()
@@ -286,6 +318,13 @@ class ControlBoard:
                         self.__inverted[i] = True
                     else:
                         self.__inverted[i] = False
+        elif msg.startswith(b'SSTAT'):
+            if len(msg) < 7:
+                return
+            with self.__state_lock:
+                self.__imu_connected = msg[5] == 1
+                self.__depth_connected = msg[6] == 1
+                self.__sstat_query_done = True
         elif msg.startswith(b'EULER'):
             self.__orientation.pitch = struct.unpack_from("<f", buffer=msg, offset=5)[0]
             self.__orientation.roll = struct.unpack_from("<f", buffer=msg, offset=9)[0]

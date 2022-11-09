@@ -1,6 +1,7 @@
 from controlboard import ControlBoard
 import traceback
 import time
+import controlboard
 
 
 if __name__ == "__main__":
@@ -29,6 +30,10 @@ if __name__ == "__main__":
         else:
             print("Fail.", flush=True)
             exit(1)
+
+        print("Sensor Status:")
+        print("  IMU:   {}".format("Connected" if cb.imu_connected else "Not Connected"))
+        print("  Depth: {}".format("Connected" if cb.depth_connected else "Not Connected"))
 
         #           x       y       z     pitch    roll    yaw        
         target = [  0.3,      0,    0,      0,      0,      0   ]

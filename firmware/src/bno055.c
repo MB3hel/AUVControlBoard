@@ -353,7 +353,7 @@ static void bno055_state_machine(uint8_t trigger){
             // Always transition to next state
             // This is just used to start the state machine
             connected = false;
-            state = STATE_SETMODE_CFG;
+            state = STATE_EXIST_CHECK;
             break;
         case STATE_EXIST_CHECK:
             if(trigger == TRIGGER_I2C_DONE){

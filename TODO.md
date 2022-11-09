@@ -10,7 +10,6 @@
 
 ## Communication
 - Implement reset command
-- Implement sensor restart command. This command should reset sensor drivers to allow newly connected sensors to be detected without a hard reset which would drop USB communication.
 - Split into three types of messages. Do not impact encoding of messages, just makes documentation easier and defines what needs an ACK.
     - Set = computer telling contorl board to do something
     - Get = computer requesting information from control board
@@ -18,6 +17,8 @@
 - All "set" messages respond with an ACK message (somehow indicating what the acknowledge is for). Should also include a status code.
 
 ## Sensors
+- How to exit BAD_SENSOR state in case a correct sensor has been connected?
+    - Probably just a long delay between restarting state machine.
 - IMU (BNO055)
     - Unit select register should be configured by state machine
     - Configure axes via messages from PC

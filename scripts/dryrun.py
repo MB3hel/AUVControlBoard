@@ -1,6 +1,7 @@
 from controlboard import ControlBoard
 import traceback
 import time
+import controlboard
 
 
 if __name__ == "__main__":
