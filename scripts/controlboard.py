@@ -271,8 +271,6 @@ class ControlBoard:
             # Watchdog kill message
             # Received when motor watchdog times out and kills thrusters
             print("WARNING: Control Board Watchdog killed thrusters!")
-        elif msg == b'ERRIMU':
-            print("WARNING: Operation requires IMU, but it is not connected to control board.")
         elif msg.startswith(b'TINV'):
             # Thruster inversion status message
             # Response to thruster inversion query
