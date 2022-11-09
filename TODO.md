@@ -1,7 +1,8 @@
 # Firmware
 
 ## Control Modes
-- GLOBAL and STABILITY_ASSIST modes should not work if required sensors are not connected
+- CMDCtrl should track sensor connected status, not specific sensors. cmdctrl should consider sensors disconnected if no new data for some duration.
+- GLOBAL and STABILITY ASSIST modes should not work if required sensors are not connected
 - Instead of periodically recalculating speeds in global and stability assist mode, use a timer. This way, if setpoint is changing rapidly from computer recalculate will be skipped.
 - Implement PID controller
 - Implement depth hold PID, pitch hold PID, and roll hold PID for stability assist mode.
