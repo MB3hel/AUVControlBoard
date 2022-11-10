@@ -1,6 +1,6 @@
 # Firmware
 
-## Control Modes
+## Control Modes / Command & Control
 - CMDCtrl should track sensor connected status, not specific sensors. cmdctrl should consider sensors disconnected if no new data for some duration.
 - GLOBAL and STABILITY ASSIST modes should not work if required sensors are not connected
 - Instead of periodically recalculating speeds in global and stability assist mode, use a timer. This way, if setpoint is changing rapidly from computer recalculate will be skipped.
@@ -10,6 +10,7 @@
 
 ## Communication
 - Implement reset command
+- Implement soft reset command
 - Split into three types of messages. Do not impact encoding of messages, just makes documentation easier and defines what needs an ACK.
     - Set = computer telling contorl board to do something
     - Get = computer requesting information from control board
