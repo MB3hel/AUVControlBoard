@@ -12,6 +12,7 @@
 #include <motor_control.h>
 #include <bno055.h>
 #include <ms5837.h>
+#include <sam.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -39,6 +40,7 @@ const static uint8_t MSG_GET_SENS_STAT[] = {'?', 'S', 'S', 'T', 'A', 'T'};
 const static uint8_t MSG_GET_GVEC_CMD[] = {'?', 'G', 'V', 'E', 'C'};
 const static uint8_t MSG_GET_EULER_CMD[] = {'?', 'E', 'U', 'L', 'E', 'R'};
 
+const static uint8_t MSG_RESET_CMD[] = {'R', 'E', 'S', 'E', 'T'};
 const static uint8_t MSG_FEED_MWDT_CMD[] = {'W', 'D', 'G', 'F'};
 
 static unsigned int mode;
@@ -238,6 +240,9 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         conversions_float_to_data(data.euler_roll, &response[9], true);
         conversions_float_to_data(data.euler_yaw, &response[13], true);
         usb_writemsg(response, sizeof(response));
+    }else if(MSG_EQUALS(MSG_RESET_CMD)){
+        // Reset system command
+        TIMERS_WDT_RESET_NOW();
     }
 }
 

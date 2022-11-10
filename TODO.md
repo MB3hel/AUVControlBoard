@@ -12,8 +12,6 @@
 - Implement yaw hold PID for stability assist mode.
 
 ## Communication
-- Implement reset command
-- Implement soft reset command
 - Split into three types of messages. Do not impact encoding of messages, just makes documentation easier and defines what needs an ACK.
     - Set = computer telling contorl board to do something
     - Get = computer requesting information from control board
