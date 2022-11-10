@@ -71,6 +71,7 @@ void i2c0_init(void){
     SERCOM2->I2CM.CTRLA.bit.ENABLE = 1;                             // Enable SERCOM
     while(SERCOM2->I2CM.SYNCBUSY.bit.ENABLE);                       // Wait for sync
     SERCOM2->I2CM.STATUS.bit.BUSSTATE = 0x01;                       // Force bus to IDLE state
+    while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);                        // Wait for sync after writing busstate
 }
 
 bool i2c0_start(i2c_trans *trans){
@@ -92,9 +93,7 @@ bool i2c0_start(i2c_trans *trans){
             timers_i2c0_timeout(I2C0_TIMEOUT);
             transaction_counter = 0;
             SERCOM2->I2CM.ADDR.bit.ADDR = i2c0_curr_trans->address << 1 | 0b0;
-
-            // Sometimes this just seems to not work. Rare, but seemingly a hardware
-            // state machine problem
+            while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);                                // Wait for sync after writing address
         }else if (trans->read_count > 0){
             // Start read phase. This will write address
             // SB interrupt will occur after first byte received
@@ -102,6 +101,7 @@ bool i2c0_start(i2c_trans *trans){
             timers_i2c0_timeout(I2C0_TIMEOUT);
             transaction_counter = 0;
             SERCOM2->I2CM.ADDR.bit.ADDR = i2c0_curr_trans->address << 1 | 0b1;
+            while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);                                // Wait for sync after writing address
         }else{
             // Transaction completed successfully
             i2c0_curr_trans->status = I2C_STATUS_SUCCESS;
@@ -132,6 +132,7 @@ void i2c0_timeout(void){
         SERCOM2->I2CM.STATUS.bit.ARBLOST = 1;                   // Clear ARBLOST error bit
         SERCOM2->I2CM.STATUS.bit.RXNACK = 1;                    // Clear RXNACK error bit
         SERCOM2->I2CM.STATUS.bit.BUSSTATE = 0x1;                // Force back to IDLE state
+        while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);                // Wait for sync after writing busstate
     }
 
 
@@ -140,6 +141,7 @@ void i2c0_timeout(void){
     SERCOM2->I2CM.CTRLB.bit.CMD = 0x03;
     while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);
     SERCOM2->I2CM.STATUS.bit.BUSSTATE = 0x01;
+    while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);                    // Wait for sync after writing busstate
     FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
 }
 
@@ -171,6 +173,7 @@ static void irq_handler(void){
         // Transaction has now finished with error status
         i2c0_curr_trans->status = I2C_STATUS_ERROR;
         SERCOM2->I2CM.STATUS.bit.BUSSTATE = 0x01;
+        while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);                // Wait for sync after writing busstate
         FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
 
         // Manually clear interrupt flag in this case
@@ -184,6 +187,7 @@ static void irq_handler(void){
             timers_i2c0_timeout(I2C0_TIMEOUT);
 
             SERCOM2->I2CM.DATA.bit.DATA = i2c0_curr_trans->write_buf[transaction_counter];
+            while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);
             transaction_counter++;
             // MB flag is cleared when DATA reg is set so no need to clear manually
         }else{
@@ -204,6 +208,7 @@ static void irq_handler(void){
                 timers_i2c0_timeout(I2C0_TIMEOUT);
                 transaction_counter = 0;
                 SERCOM2->I2CM.ADDR.bit.ADDR = i2c0_curr_trans->address << 1 | 0b1;
+                while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);                // Wait for sync after writing address
             }else{
                 timers_i2c0_timeout(0);
 
@@ -215,6 +220,7 @@ static void irq_handler(void){
                 // Transaction completed successfully
                 i2c0_curr_trans->status = I2C_STATUS_SUCCESS;
                 SERCOM2->I2CM.STATUS.bit.BUSSTATE = 0x01;
+                while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);                // Wait for sync after writing busstate
                 FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
             }
         }
@@ -250,6 +256,7 @@ static void irq_handler(void){
             // Transaction completed successfully
             i2c0_curr_trans->status = I2C_STATUS_SUCCESS;
             SERCOM2->I2CM.STATUS.bit.BUSSTATE = 0x01;
+            while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);                // Wait for sync after writing busstate
             FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
 
             // SB flag is cleared when CMD bitfield is set so no need to clear manually
@@ -267,6 +274,7 @@ static void irq_handler(void){
         // Transaction has now finished with error status
         i2c0_curr_trans->status = I2C_STATUS_ERROR;
         SERCOM2->I2CM.STATUS.bit.BUSSTATE = 0x01;
+        while(SERCOM2->I2CM.SYNCBUSY.bit.SYSOP);                // Wait for sync after writing busstate
         FLAG_SET(flags_main, FLAG_MAIN_I2C0_DONE);
 
         // Manually clear interrupt flag in this case
