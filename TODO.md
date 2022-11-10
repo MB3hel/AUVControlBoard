@@ -13,7 +13,7 @@
 
 ## Communication
 - Split into three types of messages. Do not impact encoding of messages, just makes documentation easier and defines what needs an ACK.
-    - Set = computer telling contorl board to do something
+    - Set = computer telling control board to do something
     - Get = computer requesting information from control board
     - Status = Information sent from control board to computer unprompted
 - All "set" messages respond with an ACK message (somehow indicating what the acknowledge is for). Should also include a status code.
@@ -55,4 +55,4 @@
 
 
 # PCB
-- Make a PCB using off the shelf breakouts instead of using protobaord
+- Make a PCB using off the shelf breakouts instead of using protoboard
