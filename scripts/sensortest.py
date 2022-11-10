@@ -11,7 +11,7 @@ if __name__ == "__main__":
     try:
         print("Connecting to control board...", end="", flush=True)
         try:
-            cb = ControlBoard("/dev/ttyACM1")
+            cb = ControlBoard("/dev/ttyACM0")
             print("Done.", flush=True)
         except Exception as e:
             print("Fail.", flush=True)
@@ -31,6 +31,7 @@ if __name__ == "__main__":
         while True:
             if(cb.comm_lost):
                 exit(2)
+            cb.read_sensors()
             pry = cb.get_orientation()
             grav = cb.get_gravity_vector()
             print("({:05d}) P: {:.4f}\tR: {:.4f}\tY: {:.4f}\tGX: {:.4f}\tGY: {:.4f}\t GZ: {:.4f}".format(
@@ -38,7 +39,7 @@ if __name__ == "__main__":
                 pry.pitch, pry.roll, pry.yaw,
                 grav.x, grav.y, grav.z
             ))
-            time.sleep(0.1)
+            time.sleep(0.5)
     except KeyboardInterrupt:
         print("")
         print("Interrupted by user")

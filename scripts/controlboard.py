@@ -206,6 +206,10 @@ class ControlBoard:
             if time.time() - start_time > 3.0:
                 return False
             time.sleep(0.05)
+    
+    def read_sensors(self):
+        self.__write_msg(b'?GVEC')
+        self.__write_msg(b'?EULER')
 
     def set_raw(self, s1: float, s2: float, s3: float, s4: float, s5: float, s6: float, s7: float, s8: float):
         msg = bytearray()

@@ -27,6 +27,8 @@ const static uint8_t MSG_SET_GLOBAL_PFX[] = {'G', 'L', 'O', 'B', 'A', 'L'};
 const static uint8_t MSG_GET_MODE_CMD[] = {'?', 'M', 'O', 'D', 'E'};
 const static uint8_t MSG_GET_TINV_CMD[] = {'?', 'T', 'I', 'N', 'V'};
 const static uint8_t MSG_GET_SENS_STAT[] = {'?', 'S', 'S', 'T', 'A', 'T'};
+const static uint8_t MSG_GET_GVEC_CMD[] = {'?', 'G', 'V', 'E', 'C'};
+const static uint8_t MSG_GET_EULER_CMD[] = {'?', 'E', 'U', 'L', 'E', 'R'};
 
 const static uint8_t MSG_FEED_MWDT_CMD[] = {'W', 'D', 'G', 'F'};
 
@@ -194,6 +196,33 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         response[5] = bno055_connected() ? 1 : 0;
         response[6] = ms5837_connected() ? 1 : 0;
         usb_writemsg(response, 7);
+    }else if(MSG_EQUALS(MSG_GET_GVEC_CMD)){
+        // Get gravity vector
+        // G,V,E,C + 3 floats
+        uint8_t response[4 + 3 * 4];
+        response[0] = 'G';
+        response[1] = 'V';
+        response[2] = 'E';
+        response[3] = 'C';
+        bno055_data data = bno055_get();
+        conversions_float_to_data(data.grav_x, &response[4], true);
+        conversions_float_to_data(data.grav_y, &response[8], true);
+        conversions_float_to_data(data.grav_z, &response[12], true);
+        usb_writemsg(response, sizeof(response));
+    }else if(MSG_EQUALS(MSG_GET_EULER_CMD)){
+        // Get euler orientation
+        // E,U,L,E,R + 3 floats
+        uint8_t response[5 + 3 * 4];
+        response[0] = 'E';
+        response[1] = 'U';
+        response[2] = 'L';
+        response[3] = 'E';
+        response[4] = 'R';
+        bno055_data data = bno055_get();
+        conversions_float_to_data(data.euler_pitch, &response[5], true);
+        conversions_float_to_data(data.euler_roll, &response[9], true);
+        conversions_float_to_data(data.euler_yaw, &response[13], true);
+        usb_writemsg(response, sizeof(response));
     }
 }
 

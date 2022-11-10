@@ -445,7 +445,7 @@ static void bno055_state_machine(uint8_t trigger){
                 tmp16 = ((int16_t)bno055_trans.read_buf[2]) | (((int16_t)bno055_trans.read_buf[3]) << 8);
                 data.grav_y = tmp16 / 100.0f;
                 tmp16 = ((int16_t)bno055_trans.read_buf[4]) | (((int16_t)bno055_trans.read_buf[5]) << 8);
-                data.grav_z = tmp16 / 100.0f;
+                data.grav_z = -tmp16 / 100.0f;
 
                 state = STATE_DELAY;
                 delay = 15;
