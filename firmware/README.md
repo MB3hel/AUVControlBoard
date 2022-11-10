@@ -58,3 +58,35 @@ The Control Board firmware is implemented bare metal on the SAMD51 chip. No RTOS
 ### Code Breakdown / Architecture
 
 TODO
+
+
+## Updating Firmware via Robot
+
+In the robot (sealed) the Control board is connected by USB to a Linux computer (Jetson, Raspberry Pi, Orange Pi, etc). When building the firmware, a `firmware.bin` file is generated in `.pio/build/adafruyit_itsybitsy_m4`. Copy this file to the robot's computer using scp / sftp.
+
+```sh
+# RUN ON DEV COMPUTER. REPLACE IP WITH ROBOT'S IP ADDRESS
+scp .pio/build/adafruit_itsybitsy_m4/firmware.bin [USER]@[IP_ADDRESS]:firmware.bin
+```
+
+Then, copy `uf2conv.py` and `uf2families.json` to the robot from [this](https://github.com/microsoft/uf2) repo (in `utils` folder). 
+
+
+The following command will trigger the control board to enter the bootloader (could also make this a script)
+
+```sh
+# RUN VIA SSH SESSION TO ROBOT'S COMPUTER
+python3
+>>> from serial import Serial
+>>> import time
+>>> ser = Serial("/dev/ttyACM0", 1200)
+>>> time.sleep(0.5)
+>>> ser.close()
+```
+
+Then, `uf2conv` can be used to convert `firmware.bin` to a uf2 file and flash it to the device using the bootloader's USB MSD interface.
+
+```sh
+# RUN VIA SSH SESSION TO ROBOT'S COMPUTER
+python3 uf2conv.py firmware.bin
+```
