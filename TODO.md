@@ -19,8 +19,6 @@
 ## Sensors
 - For both sensors, connected status should be determined by when data was last received
     - If new data not read in too long, the sensor is considered disconnected
-- For both sensors, if too many messages error in a row, reset the state machine
-    - Need to ensure this is more messages than may fail due to i2c needing timeout reset
 - IMU (BNO055)
     - Unit select register should be configured by state machine
     - Configure axes via messages from PC

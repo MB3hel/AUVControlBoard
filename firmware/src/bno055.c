@@ -246,7 +246,10 @@ static uint8_t delay_next_state;
 
 static bno055_data data;
 
+static bool reset;
+
 static bool connected;
+static uint32_t error_counter;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -255,7 +258,7 @@ static bool connected;
 
 // State machine diagram generated with asciiflow.com
 /*
- * i2c_error(1000)                  │init
+ * i2c_error(1000)                  │init || reset
  * i2c_done(1000),invalid_id        │
  *           ┌──────────────┬───────▼───────┐
  *           │              │  EXIST_CHECK  │                   trigger(delay_ms)
@@ -326,6 +329,7 @@ static bool connected;
 // Called when some event that may change state occurs
 static void bno055_state_machine(uint8_t trigger){
     int16_t tmp16;
+    bool repeat_state = false;
     
     // -----------------------------------------------------------------------------------------------------------------
     // State changes
@@ -333,6 +337,17 @@ static void bno055_state_machine(uint8_t trigger){
     
     // Store original state
     uint8_t orig_state = state;
+
+    if(reset){
+        // This should override normal state transitions if set
+        reset = false;
+        connected = false;
+        state = STATE_EXIST_CHECK;
+        repeat_state = true;  // just in case it was already in reset state
+
+        // Change this to prevent normal transitions from happening
+        trigger = TRIGGER_NONE;
+    }
 
     if(trigger == TRIGGER_I2C_ERROR){
         // Repeat same state after 10ms (1000ms if exist check)
@@ -478,7 +493,7 @@ static void bno055_state_machine(uint8_t trigger){
         }
     }
 
-    if(state == orig_state){
+    if((state == orig_state) && !repeat_state){
         // No state transition occurred
         return;
     }
@@ -640,6 +655,9 @@ void bno055_init(void){
     data.euler_roll = 0.0f;
     data.euler_yaw = 0.0f;
 
+    // Initial value
+    error_counter = 0;
+
     // Initial flags
     reconfig = false;
 
@@ -660,8 +678,30 @@ void bno055_init(void){
 
 void bno055_i2c_done(void){
     if(bno055_trans.status == I2C_STATUS_SUCCESS){
+        error_counter = 0;
         bno055_state_machine(TRIGGER_I2C_DONE);
     }else{
+        // If too many transactions fail in a row, the sensor is probably no longer connected
+        // Or it may just be in a bad state
+        // Either way, reset the state machine so the sensor is either "fixed" or it will be 
+        // handled correctly when (re)connected
+        error_counter++;
+        switch(state){
+        case STATE_RD_ID:
+            // Waiting for sensor to be ready by reading ID register
+            // This is expected to fail MANY times, so raise the error counter threshold massively
+            if(error_counter >= 1000){
+                error_counter = 0;
+                reset = true;
+            }
+            break;
+        default:
+            if(error_counter >= 10){
+                error_counter = 0;
+                reset = true;
+            }
+            break;
+        }
         bno055_state_machine(TRIGGER_I2C_ERROR);
     }
 }

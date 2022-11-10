@@ -73,6 +73,7 @@ static uint32_t d1, d2;
 static uint16_t prom_data[8];
 
 static bool connected;
+static uint32_t error_counter;
 
 // Flags that will disrupt normal state machine transitions
 // These will not trigger anything now, but will be handled the next time
@@ -389,6 +390,9 @@ bool ms5837_init(void){
     data.pressure_mbar = 999;
     connected = false;
     
+    // Initial count 0 b/c no transactions yet
+    error_counter = 0;
+
     // Setup transaction
     ms5837_trans.address = MS5837_ADDR;
     ms5837_trans.write_buf = wbuf;
@@ -404,8 +408,18 @@ bool ms5837_init(void){
 
 void ms5837_i2c_done(void){
     if(ms5837_trans.status == I2C_STATUS_SUCCESS){
+        error_counter = 0;
         ms5837_state_machine(TRIGGER_I2C_DONE);
     }else{
+        // If too many transactions fail in a row, the sensor is probably no longer connected
+        // Or it may just be in a bad state
+        // Either way, reset the state machine so the sensor is either "fixed" or it will be 
+        // handled correctly when (re)connected
+        error_counter++;
+        if(error_counter >= 10){
+            error_counter = 0;
+            reset = true;
+        }
         ms5837_state_machine(TRIGGER_I2C_ERROR);
     }
 }
