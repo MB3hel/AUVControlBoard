@@ -25,6 +25,15 @@ typedef struct {
 } i2c_trans;
 
 /**
+ * Convert integer to string
+ * @param value Value to be converted to string
+ * @param str Where to store result
+ * @param base Number system base
+ * @return str
+ */
+char *itoa(int value, char *str, int base);
+
+/**
  * Seed pseudorandom number generator
  */
 void srand(unsigned int seed);

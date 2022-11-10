@@ -1,5 +1,39 @@
 
 #include <util.h>
+#include <string.h>
+
+char *itoa(int value, char *str, int base){
+    if(value == 0){
+        str[0] = '0';
+        str[1] = '\0';
+    }else{
+        // Construct string in reverse
+        bool neg = (value < 0 && base == 10);
+        if(neg)
+            value *= -1;
+        int i = 0;
+        while(value > 0){
+            int r = value % base;
+            value /= base;
+            str[i++] = (r > 9) ? (r + 'A' - 10) : (r + '0');
+        }
+        if(neg)
+            str[i++] = '-';
+        str[i++] = '\0';
+
+        // Reverse the string
+        int a = 0, b = strlen(str) - 1;
+        char tmp;
+        while(a < b){
+            tmp = str[a];
+            str[a] = str[b];
+            str[b] = tmp;
+            ++a;
+            --b;
+        }
+    }
+    return str;
+}
 
 static unsigned int rand_seed = 5323;
 
