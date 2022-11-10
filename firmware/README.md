@@ -29,6 +29,7 @@ Both the [control board firmware](./firmware/) and the [hardware test](./hwtest/
     - `tinyusb`: TinyUSB library (only keeping required components for samd51). Contains both headers and source files.
     - `*.c`: Firmware sources
 - `samd51g19a_flash_wbld.ld`: Linker script modified for ItsyBitsy M4 with UF2 bootloader
+- `read_debug.py`: Reads debug messages from control board
 
 
 ## Debugging

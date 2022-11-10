@@ -45,3 +45,8 @@ uint32_t usb_getmsg(uint8_t *dest);
  * @param len Length of message
  */
 void usb_writemsg(uint8_t *msg, uint32_t len);
+
+/**
+ * Write a debug message over USB
+ */
+void usb_debugmsg(const char *msg);

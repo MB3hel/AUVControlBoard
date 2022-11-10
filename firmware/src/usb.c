@@ -12,6 +12,7 @@
 #include <util.h>
 #include <dotstar.h>
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -207,6 +208,22 @@ void usb_writemsg(uint8_t *msg, uint32_t len){
     // If a transfer is in progress (or there is no data to transfer), this function will return 0
     // Otherwise, it returns the number of bytes removed from the FIFO to start the transfer
     tud_cdc_write_flush();
+}
+
+void usb_debugmsg(const char *msg){
+    uint32_t size = strlen(msg) + 5;
+    if(size > 64)
+        size = 64;
+    uint8_t msg_bytes[64];
+    msg_bytes[0] = 'D';
+    msg_bytes[1] = 'E';
+    msg_bytes[2] = 'B';
+    msg_bytes[3] = 'U';
+    msg_bytes[4] = 'G';
+    for(uint32_t i = 0; i < size; ++i){
+        msg_bytes[i+5] = msg[i];
+    }
+    usb_writemsg(msg_bytes, size);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

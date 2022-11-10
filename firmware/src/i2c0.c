@@ -92,6 +92,9 @@ bool i2c0_start(i2c_trans *trans){
             timers_i2c0_timeout(I2C0_TIMEOUT);
             transaction_counter = 0;
             SERCOM2->I2CM.ADDR.bit.ADDR = i2c0_curr_trans->address << 1 | 0b0;
+
+            // Sometimes this just seems to not work. Rare, but seemingly a hardware
+            // state machine problem
         }else if (trans->read_count > 0){
             // Start read phase. This will write address
             // SB interrupt will occur after first byte received
