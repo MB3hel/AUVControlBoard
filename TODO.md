@@ -1,5 +1,9 @@
 # Firmware
 
+## Bugs
+- IMU seems to stop working (i2c issue?) after extended periods. Depth seems to still work.
+    - Also, a few times starting with IMU only (no depth) then connecting depth has caused the same thing. Possibly related bug.
+
 ## Control Modes / Command & Control
 - GLOBAL and STABILITY ASSIST modes should not work if required sensors are not connected
 - Instead of periodically recalculating speeds in global and stability assist mode, use a timer. This way, if setpoint is changing rapidly from computer recalculate will be skipped.
@@ -17,8 +21,6 @@
 - All "set" messages respond with an ACK message (somehow indicating what the acknowledge is for). Should also include a status code.
 
 ## Sensors
-- For both sensors, connected status should be determined by when data was last received
-    - If new data not read in too long, the sensor is considered disconnected
 - IMU (BNO055)
     - Unit select register should be configured by state machine
     - Configure axes via messages from PC
