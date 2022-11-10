@@ -45,7 +45,6 @@
 #define STATE_READ_ADC_D1       5           // Write read adc command and read data
 #define STATE_CONV_D2           6           // Write D2 convert command (temperature)
 #define STATE_READ_ADC_D2       7           // Write read adc command and read data
-#define STATE_BAD_SENSOR        8           // Dead end state for invalid sensor version / id
 
 // State transition triggers
 #define TRIGGER_NONE            0
@@ -179,21 +178,21 @@ static uint8_t crc4(uint16_t *data){
 // State Machine diagram generated using asciiflow.com
 /*
  *                            │init || reset
- *                            │                                      trigger(delay_ms)
- *                     ┌──────▼──────┐                             ────────────────────►
- *                     │    RESET    │
- *                     └──────┬──────┘                           Note: i2c_error causes
- *                            │i2c_done(10)                      a repeat of any state after 1
- *                            │                  i==6                                         0ms
- *              ┌─────►┌──────▼──────┐  i2c_done,!valid
- * i2c_done,i!=6│      │ READ_PROM_i ├───────────────────┐      valid means crc check passes
- *              └──────┤ i=0,1,...,6 │                   │
- *                     └──────┬──────┘                   │
- *              i2c_done,valid│                          │
- *                       i==6 │                          │
- *                     ┌──────▼──────┐            ┌──────▼──────┐
- *                     │    IDLE     │            │ BAD_SENSOR  │
- *                     └──────┬──────┘            └─────────────┘
+ *   i2c_error(1000)          │                                      trigger(delay_ms)
+ *           ┌─────────┬──────▼──────┐                             ────────────────────►
+ *           │         │    RESET    │◄───────────────────────────┐
+ *           └────────►└──────┬──────┘                            │    Note: i2c_error causes
+ *                            │i2c_done(10)                       │    a repeat of any state after 10ms
+ *                            │         i2c_error(1000)           │    except where otherwise indicated
+ *              ┌─────►┌──────▼──────┐  i2c_done(1000),!valid,i==6│
+ * i2c_done,i!=6│      │ READ_PROM_i ├────────────────────────────┘
+ *              └──────┤ i=0,1,...,6 │
+ *                     └──────┬──────┘              valid means crc check passes
+ *              i2c_done,valid│
+ *                       i==6 │
+ *                     ┌──────▼──────┐
+ *                     │    IDLE     │
+ *                     └──────┬──────┘
  *                            │read
  *                            │
  *                     ┌──────▼──────┐
@@ -239,10 +238,17 @@ static void ms5837_state_machine(uint8_t trigger){
     }
 
     if(trigger == TRIGGER_I2C_ERROR){
-        // Repeat same state after 10ms
-        delay = 10;
-        delay_next_state = state;
-        state = STATE_DELAY;
+        if(state == STATE_READ_PROM || state == STATE_RESET){
+            // Special case for initialization states
+            delay = 1000;
+            delay_next_state = STATE_RESET;
+            state = STATE_DELAY;
+        }else{
+            // Repeat same state after 10ms
+            delay = 10;
+            delay_next_state = state;
+            state = STATE_DELAY;
+        }
     }else{
         // Other state transitions
         switch(state){
@@ -272,8 +278,14 @@ static void ms5837_state_machine(uint8_t trigger){
                 // Valid if CRC matches 
                 uint8_t crc_read = prom_data[0] >> 12;
                 uint8_t crc_calc = crc4(prom_data);
-                state = (crc_read == crc_calc) ? STATE_CONV_D1 : STATE_BAD_SENSOR;
-                connected = (crc_read == crc_calc);
+                if(crc_read == crc_calc){
+                    state = STATE_CONV_D1;
+                    connected = (crc_read == crc_calc);
+                }else{
+                    state = STATE_DELAY;
+                    delay = 1000;
+                    delay_next_state = STATE_RESET;
+                }
             }else if(trigger == TRIGGER_I2C_DONE){
                 // Store word for later
                 prom_data[prom_read_i] = (ms5837_trans.read_buf[0] << 8) | ms5837_trans.read_buf[1];
