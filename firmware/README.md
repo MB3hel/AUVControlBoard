@@ -74,6 +74,8 @@ Then, copy `uf2conv.py` and `uf2families.json` to the robot from [this](https://
 
 The following command will trigger the control board to enter the bootloader (could also make this a script)
 
+*NOTE: THIS WILL ONLY WORK IF CONTROL BOARD FIRMWARE IS INITIALIZED FULLY AND RUNNING*
+
 ```sh
 # RUN VIA SSH SESSION TO ROBOT'S COMPUTER
 python3
