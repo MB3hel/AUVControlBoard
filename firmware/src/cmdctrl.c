@@ -13,6 +13,15 @@
 #include <bno055.h>
 #include <ms5837.h>
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Macros
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define CMDCTRL_MODE_RAW            0
+#define CMDCTRL_MODE_LOCAL          1
+#define CMDCTRL_MODE_GLOBAL         2
+#define CMDCTRL_MODE_SASSIST        3
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Globals
@@ -80,6 +89,9 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         case 'G':
             mode = CMDCTRL_MODE_GLOBAL;
             break;
+        case 'S':
+            mode = CMDCTRL_MODE_SASSIST;
+            break;
         }
     }else if(MSG_STARTS_WITH(MSG_SET_RAW_PFX) && mode == CMDCTRL_MODE_RAW){
         // RAW Mode Speed set command
@@ -117,6 +129,9 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
             break;
         case CMDCTRL_MODE_GLOBAL:
             response[4] = 'G';
+            break;
+        case CMDCTRL_MODE_SASSIST:
+            response[4] = 'S';
             break;
         }
         usb_writemsg(response, 5);
@@ -237,6 +252,9 @@ void cmdctrl_update_led(void){
     case CMDCTRL_MODE_GLOBAL:
         dotstar_set(150, 50, 0);
         break;
+    case CMDCTRL_MODE_SASSIST:
+        dotstar_set(0, 100, 100);
+        break;
     }
 }
 
@@ -266,6 +284,9 @@ void cmdctrl_update_motors(void){
         // Update motor speeds
         motor_control_global(global_x, global_y, global_z, global_pitch, global_roll, 
                 global_yaw, imu_dat.grav_x, imu_dat.grav_y, imu_dat.grav_z);
+        break;
+    case CMDCTRL_MODE_SASSIST:
+        // TODO: Get sensor data and update speeds with cached target
         break;
     }
 }

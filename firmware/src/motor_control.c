@@ -25,6 +25,11 @@ static uint16_t motor_wd_count;                         // Motor watchdog counte
 
 bool motor_control_tinv[8];                             // Thruster inversion status (true = inverted)
 
+static pid_t depth_pid;                                 // Depth hold PID controller
+static pid_t pitch_pid;                                 // Pitch hold PID controller
+static pid_t roll_pid;                                  // Roll hold PID controller
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -52,6 +57,31 @@ static int skew3(matrix *outmat, matrix *invec){
 
 void motor_control_init(void){
     motor_wd_count = WD_DISABLE_COUNT;
+
+    // Configure PIDs (initial state = reset and disabled)
+    pid_reset(&depth_pid);
+    depth_pid.kf = 0.0f;
+    depth_pid.kp = 0.0f;
+    depth_pid.ki = 0.0f;
+    depth_pid.kd = 0.0f;
+    depth_pid.min = -1.0f;
+    depth_pid.max = 1.0f;
+
+    pid_reset(&pitch_pid);
+    pitch_pid.kf = 0.0f;
+    pitch_pid.kp = 0.0f;
+    pitch_pid.ki = 0.0f;
+    pitch_pid.kd = 0.0f;
+    pitch_pid.min = -1.0f;
+    pitch_pid.max = 1.0f;
+
+    pid_reset(&roll_pid);
+    roll_pid.kf = 0.0f;
+    roll_pid.kp = 0.0f;
+    roll_pid.ki = 0.0f;
+    roll_pid.kd = 0.0f;
+    roll_pid.min = -1.0f;
+    roll_pid.max = 1.0f;
 
     // Initialize all thrusters in a non-inverted state
     for(size_t i = 0; i < 8; ++i)
@@ -245,6 +275,33 @@ void motor_control_global(float x, float y, float z, float pitch, float roll, fl
 
     // Target is now a local target (stored in order in target_arr)
     motor_control_local(target_arr[0], target_arr[1], target_arr[2], target_arr[3], target_arr[4], target_arr[5]);
+}
+
+void motor_control_cfg_depth_hold(float kp, float ki, float kd, float kf){
+
+}
+
+void motor_control_cfg_pitch_hold(float kp, float ki, float kd, float kf){
+
+}
+
+void motor_control_cfg_roll_hold(float kp, float ki, float kd, float kf){
+
+}
+
+void motor_control_sassit(float x, float y, float yaw, float pitch_target, float roll_target, float depth_target, float curr_pitch, float curr_roll, float curr_depth, float grav_x, float grav_y, float grav_z){
+    // Update PID setpoints
+    pitch_pid.setpoint = pitch_target;
+    pitch_pid.setpoint = roll_target;
+    depth_pid.setpoint = depth_target;
+
+    // Calculate speeds using PIDs
+    float z = pid_get_output(&depth_pid, curr_depth);
+    float pitch = pid_get_output(&pitch_pid, curr_pitch);
+    float roll = pid_get_output(&roll_pid, curr_roll);
+
+    // Update speeds using GLOBAL mode math
+    motor_control_global(x, y, z, pitch, roll, yaw, grav_x, grav_y, grav_z);
 }
 
 bool motor_control_watchdog_count(void){

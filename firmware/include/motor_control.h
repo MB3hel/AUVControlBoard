@@ -14,6 +14,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <pid.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -23,6 +24,7 @@
 // Array defining thruster inversions (true = inverted)
 // Index = thruster number - 1
 extern bool motor_control_tinv[8];
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
@@ -79,6 +81,45 @@ void motor_control_local(float x, float y, float z, float pitch, float roll, flo
  * @param grav_z Gravity vector z component
  */
 void motor_control_global(float x, float y, float z, float pitch, float roll, float yaw, float grav_x, float grav_y, float grav_z);
+
+/**
+ * Configure depth hold PID used in STABILITY_ASSIST mode
+ */
+void motor_control_cfg_depth_hold(float kp, float ki, float kd, float kf);
+
+/**
+ * Configure pitch hold PID used in STABILITY_ASSIST mode
+ */
+void motor_control_cfg_pitch_hold(float kp, float ki, float kd, float kf);
+
+/**
+ * Configure roll hold PID used in STABILITY_ASSIST mode
+ */
+void motor_control_cfg_roll_hold(float kp, float ki, float kd, float kf);
+
+/**
+ * Set motor speeds in "stability assist" mode.
+ * Stability assist mode specifies target values for pitch, roll, and depth. These are 
+ * achieved using tunable PID controllers. 
+ * x, y, and yaw are provided as target speeds (-1.0 to 1.0) and are WORLD relative (just as in global mode)
+ * Effectively, this control mode abstracts a 2D plane in which the robot operates.
+ * The target depth controls the depth of this 2D plane
+ * The target pitch and roll control the robot's orientation in 3D space about this plane's axes.
+ * 
+ * @param x Speed in x axis
+ * @param y Speed in y axis
+ * @param yaw Rotation speed about world z axis
+ * @param pitch_target Target pitch in degrees
+ * @param roll_target Target roll in degrees
+ * @param depth_target Target depth in meters (negative for below surface)
+ * @param curr_pitch Current pitch (deg)
+ * @param curr_roll Current roll (deg)
+ * @param curr_depth Current depth (m, negative for below surface)
+ * @param grav_x Gravity vector x component
+ * @param grav_y Gravity vector y component
+ * @param grav_z Gravity vector z component
+ */
+void motor_control_sassit(float x, float y, float yaw, float pitch_target, float roll_target, float depth_target, float curr_pitch, float curr_roll, float curr_depth, float grav_x, float grav_y, float grav_z);
 
 /**
  * Increments the motor watchdog by 1 count

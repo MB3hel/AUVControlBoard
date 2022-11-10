@@ -152,7 +152,7 @@ static void calculate(void){
     // 1mbar = 100Pa -> P * 10 = Pa
     data.pressure_mbar = P / 10.0f;
     data.temperature_c = TEMP / 100.0f;
-    data.depth_m = ((P * 10.0f) - atm_pressure) / (fluid_density * 9.80665);
+    data.depth_m = (atm_pressure - (P * 10.0f)) / (fluid_density * 9.80665);        // Negative for below surface of water
 }
 
 /**
