@@ -248,7 +248,7 @@ static bno055_data data;
 
 static bool reset;
 
-static bool connected;
+static uint32_t last_data;
 static uint32_t error_counter;
 
 
@@ -341,7 +341,6 @@ static void bno055_state_machine(uint8_t trigger){
     if(reset){
         // This should override normal state transitions if set
         reset = false;
-        connected = false;
         state = STATE_EXIST_CHECK;
         repeat_state = true;  // just in case it was already in reset state
 
@@ -366,7 +365,6 @@ static void bno055_state_machine(uint8_t trigger){
         case STATE_NONE:
             // Always transition to next state
             // This is just used to start the state machine
-            connected = false;
             state = STATE_EXIST_CHECK;
             break;
         case STATE_EXIST_CHECK:
@@ -375,7 +373,6 @@ static void bno055_state_machine(uint8_t trigger){
                     state = STATE_DELAY;
                     delay = 10;
                     delay_next_state = STATE_SETMODE_CFG;
-                    connected = true;
                 }else{
                     state = STATE_DELAY;
                     delay = 1000;
@@ -476,6 +473,8 @@ static void bno055_state_machine(uint8_t trigger){
                 data.euler_roll = tmp16 / 16.0f;
                 tmp16 = ((int16_t)bno055_trans.read_buf[4]) | (((int16_t)bno055_trans.read_buf[5]) << 8);
                 data.euler_pitch = tmp16 / 16.0f;
+
+                last_data = timers_now();
 
                 state = STATE_DELAY;
                 delay = 15;
@@ -663,7 +662,7 @@ void bno055_init(void){
 
     // Setup initial config
     axis_config = BNO055_AXIS_REMAP_P5;
-    connected = false;
+    last_data = 65535;
     
     // Setup transaction
     bno055_trans.address = BNO055_ADDR;
@@ -715,5 +714,6 @@ bno055_data bno055_get(void){
 }
 
 bool bno055_connected(void){
-    return connected;
+    // Connected if got data in the 750ms
+    return (timers_now() - last_data) < 750;
 }

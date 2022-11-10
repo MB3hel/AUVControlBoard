@@ -29,6 +29,8 @@ static volatile uint32_t i2c0_timeout_count = 0;
 static volatile uint32_t bno055_delay_count = 0;
 static volatile uint32_t ms5837_delay_count = 0;
 
+static volatile uint32_t now;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
@@ -169,6 +171,8 @@ void timers_wdt_init(void){
 }
 
 void timers_init(void){
+    now = 0;
+
     // NOTE THAT A TC in 32-BIT MODE IS ACHIEVED USING TWO TC's
     // SEE PAGE 1549 OF DATASHEET FOR DETAILS
 
@@ -234,6 +238,10 @@ void timers_i2c0_timeout(uint32_t ms){
     i2c0_timeout_count = ms;
 }
 
+uint32_t timers_now(void){
+    return now;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// IRQ Handlers
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -248,6 +256,8 @@ void TC0_Handler(void){
     if(TC0->COUNT16.INTFLAG.bit.MC0){
         // CC0 matched (1ms period)
         // General timing
+
+        now++;
 
         // Decrement counters
         ctr10ms--;

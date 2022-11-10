@@ -50,3 +50,8 @@ void timers_ms5837_delay(uint32_t delay);
  */
 void timers_i2c0_timeout(uint32_t ms);
 
+/**
+ * Get time since timer started in ms
+ * THIS IS ACUATE ONLY TO 1MS
+ */
+uint32_t timers_now(void);

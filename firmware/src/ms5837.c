@@ -72,7 +72,7 @@ static uint8_t delay_next_state;
 static uint32_t d1, d2;
 static uint16_t prom_data[8];
 
-static bool connected;
+static uint32_t last_data;
 static uint32_t error_counter;
 
 // Flags that will disrupt normal state machine transitions
@@ -230,7 +230,6 @@ static void ms5837_state_machine(uint8_t trigger){
     if(reset){
         // This should override normal state transitions if set
         reset = false;
-        connected = false;
         state = STATE_RESET;
         repeat_state = true;  // just in case it was already in reset state
 
@@ -281,7 +280,6 @@ static void ms5837_state_machine(uint8_t trigger){
                 uint8_t crc_calc = crc4(prom_data);
                 if(crc_read == crc_calc){
                     state = STATE_CONV_D1;
-                    connected = (crc_read == crc_calc);
                 }else{
                     state = STATE_DELAY;
                     delay = 1000;
@@ -321,6 +319,7 @@ static void ms5837_state_machine(uint8_t trigger){
             if(trigger == TRIGGER_I2C_DONE){
                 d2 = (ms5837_trans.read_buf[0] << 16) | (ms5837_trans.read_buf[1] << 8) | ms5837_trans.read_buf[2];
                 calculate();
+                last_data = timers_now();
 
                 state = STATE_DELAY;
                 delay = 20;                                         // Defines sensor read rate
@@ -344,7 +343,6 @@ static void ms5837_state_machine(uint8_t trigger){
         timers_ms5837_delay(delay);
         break;
     case STATE_RESET:
-        connected = false;
         ms5837_trans.write_buf[0] = MS5837_CMD_RESET;
         ms5837_trans.write_count = 1;
         ms5837_trans.read_count = 0;
@@ -388,8 +386,10 @@ bool ms5837_init(void){
     data.depth_m = 999;
     data.temperature_c = 999;
     data.pressure_mbar = 999;
-    connected = false;
-    
+
+    // Last time data was read
+    last_data = 65535;
+
     // Initial count 0 b/c no transactions yet
     error_counter = 0;
 
@@ -433,7 +433,8 @@ ms5837_data ms5837_get(void){
 }
 
 bool ms5837_connected(void){
-    return connected;
+    // Connected if got data in the 750ms
+    return (timers_now() - last_data) < 750;
 }
 
 void ms5837_reset(void){
