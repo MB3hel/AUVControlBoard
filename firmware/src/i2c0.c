@@ -122,8 +122,6 @@ void i2c0_timeout(void){
     // This is solved by disabling and re-enabling the I2C bus. Presumably, this resets the hardware state
     // machine in the SERCOM peripheral.
     if(timeouts >= 5){
-        usb_debugmsg("I2C_RESET");
-
         SERCOM2->I2CM.CTRLA.bit.ENABLE = 0;                     // Disable bus
         while(SERCOM2->I2CM.SYNCBUSY.bit.ENABLE);               // Wait for sync
         ports_i2c0_fix_sda_low();                               // Sometimes gets stuck with SDA low

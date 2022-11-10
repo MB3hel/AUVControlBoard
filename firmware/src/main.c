@@ -53,7 +53,6 @@ void i2c0_manager(void){
         // ---------------------------------------------------------------------------------------------------------
         // Runs when i2c0 timeout occurs
         // ---------------------------------------------------------------------------------------------------------
-        usb_debugmsg("I2C_TIMEOUT");
         i2c0_timeout();
         // ---------------------------------------------------------------------------------------------------------
     }
@@ -64,17 +63,9 @@ void i2c0_manager(void){
         // Runs when i2c0 finishes a transaction
         // ---------------------------------------------------------------------------------------------------------        
         if(i2c0_curr_trans == &bno055_trans){
-            if(bno055_trans.status == I2C_STATUS_SUCCESS)
-                usb_debugmsg("BNO055_DONE");
-            else
-                usb_debugmsg("BNO055_ERROR");
             bno055_i2c_done();
             idx = BNO055 + 1;
         }else if(i2c0_curr_trans == &ms5837_trans){
-            if(ms5837_trans.status == I2C_STATUS_SUCCESS)
-                usb_debugmsg("MS5837_DONE");
-            else
-                usb_debugmsg("MS5837_ERROR");
             ms5837_i2c_done();
             idx = MS5837 + 1;
         }
@@ -82,6 +73,9 @@ void i2c0_manager(void){
             idx = 0;
         // ---------------------------------------------------------------------------------------------------------
     }
+
+    // Note I2C0 uses interrupts, thus it is possible done is set here and it becomes idle
+    // between the above block of code and the below block of code
 
     // Start a new transaction if i2c0 is idle ONLY IF THE DONE FLAG IS NOT SET
     // CANNOT start a new transaction if the done flag is set because this means
@@ -98,7 +92,6 @@ void i2c0_manager(void){
                     // If starting transaction fails, leave flag set so it will try again
                     if(i2c0_start(&bno055_trans)){
                         FLAG_CLEAR(flags_main, FLAG_MAIN_BNO055_WANTI2C);
-                        usb_debugmsg("BNO055_START");
                     }
                     exit = true;
                 }
@@ -108,7 +101,6 @@ void i2c0_manager(void){
                     // If starting transaction fails, leave flag set so it will try again
                     if(i2c0_start(&ms5837_trans)){
                         FLAG_CLEAR(flags_main, FLAG_MAIN_MS5837_WANTI2C);
-                        usb_debugmsg("MS5837_START");
                     }
                     exit = true;
                 }
@@ -125,8 +117,6 @@ int main(void){
 
     uint8_t msg[USB_MAX_MSG_LEN];                               // Holds message received from usb
     uint32_t msg_len;                                           // Length of message received from usb
-    
-
 
     // -----------------------------------------------------------------------------------------------------------------
     // Initialization
@@ -178,7 +168,7 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
             // Runs every 100ms
             // ---------------------------------------------------------------------------------------------------------
-            // cmdctrl_update_led();
+            cmdctrl_update_led();
             
             // Handle motor watchdog
             if(motor_control_watchdog_count()){
@@ -191,9 +181,7 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
             // Runs every 1000ms
             // ---------------------------------------------------------------------------------------------------------
-            char dbgmsg[] = "BUSSTATE 0b----------------";
-            itoa(SERCOM2->I2CM.STATUS.reg, &dbgmsg[11], 2);
-            usb_debugmsg(dbgmsg);
+            // Nothing here
             // ---------------------------------------------------------------------------------------------------------
         }
         if(FLAG_CHECK(flags_main, FLAG_MAIN_USBMSG)){
