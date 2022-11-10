@@ -83,7 +83,12 @@ void i2c0_manager(void){
         // ---------------------------------------------------------------------------------------------------------
     }
 
-    if(I2C0_IDLE){
+    // Start a new transaction if i2c0 is idle ONLY IF THE DONE FLAG IS NOT SET
+    // CANNOT start a new transaction if the done flag is set because this means
+    // that the sensor has not been notified that it's transaction finished
+    // This will cause that sensor to stop working because the state machine will never
+    // get the i2c_done / i2c_error trigger
+    if(I2C0_IDLE && !FLAG_CHECK(flags_main, FLAG_MAIN_I2C0_DONE)){
         uint8_t tmp = idx;
         bool exit = false;
         do{

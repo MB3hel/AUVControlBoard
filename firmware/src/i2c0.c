@@ -122,6 +122,8 @@ void i2c0_timeout(void){
     // This is solved by disabling and re-enabling the I2C bus. Presumably, this resets the hardware state
     // machine in the SERCOM peripheral.
     if(timeouts >= 5){
+        usb_debugmsg("I2C_RESET");
+
         SERCOM2->I2CM.CTRLA.bit.ENABLE = 0;                     // Disable bus
         while(SERCOM2->I2CM.SYNCBUSY.bit.ENABLE);               // Wait for sync
         ports_i2c0_fix_sda_low();                               // Sometimes gets stuck with SDA low
@@ -165,6 +167,9 @@ static void irq_handler(void){
         // In either case, this is an error
 
         timers_i2c0_timeout(0);
+
+        // Clear error status bit
+        SERCOM2->I2CM.STATUS.bit.RXNACK = 1;
 
         // Send STOP
         SERCOM2->I2CM.CTRLB.bit.CMD = 0x03;
@@ -266,6 +271,10 @@ static void irq_handler(void){
         // ERROR bit is set when an error occurs
 
         timers_i2c0_timeout(0);
+
+        // Clear error bits. Could store the error somewhere first if needed.
+        SERCOM2->I2CM.STATUS.bit.ARBLOST = 1;
+        SERCOM2->I2CM.STATUS.bit.BUSERR = 1;
 
         // Send STOP
         SERCOM2->I2CM.CTRLB.bit.CMD = 0x03;
