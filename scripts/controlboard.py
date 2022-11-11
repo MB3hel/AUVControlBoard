@@ -248,6 +248,47 @@ class ControlBoard:
         msg.extend(struct.pack("<f", yaw))
         self.__write_msg(msg)
 
+    def tune_pitch_hold(self, kp: float, ki: float, kd: float, kf: float, limit: float):
+        msg = bytearray()
+        msg.extend(b'TUNEP')
+        msg.extend(struct.pack("<f", kp))
+        msg.extend(struct.pack("<f", ki))
+        msg.extend(struct.pack("<f", kd))
+        msg.extend(struct.pack("<f", kf))
+        msg.extend(struct.pack("<f", limit))
+        self.__write_msg(bytes(msg))
+    
+    def tune_roll_hold(self, kp: float, ki: float, kd: float, kf: float, limit: float):
+        msg = bytearray()
+        msg.extend(b'TUNER')
+        msg.extend(struct.pack("<f", kp))
+        msg.extend(struct.pack("<f", ki))
+        msg.extend(struct.pack("<f", kd))
+        msg.extend(struct.pack("<f", kf))
+        msg.extend(struct.pack("<f", limit))
+        self.__write_msg(bytes(msg))
+
+    def tune_depth_hold(self, kp: float, ki: float, kd: float, kf: float, limit: float):
+        msg = bytearray()
+        msg.extend(b'TUNED')
+        msg.extend(struct.pack("<f", kp))
+        msg.extend(struct.pack("<f", ki))
+        msg.extend(struct.pack("<f", kd))
+        msg.extend(struct.pack("<f", kf))
+        msg.extend(struct.pack("<f", limit))
+        self.__write_msg(bytes(msg))
+
+    def set_sassist(self, x: float, y: float, yaw: float, pitch_target: float, roll_target: float, depth_target: float):
+        msg = bytearray()
+        msg.extend(b'SASSIST')
+        msg.extend(struct.pack("<f", x))
+        msg.extend(struct.pack("<f", y))
+        msg.extend(struct.pack("<f", yaw))
+        msg.extend(struct.pack("<f", pitch_target))
+        msg.extend(struct.pack("<f", roll_target))
+        msg.extend(struct.pack("<f", depth_target))
+        self.__write_msg(bytes(msg))
+
     def get_gravity_vector(self) -> Vector3:
         return Vector3(self.__grav_vec.x, self.__grav_vec.y, self.__grav_vec.z)
 
