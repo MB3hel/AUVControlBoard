@@ -34,10 +34,12 @@ if __name__ == "__main__":
             cb.read_sensors()
             pry = cb.get_orientation()
             grav = cb.get_gravity_vector()
-            print("({:05d}) P: {:.4f}\tR: {:.4f}\tY: {:.4f}\tGX: {:.4f}\tGY: {:.4f}\t GZ: {:.4f}".format(
+            depth = cb.get_depth()
+            print("({:05d}) P: {:.4f}\tR: {:.4f}\tY: {:.4f}\tGX: {:.4f}\tGY: {:.4f}\tGZ: {:.4f}\tD: {:.4f}".format(
                 int((time.time() - start_time)*1000),
                 pry.pitch, pry.roll, pry.yaw,
-                grav.x, grav.y, grav.z
+                grav.x, grav.y, grav.z,
+                depth
             ))
             time.sleep(0.5)
     except KeyboardInterrupt:

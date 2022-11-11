@@ -72,6 +72,7 @@ class ControlBoard:
         self.__inverted: List[int] = [2] * 8
         self.__orientation: PRY = PRY()
         self.__grav_vec: Vector3 = Vector3()
+        self.__depth: float = 999999
         self.__imu_connected = False
         self.__depth_connected = False
         self.__comm_lost = False
@@ -210,6 +211,7 @@ class ControlBoard:
     def read_sensors(self):
         self.__write_msg(b'?GVEC')
         self.__write_msg(b'?EULER')
+        self.__write_msg(b'?DEPTH')
 
     def set_raw(self, s1: float, s2: float, s3: float, s4: float, s5: float, s6: float, s7: float, s8: float):
         msg = bytearray()
@@ -252,6 +254,9 @@ class ControlBoard:
     def get_orientation(self) -> PRY:
         return PRY(self.__orientation.pitch, self.__orientation.roll, 
                 self.__orientation.yaw, self.__orientation.rad)
+
+    def get_depth(self) -> float:
+        return self.__depth
 
     def __print_bytes(self, msg: bytes):
         print("[", end="")
@@ -338,6 +343,8 @@ class ControlBoard:
             self.__grav_vec.x = struct.unpack_from("<f", buffer=msg, offset=4)[0]
             self.__grav_vec.y = struct.unpack_from("<f", buffer=msg, offset=8)[0]
             self.__grav_vec.z = struct.unpack_from("<f", buffer=msg, offset=12)[0]
+        elif msg.startswith(b'DEPTH'):
+            self.__depth = struct.unpack_from("<f", buffer=msg, offset=5)[0]
 
     def __read_thread_func(self):
         parse_escaped = False
