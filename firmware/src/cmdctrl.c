@@ -54,6 +54,9 @@ static float global_x, global_y, global_z, global_pitch, global_roll, global_yaw
 
 // Cached stability assist target
 static float sassist_x, sassist_y, sassist_yaw, sassist_pitch, sassist_roll, sassist_depth;
+// Tracks if targe is "real" because pitch roll and depth targets of zero could be set or default values
+// Need to distinguish between them (eg due to watchdog timer kills motors)
+static bool sassist_real_target;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
@@ -73,6 +76,7 @@ void cmdctrl_init(void){
     sassist_pitch = 0.0f;
     sassist_roll = 0.0f;
     sassist_depth = 0.0f;
+    sassist_real_target = false;
 
     // Default to RAW control mode
     mode = CMDCTRL_MODE_RAW;
@@ -101,9 +105,16 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
             break;
         case 'G':
             mode = CMDCTRL_MODE_GLOBAL;
+            global_x = 0;
+            global_y = 0;
+            global_yaw = 0;
+            global_pitch = 0;
+            global_roll = 0;
+            global_yaw = 0;
             break;
         case 'S':
             mode = CMDCTRL_MODE_SASSIST;
+            sassist_real_target = false;
             break;
         }
     }else if(MSG_STARTS_WITH(MSG_SET_RAW_PFX) && mode == CMDCTRL_MODE_RAW){
@@ -271,6 +282,7 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         sassist_pitch = conversions_data_to_float(&msg[19], true);
         sassist_roll = conversions_data_to_float(&msg[23], true);
         sassist_depth = conversions_data_to_float(&msg[27], true);
+        sassist_real_target = true;
 
         // Don't update speeds now. This could cause PID to run "too fast" (faster than fixed period)
         // which could reduce stability
@@ -358,6 +370,7 @@ void cmdctrl_motors_killed(void){
     sassist_pitch = 0.0f;
     sassist_roll = 0.0f;
     sassist_depth = 0.0f;
+    sassist_real_target = false;
     
     // Send message telling the computer that the watchdog killed motors
     usb_writemsg((uint8_t[]){'W', 'D', 'G', 'K'}, 4);
@@ -379,13 +392,15 @@ void cmdctrl_update_motors(void){
                 global_yaw, imu_dat.grav_x, imu_dat.grav_y, imu_dat.grav_z);
         break;
     case CMDCTRL_MODE_SASSIST:
-        // Get sensor data
-        imu_dat = bno055_get();
-        depth_dat = ms5837_get();
+        if(sassist_real_target){
+            // Get sensor data
+            imu_dat = bno055_get();
+            depth_dat = ms5837_get();
 
-        // Update motor speeds
-        motor_control_sassist(sassist_x, sassist_y, sassist_yaw, sassist_pitch, sassist_roll, sassist_depth,
-                imu_dat.euler_pitch, imu_dat.euler_roll, depth_dat.depth_m, imu_dat.grav_x, imu_dat.grav_y, imu_dat.grav_z);
-        break;
+            // Update motor speeds
+            motor_control_sassist(sassist_x, sassist_y, sassist_yaw, sassist_pitch, sassist_roll, sassist_depth,
+                    imu_dat.euler_pitch, imu_dat.euler_roll, depth_dat.depth_m, imu_dat.grav_x, imu_dat.grav_y, imu_dat.grav_z);
+            break;
+        }
     }
 }
