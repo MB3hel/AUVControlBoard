@@ -340,6 +340,7 @@ static void ms5837_state_machine(uint8_t trigger){
 
     switch(state){
     case STATE_DELAY:
+        usb_debugmsg("MS5837_DELAY_START");
         timers_ms5837_delay(delay);
         break;
     case STATE_RESET:
@@ -425,6 +426,10 @@ void ms5837_i2c_done(void){
 }
 
 void ms5837_delay_done(void){
+    usb_debugmsg("MS5837_DELAY_DONE");
+    char msg[] = "MS5837_NSTATE_--";
+    itoa(delay_next_state, &msg[14], 10);
+    usb_debugmsg(msg);
     ms5837_state_machine(TRIGGER_DELAY_DONE);
 }
 

@@ -10,7 +10,7 @@ def handle_msg(msg: bytes):
     if read_crc == calc_crc:
         msg = msg[:-2]
         if msg.startswith(b'DEBUG'):
-            print(msg[5:].decode())
+            print(msg[5:].decode(), flush=True)
 
 
 def main():

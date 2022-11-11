@@ -1,8 +1,8 @@
 # Firmware
 
 ## Bugs
-- IMU seems to stop working (i2c issue?) after extended periods. Depth seems to still work.
-    - Also, a few times starting with IMU only (no depth) then connecting depth has caused the same thing. Possibly related bug.
+- Either or both sensors seem to stop working after some duration (variable time, race cond)
+    - Seems that sensors get stuck in a delay state (delay is started but delay done is never called)
 
 ## Control Modes / Command & Control
 - Query commands for PID tuning
