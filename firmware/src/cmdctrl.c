@@ -34,6 +34,7 @@ const static uint8_t MSG_SET_RAW_PFX[] = {'R', 'A', 'W'};
 const static uint8_t MSG_SET_LOCAL_PFX[] = {'L', 'O', 'C', 'A', 'L'};
 const static uint8_t MSG_SET_GLOBAL_PFX[] = {'G', 'L', 'O', 'B', 'A', 'L'};
 const static uint8_t MSG_SET_SASSIT_PFX[] = {'S', 'A', 'S', 'S', 'I', 'S', 'T'};
+const static uint8_t MSG_TUNE_PID_PFX[] = {'T', 'U', 'N', 'E'};
 
 const static uint8_t MSG_GET_MODE_CMD[] = {'?', 'M', 'O', 'D', 'E'};
 const static uint8_t MSG_GET_TINV_CMD[] = {'?', 'T', 'I', 'N', 'V'};
@@ -290,6 +291,35 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         ms5837_data dat = ms5837_get();
         conversions_float_to_data(dat.depth_m, &response[5], true);
         usb_writemsg(response, 9);
+    }else if(MSG_STARTS_WITH(MSG_TUNE_PID_PFX)){
+        // Tune PID command
+        // T,U,N,E,[which],[kp],[ki],[kd],[kf],[speed_limit]
+        // which = The pid to tune (P = pitch hold, R = roll hold, D = depth hold)
+        // kp, ki, kd, and kf are 32-bit floats (little endian) for PID(F) gains
+        // speed_limit is 32-bit float = max speed allowed (0.0-1.0) by PID
+
+        // Ensure enough data
+        if(len < 25)
+            return;
+
+        // Parse gains
+        float kp = conversions_data_to_float(&msg[5], true);
+        float ki = conversions_data_to_float(&msg[9], true);
+        float kd = conversions_data_to_float(&msg[13], true);
+        float kf = conversions_data_to_float(&msg[17], true);
+        float speed_limit = conversions_data_to_float(&msg[21], true);
+
+        switch(msg[4]){
+        case 'P':
+            motor_control_cfg_pitch_hold(kp, ki, kd, kf, speed_limit);
+            break;
+        case 'R':
+            motor_control_cfg_roll_hold(kp, ki, kd, kf, speed_limit);
+            break;
+        case 'D':
+            motor_control_cfg_depth_hold(kp, ki, kd, kf, speed_limit);
+            break;
+        }
     }
 }
 

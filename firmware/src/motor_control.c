@@ -277,16 +277,16 @@ void motor_control_global(float x, float y, float z, float pitch, float roll, fl
     motor_control_local(target_arr[0], target_arr[1], target_arr[2], target_arr[3], target_arr[4], target_arr[5]);
 }
 
-void motor_control_cfg_depth_hold(float kp, float ki, float kd, float kf){
-
+void motor_control_cfg_depth_hold(float kp, float ki, float kd, float kf, float limit){
+    // TODO
 }
 
-void motor_control_cfg_pitch_hold(float kp, float ki, float kd, float kf){
-
+void motor_control_cfg_pitch_hold(float kp, float ki, float kd, float kf, float limit){
+    // TODO
 }
 
-void motor_control_cfg_roll_hold(float kp, float ki, float kd, float kf){
-
+void motor_control_cfg_roll_hold(float kp, float ki, float kd, float kf, float limit){
+    // TODO
 }
 
 void motor_control_sassist(float x, float y, float yaw, float pitch_target, float roll_target, float depth_target, float curr_pitch, float curr_roll, float curr_depth, float grav_x, float grav_y, float grav_z){

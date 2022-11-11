@@ -85,17 +85,17 @@ void motor_control_global(float x, float y, float z, float pitch, float roll, fl
 /**
  * Configure depth hold PID used in STABILITY_ASSIST mode
  */
-void motor_control_cfg_depth_hold(float kp, float ki, float kd, float kf);
+void motor_control_cfg_depth_hold(float kp, float ki, float kd, float kf, float limit);
 
 /**
  * Configure pitch hold PID used in STABILITY_ASSIST mode
  */
-void motor_control_cfg_pitch_hold(float kp, float ki, float kd, float kf);
+void motor_control_cfg_pitch_hold(float kp, float ki, float kd, float kf, float limit);
 
 /**
  * Configure roll hold PID used in STABILITY_ASSIST mode
  */
-void motor_control_cfg_roll_hold(float kp, float ki, float kd, float kf);
+void motor_control_cfg_roll_hold(float kp, float ki, float kd, float kf, float limit);
 
 /**
  * Set motor speeds in "stability assist" mode.
