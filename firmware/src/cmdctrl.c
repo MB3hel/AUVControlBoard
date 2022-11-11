@@ -272,13 +272,17 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         sassist_roll = conversions_data_to_float(&msg[23], true);
         sassist_depth = conversions_data_to_float(&msg[27], true);
 
-        // Get sensor data
-        bno055_data imu_dat = bno055_get();
-        ms5837_data depth_dat = ms5837_get();
+        // Don't update speeds now. This could cause PID to run "too fast" (faster than fixed period)
+        // which could reduce stability
+        // Just set the target and wait for update_motors to be called again to actually set the new target
 
-        // Update motor speeds
-        motor_control_sassist(sassist_x, sassist_y, sassist_yaw, sassist_pitch, sassist_roll, sassist_depth,
-                imu_dat.euler_pitch, imu_dat.euler_roll, depth_dat.depth_m, imu_dat.grav_x, imu_dat.grav_y, imu_dat.grav_z);
+        // Get sensor data
+        // bno055_data imu_dat = bno055_get();
+        // ms5837_data depth_dat = ms5837_get();
+
+        // // Update motor speeds
+        // motor_control_sassist(sassist_x, sassist_y, sassist_yaw, sassist_pitch, sassist_roll, sassist_depth,
+        //         imu_dat.euler_pitch, imu_dat.euler_roll, depth_dat.depth_m, imu_dat.grav_x, imu_dat.grav_y, imu_dat.grav_z);
     }else if(MSG_EQUALS(MSG_GET_DEPTH_CMD)){
         // Get depth query
         // DEPTH (5 char) + 1 float (4 bytes) = 9 bytes

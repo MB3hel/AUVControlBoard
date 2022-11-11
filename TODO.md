@@ -8,7 +8,9 @@
 - Query commands for PID tuning
 - Ensure provided arguments are in range (specifically speeds and speed limits for PID tune). If not, ignore (for now) or eventually, return an error code in ACK message.
 - GLOBAL and STABILITY ASSIST modes should not work if required sensors are not connected
-- Instead of periodically recalculating speeds in global and stability assist mode, use a timer. This way, if setpoint is changing rapidly from computer recalculate will be skipped.
+- Instead of applying speeds when receiving command, apply every x ms (fixed rate of speed sets)
+    - Avoids issues where PIDs (SASSIST) are run too fast
+    - Avoids issues where computer spamming setpoints can cause latency on sets due to control board not processing messages quickly enough due to performing motor math too often
 - Implement PID controller
 - Implement depth hold PID, pitch hold PID, and roll hold PID for stability assist mode.
 - Implement yaw hold PID for stability assist mode.
