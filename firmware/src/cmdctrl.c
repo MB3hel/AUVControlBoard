@@ -33,6 +33,7 @@ const static uint8_t MSG_SET_TINV_PFX[] = {'T', 'I', 'N', 'V'};
 const static uint8_t MSG_SET_RAW_PFX[] = {'R', 'A', 'W'};
 const static uint8_t MSG_SET_LOCAL_PFX[] = {'L', 'O', 'C', 'A', 'L'};
 const static uint8_t MSG_SET_GLOBAL_PFX[] = {'G', 'L', 'O', 'B', 'A', 'L'};
+const static uint8_t MSG_SET_SASSIT_PFX[] = {'S', 'A', 'S', 'S', 'I', 'S', 'T'};
 
 const static uint8_t MSG_GET_MODE_CMD[] = {'?', 'M', 'O', 'D', 'E'};
 const static uint8_t MSG_GET_TINV_CMD[] = {'?', 'T', 'I', 'N', 'V'};
@@ -49,19 +50,27 @@ static unsigned int mode;
 // Need to store last setting because periodic recalculations are required in case of orientation changes
 static float global_x, global_y, global_z, global_pitch, global_roll, global_yaw;
 
+// Cached stability assist target
+static float sassist_x, sassist_y, sassist_yaw, sassist_pitch, sassist_roll, sassist_depth;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void cmdctrl_init(void){
-    // Zero cached target initially
+    // Zero cached targets initially
     global_x = 0.0f;
     global_y = 0.0f;
     global_z = 0.0f;
     global_pitch = 0.0f;
     global_roll = 0.0f;
     global_yaw = 0.0f;
+    sassist_x = 0.0f;
+    sassist_y = 0.0f;
+    sassist_yaw = 0.0f;
+    sassist_pitch = 0.0f;
+    sassist_roll = 0.0f;
+    sassist_depth = 0.0f;
 
     // Default to RAW control mode
     mode = CMDCTRL_MODE_RAW;
@@ -243,6 +252,31 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
     }else if(MSG_EQUALS(MSG_RESET_CMD)){
         // Reset system command
         TIMERS_WDT_RESET_NOW();
+    }else if(MSG_STARTS_WITH(MSG_SET_SASSIT_PFX)){
+        // S,A,S,S,I,S,T,[x],[y],[yaw],[pitch_targe],[roll_target],[depth_target]
+        // x, y, and yaw are speeds (32-bit float little endian) from -1.0 to 1.0
+        // pitch_target and roll_target and desired pitch and roll in degrees (32-bit float little endian)
+        // depth_target is desired depth in meters (32-bit float little endian). Negative for below surface
+
+        // Ensure enough data
+        if(len < 31)
+            return;
+
+        // Get arguments from message
+        sassist_x = conversions_data_to_float(&msg[7], true);
+        sassist_y = conversions_data_to_float(&msg[11], true);
+        sassist_yaw = conversions_data_to_float(&msg[15], true);
+        sassist_pitch = conversions_data_to_float(&msg[19], true);
+        sassist_roll = conversions_data_to_float(&msg[23], true);
+        sassist_depth = conversions_data_to_float(&msg[27], true);
+
+        // Get sensor data
+        bno055_data imu_dat = bno055_get();
+        ms5837_data depth_dat = ms5837_get();
+
+        // Update motor speeds
+        motor_control_sassist(sassist_x, sassist_y, sassist_yaw, sassist_pitch, sassist_roll, sassist_depth,
+                imu_dat.euler_pitch, imu_dat.euler_roll, depth_dat.depth_m, imu_dat.grav_x, imu_dat.grav_y, imu_dat.grav_z);
     }
 }
 
@@ -271,6 +305,12 @@ void cmdctrl_motors_killed(void){
     global_pitch = 0.0f;
     global_roll = 0.0f;
     global_yaw = 0.0f;
+    sassist_x = 0.0f;
+    sassist_y = 0.0f;
+    sassist_yaw = 0.0f;
+    sassist_pitch = 0.0f;
+    sassist_roll = 0.0f;
+    sassist_depth = 0.0f;
     
     // Send message telling the computer that the watchdog killed motors
     usb_writemsg((uint8_t[]){'W', 'D', 'G', 'K'}, 4);
@@ -278,6 +318,7 @@ void cmdctrl_motors_killed(void){
 
 void cmdctrl_update_motors(void){
     bno055_data imu_dat;
+    ms5837_data depth_dat;
 
     // Some modes use sensors. In these modes, periodically recalculate
     // using latest sensor data and a cached speed
@@ -291,7 +332,13 @@ void cmdctrl_update_motors(void){
                 global_yaw, imu_dat.grav_x, imu_dat.grav_y, imu_dat.grav_z);
         break;
     case CMDCTRL_MODE_SASSIST:
-        // TODO: Get sensor data and update speeds with cached target
+        // Get sensor data
+        imu_dat = bno055_get();
+        depth_dat = ms5837_get();
+
+        // Update motor speeds
+        motor_control_sassist(sassist_x, sassist_y, sassist_yaw, sassist_pitch, sassist_roll, sassist_depth,
+                imu_dat.euler_pitch, imu_dat.euler_roll, depth_dat.depth_m, imu_dat.grav_x, imu_dat.grav_y, imu_dat.grav_z);
         break;
     }
 }

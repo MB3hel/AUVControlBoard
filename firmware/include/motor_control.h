@@ -119,7 +119,7 @@ void motor_control_cfg_roll_hold(float kp, float ki, float kd, float kf);
  * @param grav_y Gravity vector y component
  * @param grav_z Gravity vector z component
  */
-void motor_control_sassit(float x, float y, float yaw, float pitch_target, float roll_target, float depth_target, float curr_pitch, float curr_roll, float curr_depth, float grav_x, float grav_y, float grav_z);
+void motor_control_sassist(float x, float y, float yaw, float pitch_target, float roll_target, float depth_target, float curr_pitch, float curr_roll, float curr_depth, float grav_x, float grav_y, float grav_z);
 
 /**
  * Increments the motor watchdog by 1 count
