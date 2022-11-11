@@ -18,6 +18,8 @@
     - Get = computer requesting information from control board
     - Status = Information sent from control board to computer unprompted
 - All "set" messages respond with an ACK message (somehow indicating what the acknowledge is for). Should also include a status code.
+- Should computer have to ACK status messages?
+    - Maybe some should be (eg motor watchdog did kill), but others no (sensor data)
 
 ## Sensors
 - IMU (BNO055)
