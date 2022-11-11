@@ -3,6 +3,7 @@
 ## Bugs
 - Either or both sensors seem to stop working after some duration (variable time, race cond)
     - Seems that sensors get stuck in a delay state (delay is started but delay done is never called)
+    - This bug could also affect i2c0 timeout counter which is implemented the same way. This would be less likely to be seen since it would have to occur at the same time the i2c hardware "dies"
 
 ## Control Modes / Command & Control
 - Query commands for PID tuning

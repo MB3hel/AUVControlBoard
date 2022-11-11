@@ -268,18 +268,14 @@ void TC0_Handler(void){
 
         if(bno055_delay_count > 0){
             bno055_delay_count--;
-            if(bno055_delay_count == 0){
-                usb_debugmsg("BNO055_FLAG_SET");
+            if(bno055_delay_count == 0)
                 FLAG_SET(flags_main, FLAG_MAIN_BNO055_DELAY);
-            }
         }
 
         if(ms5837_delay_count > 0){
             ms5837_delay_count--;
-            if(ms5837_delay_count == 0){
-                usb_debugmsg("MS5837_FLAG_SET");
+            if(ms5837_delay_count == 0)
                 FLAG_SET(flags_main, FLAG_MAIN_MS5837_DELAY);
-            }
         }
 
         if(i2c0_timeout_count > 0){
