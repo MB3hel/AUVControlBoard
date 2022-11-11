@@ -63,9 +63,17 @@ void i2c0_manager(void){
         // Runs when i2c0 finishes a transaction
         // ---------------------------------------------------------------------------------------------------------        
         if(i2c0_curr_trans == &bno055_trans){
+            if(bno055_trans.status == I2C_STATUS_SUCCESS)
+                usb_debugmsg("BNO055_DONE");
+            else
+                usb_debugmsg("BNO055_ERROR");
             bno055_i2c_done();
             idx = BNO055 + 1;
         }else if(i2c0_curr_trans == &ms5837_trans){
+            if(ms5837_trans.status == I2C_STATUS_SUCCESS)
+                usb_debugmsg("MS5837_DONE");
+            else
+                usb_debugmsg("MS5837_ERROR");
             ms5837_i2c_done();
             idx = MS5837 + 1;
         }
@@ -91,6 +99,7 @@ void i2c0_manager(void){
                 if(FLAG_CHECK(flags_main, FLAG_MAIN_BNO055_WANTI2C)){
                     // If starting transaction fails, leave flag set so it will try again
                     if(i2c0_start(&bno055_trans)){
+                        usb_debugmsg("BNO055_START");
                         FLAG_CLEAR(flags_main, FLAG_MAIN_BNO055_WANTI2C);
                     }
                     exit = true;
@@ -100,6 +109,7 @@ void i2c0_manager(void){
                 if(FLAG_CHECK(flags_main, FLAG_MAIN_MS5837_WANTI2C)){
                     // If starting transaction fails, leave flag set so it will try again
                     if(i2c0_start(&ms5837_trans)){
+                        usb_debugmsg("MS5837_START");
                         FLAG_CLEAR(flags_main, FLAG_MAIN_MS5837_WANTI2C);
                     }
                     exit = true;

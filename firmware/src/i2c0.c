@@ -115,6 +115,8 @@ bool i2c0_start(i2c_trans *trans){
 void i2c0_timeout(void){
     timeouts++;
 
+    usb_debugmsg("I2C0_TIMEOUT");
+
     // Sometimes, noise on the bus during transactions (from something such as touching pins)
     // has caused the bus to "freeze" where both lines are high, but no activity occurs (even when)
     // a transaction is attempted). This is seemingly undetectable by software (no status or error bits
@@ -122,6 +124,7 @@ void i2c0_timeout(void){
     // This is solved by disabling and re-enabling the I2C bus. Presumably, this resets the hardware state
     // machine in the SERCOM peripheral.
     if(timeouts >= 5){
+        usb_debugmsg("I2C0_RESET");
         SERCOM2->I2CM.CTRLA.bit.ENABLE = 0;                     // Disable bus
         while(SERCOM2->I2CM.SYNCBUSY.bit.ENABLE);               // Wait for sync
         ports_i2c0_fix_sda_low();                               // Sometimes gets stuck with SDA low
