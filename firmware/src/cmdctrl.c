@@ -40,6 +40,7 @@ const static uint8_t MSG_GET_TINV_CMD[] = {'?', 'T', 'I', 'N', 'V'};
 const static uint8_t MSG_GET_SENS_STAT[] = {'?', 'S', 'S', 'T', 'A', 'T'};
 const static uint8_t MSG_GET_GVEC_CMD[] = {'?', 'G', 'V', 'E', 'C'};
 const static uint8_t MSG_GET_EULER_CMD[] = {'?', 'E', 'U', 'L', 'E', 'R'};
+const static uint8_t MSG_GET_DEPTH_CMD[] = {'?', 'D', 'E', 'P', 'T', 'H'};
 
 const static uint8_t MSG_RESET_CMD[] = {'R', 'E', 'S', 'E', 'T'};
 const static uint8_t MSG_FEED_MWDT_CMD[] = {'W', 'D', 'G', 'F'};
@@ -277,6 +278,18 @@ void cmdctrl_handle_msg(uint8_t *msg, uint32_t len){
         // Update motor speeds
         motor_control_sassist(sassist_x, sassist_y, sassist_yaw, sassist_pitch, sassist_roll, sassist_depth,
                 imu_dat.euler_pitch, imu_dat.euler_roll, depth_dat.depth_m, imu_dat.grav_x, imu_dat.grav_y, imu_dat.grav_z);
+    }else if(MSG_EQUALS(MSG_GET_DEPTH_CMD)){
+        // Get depth query
+        // DEPTH (5 char) + 1 float (4 bytes) = 9 bytes
+        uint8_t response[9];
+        response[0] = 'D';
+        response[1] = 'E';
+        response[2] = 'P';
+        response[3] = 'T';
+        response[4] = 'H';
+        ms5837_data dat = ms5837_get();
+        conversions_float_to_data(dat.depth_m, &response[5], true);
+        usb_writemsg(response, 9);
     }
 }
 
