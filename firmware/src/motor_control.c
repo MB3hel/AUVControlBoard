@@ -278,15 +278,30 @@ void motor_control_global(float x, float y, float z, float pitch, float roll, fl
 }
 
 void motor_control_cfg_depth_hold(float kp, float ki, float kd, float kf, float limit){
-    // TODO
+    depth_pid.kp = kp;
+    depth_pid.ki = ki;
+    depth_pid.kd = kd;
+    depth_pid.kf = kf;
+    depth_pid.min = -limit;
+    depth_pid.max = limit;
 }
 
 void motor_control_cfg_pitch_hold(float kp, float ki, float kd, float kf, float limit){
-    // TODO
+    pitch_pid.kp = kp;
+    pitch_pid.ki = ki;
+    pitch_pid.kd = kd;
+    pitch_pid.kf = kf;
+    pitch_pid.min = -limit;
+    pitch_pid.max = limit;
 }
 
 void motor_control_cfg_roll_hold(float kp, float ki, float kd, float kf, float limit){
-    // TODO
+    roll_pid.kp = kp;
+    roll_pid.ki = ki;
+    roll_pid.kd = kd;
+    roll_pid.kf = kf;
+    roll_pid.min = -limit;
+    roll_pid.max = limit;
 }
 
 void motor_control_sassist(float x, float y, float yaw, float pitch_target, float roll_target, float depth_target, float curr_pitch, float curr_roll, float curr_depth, float grav_x, float grav_y, float grav_z){
