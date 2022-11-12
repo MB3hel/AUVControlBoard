@@ -472,7 +472,7 @@ static void bno055_state_machine(uint8_t trigger){
         case STATE_RD_EULER:
             if(trigger == TRIGGER_I2C_DONE){
                 tmp16 = ((int16_t)bno055_trans.read_buf[0]) | (((int16_t)bno055_trans.read_buf[1]) << 8);
-                data.euler_yaw = tmp16 / 16.0f;
+                data.euler_yaw = -tmp16 / 16.0f;
                 tmp16 = ((int16_t)bno055_trans.read_buf[2]) | (((int16_t)bno055_trans.read_buf[3]) << 8);
                 data.euler_roll = tmp16 / 16.0f;
                 tmp16 = ((int16_t)bno055_trans.read_buf[4]) | (((int16_t)bno055_trans.read_buf[5]) << 8);

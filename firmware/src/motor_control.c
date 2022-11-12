@@ -304,7 +304,7 @@ void motor_control_cfg_roll_hold(float kp, float ki, float kd, float kf, float l
     roll_pid.max = limit;
 }
 
-void motor_control_sassist(float x, float y, float yaw, float pitch_target, float roll_target, float depth_target, float curr_pitch, float curr_roll, float curr_depth, float grav_x, float grav_y, float grav_z){
+void motor_control_sassist(float x, float y, float yaw, float pitch_target, float roll_target, float depth_target, float curr_pitch, float curr_roll, float curr_depth, float grav_x, float grav_y, float grav_z){  
     // Update PID setpoints
     pitch_pid.setpoint = pitch_target;
     pitch_pid.setpoint = roll_target;

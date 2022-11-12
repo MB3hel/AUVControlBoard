@@ -55,6 +55,7 @@ class ControlBoard:
         RAW = auto()
         LOCAL = auto()
         GLOBAL = auto()
+        SASSIST = auto()
 
     def __init__(self, port: str):
         self.__ser: serial.Serial = serial.Serial(port)
@@ -123,6 +124,8 @@ class ControlBoard:
             msg.extend(b'L')
         elif mode == ControlBoard.Mode.GLOBAL:
             msg.extend(b'G')
+        elif mode == ControlBoard.Mode.SASSIST:
+            msg.extend(b'S')
         else:
             # Not a valid mode to set
             # Note that UNKNOWN mode cannot be set
@@ -349,6 +352,8 @@ class ControlBoard:
                     self.__mode = ControlBoard.Mode.LOCAL
                 elif msg[4:5] == b'G':
                     self.__mode = ControlBoard.Mode.GLOBAL
+                elif msg[4:5] == b'S':
+                    self.__mode = ControlBoard.Mode.SASSIST
         elif msg == b'WDGK':
             # Watchdog kill message
             # Received when motor watchdog times out and kills thrusters
