@@ -9,13 +9,26 @@
 
 #include <stdint.h>
 
+
 // Macros to work with flags
 
+// TODO: Remove this!!!
+#include <string.h>
+#include <usb.h>
+#include <util.h>
+extern char tmpmsg[32];
+
 // Set a flag
-#define FLAG_SET(field, flag)       ((field) |= (flag))
+#define FLAG_SET(field, flag)       ((field) |= (flag)); \
+                                    strcpy(tmpmsg, "FLAG_SET -----"); \
+                                    itoa(flag, &tmpmsg[9], 10); \
+                                    usb_debugmsg(tmpmsg);
 
 // Clear (unset)  a flag
-#define FLAG_CLEAR(field, flag)     ((field) &= ~(flag))
+#define FLAG_CLEAR(field, flag)     ((field) &= ~(flag)); \
+                                    strcpy(tmpmsg, "FLAG_CLEAR -----"); \
+                                    itoa(flag, &tmpmsg[11], 10); \
+                                    usb_debugmsg(tmpmsg);
 
 // Check if a flag is set
 #define FLAG_CHECK(field, flag)     ((field) & (flag))

@@ -176,8 +176,10 @@ inline static void __attribute__((always_inline)) usb_writeone(uint8_t c) {
         // If a transfer is in progress (or there is no data to transfer), this function will return 0
         // Otherwise, it returns the number of bytes removed from the FIFO
         // Wait until a transfer can be started to continue writing
-        while(tud_cdc_write_flush() == 0)
-            delay_ms(1);        // Delay will feed watchdog inside this loop
+        while(tud_cdc_write_flush() == 0){
+            tud_task();
+            TIMERS_WDT_FEED();
+        }
         TIMERS_WDT_FEED();      // Don't reset the system while here
     }
 }

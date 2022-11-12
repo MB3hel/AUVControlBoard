@@ -182,7 +182,7 @@ void timers_init(void){
     timers_tc3_init();
     timers_tcc0_init();
     timers_tcc1_init();
-    timers_wdt_init();
+    // timers_wdt_init();
 }
 
 void timers_thruster_pwm_set(float *speeds){
@@ -277,6 +277,7 @@ void TC0_Handler(void){
             ms5837_delay_count--;
             if(ms5837_delay_count == 0){
                 FLAG_SET(flags_main, FLAG_MAIN_MS5837_DELAY);
+                dotstar_set(0, 0, 255);
             }
         }
 
