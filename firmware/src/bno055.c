@@ -232,6 +232,9 @@
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// TODO: Remove
+static uint32_t stuck_counter;
+
 static uint8_t axis_config;
 static bool reconfig;
 
@@ -498,6 +501,8 @@ static void bno055_state_machine(uint8_t trigger){
         return;
     }
 
+    stuck_counter = 0;
+
     // -----------------------------------------------------------------------------------------------------------------
     // Actions at START of state
     // -----------------------------------------------------------------------------------------------------------------
@@ -657,6 +662,7 @@ void bno055_init(void){
 
     // Initial value
     error_counter = 0;
+    stuck_counter = 0;
 
     // Initial flags
     reconfig = false;
@@ -717,4 +723,18 @@ bno055_data bno055_get(void){
 bool bno055_connected(void){
     // Connected if got data in the 750ms
     return (timers_now() - last_data) < 750;
+}
+
+// TODO: Remove this and debug the actual problem
+void bno055_fix_stuck(void){
+    if(state == STATE_DELAY){
+        stuck_counter+= 50;
+        // If delay is double what it should have been, force exit delay now
+        if((delay < 100 && stuck_counter >= 200) || (delay >= 100 && stuck_counter >= (2 * delay))){
+            usb_debugmsg("IMU_FIX");
+            timers_bno055_delay(0);
+            FLAG_CLEAR(flags_main, FLAG_MAIN_BNO055_DELAY);
+            bno055_delay_done();
+        }
+    }
 }

@@ -69,3 +69,7 @@ bno055_data bno055_get(void);
  * Check if BNO055 IMU connected
  */
 bool bno055_connected(void);
+
+
+// TODO: Remove this and debug the actual problem
+void bno055_fix_stuck(void);

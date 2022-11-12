@@ -169,6 +169,9 @@ inline static void __attribute__((always_inline)) usb_writeone(uint8_t c) {
     // be increased in tusb_config.h
     // FIFO should at least be the size of one message. Probably multiple.
     // This will block until write succeeds
+    // WARNING: If this is called from an IRQ handler, this loop may block forever as the calling 
+    //          IRQ handler may be higher priority than USB handlers causing tud flush to never happen.
+    //          IT IS NOT RECOMMENDED TO PERFORM USB WRITES FROM IRQ HANDLERS!!!
     while(tud_cdc_write_char(c) == 0){
         // Write failed.
         // Typically, TinyUSB will only send data once the FIFO reaches the bulk packet size

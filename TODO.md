@@ -6,6 +6,8 @@
     - This bug could also affect i2c0 timeout counter which is implemented the same way. This would be less likely to be seen since it would have to occur at the same time the i2c hardware "dies"
     - What seems to happen is the BNO055_DELAY_DONE or MS5837_DELAY_DONE flag gets set in IRQ handler (timers) as indicated by debug messages and LED. But, main never sees the flag set. Not sure how this happens. Have verified that memory clobbering around the flags_main field does not occur.
     - How else this can happen??? Flag get cleared somehow by something else???
+    - Added trace prints to FLAG_SET and FLAG_CLEAR macros. Flag 1024 (depth sensor delay flag) gets set and never cleared. Following flag sets / clears do not impact the same bit (all checked).
+- Fix SDA low doesn't seem to work properly
 
 ## Control Modes / Command & Control
 - Query commands for PID tuning

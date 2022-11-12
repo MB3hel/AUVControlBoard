@@ -58,6 +58,9 @@
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// TODO: Remove this
+static uint32_t stuck_counter;
+
 static uint8_t wbuf[WRITE_BUF_SIZE];
 static volatile uint8_t rbuf[READ_BUF_SIZE];
 i2c_trans ms5837_trans;
@@ -334,6 +337,8 @@ static void ms5837_state_machine(uint8_t trigger){
         return;
     }
 
+    stuck_counter = 0;
+
     // -----------------------------------------------------------------------------------------------------------------
     // Actions at START of state
     // -----------------------------------------------------------------------------------------------------------------
@@ -386,6 +391,8 @@ bool ms5837_init(void){
     data.depth_m = 999;
     data.temperature_c = 999;
     data.pressure_mbar = 999;
+
+    stuck_counter = 0;
 
     // Last time data was read
     last_data = 65535;
@@ -440,4 +447,19 @@ bool ms5837_connected(void){
 void ms5837_reset(void){
     reset = true;
 }
+
+// TODO: Remove this and debug the actual problem
+void ms5837_fix_stuck(void){
+    if(state == STATE_DELAY){
+        stuck_counter += 50;
+        // If delay is double what it should have been, force exit delay now
+        if((delay < 100 && stuck_counter >= 200) || (delay >= 100 && stuck_counter >= (2 * delay))){
+            usb_debugmsg("DEPTH_FIX");
+            timers_ms5837_delay(0);
+            FLAG_CLEAR(flags_main, FLAG_MAIN_MS5837_DELAY);
+            ms5837_delay_done();
+        }
+    }
+}
+
 

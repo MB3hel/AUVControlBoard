@@ -62,3 +62,6 @@ bool ms5837_connected(void);
  * Necessary if SDA line becomes held low or this sensor will stop responding
  */
 void ms5837_reset(void);
+
+// TODO: Remove this and debug the actual problem
+void ms5837_fix_stuck(void);
