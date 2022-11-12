@@ -233,7 +233,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // TODO: Remove
-static uint32_t stuck_counter;
+static uint32_t delay_started_at;
 
 static uint8_t axis_config;
 static bool reconfig;
@@ -501,14 +501,13 @@ static void bno055_state_machine(uint8_t trigger){
         return;
     }
 
-    stuck_counter = 0;
-
     // -----------------------------------------------------------------------------------------------------------------
     // Actions at START of state
     // -----------------------------------------------------------------------------------------------------------------
 
     switch(state){
     case STATE_DELAY:
+        delay_started_at = timers_now();
         timers_bno055_delay(delay);
         break;
     case STATE_EXIST_CHECK:
@@ -662,7 +661,7 @@ void bno055_init(void){
 
     // Initial value
     error_counter = 0;
-    stuck_counter = 0;
+    delay_started_at = 0;
 
     // Initial flags
     reconfig = false;
@@ -727,14 +726,9 @@ bool bno055_connected(void){
 
 // TODO: Remove this and debug the actual problem
 void bno055_fix_stuck(void){
-    if(state == STATE_DELAY){
-        stuck_counter+= 50;
-        // If delay is double what it should have been, force exit delay now
-        if((delay < 100 && stuck_counter >= 200) || (delay >= 100 && stuck_counter >= (2 * delay))){
-            usb_debugmsg("IMU_FIX");
-            timers_bno055_delay(0);
-            FLAG_CLEAR(flags_main, FLAG_MAIN_BNO055_DELAY);
-            bno055_delay_done();
-        }
+    if(state == STATE_DELAY && timers_now() - delay_started_at > 2 * delay){
+        timers_bno055_delay(0);
+        FLAG_CLEAR(flags_main, FLAG_MAIN_BNO055_DELAY);
+        bno055_delay_done();
     }
 }
