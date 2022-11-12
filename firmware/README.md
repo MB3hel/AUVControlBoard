@@ -30,6 +30,7 @@ Both the [control board firmware](./firmware/) and the [hardware test](./hwtest/
     - `*.c`: Firmware sources
 - `samd51g19a_flash_wbld.ld`: Linker script modified for ItsyBitsy M4 with UF2 bootloader
 - `read_debug.py`: Reads debug messages from control board (messages sent with `usb_debugmsg`)
+- `remote_flash`: Folder containing tools required to flash control board using computer in the robot
 
 
 ## Debugging
@@ -69,6 +70,12 @@ In the robot (sealed) the Control board is connected by USB to a Linux computer 
 scp .pio/build/adafruit_itsybitsy_m4/firmware.bin [USER]@[IP_ADDRESS]:firmware.bin
 ```
 
+Then, copy the scripts in `remote_flash`. SSH to the remote system and run
+
+```sh
+flash.py /dev/ttyACM0 /path/to/firmware.bin
+```
+
 Then, copy `uf2conv.py` and `uf2families.json` to the robot from [this](https://github.com/microsoft/uf2) repo (in `utils` folder). 
 
 
@@ -79,11 +86,7 @@ The following command will trigger the control board to enter the bootloader (co
 ```sh
 # RUN VIA SSH SESSION TO ROBOT'S COMPUTER
 python3
->>> from serial import Serial
->>> import time
->>> ser = Serial("/dev/ttyACM0", 1200)
->>> time.sleep(0.5)
->>> ser.close()
+>>> 
 ```
 
 Then, `uf2conv` can be used to convert `firmware.bin` to a uf2 file and flash it to the device using the bootloader's USB MSD interface.
