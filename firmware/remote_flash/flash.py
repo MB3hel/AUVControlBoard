@@ -16,12 +16,18 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("port", type=str)
     parser.add_argument("firmware", type=str)
+    parser.add_argument("-m", dest="mount", action='store_true')
     args = parser.parse_args()
 
     script_dir = os.path.dirname(__file__)
     reset_to_bootloader(args.port)
     time.sleep(2)
-    os.system("python3 {}/uf2conv.py -b 0x4000 {}".format(script_dir, args.firmware))
+    if args.mount:
+        os.system("sudo mount /dev/sda /mnt/usb")
+        os.system("python3 {}/uf2conv.py -c -b 0x4000 {}".format(script_dir, args.firmware))
+        os.system("sudo mv flash.uf2 /mnt/usb/")
+    else:
+        os.system("python3 {}/uf2conv.py -b 0x4000 {}".format(script_dir, args.firmware))
 
 
 if __name__ == "__main__":
