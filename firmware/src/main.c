@@ -25,26 +25,8 @@
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO: REMOVE! DEBUG USE ONLY!
-uint32_t clobber_detection_a[8];
-
 // Declared in flags.h
 volatile uint16_t flags_main = 0;
-
-// TODO: REMOVE! DEBUG USE ONLY!
-uint32_t clobber_detection_b[8];
-
-
-const static uint32_t correct_data[] = {
-    0xABCD,
-    0x1234,
-    0x5678,
-    0x479F,
-    0x8409,
-    0xFFED,
-    0x00E4,
-    0xE405,
-};
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -131,52 +113,7 @@ void i2c0_manager(void){
     }
 }
 
-// TODO: REMOVE! DEBUG USE ONLY!
-void clobber_print(void){
-    usb_debugmsg("CLOBBER DATA:");
-    usb_debugmsg("i      A       B");
-    for(int i = 0; i < 8; ++i){
-        char msg[] = "-      0x----    0x----";
-        itoa(i, &msg[0], 10);
-        itoa(clobber_detection_a[i], &msg[9], 16);
-        itoa(clobber_detection_b[i], &msg[19], 16);
-        usb_debugmsg(msg);
-    }
-}
-
-// TODO: REMOVE! DEBUG USE ONLY!
-void clobber_check(void){
-    int i;
-    bool clobber = false;
-    for(i = 0; i < 8; ++i){
-        if(clobber_detection_a[i] != correct_data[i]){
-            usb_debugmsg("WARNING: Unexpected memory write detected in region A!!!");
-            clobber = true;
-        }
-        if(clobber_detection_b[i] != correct_data[i]){
-            usb_debugmsg("WARNING: Unexpected memory write detected in region B!!!");
-            clobber = true;
-        }
-        if(clobber){
-            clobber_print();
-            for(i = 0; i < 8; ++i){
-                clobber_detection_a[i] = correct_data[i];
-                clobber_detection_b[i] = correct_data[i];
-            }
-            break;
-        }
-    }
-}
-
 int main(void){
-
-    int i;
-
-    // TODO: REMOVE! DEBUG USE ONLY!
-    for(i = 0; i < 8; ++i){
-        clobber_detection_a[i] = correct_data[i];
-        clobber_detection_b[i] = correct_data[i];
-    }
 
     uint8_t msg[USB_MAX_MSG_LEN];                               // Holds message received from usb
     uint32_t msg_len;                                           // Length of message received from usb
@@ -244,7 +181,7 @@ int main(void){
             // ---------------------------------------------------------------------------------------------------------
             // Runs every 1000ms
             // ---------------------------------------------------------------------------------------------------------
-            clobber_check();
+            // Nothing here
             // ---------------------------------------------------------------------------------------------------------
         }
         if(FLAG_CHECK(flags_main, FLAG_MAIN_USBMSG)){
