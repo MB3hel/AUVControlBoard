@@ -41,13 +41,18 @@ if __name__ == "__main__":
 
         # PID Tunings (all gains to zero to disable)
         #                     kP      kI      kD     kF       MaxSpeed
-        cb.tune_depth_hold(   0,       0,      0,      0,      1)
-        cb.tune_pitch_hold(   0,       0,      0,      0,      1)
-        cb.tune_roll_hold(    0,       0,      0,      0,      1)
+        cb.tune_depth_hold(   0.5,       1e-10,      0,      0,      0.3)
+        cb.tune_pitch_hold(   0.025,       1e-14,      0,      0,      0.3)
+        cb.tune_roll_hold(    0.01,       0,      0,      0,      0.3)
 
         #           x       y       yaw     pitch_target    roll_target    depth_target        
-        target = [  0,      0,      0,      0,               0,               0   ]
+        target = [  0,      0,      0,      0,               0,               -1.0   ]
         print("Setting target vector {}...".format(target), flush=True)
+        cb.set_sassist(target[0], target[1], target[2], target[3], target[4], target[5])
+        time.sleep(5)
+        print("STAGE2")
+        target[1] = 1
+        target[2] = -0.02
         cb.set_sassist(target[0], target[1], target[2], target[3], target[4], target[5])
         input("Press enter to stop running...")
         cb.set_mode(ControlBoard.Mode.GLOBAL)
