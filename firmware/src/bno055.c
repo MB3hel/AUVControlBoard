@@ -706,12 +706,6 @@ void bno055_i2c_done(void){
     }
 }
 
-void bno055_debug(void){
-    char msg[] = "BNO055: --";
-    itoa(state, &msg[8], 10);
-    usb_debugmsg(msg);
-}
-
 void bno055_delay_done(void){
     bno055_state_machine(TRIGGER_DELAY_DONE);
 }

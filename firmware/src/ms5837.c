@@ -424,12 +424,6 @@ void ms5837_i2c_done(void){
     }
 }
 
-void ms5837_debug(void){
-    char msg[] = "MS5837: --";
-    itoa(state, &msg[8], 10);
-    usb_debugmsg(msg);
-}
-
 void ms5837_delay_done(void){
     ms5837_state_machine(TRIGGER_DELAY_DONE);
 }
