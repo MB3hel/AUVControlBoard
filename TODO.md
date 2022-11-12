@@ -4,6 +4,8 @@
 - Either or both sensors seem to stop working after some duration (variable time, race cond)
     - Seems that sensors get stuck in a delay state (delay is started but delay done is never called)
     - This bug could also affect i2c0 timeout counter which is implemented the same way. This would be less likely to be seen since it would have to occur at the same time the i2c hardware "dies"
+    - What seems to happen is the BNO055_DELAY_DONE or MS5837_DELAY_DONE flag gets set in IRQ handler (timers) as indicated by debug messages and LED. But, main never sees the flag set. Not sure how this happens. Have verified that memory clobbering around the flags_main field does not occur.
+    - How else this can happen??? Flag get cleared somehow by something else???
 
 ## Control Modes / Command & Control
 - Query commands for PID tuning
