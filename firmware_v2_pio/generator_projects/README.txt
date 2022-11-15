@@ -1,0 +1,1 @@
+ControlBoard V2 uses STM32F411 chip. Generator used is STM32CubeMX
