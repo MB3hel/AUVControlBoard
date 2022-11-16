@@ -47,8 +47,6 @@ The axis configuration can be changed to match any mounting position of the cont
 
 2. Wire SDA and SCL wires from MCU board to each sensor as shown below (connect the two pins shown in each row).
 
-**NOTE: SHOULD ADD 10K PULLUP RESISTOR TO SDA AND SCL LINES**
-
 | Pin 1                      | Pin 2                    |
 | -------------------------- | ------------------------ |
 | ItsyBitsy SDA              | BNO055 SDA               |
