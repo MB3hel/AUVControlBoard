@@ -5,6 +5,8 @@
 #define init_frameworks     atmel_start_init
 
 #include <atmel_start.h>
+#include <sam.h>
+#include <peripheral_clk_config.h>
 
 #elif defined(CONTROL_BOARD_V2)
 
