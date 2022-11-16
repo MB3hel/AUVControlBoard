@@ -1,2 +1,12 @@
-ControlBoard v1 uses Adafruit ItsyBitsy M4 w/ SAMD51 chip. Generator used is Atmel Start.
-ControlBoard v2 uses WeAct Studio Black Pill board w/ STM32F411 chip. Generator used is STM32CubeMX
+- ControlBoard v1 uses Adafruit ItsyBitsy M4 w/ SAMD51 chip. Generator used is Atmel Start.
+    - Open the `.atstart` file at https://start.atmel.com/
+    - If changes are made, save the configuration (new `.atstart` file)
+    - Export the project to download the `.atzip` file.
+    - Run the update_from_generators script and choose v1
+    - It is also necessary to manually update the include flags (platformio.ini build_flags) for the hpl directories. The update script creates a text file (hpl_includes.txt) listing the necessary include flags. 
+    
+- ControlBoard v2 uses WeAct Studio Black Pill board w/ STM32F411 chip. Generator used is STM32CubeMX
+    - Install STM32CubeMX (standalone application)
+    - Edit the ioc file (and save in place)
+    - Generate code
+    - Run the update_from_generators script and choose v2

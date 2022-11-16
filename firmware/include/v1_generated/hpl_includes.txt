@@ -1,0 +1,4 @@
+-Iinclude/v1_generated/hpl/core
+-Iinclude/v1_generated/hpl/gclk
+-Iinclude/v1_generated/hpl/pm
+-Iinclude/v1_generated/hpl/port
