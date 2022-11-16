@@ -2,6 +2,17 @@ import os
 import shutil
 import glob
 import sys
+import traceback
+from io import StringIO
+
+
+def replace_in_file(file, old: str, new: str):
+    contents = ""
+    with open(file, 'r') as f:
+        contents = f.read()
+    contents = contents.replace(old, new)
+    with open(file, 'w') as f:
+        f.write(contents)
 
 
 def update_controlboard_v2():
@@ -36,10 +47,35 @@ def update_controlboard_v2():
     shutil.copy(os.path.join(generator_proj, "startup_stm32f411xe.s"), os.path.join(src_dest))
 
     # Core
-    os.mkdir(os.path.join(inc_dest, "Core"))
-    shutil.copy(os.path.join(generator_proj, "Core", "Inc", "stm32f4xx_hal_conf.h"), os.path.join(inc_dest, "Core"))
-    os.mkdir(os.path.join(src_dest, "Core"))
-    shutil.copy(os.path.join(generator_proj, "Core", "Src", "system_stm32f4xx.c"), os.path.join(src_dest, "Core"))
+    shutil.copytree(os.path.join(generator_proj, "Core", "Inc"), os.path.join(inc_dest, "Core"))
+    shutil.copytree(os.path.join(generator_proj, "Core", "Src"), os.path.join(src_dest, "Core"))
+   
+    # Remove interrupt handlers
+    os.remove(os.path.join(inc_dest, "Core", "stm32f4xx_it.h"))
+    os.remove(os.path.join(src_dest, "Core", "stm32f4xx_it.c"))
+
+    # Rename main.h and main.c
+    os.rename(os.path.join(inc_dest, "Core", "main.h"), os.path.join(inc_dest, "Core", "stm32cubemx_main.h"))
+    os.rename(os.path.join(src_dest, "Core", "main.c"), os.path.join(src_dest, "Core", "stm32cubemx_main.c"))
+    
+    # Fix main.h includes
+    for file in os.listdir(os.path.join(src_dest, "Core")):
+        if file.endswith(".c"):
+            replace_in_file(os.path.join(src_dest, "Core", file), "#include \"main.h\"", "#include \"stm32cubemx_main.h\"")
+    
+    # Change name of main function
+    replace_in_file(os.path.join(src_dest, "Core", "stm32cubemx_main.c"), "int main(void)", "void stm32cubemx_main(void)")
+    
+    # Remove infinite while loop from stm32cubemx_main
+    content = ""
+    with open(os.path.join(src_dest, "Core", "stm32cubemx_main.c"), 'r') as f:
+        content = f.read()
+    main_idx = content.find("void stm32cubemx_main(void)")
+    while_idx = content.find("while (1)", main_idx)
+    while_end_idx = content.find("}", while_idx)
+    content = content[:while_idx] + content[while_end_idx + 1:]
+    with open(os.path.join(src_dest, "Core", "stm32cubemx_main.c"), 'w') as f:
+        f.write(content)
 
     # Drivers/CMSIS
     shutil.copytree(os.path.join(generator_proj, "Drivers", "CMSIS", "Include"), os.path.join(inc_dest, "Drivers", "CMSIS"))
@@ -52,14 +88,12 @@ def update_controlboard_v2():
     shutil.copytree(os.path.join(generator_proj, "Drivers", "STM32F4xx_HAL_Driver", "Inc"), os.path.join(inc_dest, "Drivers", "STM32F4xx_HAL_Driver"))
     shutil.copytree(os.path.join(generator_proj, "Drivers", "STM32F4xx_HAL_Driver", "Src"), os.path.join(src_dest, "Drivers", "STM32F4xx_HAL_Driver"))
 
-    print("***Make sure to manually update the init.c file from Core/Src/main.c!***")
-
     return 0
 
 def main():    
     print("Update Generator Project:")
     print("    A. ControlBoard v1 (Adafruit ItsyBitsy M4)")
-    print("    B. ControlBoard v2 (Black Pill STM32F411)")
+    print("    B. ControlBoard v2 (WeAct Studio Black Pill STM32F411)")
     
     cont = True
     while cont:
@@ -76,4 +110,10 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    ret = 0
+    try:
+        ret = main()
+    except:
+        traceback.print_exc()
+        sys.exit(2)
+    sys.exit(ret)
