@@ -5,9 +5,8 @@ The control board is a coprocessor used by SeaWolf VIII's computer to control th
 
 ## Repository Structure
 
-- `firmware`: PlatformIO project and source code for the control board firmware. The readme has firmware developer oriented documentation.
-- `docs`: Markdown documentation files for control board. This is end-user facing documentation.
-- `math`: Documentation of the math used for motor control, as well as a demo in numpy.
-- `prototype`: Assembly instructions for control board prototype
-- `references`: Datasheets and documentation on relevant components / sensors used on Control Board.
-- `scripts`: Python scripts that demo interfacing with the control board
+- `docs`: Documentation for users of the control board. This is **not** firmware developer documentation.
+- `firmware`: PlatformIO project and source code for ControlBoard firmware.
+- `hardware`: Documentation & design files for hardware control board. Includes hardware design files and assembly instructions as applicable.
+- `math`: Description of the math used for 6-DOF vectored motor control as well as a numpy script demoing the math.
+- `references`: Various links and pdfs providing information about components used on the control board. Intended for firmware developers.
