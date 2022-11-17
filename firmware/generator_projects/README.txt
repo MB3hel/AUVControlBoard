@@ -3,7 +3,8 @@
     - If changes are made, save the configuration (new `.atstart` file)
     - Export the project to download the `ControlBoard_v1.atzip` file. Save it in the same folder as the atstart file.
     - Run the update_from_generators script and choose v1
-    
+    - Note: FreeRTOS is included in the generated project, but is not copied. It is included only so hal_rtos.h will be generated.
+
 - ControlBoard v2 uses WeAct Studio Black Pill board w/ STM32F411 chip. Generator used is STM32CubeMX
     - Install STM32CubeMX (standalone application)
     - Edit the ioc file (and save in place)

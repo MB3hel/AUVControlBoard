@@ -83,6 +83,13 @@ def update_controlboard_v1():
     # config
     shutil.copytree(os.path.join(generator_proj, "config"), os.path.join(inc_dest, "config"))
 
+    # RTOS files (used by ASF4 hal)
+    # DOES NOT COPY actual FreeRTOS code
+    shutil.copy(os.path.join(generator_proj, "thirdparty", "RTOS", "hal_rtos.h"), inc_dest)
+    shutil.copy(os.path.join(generator_proj, "thirdparty", "RTOS", "freertos", "FreeRTOSV10.0.0", "rtos_port.h"), inc_dest)
+    shutil.copy(os.path.join(generator_proj, "thirdparty", "RTOS", "freertos", "FreeRTOSV10.0.0", "rtos_port.c"), src_dest)
+
+
     # hal
     shutil.copytree(os.path.join(generator_proj, "hal", "include"), os.path.join(inc_dest, "hal"))
     shutil.copytree(os.path.join(generator_proj, "hal", "src"), os.path.join(src_dest, "hal"))
@@ -104,6 +111,7 @@ def update_controlboard_v1():
     shutil.copy(os.path.join(generator_proj, "atmel_start.h"), os.path.join(inc_dest))
     shutil.copy(os.path.join(generator_proj, "atmel_start_pins.h"), os.path.join(inc_dest))
     shutil.copy(os.path.join(generator_proj, "atmel_start.c"), os.path.join(src_dest))
+    replace_in_file(os.path.join(inc_dest, "atmel_start.h"), '#include "rtos_start.h"', '// #include "rtos_start.h"')
 
     # driver_init
     shutil.copy(os.path.join(generator_proj, "driver_init.h"), os.path.join(inc_dest))

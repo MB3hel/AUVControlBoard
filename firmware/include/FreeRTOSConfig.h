@@ -17,6 +17,9 @@
 // because some frameworks need something called from systick handler too
 // #define xPortSysTickHandler SysTick_Handler
 
+// Needed to make hal_rtos stuff (ASF4) work as intended
+#define xSemaphoreHandle SemaphoreHandle_t
+
 /* General configuration */
 #define configUSE_PREEMPTION                    1
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION 0
