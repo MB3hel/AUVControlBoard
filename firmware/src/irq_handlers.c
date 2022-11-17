@@ -1,4 +1,6 @@
 
+extern void xPortSysTickHandler( void );
+
 #if defined(CONTROL_BOARD_V1)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Control Board V1 IRQ Handlers
@@ -24,13 +26,19 @@ void UsageFault_Handler(void){
     while (1);
 }
 
-void SVC_Handler(void){}
-
 void DebugMon_Handler(void){}
 
-void PendSV_Handler(void){}
+void SysTick_Handler(void){
+    xPortSysTickHandler();
+}
 
-void SysTick_Handler(void){}
+// Defined by FreeRTOS
+// void SVC_Handler(void){}
+
+// Defined by FreeRTOS
+// void PendSV_Handler(void){}
+
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #elif defined(CONTROL_BOARD_V2)
