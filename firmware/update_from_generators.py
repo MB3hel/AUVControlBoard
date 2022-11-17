@@ -90,21 +90,12 @@ def update_controlboard_v1():
     shutil.copytree(os.path.join(generator_proj, "hal", "utils", "src"), os.path.join(src_dest, "hal", "utils"))
 
     # hpl
-    hpl_includes = []
-    for name in os.listdir(os.path.join(generator_proj, "hpl")):
-        full_path = os.path.join(generator_proj, "hpl", name)
-        if os.path.isdir(full_path):
-            inc_dest_dir = os.path.join(inc_dest, "hpl", name)
-            src_dest_dir = os.path.join(src_dest, "hpl", name)
-            inc_glb = "{}/**/*.h".format(full_path.replace("\\", "/"))
-            src_glb = "{}/**/*.c".format(full_path.replace("\\", "/"))
-            copyglob(inc_glb, inc_dest_dir)
-            copyglob(src_glb, src_dest_dir)
-            if os.path.exists(inc_dest_dir):
-                hpl_includes.append(name)
-    with open(os.path.join(inc_dest, "hpl_includes.txt"), 'w') as f:
-        for item in hpl_includes:
-            f.write("-Iinclude/v1_generated/hpl/{}\n".format(item))
+    inc_dest_fixed = os.path.join(inc_dest, "hpl").replace("\\", "/")
+    src_dest_fixed = os.path.join(src_dest, "hpl").replace("\\", "/")
+    inc_files = "{}/**/*.h".format(os.path.join(generator_proj, "hpl")).replace("\\", "/")
+    src_files = "{}/**/*.c".format(os.path.join(generator_proj, "hpl")).replace("\\", "/")
+    copyglob(src_files, src_dest_fixed)
+    copyglob(inc_files, inc_dest_fixed)
 
     # hri
     shutil.copytree(os.path.join(generator_proj, "hri"), os.path.join(inc_dest, "hri"))
@@ -138,9 +129,6 @@ def update_controlboard_v1():
         contents = contents.replace("uint32_t _get_cycles_for_ms(", "__attribute__ (( aligned(8) )) uint32_t _get_cycles_for_ms(")
         with open(os.path.join(src_dest, "hpl", "core", "hpl_core_m4.c"), 'w') as f:
             f.write(contents)
-
-
-    print("*** MANUALLY COPY INCLUDES TO FROM hpl_includes.txt to platformio.ini ***")
 
 
 def update_controlboard_v2():
