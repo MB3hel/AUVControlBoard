@@ -10,3 +10,4 @@
     - Edit the ioc file (and save in place)
     - Generate code
     - Run the update_from_generators script and choose v2
+    - Ignore warnings about timebase source

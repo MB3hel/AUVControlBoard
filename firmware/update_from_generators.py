@@ -186,7 +186,7 @@ def update_controlboard_v2():
     for file in os.listdir(os.path.join(src_dest, "Core")):
         if file.endswith(".c"):
             replace_in_file(os.path.join(src_dest, "Core", file), "#include \"main.h\"", "#include \"stm32cubemx_main.h\"")
-    
+
     # Change name of main function
     replace_in_file(os.path.join(src_dest, "Core", "stm32cubemx_main.c"), "int main(void)", "void stm32cubemx_main(void)")
     
