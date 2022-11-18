@@ -6,6 +6,8 @@ extern void xPortSysTickHandler( void );
 /// Control Board V1 IRQ Handlers
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#include <tusb.h>
+
 void NMI_Handler(void){
     while (1);
 }
@@ -37,6 +39,21 @@ void DebugMon_Handler(void){}
 // Defined by FreeRTOS
 // void PendSV_Handler(void){}
 
+void USB_0_Handler (void){
+    tud_int_handler(0);
+}
+
+void USB_1_Handler (void){
+    tud_int_handler(0);
+}
+
+void USB_2_Handler (void){
+    tud_int_handler(0);
+}
+
+void USB_3_Handler (void){
+    tud_int_handler(0);
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
