@@ -9,6 +9,8 @@
 #include <sam.h>
 #include <stdint.h>
 
+#define configENABLE_FPU								        1
+
 /* Map the FreeRTOS port interrupt handlers to their CMSIS standard names */
 #define vPortSVCHandler SVCall_Handler
 #define xPortPendSVHandler PendSV_Handler
@@ -47,7 +49,7 @@
 #define configHEAP_CLEAR_MEMORY_ON_FREE         1
 
 /* Memory allocation related definitions. */
-#define configSUPPORT_STATIC_ALLOCATION             0
+#define configSUPPORT_STATIC_ALLOCATION             1
 #define configSUPPORT_DYNAMIC_ALLOCATION            1
 #define configTOTAL_HEAP_SIZE                       10240
 #define configAPPLICATION_ALLOCATED_HEAP            0
@@ -123,7 +125,7 @@
 
 #include <stm32f4xx.h>
 
-
+#define configENABLE_FPU								        1
 
 /* Map the FreeRTOS port interrupt handlers to their CMSIS standard names */
 #define vPortSVCHandler SVC_Handler
@@ -160,7 +162,7 @@
 #define configHEAP_CLEAR_MEMORY_ON_FREE         1
 
 /* Memory allocation related definitions. */
-#define configSUPPORT_STATIC_ALLOCATION             0
+#define configSUPPORT_STATIC_ALLOCATION             1
 #define configSUPPORT_DYNAMIC_ALLOCATION            1
 #define configTOTAL_HEAP_SIZE                       10240
 #define configAPPLICATION_ALLOCATED_HEAP            0

@@ -5,6 +5,9 @@
 #include <led.h>
 #include <usb.h>
 
+/**
+ * Thread to periodically blink the LED
+ */
 void led_thread(void *argument){
     while(1){
         led_toggle();
@@ -12,6 +15,9 @@ void led_thread(void *argument){
     }
 }
 
+/**
+ * Thread to periodically print a message via USB
+ */
 void usb_thread(void *argument){
     while(1){
         usb_write("Hello from control board!\r\n");
@@ -19,6 +25,9 @@ void usb_thread(void *argument){
     }
 }
 
+/**
+ * Background service to process TinyUSB events
+ */
 void usb_service(void *argument){
     while(1){
         usb_process();
