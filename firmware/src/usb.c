@@ -28,41 +28,12 @@ void usb_init(void){
     NVIC_EnableIRQ(USB_2_IRQn);                                     // Enable interrupt handlers for USB
     NVIC_EnableIRQ(USB_3_IRQn);                                     // Enable interrupt handlers for USB
 #elif defined(CONTROL_BOARD_V2)    
-    GPIO_InitTypeDef  GPIO_InitStruct;
-
     NVIC_SetPriority(OTG_FS_IRQn, 
             configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY );         // Give USB FS interrupt highest priority
     NVIC_EnableIRQ(OTG_FS_IRQn);                                    // Enable USB FS interrupt handler
 
-    /* Configure USB FS GPIOs */
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-
-    /* Configure USB D+ D- Pins */
-    GPIO_InitStruct.Pin = GPIO_PIN_11 | GPIO_PIN_12;
-    GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Alternate = GPIO_AF10_OTG_FS;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-    /* Configure VBUS Pin */
-    GPIO_InitStruct.Pin = GPIO_PIN_9;
-    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-    /* ID Pin */
-    GPIO_InitStruct.Pin = GPIO_PIN_10;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF10_OTG_FS;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
     // Enable USB OTG clock
     __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
-
-    //  __HAL_RCC_USB_OTG_HS_CLK_ENABLE();
 
     USB_OTG_FS->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
     USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSBSEN;
