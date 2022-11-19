@@ -248,9 +248,9 @@ uint8_t const * tud_descriptor_configuration_cb(uint8_t index){
 
 char const* string_desc_arr [] = {
     (const char[]) { 0x09, 0x04 },                  // 0: is supported language is English (0x0409)
-    "WeAct Studio",                                 // 1: Manufacturer
-    "SW8 Control Board v2 (Black Pill STM32F411)",  // 2: Product
-    "",                                             // 3: Serials (empty, overriden in func)
+    "STMicroelectronics",                           // 1: Manufacturer
+    "SW8 Control Board v2 (Virtual COM Port)",      // 2: Product
+    "fakeserial",                                   // 3: Serials (TODO: Implement correctly)
     "ControlBoard CDC"                              // 4: CDC Interface
     // Additional classes need descriptors here too if enabled
 };
@@ -265,7 +265,7 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid){
     if ( index == 0){
         memcpy(&_desc_str[1], string_desc_arr[0], 2);
         chr_count = 1;
-    }else if(index == 3){
+    }/*else if(index == 3){
         // NOTE: SAMD51 specific
         // Get chip serial number as a string
         // Values of word are concatenated as hex strings
@@ -292,7 +292,7 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid){
             _desc_str[idx++] = translation[(data[w] & 0x0000000F) >> 0];
         }
         chr_count = 32;
-    }else{
+    }*/else{
         // Note: the 0xEE index string is a Microsoft OS 1.0 Descriptors.
         // https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/microsoft-defined-usb-descriptors
 

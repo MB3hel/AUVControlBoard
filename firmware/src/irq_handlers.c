@@ -100,11 +100,11 @@ void DebugMon_Handler(void){}
 // void SVC_Handler(void){}
 
 void TIM1_TRG_COM_TIM11_IRQHandler(void){
-  HAL_TIM_IRQHandler(&htim11);
+    HAL_TIM_IRQHandler(&htim11);
 }
 
 void OTG_FS_IRQHandler(void){
-  tud_int_handler(0);
+    tud_int_handler(0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -27,12 +27,12 @@ void usb_init(void){
     NVIC_EnableIRQ(USB_1_IRQn);                                     // Enable interrupt handlers for USB
     NVIC_EnableIRQ(USB_2_IRQn);                                     // Enable interrupt handlers for USB
     NVIC_EnableIRQ(USB_3_IRQn);                                     // Enable interrupt handlers for USB
-#elif defined(CONTROL_BOARD_V2)
+#elif defined(CONTROL_BOARD_V2)    
     GPIO_InitTypeDef  GPIO_InitStruct;
-    
-    USB_OTG_FS->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
-    USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSBSEN;
-    USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSASEN;
+
+    NVIC_SetPriority(OTG_FS_IRQn, 
+            configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY );         // Give USB FS interrupt highest priority
+    NVIC_EnableIRQ(OTG_FS_IRQn);                                    // Enable USB FS interrupt handler
 
     /* Configure USB FS GPIOs */
     __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -62,10 +62,11 @@ void usb_init(void){
     // Enable USB OTG clock
     __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
 
-    NVIC_SetPriority(OTG_FS_IRQn, 
-            configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY );         // Give USB FS interrupt highest priority
-    
-    NVIC_EnableIRQ(OTG_FS_IRQn);                                    // Enable USB FS interrupt handler
+    //  __HAL_RCC_USB_OTG_HS_CLK_ENABLE();
+
+    USB_OTG_FS->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
+    USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSBSEN;
+    USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSASEN;
 #endif
     tud_init(BOARD_TUD_RHPORT);                                     // Initialize TinyUSB device
 }

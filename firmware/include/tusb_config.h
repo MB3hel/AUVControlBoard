@@ -63,7 +63,8 @@
 // -------------------------------------------------------------------------------------------------
 
 #define BOARD_TUD_RHPORT        0                               // RHPort number used for device
-#define BOARD_TUD_MAX_SPEED     OPT_MODE_FULL_SPEED            // RHPort max speed supported for device
+#define BOARD_TUD_MAX_SPEED     OPT_MODE_FULL_SPEED             // RHPort max speed supported for device
+
 
 // -------------------------------------------------------------------------------------------------
 // Common Configuration

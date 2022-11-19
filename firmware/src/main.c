@@ -37,6 +37,7 @@ void usb_service(void *argument){
 int main(void){
     init_frameworks();
     led_init();
+    led_off();
     usb_init();
     xTaskCreate(usb_service, "usb_service", 128, NULL, 1, NULL);
     xTaskCreate(usb_thread, "usb_thread", 128, NULL, 2, NULL);
