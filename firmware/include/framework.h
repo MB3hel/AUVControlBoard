@@ -1,8 +1,12 @@
 #pragma once
 
+#include <stdint.h>
+
 #if defined(CONTROL_BOARD_V1)
 
 #define init_frameworks()   SYS_Initialize(NULL)
+
+extern uint32_t SystemCoreClock;
 
 #include <samd51g19a.h>
 #include <definitions.h>
