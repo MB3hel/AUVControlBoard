@@ -95,7 +95,7 @@ uint8_t const * tud_descriptor_configuration_cb(uint8_t index){
 char const* string_desc_arr [] = {
     (const char[]) { 0x09, 0x04 },                  // 0: is supported language is English (0x0409)
     "Adafruit",                                     // 1: Manufacturer
-    "SW8 Control Board v1 (ItsyBitsy M4 Express)",  // 2: Product
+    "Control Board v1 (ItsyBitsy M4 Express)",      // 2: Product
     "",                                             // 3: Serials (empty, overriden in func)
     "ControlBoard CDC"                              // 4: CDC Interface
     // Additional classes need descriptors here too if enabled
@@ -249,7 +249,7 @@ uint8_t const * tud_descriptor_configuration_cb(uint8_t index){
 char const* string_desc_arr [] = {
     (const char[]) { 0x09, 0x04 },                  // 0: is supported language is English (0x0409)
     "STMicroelectronics",                           // 1: Manufacturer
-    "SW8 Control Board v2 (Virtual COM Port)",      // 2: Product
+    "Control Board v2 (Virtual COM Port)",          // 2: Product
     "fakeserial",                                   // 3: Serials (TODO: Implement correctly)
     "ControlBoard CDC"                              // 4: CDC Interface
     // Additional classes need descriptors here too if enabled
