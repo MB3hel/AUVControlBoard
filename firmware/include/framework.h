@@ -2,11 +2,11 @@
 
 #if defined(CONTROL_BOARD_V1)
 
-#define init_frameworks     atmel_start_init
+#define init_frameworks()   SYS_Initialize(NULL)
 
-#include <atmel_start.h>
-#include <sam.h>
-#include <peripheral_clk_config.h>
+#include <samd51g19a.h>
+#include <definitions.h>
+#include <device.h>
 
 #elif defined(CONTROL_BOARD_V2)
 

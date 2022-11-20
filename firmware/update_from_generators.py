@@ -30,21 +30,13 @@ def copyglob(glb: str, dest: str):
 
 
 def update_controlboard_v1():
+    # Note: Following this gude for building harmony v3 project with gcc
+    # https://microchip-mplab-harmony.github.io/quick_docs/source/migration/build_harmony_3_project_with_gcc/readme.html
     script_dir = os.path.dirname(__file__)
     generator_proj = os.path.join(script_dir, "generator_projects", "ControlBoard_v1")
-    if not os.path.exists(os.path.join(generator_proj, "ControlBoard_v1.atzip")):
-        print("Project not generated. Use Atmel Start to generate code first.")
+    if not os.path.exists(os.path.join(generator_proj, "firmware", "src", "main.c")):
+        print("Project not generated. Use MCC Standalone to generate code first.")
         return 1
-
-    ####################################################################################################################
-    # Extract the atzip file
-    ####################################################################################################################
-    generator_dest = os.path.join(generator_proj, "extracted")
-    if os.path.exists(generator_dest):
-        shutil.rmtree(generator_dest)
-    os.mkdir(generator_dest)
-    shutil.unpack_archive(os.path.join(generator_proj, "ControlBoard_v1.atzip"), generator_dest, "zip")
-    generator_proj = generator_dest
 
 
     ####################################################################################################################
@@ -66,77 +58,75 @@ def update_controlboard_v1():
     # Copy files to appropriate directories
     ####################################################################################################################
     # Linker script
-    shutil.copy(os.path.join(generator_proj, "samd51a", "gcc", "gcc", "samd51g19a_flash.ld"), linker_dest)
+    shutil.copy(os.path.join(generator_proj, "supplemental", "samd51g19a_flash.ld"), linker_dest)
 
     # Modify linker script because first 16k reserved for UF2 bootloader
     replace_in_file(linker_dest, "rom      (rx)  : ORIGIN = 0x00000000, LENGTH = 0x00080000", "rom      (rx)  : ORIGIN = 0x00004000, LENGTH = 0x0007C000")
 
-    # samd51a
-    shutil.copytree(os.path.join(generator_proj, "samd51a", "include"), os.path.join(inc_dest, "samd51a"))
-    os.mkdir(os.path.join(src_dest, "samd51a"))
-    shutil.copy(os.path.join(generator_proj, "samd51a", "gcc", "system_samd51.c"), os.path.join(src_dest, "samd51a"))
-    shutil.copy(os.path.join(generator_proj, "samd51a", "gcc", "gcc", "startup_samd51.c"), os.path.join(src_dest, "samd51a"))
+    # gcc startup and system sources
+    shutil.copy(os.path.join(generator_proj, "supplemental", "startup_samd51g19a.c"), src_dest)
+    shutil.copy(os.path.join(generator_proj, "supplemental", "system_samd51g19a.c"), src_dest)
 
-    # CMSIS
-    shutil.copytree(os.path.join(generator_proj, "CMSIS", "Core", "Include"), os.path.join(inc_dest, "CMSIS", "Core"))
+    # Patch system file so SystemCoreClock is right based on configured project
+    replace_in_file(os.path.join(src_dest, "system_samd51g19a.c"), "#define __SYSTEM_CLOCK    (48000000)", "")
+    replace_in_file(os.path.join(src_dest, "system_samd51g19a.c"), "__SYSTEM_CLOCK", "CPU_CLOCK_FREQUENCY")
+    replace_in_file(os.path.join(src_dest, "system_samd51g19a.c"), '#include "samd51g19a.h"', '#include "samd51g19a.h"\n#include "definitions.h"')
 
-    # config
-    shutil.copytree(os.path.join(generator_proj, "config"), os.path.join(inc_dest, "config"))
+    # CMSIS Core
+    shutil.copytree(os.path.join(generator_proj, "firmware", "src", "packs", "CMSIS", "CMSIS", "Core", "Include"), os.path.join(inc_dest, "CMSIS", "Core"))
+    
+    # Device Framework / Support Pack (DFP / DSP)
+    shutil.copytree(os.path.join(generator_proj, "firmware", "src", "packs", "ATSAMD51G19A_DFP"), os.path.join(inc_dest, "ATSAMD51G19A_DFP"))
 
-    # RTOS files (used by ASF4 hal)
-    # DOES NOT COPY actual FreeRTOS code
-    shutil.copy(os.path.join(generator_proj, "thirdparty", "RTOS", "hal_rtos.h"), inc_dest)
-    shutil.copy(os.path.join(generator_proj, "thirdparty", "RTOS", "freertos", "FreeRTOSV10.0.0", "rtos_port.h"), inc_dest)
-    shutil.copy(os.path.join(generator_proj, "thirdparty", "RTOS", "freertos", "FreeRTOSV10.0.0", "rtos_port.c"), src_dest)
+    # Loose files in config/default
+    harmony_src_dest = os.path.join(src_dest, "mcc_harmony")
+    harmony_inc_dest = os.path.join(inc_dest, "mcc_harmony")
+    os.mkdir(harmony_src_dest)
+    os.mkdir(harmony_inc_dest)
+    shutil.copy(os.path.join(generator_proj, "firmware", "src", "config", "default", "definitions.h"), harmony_inc_dest)
+    shutil.copy(os.path.join(generator_proj, "firmware", "src", "config", "default", "device.h"), harmony_inc_dest)
+    shutil.copy(os.path.join(generator_proj, "firmware", "src", "config", "default", "device_cache.h"), harmony_inc_dest)
+    shutil.copy(os.path.join(generator_proj, "firmware", "src", "config", "default", "device_vectors.h"), harmony_inc_dest)
+    shutil.copy(os.path.join(generator_proj, "firmware", "src", "config", "default", "initialization.c"), harmony_src_dest)
+    shutil.copy(os.path.join(generator_proj, "firmware", "src", "config", "default", "libc_syscalls.c"), harmony_src_dest)
+    shutil.copy(os.path.join(generator_proj, "firmware", "src", "config", "default", "toolchain_specifics.h"), harmony_inc_dest)
 
+    # Comment pragma configs in initialization.c (not supported by gcc)
+    replace_in_file(os.path.join(harmony_src_dest, "initialization.c"), "#pragma config", "// #pragma config")
 
-    # hal
-    shutil.copytree(os.path.join(generator_proj, "hal", "include"), os.path.join(inc_dest, "hal"))
-    shutil.copytree(os.path.join(generator_proj, "hal", "src"), os.path.join(src_dest, "hal"))
-    shutil.copytree(os.path.join(generator_proj, "hal", "utils", "include"), os.path.join(inc_dest, "hal", "utils"))
-    shutil.copytree(os.path.join(generator_proj, "hal", "utils", "src"), os.path.join(src_dest, "hal", "utils"))
+    # config/default/peripheral
+    os.mkdir(os.path.join(harmony_src_dest, "peripheral"))
+    os.mkdir(os.path.join(harmony_inc_dest, "peripheral"))
+    for name in os.listdir(os.path.join(generator_proj, "firmware", "src", "config", "default", "peripheral")):
+        if os.path.isdir(os.path.join(generator_proj, "firmware", "src", "config", "default", "peripheral", name)):
+            srcglb = "{}/*.c".format(os.path.join(generator_proj, "firmware", "src", "config", "default", "peripheral", name).replace("\\", "/"))
+            incglb = "{}/*.h".format(os.path.join(generator_proj, "firmware", "src", "config", "default", "peripheral", name).replace("\\", "/"))
+            copyglob(srcglb, os.path.join(harmony_src_dest, "peripheral"))
+            copyglob(incglb, os.path.join(harmony_inc_dest, "peripheral"))
 
-    # hpl
-    inc_dest_fixed = os.path.join(inc_dest, "hpl").replace("\\", "/")
-    src_dest_fixed = os.path.join(src_dest, "hpl").replace("\\", "/")
-    inc_files = "{}/**/*.h".format(os.path.join(generator_proj, "hpl")).replace("\\", "/")
-    src_files = "{}/**/*.c".format(os.path.join(generator_proj, "hpl")).replace("\\", "/")
-    copyglob(src_files, src_dest_fixed)
-    copyglob(inc_files, inc_dest_fixed)
+    for name in os.listdir(os.path.join(generator_proj, "firmware", "src", "config", "default", "peripheral")):
 
-    # hri
-    shutil.copytree(os.path.join(generator_proj, "hri"), os.path.join(inc_dest, "hri"))
+        # Patching include paths in definitions.h
+        replace_in_file(os.path.join(inc_dest, "mcc_harmony", "definitions.h"), '#include "peripheral/{}/'.format(name), '#include "')
 
-    # atmel_start
-    shutil.copy(os.path.join(generator_proj, "atmel_start.h"), os.path.join(inc_dest))
-    shutil.copy(os.path.join(generator_proj, "atmel_start_pins.h"), os.path.join(inc_dest))
-    shutil.copy(os.path.join(generator_proj, "atmel_start.c"), os.path.join(src_dest))
-    replace_in_file(os.path.join(inc_dest, "atmel_start.h"), '#include "rtos_start.h"', '// #include "rtos_start.h"')
+        # Patching include paths in all copied .c files
+        for file in glob.glob("{}/mcc_harmony/peripheral/*.c".format(src_dest.replace("\\", "/")), recursive=True):
+            replace_in_file(file, '#include "peripheral/{}/'.format(name), '#include "')
 
-    # driver_init
-    shutil.copy(os.path.join(generator_proj, "driver_init.h"), os.path.join(inc_dest))
-    shutil.copy(os.path.join(generator_proj, "driver_init.c"), os.path.join(src_dest))
+    # Patch libc_syscalls.c for gcc
+    contents = ""
+    with open(os.path.join(harmony_src_dest, "libc_syscalls.c"), 'r') as f:
+        contents = f.read()
+    idx = contents.rfind("#ifdef __cplusplus")
+    idx = contents.rfind("\n", 0, idx)
+    patch = "extern int _end;\nextern caddr_t _sbrk(int incr);\ncaddr_t _sbrk(int incr){\n    static unsigned char *heap = NULL;\n    unsigned char *       prev_heap;\n    if (heap == NULL) {\n	    heap = (unsigned char *)&_end;\n    }\n    prev_heap = heap;\n    heap += incr;\n    return (caddr_t)prev_heap;\n}"
+    contents = contents[:idx-1] + patch + contents[idx:]
+    with open(os.path.join(harmony_src_dest, "libc_syscalls.c"), 'w') as f:
+        f.write(contents)
 
-    # Fix a delay bug due to wrong alignment if not using SysTick based delay driver
-    # This bug can result in 2x to 44x delay times
-    # See https://www.avrfreaks.net/s/topic/a5C3l000000UZLqEAO/t149684
-    using_systick_delay = False
-    with open(os.path.join(src_dest, "driver_init.c"), 'r') as f:
-        line = f.readline()
-        while line is not None and line != "":
-            if line.find("delay_driver_init") != -1:
-                using_systick_delay = True
-                break
-            line = f.readline()
-    if not using_systick_delay:
-        print("Detected ASF4 without SysTick delay driver. Patching hpl_core_m4.c to fix a bug.")
-        contents = ""
-        with open(os.path.join(src_dest, "hpl", "core", "hpl_core_m4.c"), 'r') as f:
-            contents = f.read()
-        contents = contents.replace("uint32_t _get_cycles_for_us(", "__attribute__ (( aligned(8) )) uint32_t _get_cycles_for_us(")
-        contents = contents.replace("uint32_t _get_cycles_for_ms(", "__attribute__ (( aligned(8) )) uint32_t _get_cycles_for_ms(")
-        with open(os.path.join(src_dest, "hpl", "core", "hpl_core_m4.c"), 'w') as f:
-            f.write(contents)
+    # Create empty versions of files that are not copied (so include errors don't happen)
+    with open(os.path.join(inc_dest, "mcc_harmony", "interrupts.h"), 'w') as f:
+        f.write("#pragma once\n\n//Empty")
 
 
 def update_controlboard_v2():

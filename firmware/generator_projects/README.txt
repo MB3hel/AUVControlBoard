@@ -1,9 +1,9 @@
-- ControlBoard v1 uses Adafruit ItsyBitsy M4 w/ SAMD51 chip. Generator used is Atmel Start.
-    - Open the `.atstart` file at https://start.atmel.com/
-    - If changes are made, save the configuration (new `.atstart` file)
-    - Export the project to download the `ControlBoard_v1.atzip` file. Save it in the same folder as the atstart file.
+- ControlBoard v1 uses Adafruit ItsyBitsy M4 w/ SAMD51 chip. Generator used is Microchip Code Configurator (MCC).
+    - Install MCC Standalone application
+    - Open and edit firmware/ControlBoard_v1ControlBoard_v1.mc3 in MCC Standalone
+    - Generate the project in MCC Standalone
     - Run the update_from_generators script and choose v1
-    - Note: FreeRTOS is included in the generated project, but is not copied. It is included only so hal_rtos.h will be generated.
+	- Note that since MCC does not generate for gcc directly, some options (such as advanced linker modifications) will not work. The supplemental directory contains startup code and linker script for gcc manually extracted from device support pack.
 
 - ControlBoard v2 uses WeAct Studio Black Pill board w/ STM32F411 chip. Generator used is STM32CubeMX
     - Install STM32CubeMX (standalone application)

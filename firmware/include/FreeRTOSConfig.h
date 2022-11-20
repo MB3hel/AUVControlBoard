@@ -6,8 +6,10 @@
 /// Control Board v1 (ItsyBitsy M4 w/ SAMD51G19A)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include <sam.h>
+#include <samd51g19a.h>
 #include <stdint.h>
+
+extern uint32_t SystemCoreClock;
 
 #define configENABLE_FPU								        1
 
