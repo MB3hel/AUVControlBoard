@@ -27,7 +27,9 @@ void usb_init(void){
     NVIC_EnableIRQ(USB_1_IRQn);                                     // Enable interrupt handlers for USB
     NVIC_EnableIRQ(USB_2_IRQn);                                     // Enable interrupt handlers for USB
     NVIC_EnableIRQ(USB_3_IRQn);                                     // Enable interrupt handlers for USB
-#elif defined(CONTROL_BOARD_V2)    
+#elif defined(CONTROL_BOARD_V2)  
+    // Pin functions and clock configured in STM32CubeMX project
+
     NVIC_SetPriority(OTG_FS_IRQn, 
             configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY );         // Give USB FS interrupt highest priority
     NVIC_EnableIRQ(OTG_FS_IRQn);                                    // Enable USB FS interrupt handler
