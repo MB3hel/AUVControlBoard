@@ -63,18 +63,18 @@ To debug, install the `Cortex-Debug` extension in VSCode. Create a `launch.json`
 
 ```json
 {
-            "name": "Control Board v2 w/ ST-LINK v2",
-            "cwd": "${workspaceFolder}",
-            "executable": "./build/v2/Debug/ControlBoard.elf",
-            "request": "launch",
-            "type": "cortex-debug",
-            "runToEntryPoint": "main",
-            "servertype": "openocd",
-            "configFiles": [
-                "interface/stlink-v2.cfg",
-                "target/stm32f4x.cfg"
-            ]
-        }
+    "name": "Control Board v2 w/ ST-LINK v2",
+    "cwd": "${workspaceFolder}",
+    "executable": "./build/v2/Debug/ControlBoard.elf",
+    "request": "launch",
+    "type": "cortex-debug",
+    "runToEntryPoint": "main",
+    "servertype": "openocd",
+    "configFiles": [
+        "interface/stlink-v2.cfg",
+        "target/stm32f4x.cfg"
+    ]
+}
 ```
 
 
