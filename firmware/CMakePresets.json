@@ -1,0 +1,87 @@
+{
+    "version": 2,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 20,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "v1",
+            "displayName": "Control Board v1",
+            "description": "Version 1 of Control Board",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build/v1",
+            "cacheVariables": {
+                "CBOARD_REV": "v1",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/toolchains/arm-none-eabi.cmake"
+            },
+            "environment": {},
+            "vendor": {}
+        },
+        {
+            "name": "v2",
+            "displayName": "Control Board v2",
+            "description": "Version 2 of Control Board",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build/v2",
+            "cacheVariables": {
+                "CBOARD_REV": "v2",
+                "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/toolchains/arm-none-eabi.cmake"
+            },
+            "environment": {},
+            "vendor": {}
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "v1-debug",
+            "displayName": "Debug",
+            "configurePreset": "v1",
+            "configuration": "Debug"
+        },
+        {
+            "name": "v1-release",
+            "displayName": "Release",
+            "configurePreset": "v1",
+            "configuration": "Release"
+        },
+        {
+            "name": "v1-minsizerel",
+            "displayName": "MinSizeRel",
+            "configurePreset": "v1",
+            "configuration": "MinSizeRel"
+        },
+        {
+            "name": "v1-relwithdebinfo",
+            "displayName": "RelWithDebInfo",
+            "configurePreset": "v1",
+            "configuration": "RelWithDebInfo"
+        },
+
+        {
+            "name": "v2-debug",
+            "displayName": "Debug",
+            "configurePreset": "v2",
+            "configuration": "Debug"
+        },
+        {
+            "name": "v2-release",
+            "displayName": "Release",
+            "configurePreset": "v2",
+            "configuration": "Release"
+        },
+        {
+            "name": "v2-minsizerel",
+            "displayName": "MinSizeRel",
+            "configurePreset": "v2",
+            "configuration": "MinSizeRel"
+        },
+        {
+            "name": "v2-relwithdebinfo",
+            "displayName": "RelWithDebInfo",
+            "configurePreset": "v2",
+            "configuration": "RelWithDebInfo"
+        }
+    ]
+}

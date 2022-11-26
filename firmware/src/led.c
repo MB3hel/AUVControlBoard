@@ -11,7 +11,7 @@ void led_on(void){
 #if defined(CONTROL_BOARD_V1)
     RED_LED_Set();
 #elif defined(CONTROL_BOARD_V2)
-    HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
 #endif
 }
 
@@ -19,7 +19,7 @@ void led_off(void){
 #if defined(CONTROL_BOARD_V1)
     RED_LED_Clear();
 #elif defined(CONTROL_BOARD_V2)
-    HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
 #endif
 }
 

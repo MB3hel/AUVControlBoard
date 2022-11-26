@@ -24,29 +24,29 @@ static void hsv_to_rgb(float *rgb, float h, float s, float v){
     float c = v * s;
     float x = c * (1 - fabsf(fmodf(h / 60.0f, 2) - 1));
     if(0.0f <= h && h < 60.0f){
-		rgb[0] = c;
-		rgb[1] = x;
-		rgb[2] = 0;
+        rgb[0] = c;
+        rgb[1] = x;
+        rgb[2] = 0;
     }else if(60.0f <= h && h < 120.0f){
-		rgb[0] = x;
-		rgb[1] = c;
-		rgb[2] = 0;
+        rgb[0] = x;
+        rgb[1] = c;
+        rgb[2] = 0;
     }else if(120.0f <= h && h < 180.0f){
-		rgb[0] = 0;
-		rgb[1] = c;
-		rgb[2] = x;
+        rgb[0] = 0;
+        rgb[1] = c;
+        rgb[2] = x;
     }else if(180.0f <= h && h < 240.0f){
-		rgb[0] = 0;
-		rgb[1] = x;
-		rgb[2] = c;
+        rgb[0] = 0;
+        rgb[1] = x;
+        rgb[2] = c;
     }else if(240.0f <= h && h < 300.0f){
-		rgb[0] = x;
-		rgb[1] = 0;
-		rgb[2] = c;
+        rgb[0] = x;
+        rgb[1] = 0;
+        rgb[2] = c;
     }else if(300.0f <= h && h < 360.0f){
-		rgb[0] = c;
-		rgb[1] = 0;
-		rgb[2] = x;
+        rgb[0] = c;
+        rgb[1] = 0;
+        rgb[2] = x;
     }else{
         rgb[0] = 0;
         rgb[1] = 0;
@@ -104,11 +104,11 @@ int main(void){
     init_frameworks();
     delay_init();
     led_init();
-    led_off();
     usb_init();
+    led_off();
     xTaskCreate(usb_service, "usb_service", 128, NULL, 1, NULL);
     xTaskCreate(usb_thread, "usb_thread", 128, NULL, 2, NULL);
     xTaskCreate(led_thread, "led_thread", 128, NULL, 2, NULL);
     xTaskCreate(rgb_thread, "rgb_thread", 128, NULL, 2, NULL);
-	vTaskStartScheduler();
+    vTaskStartScheduler();
 }
