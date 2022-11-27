@@ -89,6 +89,9 @@ def update_controlboard_v1():
     shutil.copy(os.path.join(generator_proj, "supplemental", "startup_samd51g19a.c"), dest)
     shutil.copy(os.path.join(generator_proj, "supplemental", "system_samd51g19a.c"), dest)
 
+    # SVD file for debugging
+    shutil.copy(os.path.join(generator_proj, "supplemental", "ATSAMD51G19A.svd"), dest)
+
     # MCC generated code
     shutil.copytree(os.path.join(generator_proj, "firmware", "src", "config", "default"), os.path.join(dest, "mcc"))
     shutil.rmtree(os.path.join(dest, "mcc", "default.mhc"))
