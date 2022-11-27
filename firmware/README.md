@@ -59,12 +59,43 @@ Install the `C/C++` and `CMake Tools` extensions, then open this folder in VSCod
 
 To debug, install the `Cortex-Debug` extension in VSCode. Create a `launch.json` file with a configuration in one of the following formats entry with one of the following formats. Make sure to change the binary path to match the configuration you are building!
 
+
+**Debug Control Board v1 w/ CMSIS-DAP**
+
+*Note: A Picoprobe firmware supporting CMSIS-DAP mode exists.*
+
+```json
+// Add to "configurations" array
+{
+    "name": "CBv1 w/ CMSIS-DAP",
+    "cwd": "${workspaceFolder}",
+    "svdFile": "./thirdparty/v2_generated/STM32F411.svd",
+    "executable": "./build/v2/Debug/ControlBoard.elf",
+    "request": "launch",
+    "type": "cortex-debug",
+    "runToEntryPoint": "main",
+    "servertype": "openocd",
+    "openOCDPreConfigLaunchCommands":[
+        "set CHIPNAME at91samd51g19a"
+    ],
+    "configFiles": [
+        "interface/cmsis-dap.cfg",
+        "target/atsame5x.cfg"
+    ],
+    "openOCDLaunchCommands":[
+        "transport select swd",
+        "adapter speed 10000"
+    ]
+}
+```
+
+
 **Debug Control Board v2 w/ ST-LINK v2**:
 
 ```json
 // Add to "configurations" array
 {
-    "name": "Control Board v2 w/ ST-LINK v2",
+    "name": "CBv2 w/ ST-LINK",
     "cwd": "${workspaceFolder}",
     "svdFile": "./thirdparty/v2_generated/STM32F411.svd",
     "executable": "./build/v2/Debug/ControlBoard.elf",
