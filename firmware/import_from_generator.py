@@ -153,6 +153,8 @@ def update_controlboard_v2():
 
     # Supplemental files
     shutil.copy(os.path.join(generator_proj, "supplemental", "libc_syscalls.c"), dest)
+    shutil.copy(os.path.join(generator_proj, "supplemental", "STM32F411.svd"), dest)
+
 
     # --------------------------------------------------------------------------
     # Modify main into stm32cubemx_main
