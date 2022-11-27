@@ -62,9 +62,11 @@ To debug, install the `Cortex-Debug` extension in VSCode. Create a `launch.json`
 **Debug Control Board v2 w/ ST-LINK v2**:
 
 ```json
+// Add to "configurations" array
 {
     "name": "Control Board v2 w/ ST-LINK v2",
     "cwd": "${workspaceFolder}",
+    "svdFile": "./thirdparty/v2_generated/STM32F411.svd",
     "executable": "./build/v2/Debug/ControlBoard.elf",
     "request": "launch",
     "type": "cortex-debug",
