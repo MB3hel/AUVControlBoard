@@ -1,6 +1,8 @@
-# AquaPack Robotics Control Board
+# AUV Control Board
 
-The control board is a coprocessor used by SeaWolf VIII's computer to control the robot's motion. It can be considered a complex motor controller, but can also provide sensor data to the computer for use in mission software.
+Motion controller for Autonomous Underwater Vehicles (AUVs) supporting motion in 6 degrees of freedom. Designed for vehicles with fixed position thrusters.
+
+The Control Board is a coprocessor designed to assist a main computer (typically an embedded Linux computer) control the vehicle.
 
 
 ## Repository Structure

@@ -1,4 +1,4 @@
-# AquaPack Robotics Control Board Math
+# Control Board Math
 
 `motor_control_math.py` is an implementation of the motor control math using numpy. It is used for prototyping / testing.
 
@@ -38,8 +38,8 @@
 ## Robot Thruster Arrangement
 
 - The arrows on the diagrams below are the direction the thrusters push water when given a positive speed (meaning the force excreted on the robot is in the opposite direction).
-- Note: Thruster numbers may not match SW8 exactly. This can be addressed later by adjusting motor numbers in the motor matrix (will be explained later).
-- Note: Directions of arrows may be incorrect for positive speed on some thrusters. Inverting sign of speed per motor as needed in software can correct this.
+- Note: Thruster numbers can be easily switched later if thrusters are connected to different pwm outputs.
+- Note: Thruster directions can be inverted by the control board firmware if needed (without changing the math).
 
 <p align="center">
     <img height="400" src="./img/thruster_config.png">
