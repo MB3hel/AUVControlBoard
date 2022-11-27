@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "CBv1 via CMSIS-DAP",
+            "cwd": "${workspaceFolder}",
+            "svdFile": "./thirdparty/v1_generated/ATSAMD51G19A.svd",
+            "executable": "./build/v1/Debug/ControlBoard.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "servertype": "openocd",
+            "configFiles": [
+                "tools/debug/cb_v1_via_cmsisdap.cfg"
+            ]
+        },
+        {
+            "name": "CBv2 via ST-LINK-v2",
+            "cwd": "${workspaceFolder}",
+            "svdFile": "./thirdparty/v2_generated/STM32F411.svd",
+            "executable": "./build/v2/Debug/ControlBoard.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "servertype": "openocd",
+            "configFiles": [
+                "tools/debug/cb_v2_via_stlink2.cfg"
+            ]
+        }
+    ]
+}

@@ -51,66 +51,16 @@ python3 flash.py [version] [config] -u [tool]
 
 
 
+## Debugging
 
+OpenOCD config files exist in `tools/debug`. The following configurations exist
 
-## Development using VSCode
+| ControlBoard Version | Debugger / Debug Probe | Config Name                  |
+| -------------------- | ---------------------- | ---------------------------- |
+| v1                   | CMSIS-DAP&ast;         | `cb_v1_via_cmsisdap.cfg`     |
+| v2                   | ST-LINK v2             | `cb_v2_via_stlink2.cfg`      |
 
-Install the `C/C++` and `CMake Tools` extensions, then open this folder in VSCode. Choose one of the configure presets on the bottom bar. Then, choose a build preset. Finally, click build.
-
-To debug, install the `Cortex-Debug` extension in VSCode. Create a `launch.json` file with a configuration in one of the following formats entry with one of the following formats. Make sure to change the binary path to match the configuration you are building!
-
-
-**Debug Control Board v1 w/ CMSIS-DAP**
-
-*Note: A Picoprobe firmware supporting CMSIS-DAP mode exists.*
-
-```json
-// Add to "configurations" array
-{
-    "name": "CBv1 w/ CMSIS-DAP",
-    "cwd": "${workspaceFolder}",
-    "svdFile": "./thirdparty/v2_generated/STM32F411.svd",
-    "executable": "./build/v2/Debug/ControlBoard.elf",
-    "request": "launch",
-    "type": "cortex-debug",
-    "runToEntryPoint": "main",
-    "servertype": "openocd",
-    "openOCDPreConfigLaunchCommands":[
-        "set CHIPNAME at91samd51g19a"
-    ],
-    "configFiles": [
-        "interface/cmsis-dap.cfg",
-        "target/atsame5x.cfg"
-    ],
-    "openOCDLaunchCommands":[
-        "transport select swd",
-        "adapter speed 10000"
-    ]
-}
-```
-
-
-**Debug Control Board v2 w/ ST-LINK v2**:
-
-```json
-// Add to "configurations" array
-{
-    "name": "CBv2 w/ ST-LINK",
-    "cwd": "${workspaceFolder}",
-    "svdFile": "./thirdparty/v2_generated/STM32F411.svd",
-    "executable": "./build/v2/Debug/ControlBoard.elf",
-    "request": "launch",
-    "type": "cortex-debug",
-    "runToEntryPoint": "main",
-    "servertype": "openocd",
-    "configFiles": [
-        "interface/stlink-v2.cfg",
-        "target/stm32f4x.cfg"
-    ]
-}
-```
-
-
+&ast;There is a firmware for a Raspberry Pi Pico to turn it into a CMSIS-DAP debugger. This is a variant of the Picoprobe firmware.
 
 
 
@@ -155,3 +105,10 @@ Control Board v2 uses a WeAct Studio Black Pill board (STMicro STM32F411CEU chip
 ### Importing from Generators
 
 After running the generator (as described above) the generated code must be imported to the project. The import process is mostly just copying generated files, however some files are modified slightly. The import process is handled by the `import_from_generator.py` script. If additional components are added in the generator projects, this script may need to be modified to import additional components. When this script is run, it will prompt a version of control board to import generated code for. This script must be run after each time the generator project is modified and code is re-generated.
+
+
+## Development using VSCode
+
+Install the `C/C++` and `CMake Tools` extensions, then open this folder in VSCode. Choose one of the configure presets on the bottom bar. Then, choose a build preset. Finally, click build.
+
+To debug, install the `Cortex-Debug` extension in VSCode. Copy `tools/debug/launch.json` to `.vscode`. *MAKE SURE TO BUILD DEBUG CONFIG BEFORE LAUNCHING DEBUG SESSION. IT WILL NOT BUILD AUTOMATICALLY.*
