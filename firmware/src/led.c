@@ -5,9 +5,22 @@
 #include <task.h>
 
 
+#if defined(CONTROL_BOARD_V2)
+extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim4;
+#endif
+
 void led_init(void){
     led_off();
     led_rgb_set(0, 0, 0);
+
+#if defined(CONTROL_BOARD_V2)
+    // Configured in generated code to a PWM frequency of ~500Hz (96MHz / 3 / 65535 = 488MHz)
+    // 16-bit resolution PWM (0-65535)
+    HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);           // R
+    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);           // G
+    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);           // B
+#endif
 }
 
 void led_on(void){
@@ -67,6 +80,12 @@ void led_rgb_set(uint8_t r, uint8_t g, uint8_t b){
     dotstar_write(0xFF);
     taskEXIT_CRITICAL();
 #elif defined(CONTROL_BOARD_V2)
-    #warning "RGB LED Not Yet Implemented for v2!"
+    // Bitshift by 8 scales up to 16-bit value preserving step size
+    // This also ensures that a value of 255 creates the same signal it would on an 8-bit timer
+    // 255 << 8 = 65280
+    // (65280 / 65536) == (255 / 256) therefore the waveform is the same (same low time)
+    TIM1->CCR1 = r << 8;
+    TIM4->CCR1 = g << 8;
+    TIM4->CCR2 = b << 8;
 #endif
 }
