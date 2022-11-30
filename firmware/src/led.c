@@ -80,12 +80,9 @@ void led_rgb_set(uint8_t r, uint8_t g, uint8_t b){
     dotstar_write(0xFF);
     taskEXIT_CRITICAL();
 #elif defined(CONTROL_BOARD_V2)
-    // Bitshift by 8 scales up to 16-bit value preserving step size
-    // This also ensures that a value of 255 creates the same signal it would on an 8-bit timer
-    // 255 << 8 = 65280
-    // (65280 / 65536) == (255 / 256) therefore the waveform is the same (same low time)
-    TIM1->CCR1 = r << 8;
-    TIM4->CCR1 = g << 8;
-    TIM4->CCR2 = b << 8;
+    // LED is common anode, thus red full on = min duty cycle pwm
+    TIM1->CCR1 = (255 - r) * 257;
+    TIM4->CCR1 = (255 - g) * 257;
+    TIM4->CCR2 = (255 - b) * 257;
 #endif
 }
