@@ -86,3 +86,9 @@ The axis configuration can be changed to match any mounting position of the cont
 5. While not shown in pictures above, it is recommended to add a 10K pullup resistor on both the SDA and SCL lines. For each line (SDA and SCL) connect one edge of the resistor to the line (SDA or SCL) and the other side to 3V. These are not strictly required as the IMU includes a level shifter on these pins with 10K pullups, but putting additional ones in parallel helps if power rail on IMU becomes noisy (usually due to touching the pins) or if the IMU is not populated. *This significantly reduces the number of I2C "glitches" that happened during development, thus is highly encouraged.*
 
 6. If you want to interface with a debugger, it is recommended to add an extra VCC (3.3V) and GND pin (male) somewhere on the protoboard. Additionally, solder male pin headers to the SWDIO and SWCLK pins on the back edge of the ItsyBitsy M4.
+
+
+
+*The following image shows the recommended additions described in steps 5 and 6:*
+
+![](./extra_additoins.png)
