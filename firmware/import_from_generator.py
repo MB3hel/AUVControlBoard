@@ -85,6 +85,11 @@ def update_controlboard_v1():
     # Set explicit stack size in linker script
     replace_prefix_in_file(os.path.join(dest, "samd51g19a_flash.ld"), "STACK_SIZE = ", "STACK_SIZE = 0xC000;")
 
+    # Add __bss_start and __bss_end__ definitions to linker script
+    replace_in_file(os.path.join(dest, "samd51g19a_flash.ld"), "_szero = .;", "_szero = .;\n        __bss_start__ = .;")
+    replace_in_file(os.path.join(dest, "samd51g19a_flash.ld"), "_ezero = .;", "_ezero = .;\n        __bss_end__ = .;")
+
+
     # gcc startup and system sources
     shutil.copy(os.path.join(generator_proj, "supplemental", "startup_samd51g19a.c"), dest)
     shutil.copy(os.path.join(generator_proj, "supplemental", "system_samd51g19a.c"), dest)
