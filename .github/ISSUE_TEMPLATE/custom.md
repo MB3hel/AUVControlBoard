@@ -10,11 +10,7 @@ assignees: ''
 **Summary:**
 
 **Versions Tested:**
-- [ ] v1
-- [ ] v2
 
 **Versions Impacted:**
-- [ ] v1
-- [ ] v2
 
 **Details:**
