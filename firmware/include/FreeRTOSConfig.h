@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 extern uint32_t SystemCoreClock;
+extern void vAssertCalled(const char *file, unsigned int line);
 
 #define configENABLE_FPU								        1
 
@@ -60,8 +61,8 @@ extern uint32_t SystemCoreClock;
 /* Hook function related definitions. */
 #define configUSE_IDLE_HOOK                     0
 #define configUSE_TICK_HOOK                     0
-#define configCHECK_FOR_STACK_OVERFLOW          0
-#define configUSE_MALLOC_FAILED_HOOK            0
+#define configCHECK_FOR_STACK_OVERFLOW          1
+#define configUSE_MALLOC_FAILED_HOOK            1
 #define configUSE_DAEMON_TASK_STARTUP_HOOK      0
 #define configUSE_SB_COMPLETED_CALLBACK         0
 
@@ -90,12 +91,7 @@ extern uint32_t SystemCoreClock;
 // #define configMAX_API_CALL_INTERRUPT_PRIORITY   (configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << (8 - configPRIO_BITS))
 
 /* Define to trap errors during development. */
-#define configASSERT(x)                                                                                                \
-	if ((x) == 0) {                                                                                                    \
-		taskDISABLE_INTERRUPTS();                                                                                      \
-		for (;;)                                                                                                       \
-			;                                                                                                          \
-	}
+#define configASSERT(x)			if((x) == 0) vAssertCalled(__FILE__, __LINE__)
 
 /* Optional functions - most linkers will remove unused functions anyway. */
 #define INCLUDE_vTaskPrioritySet                1
@@ -126,6 +122,8 @@ extern uint32_t SystemCoreClock;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <stm32f4xx.h>
+
+extern void vAssertCalled(const char *file, unsigned int line);
 
 #define configENABLE_FPU								        1
 
@@ -173,8 +171,8 @@ extern uint32_t SystemCoreClock;
 /* Hook function related definitions. */
 #define configUSE_IDLE_HOOK                     0
 #define configUSE_TICK_HOOK                     0
-#define configCHECK_FOR_STACK_OVERFLOW          0
-#define configUSE_MALLOC_FAILED_HOOK            0
+#define configCHECK_FOR_STACK_OVERFLOW          1
+#define configUSE_MALLOC_FAILED_HOOK            1
 #define configUSE_DAEMON_TASK_STARTUP_HOOK      0
 #define configUSE_SB_COMPLETED_CALLBACK         0
 
@@ -203,12 +201,7 @@ extern uint32_t SystemCoreClock;
 // #define configMAX_API_CALL_INTERRUPT_PRIORITY   (configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << (8 - configPRIO_BITS))
 
 /* Define to trap errors during development. */
-#define configASSERT(x)                                                                                                \
-	if ((x) == 0) {                                                                                                    \
-		taskDISABLE_INTERRUPTS();                                                                                      \
-		for (;;)                                                                                                       \
-			;                                                                                                          \
-	}
+#define configASSERT(x)			if(x) vAssertCalled(__FILE__, __LINE__)
 
 /* Optional functions - most linkers will remove unused functions anyway. */
 #define INCLUDE_vTaskPrioritySet                1

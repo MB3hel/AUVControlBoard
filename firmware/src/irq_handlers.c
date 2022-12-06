@@ -9,23 +9,33 @@ extern void xPortSysTickHandler( void );
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void NMI_Handler(void){
-    while (1);
+    while(1){
+        asm("nop");
+    }
 }
 
 void HardFault_Handler(void){
-    while (1);
+    while(1){
+        asm("nop");
+    }
 }
 
 void MemManage_Handler(void){
-    while (1);
+    while(1){
+        asm("nop");
+    }
 }
 
 void BusFault_Handler(void){
-    while (1);
+    while(1){
+        asm("nop");
+    }
 }
 
 void UsageFault_Handler(void){
-    while (1);
+    while(1){
+        asm("nop");
+    }
 }
 
 void DebugMon_Handler(void){}
@@ -69,23 +79,33 @@ void USB_TRCPT1_Handler (void){
 extern TIM_HandleTypeDef htim11;
 
 void NMI_Handler(void){
-    while (1);
+    while(1){
+        asm("nop");
+    }
 }
 
 void HardFault_Handler(void){
-    while (1);
+    while(1){
+        asm("nop");
+    }
 }
 
 void MemManage_Handler(void){
-    while (1);
+    while(1){
+        asm("nop");
+    }
 }
 
 void BusFault_Handler(void){
-    while (1);
+    while(1){
+        asm("nop");
+    }
 }
 
 void UsageFault_Handler(void){
-    while (1);
+    while(1){
+        asm("nop");
+    }
 }
 
 void DebugMon_Handler(void){}
