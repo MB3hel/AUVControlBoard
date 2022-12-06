@@ -83,10 +83,14 @@ void rgb_thread(void *argument){
 
 
 void usb_device_task(void *argument){
+#if defined(CONTROL_BOARD_V1)
     NVIC_SetPriority(USB_OTHER_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
     NVIC_SetPriority(USB_SOF_HSOF_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
     NVIC_SetPriority(USB_TRCPT0_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
     NVIC_SetPriority(USB_TRCPT1_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+#elif defined(CONTROL_BOARD_V2)
+    NVIC_SetPriority(OTG_FS_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+#endif
     tud_init(BOARD_TUD_RHPORT);
     while(1){
         // This call will block thread until there is / are event(s)
@@ -112,7 +116,7 @@ int main(void){
     led_init();
     led_off();
     xTaskCreate(usb_device_task, "usb_device_task", 512, NULL, 1, NULL);
-    xTaskCreate(cdc_task, "cdc_task", 128, NULL, 2, NULL);
+    // xTaskCreate(cdc_task, "cdc_task", 128, NULL, 2, NULL);
     xTaskCreate(led_thread, "led_thread", 128, NULL, 2, NULL);
     xTaskCreate(rgb_thread, "rgb_thread", 128, NULL, 2, NULL);
     vTaskStartScheduler();

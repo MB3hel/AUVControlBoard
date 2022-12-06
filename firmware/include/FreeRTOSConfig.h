@@ -201,7 +201,7 @@ extern void vAssertCalled(const char *file, unsigned int line);
 // #define configMAX_API_CALL_INTERRUPT_PRIORITY   (configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY << (8 - configPRIO_BITS))
 
 /* Define to trap errors during development. */
-#define configASSERT(x)			if(x) vAssertCalled(__FILE__, __LINE__)
+#define configASSERT(x)			if((x) == 0) vAssertCalled(__FILE__, __LINE__)
 
 /* Optional functions - most linkers will remove unused functions anyway. */
 #define INCLUDE_vTaskPrioritySet                1
