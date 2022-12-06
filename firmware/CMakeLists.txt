@@ -38,10 +38,16 @@ remove_items_containing(SOURCES "${PROJECT_SOURCE_DIR}/thirdparty/TinyUSB/portab
 set(DEFINES  "")
 
 # General compile flags (all targets)
-set(CFLAGS "")
+set(CFLAGS
+    -ffunction-sections
+    -fdata-sections
+    -mlong-calls
+    -Wall
+)
 
 # General linker flags (all targets)
 set(LDFLAGS
+    -Wl,--gc-sections
     -Wl,--print-memory-usage
 )
 
@@ -95,17 +101,11 @@ if("${CBOARD_REV}" STREQUAL "v1")
     # Target specific c commpiler flags
     set(EXTRA_CFLAGS
         ${EXTRA_SHAREDFLAGS}
-        -ffunction-sections
-        -fdata-sections
-        -mlong-calls
-        -Wall
     )
 
     # Target specific linker flags
     set(EXTRA_LDFLAGS
         ${EXTRA_SHAREDFLAGS}
-        -Wl,--gc-sections
-        -Wl,--print-memory-usage
         -T${PROJECT_SOURCE_DIR}/thirdparty/v1_generated/samd51g19a_flash.ld
     )
     
@@ -157,16 +157,11 @@ elseif("${CBOARD_REV}" STREQUAL "v2")
     # Target specific c commpiler flags
     set(EXTRA_CFLAGS
         ${EXTRA_SHAREDFLAGS}
-        -ffunction-sections
-        -fdata-sections
-        -mlong-calls
-        -Wall
     )
 
     # Target specific linker flags
     set(EXTRA_LDFLAGS
         ${EXTRA_SHAREDFLAGS}
-        -Wl,--gc-sections
         -T${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/STM32F411CEUx_FLASH.ld
     )
 
