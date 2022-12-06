@@ -75,6 +75,7 @@ if("${CBOARD_REV}" STREQUAL "v1")
         "${PROJECT_SOURCE_DIR}/thirdparty/v1_generated/packs/CMSIS/CMSIS/Core/Include"
         "${PROJECT_SOURCE_DIR}/thirdparty/v1_generated/packs/ATSAMD51G19A_DFP"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/GCC/ARM_CM4F"
+        "${PROJECT_SOURCE_DIR}/include/v1"
     )
 
     # Target specific preprocessor definitions
@@ -131,6 +132,7 @@ elseif("${CBOARD_REV}" STREQUAL "v2")
         "${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/Drivers/CMSIS/Device/ST/STM32F4xx/Include"
         "${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/Drivers/STM32F4xx_HAL_Driver/Inc"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/GCC/ARM_CM4F"
+        "${PROJECT_SOURCE_DIR}/include/v2"
     )
 
     # Target specific preprocessor definitions
