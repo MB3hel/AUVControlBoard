@@ -1,6 +1,8 @@
 #pragma once
 
-
+/**
+ * Initialize mechanism for delays (must call before using delay functions)
+ */
 void delay_init(void);
 
 /**

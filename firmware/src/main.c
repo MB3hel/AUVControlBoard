@@ -5,12 +5,38 @@
 #include <led.h>
 #include <delay.h>
 #include <math.h>
-#include <tusb.h>
+#include <usb.h>
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Task (thread) configuration
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Stack sizes
+#define TASK_LED_SSIZE                      (configMINIMAL_STACK_SIZE)
+#define TASK_RGB_SSIZE                      (configMINIMAL_STACK_SIZE)
+#define TASK_PCCOMM_SSIZE                   (configMINIMAL_STACK_SIZE)
+#define TASK_USB_DEVICE_SSIZE               (192)                               // This is size used in CDC-MSC example
+
+// Task priorities
+#define TASK_LED_PRIORITY                   (1)
+#define TASK_RGB_PRIORITY                   (1)
+#define TASK_PCCOMM_PRIORITY                (1)
+#define TASK_USB_DEVICE_PRIORITY            (2)
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Task handles
+static TaskHandle_t task_led_handle;
+static TaskHandle_t task_rgb_handle;
+static TaskHandle_t task_pccomm_handle;
+static TaskHandle_t task_usb_device_handle;
+
 
 /**
  * Thread to periodically blink the LED
  */
-void led_thread(void *argument){
+void led_task(void *argument){
     while(1){
         led_toggle();
         vTaskDelay(250 / portTICK_PERIOD_MS);
@@ -67,7 +93,7 @@ static void hsv_to_rgb(float *rgb, float h, float s, float v){
 /**
  * Thread to fade RGB led through colors
  */
-void rgb_thread(void *argument){
+void rgb_task(void *argument){
     float hue = 0.0f;
     const float sat = 1.0f;
     const float val = 0.1f;
@@ -81,47 +107,74 @@ void rgb_thread(void *argument){
     }
 }
 
-
-void usb_device_task(void *argument){
-#if defined(CONTROL_BOARD_V1)
-    NVIC_SetPriority(USB_OTHER_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
-    NVIC_SetPriority(USB_SOF_HSOF_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
-    NVIC_SetPriority(USB_TRCPT0_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
-    NVIC_SetPriority(USB_TRCPT1_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
-#elif defined(CONTROL_BOARD_V2)
-    NVIC_SetPriority(OTG_FS_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
-    __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
-    USB_OTG_FS->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
-    USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSBSEN;
-    USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSASEN;
-#endif
-    tud_init(BOARD_TUD_RHPORT);
-    while(1){
-        // This call will block thread until there is / are event(s)
-        tud_task();
-    }
-}
-
-void cdc_task(void *argument){
-    while(!tud_inited()){
-        vTaskDelay(50 / portTICK_PERIOD_MS);
-    }
+/**
+ * Thread to periodically send message to PC via USB
+ */
+void pccomm_task(void *argument){
     while(1){
         const char msg[] = "Hello From ControlBoard!!!\r\n";
-        tud_cdc_write(msg, sizeof(msg) - 1);
-        tud_cdc_write_flush();
+        usb_writestr(msg);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
 
 int main(void){
+    // -------------------------------------------------------------------------
+    // System & Peripheral Initialization
+    // -------------------------------------------------------------------------
     init_frameworks();
     delay_init();
     led_init();
     led_off();
-    xTaskCreate(usb_device_task, "usb_device_task", 512, NULL, 1, NULL);
-    xTaskCreate(cdc_task, "cdc_task", 128, NULL, 2, NULL);
-    xTaskCreate(led_thread, "led_thread", 128, NULL, 2, NULL);
-    xTaskCreate(rgb_thread, "rgb_thread", 128, NULL, 2, NULL);
+    usb_init();
+    // -------------------------------------------------------------------------
+    
+    // -------------------------------------------------------------------------
+    // RTOS task creation
+    // -------------------------------------------------------------------------
+    xTaskCreate(
+        usb_device_task, 
+        "usb_device_task", 
+        TASK_USB_DEVICE_SSIZE, 
+        NULL, 
+        TASK_USB_DEVICE_PRIORITY, 
+        &task_usb_device_handle
+    );
+    xTaskCreate(
+        pccomm_task,
+        "pccomm_task", 
+        TASK_PCCOMM_SSIZE, 
+        NULL, 
+        TASK_PCCOMM_PRIORITY, 
+        &task_pccomm_handle
+    );
+    xTaskCreate(
+        led_task, 
+        "led_task", 
+        TASK_LED_SSIZE, 
+        NULL, 
+        TASK_LED_PRIORITY, 
+        &task_led_handle
+    );
+    xTaskCreate(
+        rgb_task, 
+        "rgb_task", 
+        TASK_RGB_SSIZE, 
+        NULL, 
+        TASK_RGB_PRIORITY, 
+        &task_rgb_handle
+    );
+    // -------------------------------------------------------------------------
+
+    // -------------------------------------------------------------------------
+    // RTOS Startup
+    // -------------------------------------------------------------------------
     vTaskStartScheduler();
+    // -------------------------------------------------------------------------
+
+    // Start scheduler should never return. This should never run, but is
+    // included to make debugging easier in case it does
+    while(1){
+        asm("nop");
+    }
 }
