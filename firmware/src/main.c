@@ -3,9 +3,9 @@
 #include <FreeRTOS.h>
 #include <task.h>
 #include <led.h>
-#include <usb.h>
 #include <delay.h>
 #include <math.h>
+#include <tusb.h>
 
 /**
  * Thread to periodically blink the LED
@@ -81,22 +81,22 @@ void rgb_thread(void *argument){
     }
 }
 
-/**
- * Thread to periodically print a message via USB
- */
-void usb_thread(void *argument){
+
+void usb_device_task(void *argument){
+    NVIC_SetPriority(USB_OTHER_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+    NVIC_SetPriority(USB_SOF_HSOF_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+    NVIC_SetPriority(USB_TRCPT0_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+    NVIC_SetPriority(USB_TRCPT1_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+    tud_init(BOARD_TUD_RHPORT);
     while(1){
-        usb_write("Hello from control board!\r\n");
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        tud_task();                     // This will block this thread until there are new events
+        tud_cdc_write_flush();          // Only runs if at least one event processed
     }
 }
 
-/**
- * Background service to process TinyUSB events
- */
-void usb_service(void *argument){
+void cdc_task(void *argument){
     while(1){
-        usb_process();
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -104,10 +104,9 @@ int main(void){
     init_frameworks();
     delay_init();
     led_init();
-    usb_init();
     led_off();
-    xTaskCreate(usb_service, "usb_service", 128, NULL, 1, NULL);
-    xTaskCreate(usb_thread, "usb_thread", 128, NULL, 2, NULL);
+    xTaskCreate(usb_device_task, "usb_device_task", 512, NULL, 1, NULL);
+    xTaskCreate(cdc_task, "cdc_Task", 128, NULL, 2, NULL);
     xTaskCreate(led_thread, "led_thread", 128, NULL, 2, NULL);
     xTaskCreate(rgb_thread, "rgb_thread", 128, NULL, 2, NULL);
     vTaskStartScheduler();
