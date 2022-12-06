@@ -62,7 +62,7 @@ OpenOCD config files exist in `tools/debug`. The following configurations exist
 
 &ast;There is a firmware for a Raspberry Pi Pico to turn it into a CMSIS-DAP debugger. This is a variant of the Picoprobe firmware.
 
-*Note that [OpenOCD](https://openocd.org/) must be installed and in the `PATH`.
+*Note that [OpenOCD](https://openocd.org/) must be installed and in the `PATH`.*
 
 
 ## Generator Projects
