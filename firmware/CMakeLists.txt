@@ -33,6 +33,8 @@ file(GLOB_RECURSE SOURCES
 )
 remove_items_containing(SOURCES "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable")
 remove_items_containing(SOURCES "${PROJECT_SOURCE_DIR}/thirdparty/TinyUSB/portable")
+remove_items_containing(SOURCES "${PROJECT_SOURCE_DIR}/src/v1")
+remove_items_containing(SOURCES "${PROJECT_SOURCE_DIR}/src/v2")
 
 # General preprocessor definitions (all targets)
 set(DEFINES  "")
@@ -63,6 +65,7 @@ if("${CBOARD_REV}" STREQUAL "v1")
 
     # Version specific sources
     file(GLOB_RECURSE EXTRA_SOURCES 
+        "${PROJECT_SOURCE_DIR}/src/v1/*.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/v1_generated/*.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/MemMang/heap_4.c"
@@ -118,6 +121,7 @@ elseif("${CBOARD_REV}" STREQUAL "v2")
     
     # Version specific sources
     file(GLOB_RECURSE EXTRA_SOURCES 
+        "${PROJECT_SOURCE_DIR}/src/v2/*.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/*.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/startup_stm32f411xe.s"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c"
