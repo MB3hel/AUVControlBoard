@@ -90,6 +90,10 @@ void usb_device_task(void *argument){
     NVIC_SetPriority(USB_TRCPT1_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
 #elif defined(CONTROL_BOARD_V2)
     NVIC_SetPriority(OTG_FS_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+    __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
+    USB_OTG_FS->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
+    USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSBSEN;
+    USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSASEN;
 #endif
     tud_init(BOARD_TUD_RHPORT);
     while(1){
@@ -116,7 +120,7 @@ int main(void){
     led_init();
     led_off();
     xTaskCreate(usb_device_task, "usb_device_task", 512, NULL, 1, NULL);
-    // xTaskCreate(cdc_task, "cdc_task", 128, NULL, 2, NULL);
+    xTaskCreate(cdc_task, "cdc_task", 128, NULL, 2, NULL);
     xTaskCreate(led_thread, "led_thread", 128, NULL, 2, NULL);
     xTaskCreate(rgb_thread, "rgb_thread", 128, NULL, 2, NULL);
     vTaskStartScheduler();
