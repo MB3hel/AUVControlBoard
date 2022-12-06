@@ -89,13 +89,19 @@ void usb_device_task(void *argument){
     NVIC_SetPriority(USB_TRCPT1_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
     tud_init(BOARD_TUD_RHPORT);
     while(1){
-        tud_task();                     // This will block this thread until there are new events
-        tud_cdc_write_flush();          // Only runs if at least one event processed
+        // This call will block thread until there is / are event(s)
+        tud_task();
     }
 }
 
 void cdc_task(void *argument){
+    while(!tud_inited()){
+        vTaskDelay(50 / portTICK_PERIOD_MS);
+    }
     while(1){
+        const char msg[] = "Hello From ControlBoard!!!\r\n";
+        tud_cdc_write(msg, sizeof(msg) - 1);
+        tud_cdc_write_flush();
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
@@ -106,7 +112,7 @@ int main(void){
     led_init();
     led_off();
     xTaskCreate(usb_device_task, "usb_device_task", 512, NULL, 1, NULL);
-    xTaskCreate(cdc_task, "cdc_Task", 128, NULL, 2, NULL);
+    xTaskCreate(cdc_task, "cdc_task", 128, NULL, 2, NULL);
     xTaskCreate(led_thread, "led_thread", 128, NULL, 2, NULL);
     xTaskCreate(rgb_thread, "rgb_thread", 128, NULL, 2, NULL);
     vTaskStartScheduler();
