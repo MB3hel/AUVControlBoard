@@ -85,7 +85,9 @@ The decision to use generator projects comes down to the following
 
 #### Control Board v1
 
-Control Board v1 uses an Adafruit ItsyBitsy M4 board (Microchip ATSAMD51G19A chip). The generator used for this project is [MCC Standalone](https://www.microchip.com/en-us/tools-resources/configure/mplab-code-configurator). This tool is available for download on Windows, macOS, and Linux. Once installed
+Control Board v1 uses an Adafruit ItsyBitsy M4 board (Microchip ATSAMD51G19A chip). The generator used for this project is [MCC Standalone](https://www.microchip.com/en-us/tools-resources/configure/mplab-code-configurator). This tool is available for download on Windows, macOS, and Linux. Tested with v5.2.1 of MCC Standalone.
+
+Once installed
 - Launch the application
 - Make sure the Harmony Content Path is set in `Tools` > `Options`. This should only need to be done once per computer. Recommended path is `~/.mcc/harmony/v3`.
 - `File` > `Load Configuration`
@@ -95,7 +97,9 @@ Control Board v1 uses an Adafruit ItsyBitsy M4 board (Microchip ATSAMD51G19A chi
 
 #### Control Board v2
 
-Control Board v2 uses a WeAct Studio Black Pill board (STMicro STM32F411CEU chip). The generator used for this project is [STM32CubeMX](https://www.st.com/en/development-tools/stm32cubemx.html). This tool is available for download on Windows, macOS, and Linux. Once installed
+Control Board v2 uses a WeAct Studio Black Pill board (STMicro STM32F411CEU chip). The generator used for this project is [STM32CubeMX](https://www.st.com/en/development-tools/stm32cubemx.html). This tool is available for download on Windows, macOS, and Linux. Tested with v6.6.1 of STM32CubeMX.
+
+Once installed
 - Launch the application
 - `File` > `Load Project`
 - Choose `generator_projects/ControlBoard_v2/ControlBoard_v2.ioc`
