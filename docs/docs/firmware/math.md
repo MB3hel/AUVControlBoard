@@ -1,6 +1,6 @@
-# Control Board Math
+# 6DOF Math
 
-`motor_control_math.py` is an implementation of the motor control math using numpy. It is used for prototyping / testing.
+[motor_control_math.py](./math_res/numpy_motor_math.py) is an implementation of the motor control math using numpy. It is used for prototyping / testing.
 
 
 ## Coordinate System Definition
@@ -15,12 +15,11 @@
     - Positive roll is defined as counter-clockwise rotation in the xz plan when view from the +y side
     - Positive yaw is defined as counter-clockwise rotation in the xy plane when viewed from the +z side
 
-<p align="center">
-    <img height="250" src="./img/coord_system_1.png">
-    <img height="250" src="./img/coord_system_2.png">
-    <img height="250" src="./img/coord_system_rotations.png">
-</p>
-
+<center>
+![](./math_res/coord_system_1.png){: style="height:250px;"}
+![](./math_res/coord_system_2.png){: style="height:250px;"}
+![](./math_res/coord_system_rotations.png){: style="height:250px;"}
+</center>
 
 ## Robot Local Coordinate System
 
@@ -30,10 +29,9 @@
     - +roll raises left of the robot
     - +yaw moves the front to the left
 
-<p align="center">
-    <img height="400" src="./img/robot_local_coord.png">
-</p>
-
+<center>
+![](./math_res/robot_local_coord.png){: style="height:400px;"}
+</center>
 
 ## Robot Thruster Arrangement
 
@@ -41,9 +39,9 @@
 - Note: Thruster numbers can be easily switched later if thrusters are connected to different pwm outputs.
 - Note: Thruster directions can be inverted by the control board firmware if needed (without changing the math).
 
-<p align="center">
-    <img height="400" src="./img/thruster_config.png">
-</p>
+<center>
+![](./math_res/thruster_config.png){: style="height:400px;"}
+</center>
 
 
 ## 6DOF Motor Math
@@ -57,26 +55,26 @@ The motor matrix is generated based on physical frame and thruster configuration
 
 The motor matrix can be thought of as a "table" where each column represents one degree of freedom and each row represents a motor. Each column is a set of motor speeds that cause motion **only** in the column's degree of freedom (and in the positive direction and at maximum possible speed). There are always 7 columns in the matrix. The number of rows is equal to the number of motors. Note that the motor numbers can be in any order (ie row order does not matter) whereas columns must be ordered as shown in the image below.
 
-<p align="center">
-    <img height="250" src="./img/motor_matrix.png">
-</p>
+<center>
+![](./math_res/motor_matrix.png){: style="height:250px;"}
+</center>
 
 To construct the motor matrix for a given thruster configuration, work one column at a time (after assigning motor numbers to rows). For each column determine the speeds for each motor to cause motion **only** in the positive direction of the column's DoF at the maximum possible speed. The motor speeds in each column must not cause motion in any other DoF (in an ideal scenario; in the real world things are never perfect). Note that all motor speeds are specified as a number between negative one and positive one.
 
 The motor matrix for the thruster configuration shown above is as follows
 
-<p align="center">
-    <img height="250" src="./img/motor_matrix_sw8.png">
-</p>
+<center>
+![](./math_res/motor_matrix_sw8.png){: style="height:250px;"}
+</center>
 
 
 ### DoF Matrix
 
 The motor matrix is not directly used in calculations. Only a subset of it is. The DoF Matrix is a submatrix of the motor matrix excluding the first column (motor numbers). This matrix is used for all calculations. The motor number column is extracted and stored as a column vector and used to associate speed calculation results with the correct motor numbers after other calculations.
 
-<p align="center">
-    <img height="250" src="./img/dof_matrix_split.png">
-</p>
+<center>
+![](./math_res/dof_matrix_split.png){: style="height:250px;"}
+</center>
 
 
 ### Local Targets
@@ -85,21 +83,24 @@ Next it is necessary to define a motion target, or a goal for the robot's motion
 
 A motion target is a column vector where each row corresponds to a DoF (order matches order of DoFs in motor matrix columns). The value in each cell is a number from negative one to positive one and represents the target speed in each degree of freedom. The target can have motion in as many DoFs as desired. 
 
-<p align="center">
-    <img height="250" src="./img/target_vector.png">
-</p>
+<center>
+![](./math_res/target_vector.png){: style="height:250px;"}
+</center>
+
 
 This target motion vector can then be used to calculate individual motor speeds by multiplying it by the DoF matrix. The result of this multiplication is a column vector with as many entries as there are motors. Each entry is a motor speed. The motor speeds are in the same order as the motor number column vector (first column of motor matrix). This vector is the speed vector.
 
-<p align="center">
-    <img height="250" src="./img/motor_speed_calc.png">
-</p>
+<center>
+![](./math_res/motor_speed_calc.png){: style="height:250px;"}
+</center>
+
 
 Motion in multiple DoFs can be used to create any net motion the robot is capable of. For example, positive y translation and positive yaw of equal magnitudes (speeds) will result in the robot moving in a circle in the xy plane about the left edge of the robot (positive directions). The calculation for this scenario is shown below (at 100% speed).
 
-<p align="center">
-    <img height="250" src="./img/two_dof_calc.png">
-</p>
+<center>
+![](./math_res/two_dof_calc.png){: style="height:250px;"}
+</center>
+
 
 Notice that the resultant motor speed vector has motor speeds that exceed 100% speed. This is because it is not possible to move at 100% speed in both of the specified DoFs at the same time. As such, motor speeds will need to be scaled down. This is discussed in the next section.
 
@@ -110,37 +111,38 @@ The above example illustrates the need to scale down motor speeds. However, doin
 
 The most intuitive option would be to divide all motor speeds by the largest magnitude (`m = max(abs(speed_vector))`) if `m` is larger than 1.0 (no need to divide if no value is larger than 1 because the motion is already possible). This solution works in the above example resulting in the following scaled speed vector
 
-<p align="center">
-    <img height="250" src="./img/scaled_speed_vec_all.png">
-</p>
+<center>
+![](./math_res/scaled_speed_vec_all.png){: style="height:250px;"}
+</center>
 
 While this is the correct result for the above example, consider the following more complex example (where motion in more DoFs is added).
 
-<p align="center">
-    <img height="250" src="./img/many_dof_speed_calc.png">
-</p>
+<center>
+![](./math_res/many_dof_speed_calc.png){: style="height:250px;"}
+</center>
 
 If the previously described algorithm is applied `m = 3` which results in the following scaled speed vector
 
-<p align="center">
-    <img height="225" src="./img/scaled_all_many_dof.png">
-</p>
+<center>
+![](./math_res/scaled_all_many_dof.png){: style="height:225px;"}
+</center>
 
 However, this speed vector is scaled non-optimally. Notice that the maximum speed occurred at motor 5. However, motors 1, 2, 3, and 4 do not affect any of the same directions as motor 5. As such, it is not necessary to divide motor 1, 2, 3, 4 speeds by 3. Instead they should only be divided by 2 otherwise some DoF motions are slowed more than required (artificially reducing max speed).
 
 In reality, it is only necessary to divide the speeds of some motors depending on where the max speed is located. If the max speed occurs at motor *i*, it is only necessary to divide the speed of any motors that "overlap" with motor *i*. Overlap is defined as sharing a contribution in any DoF. In terms of the DoF matrix, two motors *i* and *j* overlap if the row for motor *i* and the row for motor *j* have a non-zero entry in the same column for at least one column. Mathematically, this is easier to calculate if a contribution matrix is defined as "the dof matrix is not equal to zero". The contribution matrix is a "binary version" of the dof matrix, where any non-zero entry in the dof matrix becomes a 1 in the contribution matrix (and any zero remains a zero). 
 
-<p align="center">
-    <img height="300" src="./img/contribution_matrix_calc.png">
-</p>
+<center>
+![](./math_res/contribution_matrix_calc.png){: style="height:300px;"}
+</center>
+
 
 Then, in terms of the contribution matrix, two motors *i* and *j* overlap if the row for motor *i* and motor *j* have a one entry in the same column for at least one column. Mathematically, the number of shared non-zero entries is the dot product of the two rows.
 
 To simplify later calculations an overlap vector will be generated for each motor in the dof matrix. The overlap vector is a vector of 1's and 0's indicating whether overlap occurs with the corresponding index motor in the speed vector. For motor i the overlap vector (`overlap_vec[i]`) is defined as "the product of the contribution matrix and the transpose of row `i` of the contribution matrix is not equal to zero". For example `overlap_vec[0]` is defined as follows
 
-<p align="center">
-    <img height="425" src="./img/overlap_vec_calc.png">
-</p>
+<center>
+![](./math_res/overlap_vec_calc.png){: style="height:425px;"}
+</center>
 
 One overlap vector must be calculated for *each* motor. These are calculated ahead of time to reduce the number of operations that must be performed to calculate motor speeds (important when this is implemented on a microcontroller).
 
@@ -161,16 +163,16 @@ while true
             speed_vector[i] /= m;
         endif
     endfor
-endfor
+endwhile
 ```
 
 Using this algorithm the earlier example results in the following scaled speed vector (which is optimal for the requested motions).
 
-<p align="center">
-    <img height="250" src="./img/proper_scaling.png">
-    <br />
-    <i>Motor 1, 2, 3, 4 speeds divided by 2 and motor 5, 6, 7, 8 speeds divided by 3. This results in the fastest motor within each group being at 100% speed, thus this is optimal scaling.</i>
-</p>
+<center>
+![](./math_res/proper_scaling.png){: style="height:250px;"}
+
+*Motor 1, 2, 3, 4 speeds divided by 2 and motor 5, 6, 7, 8 speeds divided by 3. This results in the fastest motor within each group being at 100% speed, thus this is optimal scaling.*
+</center>
 
 
 ### Global Targets
@@ -185,9 +187,10 @@ This method is used instead of a true global target for two reasons
 
 The target vector can be split into two parts: a translation vector and a rotation vector.
 
-<p align="center">
-    <img height="250" src="./img/target_vector_split.png">
-</p>
+<center>
+![](./math_res/target_vector_split.png){: style="height:250px;"}
+</center>
+
 
 Both vectors are in an [x, y, z] order.
 - Translations are along the given axes
@@ -197,18 +200,18 @@ The idea is to determine a rotation matrix to translate the world gravity vector
 
 It is assumed that when the robot's coordinate frame matches the world's coordinate frame, the measured gravity vector will be [0, 0, -g] (meaning in the negative z direction). This must be configured to be the case (IMU supports axis remapping internally to allow this regardless of how the IMU is mounted). Then, given a world gravity vector (`g_w`) and a measured gravity vector `g_r` a rotation matrix (`R`) to rotate vectors from the world coordinate system into the robot's coordinate system can be calculated as shown below
 
-<p align="center">
-    <img height="100" src="./img/rotation_matrix_calc.png">
-</p>
+<center>
+![](./math_res/rotation_matrix_calc.png){: style="height:100px;"}
+</center>
 
 Where `[v_c]_x` is the skew symmetric cross product matrix of `v_c` defined as follows
 
-<p align="center">
-    <img height="100" src="./img/skew_symmetric.png">
-</p>
+<center>
+![](./math_res/skew_symmetric.png){: style="height:100px;"}
+</center>
 
 Then each of the translation and rotation targets can be rotated by multiplication by the rotation matrix (`R`). The translation and rotation vectors are then concatenated to create the full local target vector.
 
-<p align="center">
-    <img height="100" src="./img/apply_rotation.png">
-</p>
+<center>
+![](./math_res/apply_rotation.png){: style="height:100px;"}
+</center>

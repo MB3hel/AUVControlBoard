@@ -1,0 +1,16 @@
+site_name: AUV Control Board
+theme:
+    name: readthedocs
+    highlightjs: true
+markdown_extensions:
+  - attr_list
+nav:
+  - Home: index.md
+  - Hardware:
+    - Version 1: hardware/v1.md
+    - Version 2: hardware/v2.md
+  - Firmware:
+    - Overview: firmware/overview.md
+    - 6DOF Math: firmware/math.md
+  - User Guide:
+    - Coming Eventually: none.md

@@ -7,8 +7,15 @@ The Control Board is a coprocessor designed to assist a main computer (typically
 
 ## Repository Structure
 
-- `docs`: Documentation for users of the control board. This is **not** firmware developer documentation.
+- `docs`: Documentation for users of the control board. This is a mkdocs project.
 - `firmware`: PlatformIO project and source code for ControlBoard firmware.
-- `hardware`: Documentation & design files for hardware control board. Includes hardware design files and assembly instructions as applicable.
-- `math`: Description of the math used for 6-DOF vectored motor control as well as a numpy script demoing the math.
-- `references`: Various links and pdfs providing information about components used on the control board. Intended for firmware developers.
+- `references`: Various links and pdfs providing information about components and libraries used on the control board. Intended for firmware developers.
+
+
+## View Documentation
+
+```sh
+python3 -m pip install mkdocs
+mkdocs serve
+# Open http://localhost:8000/ in a web browser
+```
