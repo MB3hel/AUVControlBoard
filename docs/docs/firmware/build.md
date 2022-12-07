@@ -43,3 +43,10 @@ python3 flash.py [version] [config] -u [tool]
 - `[version]` is either `v1` or `v2`
 - `[config]` is the configuration you want to flash (same as configuration built: `Debug`, `Release`, `MinSizeRel`, or `RelWithDebInfo`)
 - `[tool]` is one of the above upload tool aliases.
+
+*Note that most tools will only work if the target board is in bootloader mode. To enter bootloader mode:*
+
+- ***v1:** Press the reset button twice quickly (double press).*
+- ***v2:** Hold the BOOT button. While holding it, press and release the NRST button. Then release the boot button.*
+
+*Make sure to enter bootloader mode before flashing!*

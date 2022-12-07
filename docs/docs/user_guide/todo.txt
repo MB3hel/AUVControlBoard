@@ -1,0 +1,14 @@
+- Flashing Firmware to the Board
+    - Detailed instructions for v1 and v2 using released binaries
+- General Use Procedure
+    - Pre-use configuration (motor matrix, thruster inversions)
+    - Sensor configuration options and procedure
+    - Modes of operation
+    - Types of data that can be provided
+    - How to check sensor validity
+    - Feeding the motor watchdog
+    - Recommended procedure for using in standard application
+- LED indicator info
+- Communicating with Control Board
+    - Protocol
+    - Specific messages
