@@ -11,6 +11,8 @@ nav:
     - Version 2: hardware/v2.md
   - Firmware:
     - Overview: firmware/overview.md
+    - Build and Flash: firmware/build.md
     - 6DOF Math: firmware/math.md
+    - Firmware Development: firmware/developing.md
   - User Guide:
     - Coming Eventually: none.md
