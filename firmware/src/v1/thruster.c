@@ -2,7 +2,7 @@
 #include <thruster.h>
 
 void thruster_init(void){
-    float *zero_speeds = (float[]){-1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    float *zero_speeds = (float[]){0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     thruster_set(zero_speeds);
     TCC0_PWMStart();
     TCC1_PWMStart();
