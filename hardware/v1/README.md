@@ -17,16 +17,11 @@
     - Two 1x8 headers
     - One 1x4 header
 - Two 10K resistors (through hole, 1/4 W)
-- ~~Adafruit BMP280 Breakout~~
-    - **NOT NEEDED AND NOT SUPPORTED IN FIRMWARE. RECOMMENDED TO OMIT AS IT ADDS UNNECESSARY COST.**
-    - ~~Pressure and temperature sensor~~
-    - ~~Not likely to be used if on-chip calibrations of BNO055 are used, however some sensor calibration algorithms take into account temperature and pressure. This is present in case this information is needed at a later date.~~
-    - ~~Can also be used to detect abnormal conditions (eg over temperature)~~
 
 
 ## Assembly
 
-Prototype is assembled on protoboard. Final assembled prototype and pinout is shown below.
+Prototype is assembled on protoboard. Final assembled prototype and pinout is shown below. Note that some pictures show a version with a pressure / temperature sensor. This is no longer used and should not be included when building the board.
 
 ![](.//prototype_assembled_labeled.png)
 
@@ -50,10 +45,8 @@ The axis configuration can be changed to match any mounting position of the cont
 | Pin 1                      | Pin 2                    |
 | -------------------------- | ------------------------ |
 | ItsyBitsy SDA              | BNO055 SDA               |
-| ItsyBitsy SDA              | BMP280 SDI               |
 | ItsyBitsy SDA              | Depth SDA                |
 | ItsyBitsy SCL              | BNO055 SCL               |
-| ItsyBitsy SCL              | BMP280 SCK               |
 | ItsyBitsy SCL              | Depth SCL                |
 
 
@@ -62,10 +55,8 @@ The axis configuration can be changed to match any mounting position of the cont
 | Pin 1                      | Pin 2                    |
 | -------------------------- | ------------------------ |
 | ItsyBitsy 3V               | BNO055 VIN               |
-| ItsyBitsy 3V               | BMP280 VIN               |
 | ItsyBitsy 3V               | Depth VCC                |
 | ItsyBitsy GND              | BNO055 GND               |
-| ItsyBitsy GND              | BMP280 GND               |
 | ItsyBitsy GND              | Depth GND                |
 
 4. Wire PWM signal header pins to GPIO pins on the dev board
