@@ -133,7 +133,11 @@ void SYS_Initialize ( void* data )
 
 
 
+    TCC1_PWMInitialize();
+
     EVSYS_Initialize();
+
+    TCC0_PWMInitialize();
 
 
 

@@ -65,14 +65,37 @@
 // *****************************************************************************
 // *****************************************************************************
 
-/*** Macros for RED_LED pin ***/
-#define RED_LED_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 22U))
-#define RED_LED_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 22U))
-#define RED_LED_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 22U))
-#define RED_LED_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 22U))
-#define RED_LED_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 22U))
-#define RED_LED_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 22U)) & 0x01U)
-#define RED_LED_PIN                  PORT_PIN_PA22
+/*** Macros for THR8 pin ***/
+#define THR8_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 16U)) & 0x01U)
+#define THR8_PIN                  PORT_PIN_PA16
+
+/*** Macros for THR7 pin ***/
+#define THR7_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 17U)) & 0x01U)
+#define THR7_PIN                  PORT_PIN_PA17
+
+/*** Macros for THR6 pin ***/
+#define THR6_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 18U)) & 0x01U)
+#define THR6_PIN                  PORT_PIN_PA18
+
+/*** Macros for THR5 pin ***/
+#define THR5_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 19U)) & 0x01U)
+#define THR5_PIN                  PORT_PIN_PA19
+
+/*** Macros for THR4 pin ***/
+#define THR4_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 20U)) & 0x01U)
+#define THR4_PIN                  PORT_PIN_PA20
+
+/*** Macros for THR3 pin ***/
+#define THR3_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 21U)) & 0x01U)
+#define THR3_PIN                  PORT_PIN_PA21
+
+/*** Macros for THR1 pin ***/
+#define THR1_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 22U)) & 0x01U)
+#define THR1_PIN                  PORT_PIN_PA22
+
+/*** Macros for THR2 pin ***/
+#define THR2_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 23U)) & 0x01U)
+#define THR2_PIN                  PORT_PIN_PA23
 
 /*** Macros for DS_CLK pin ***/
 #define DS_CLK_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 2U))

@@ -11,15 +11,18 @@ void led_init(void){
 }
 
 void led_on(void){
-    RED_LED_Set();
+    // No longer implemented. Pin used for THR1
+    asm("nop");
 }
 
 void led_off(void){
-    RED_LED_Clear();
+    // No longer implemented. Pin used for THR1
+    asm("nop");
 }
 
 void led_toggle(void){
-    RED_LED_Toggle();
+    // No longer implemented. Pin used for THR1
+    asm("nop");
 }
 
 static inline void dotstar_write(uint8_t val){

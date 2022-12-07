@@ -6,6 +6,7 @@
 #include <delay.h>
 #include <math.h>
 #include <usb.h>
+#include <thruster.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -13,13 +14,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Stack sizes
-#define TASK_LED_SSIZE                      (configMINIMAL_STACK_SIZE)
 #define TASK_RGB_SSIZE                      (configMINIMAL_STACK_SIZE)
 #define TASK_PCCOMM_SSIZE                   (configMINIMAL_STACK_SIZE)
 #define TASK_USB_DEVICE_SSIZE               (192)                               // This is size used in CDC-MSC example
 
 // Task priorities
-#define TASK_LED_PRIORITY                   (1)
 #define TASK_RGB_PRIORITY                   (1)
 #define TASK_PCCOMM_PRIORITY                (1)
 #define TASK_USB_DEVICE_PRIORITY            (2)
@@ -27,21 +26,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Task handles
-static TaskHandle_t task_led_handle;
 static TaskHandle_t task_rgb_handle;
 static TaskHandle_t task_pccomm_handle;
 static TaskHandle_t task_usb_device_handle;
 
-
-/**
- * Thread to periodically blink the LED
- */
-void led_task(void *argument){
-    while(1){
-        led_toggle();
-        vTaskDelay(250 / portTICK_PERIOD_MS);
-    }
-}
 
 static void hsv_to_rgb(float *rgb, float h, float s, float v){
     // https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB
@@ -127,6 +115,7 @@ int main(void){
     led_init();
     led_off();
     usb_init();
+    thruster_init();
     // -------------------------------------------------------------------------
     
     // -------------------------------------------------------------------------
@@ -147,14 +136,6 @@ int main(void){
         NULL, 
         TASK_PCCOMM_PRIORITY, 
         &task_pccomm_handle
-    );
-    xTaskCreate(
-        led_task, 
-        "led_task", 
-        TASK_LED_SSIZE, 
-        NULL, 
-        TASK_LED_PRIORITY, 
-        &task_led_handle
     );
     xTaskCreate(
         rgb_task, 
