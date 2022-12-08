@@ -4,6 +4,33 @@
 #include <pccomm.h>
 #include <cmdctrl.h>
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Task configuration
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Stack sizes
+#define TASK_USB_DEVICE_SSIZE               (192)                               // This is size used in CDC-MSC example
+#define TASK_COMMUNICATE_SSIZE              (configMINIMAL_STACK_SIZE)
+
+// Task priorities
+#define TASK_USB_DEVICE_PRIORITY            (configMAX_PRIORITIES - 1)          // Must happen quickly for TUSB to work
+#define TASK_COMMUNICATE_PRIORITY           (configMAX_PRIORITIES - 2)          // Must handle usb data quickly
+                                                                                // Handling commands from PC is critical
+// TODO: Task to handle sensor data will be lower priority
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///  Task Handles
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+TaskHandle_t task_usb_device_handle;
+TaskHandle_t task_communicate_handle;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Thread (task) functions
@@ -28,9 +55,8 @@ void communicate_task(void *arg){
             // There is data to handle from the PC
             // Read and parse the data
             if(pccomm_read_and_parse()){
-                // Give the message to cmdctrl to handle (exclude last two bytes being CRC)
-                // Use the message's CRC as it's identifier
-                cmdctrl_handle_cmd(pccomm_read_crc, pccomm_read_buf, pccomm_read_len - 2);
+                // Inform cmdctrl there is a complete message
+                cmdctrl_handle_message();
             }
 
             // If there is still data to handle, ensure flag is set again
@@ -67,7 +93,22 @@ void usb_device_task(void *argument){
 
 void threads_init(void){
     // Create RTOS threads
-    // TODO
+    xTaskCreate(
+        usb_device_task,
+        "usb_device_task",
+        TASK_USB_DEVICE_SSIZE,
+        NULL,
+        TASK_USB_DEVICE_PRIORITY,
+        &task_usb_device_handle
+    );
+    xTaskCreate(
+        communicate_task,
+        "communicate_task",
+        TASK_COMMUNICATE_SSIZE,
+        NULL,
+        TASK_COMMUNICATE_PRIORITY,
+        &task_communicate_handle
+    );
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

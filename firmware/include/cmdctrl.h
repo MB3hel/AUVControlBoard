@@ -8,9 +8,6 @@
 void cmdctrl_init(void);
 
 /**
- * Handle a command
- * @param msg_id Identifier of the message
- * @param msg The message data
- * @param len Length of message data
+ * Handle a message received from the pc
  */
-void cmdctrl_handle_cmd(uint16_t msg_id, uint8_t *msg, unsigned int len);
+void cmdctrl_handle_message();

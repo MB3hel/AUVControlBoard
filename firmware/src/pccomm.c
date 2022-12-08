@@ -1,13 +1,14 @@
 #include <pccomm.h>
 #include <tusb.h>
+#include <conversions.h>
 
 // Comm protocol special bytes
 #define START_BYTE          253
 #define END_BYTE            254
 #define ESCAPE_BYTE         255
 
-uint8_t pccomm_pccomm_read_buf[PCCOMM_MAX_MSG_LEN + 2];
-unsigned int pccomm_pccomm_read_len = 0;
+uint8_t pccomm_read_buf[PCCOMM_MAX_MSG_LEN + 2];
+unsigned int pccomm_read_len = 0;
 uint16_t pccomm_read_crc = 0;
 
 /**
@@ -73,9 +74,10 @@ bool pccomm_read_and_parse(void){
                 // Handle end byte (special meaning when not escaped)
                 // End byte means the buffer now holds the entire message
 
-                // Calculate CRC of read data. Exclude last two bytes (these are the read crc)
+                // Calculate CRC of read data. Exclude last two bytes.
+                // Last two bytes are the CRC (big endian) appended to the original data
                 uint16_t calc_crc = crc16_ccitt_false(pccomm_read_buf, pccomm_read_len - 2);
-                pccomm_read_crc = (pccomm_read_buf[pccomm_read_len - 2] << 8) | pccomm_read_buf[pccomm_read_len - 1];
+                pccomm_read_crc = conversions_data_to_int16(&pccomm_read_buf[pccomm_read_len - 2], false);
 
                 if(pccomm_read_crc == calc_crc){
                     // This is a complete, valid message

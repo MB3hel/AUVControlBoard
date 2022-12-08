@@ -8,6 +8,7 @@
 #include <thruster.h>
 #include <threads.h>
 #include <cmdctrl.h>
+#include <conversions.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -19,6 +20,7 @@ int main(void){
     // System & Peripheral Initialization
     // -------------------------------------------------------------------------
     init_frameworks();
+    conversions_init();
     delay_init();
     led_init();
     usb_init();
