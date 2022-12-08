@@ -10,7 +10,7 @@
 
 // Stack sizes
 #define TASK_USB_DEVICE_SSIZE               (192)                               // This is size used in CDC-MSC example
-#define TASK_COMMUNICATE_SSIZE              (configMINIMAL_STACK_SIZE)
+#define TASK_COMMUNICATE_SSIZE              (2*configMINIMAL_STACK_SIZE)
 
 // Task priorities
 #define TASK_USB_DEVICE_PRIORITY            (configMAX_PRIORITIES - 1)          // Must happen quickly for TUSB to work
@@ -95,7 +95,7 @@ void threads_init(void){
     // Create RTOS threads
     xTaskCreate(
         usb_device_task,
-        "usb_device_task",
+        "usbd_task",
         TASK_USB_DEVICE_SSIZE,
         NULL,
         TASK_USB_DEVICE_PRIORITY,
@@ -103,7 +103,7 @@ void threads_init(void){
     );
     xTaskCreate(
         communicate_task,
-        "communicate_task",
+        "comm_task",
         TASK_COMMUNICATE_SSIZE,
         NULL,
         TASK_COMMUNICATE_PRIORITY,
