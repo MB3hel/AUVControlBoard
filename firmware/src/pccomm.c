@@ -7,17 +7,23 @@
 #define END_BYTE            254
 #define ESCAPE_BYTE         255
 
-uint8_t pccomm_read_buf[PCCOMM_MAX_MSG_LEN + 2];
+uint8_t pccomm_read_buf[PCCOMM_MAX_MSG_LEN + 4];
 unsigned int pccomm_read_len = 0;
 uint16_t pccomm_read_crc = 0;
+
+static uint16_t curr_msg_id = 0;
+
+
+#define crc16_ccitt_false(data, len)      crc16_ccitt_false_partial((data), (len), 65535)  
 
 /**
  * Calculate 16-bit CRC (CCITT-FALSE) of the given data
  * @param data Data to calculate crc of
  * @param len Length of data
+ * @param initial Initial value to use in calc. Useful for fragmented data sets. 65535 for "default"
  * @return uint16_t Calculated crc
  */
-uint16_t crc16_ccitt_false(uint8_t *data, unsigned int len){
+uint16_t crc16_ccitt_false_partial(uint8_t *data, unsigned int len, uint16_t initial){
     uint16_t crc = 0xFFFF;
     int pos = 0;
     while(pos < len){
@@ -75,8 +81,9 @@ bool pccomm_read_and_parse(void){
                 // Handle end byte (special meaning when not escaped)
                 // End byte means the buffer now holds the entire message
 
-                // Calculate CRC of read data. Exclude last two bytes.
+                // Calculate CRC of read data. Exclude last two bytes and first two bytes.
                 // Last two bytes are the CRC (big endian) appended to the original data
+                // First two bytes are message ID. These are INCLUDED in CRC calc.
                 uint16_t calc_crc = crc16_ccitt_false(pccomm_read_buf, pccomm_read_len - 2);
                 pccomm_read_crc = conversions_data_to_int16(&pccomm_read_buf[pccomm_read_len - 2], false);
 
@@ -120,6 +127,20 @@ void pccomm_write(uint8_t *msg, unsigned int len){
     // Write start byte
     pccomm_write_one(START_BYTE);
     
+    // Write message id (big endian). Escape it as needed.
+    taskENTER_CRITICAL();
+    uint16_t msg_id = curr_msg_id;
+    curr_msg_id++;
+    taskEXIT_CRITICAL();
+    uint8_t id_buf[2];
+    conversions_int16_to_data(msg_id, id_buf, false);
+    if(id_buf[0] == START_BYTE || id_buf[0] == END_BYTE || id_buf[0] == ESCAPE_BYTE)
+        pccomm_write_one(ESCAPE_BYTE);
+    pccomm_write_one(id_buf[0]);
+    if(id_buf[1] == START_BYTE || id_buf[1] == END_BYTE || id_buf[1] == ESCAPE_BYTE)
+        pccomm_write_one(ESCAPE_BYTE);
+    pccomm_write_one(id_buf[1]);
+
     // Write each byte of msg (escaping it if necessary)
     for(unsigned int i = 0; i < len; ++i){
         if(msg[i] == START_BYTE || msg[i] == END_BYTE || msg[i] == ESCAPE_BYTE)
@@ -127,9 +148,9 @@ void pccomm_write(uint8_t *msg, unsigned int len){
         pccomm_write_one(msg[i]);
     }
 
-    // Calculate CRC and write it.
+    // Calculate CRC and write it. CRC INCLUDES MESSAGE ID BYTES!!!
     // Each byte of the CRC must also be escaped if it matches a special byte.
-    uint16_t crc = crc16_ccitt_false(msg, len);
+    uint16_t crc = crc16_ccitt_false_partial(msg, len, crc16_ccitt_false(id_buf, 2));
     uint8_t high_byte = (crc >> 8) & 0xFF;
     uint8_t low_byte = crc & 0xFF;
     if(high_byte == START_BYTE || high_byte == END_BYTE || high_byte == ESCAPE_BYTE)

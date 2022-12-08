@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     cb = None
     try:
-        cb = ControlBoard(port)
+        cb = ControlBoard(port, debug=True)
     except:
         traceback.print_exc()
         print("Failed to open communication with control board.")

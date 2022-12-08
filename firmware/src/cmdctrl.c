@@ -104,13 +104,17 @@ static void cmdctrl_acknowledge(uint16_t msg_id, uint8_t error_code){
 
 void cmdctrl_handle_message(){
     // Helper macros
-    #define msg     pccomm_read_buf
-    #define len     (pccomm_read_len - 2)
-    #define msg_id  pccomm_read_crc
+    // First two bytes of message are message ID (so skip them for actual message content)
+    // Also, skip last two bytes (these are message CRC)
+    #define msg     (&pccomm_read_buf[2])
+    #define len     (pccomm_read_len - 4)
+    
+    // Compare message to byte arrays
     #define MSG_STARTS_WITH(x)      data_startswith(msg, len, (x), sizeof((x)))
     #define MSG_EQUALS(x)           data_matches(msg, len, x, sizeof(x))
 
-    
+    // msg_id is first two bytes (unsigned 16-bit int big endian)
+    uint16_t msg_id = conversions_data_to_int16(pccomm_read_buf, false);
     
     if(MSG_STARTS_WITH(((uint8_t[]){'R', 'A', 'W'}))){
         // RAW speed set command

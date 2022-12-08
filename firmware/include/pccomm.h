@@ -7,8 +7,8 @@
 #define PCCOMM_MAX_MSG_LEN          96
 
 // Buffer to hold a message currently being read / parsed
-// (size = max_len + 2 because of 2 bytes for CRC16)
-extern uint8_t pccomm_read_buf[PCCOMM_MAX_MSG_LEN + 2];
+// (size = max_len + 4 because of 2 bytes for CRC16 and 2 bytes for message ID)
+extern uint8_t pccomm_read_buf[PCCOMM_MAX_MSG_LEN + 4];
 extern unsigned int pccomm_read_len;
 
 // CRC of a complete read message (only valid after read_and_process returns 1
