@@ -46,6 +46,9 @@
 
 static unsigned int mode;
 
+// Last used raw mode target
+static float raw_target[8];
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -57,6 +60,19 @@ static unsigned int mode;
 
 
 void cmdctrl_init(void){
+    // Initialize targets for all modes to result in no motion
+
+    // Raw mode (zero all motor speeds)
+    for(unsigned int i = 0; i < 8; ++i)
+        raw_target[i] = 0.0f;
+
+    // TODO: Local mode (zero all)
+
+    // TODO: Global mode (zero all)
+
+    // TODO: Sassist mode (set valid bool to false)
+
+    // Default to raw mode
     mode = MODE_RAW;
     led_set(COLOR_RAW);
 }
@@ -97,6 +113,17 @@ bool data_startswith(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_
             return false;
     }
     return true;
+}
+
+/**
+ * Apply the last saved speed for the current mode
+ */
+void cmdctrl_apply_saved_speed(void){
+    switch (mode){
+    case MODE_RAW:
+        mc_set_raw(raw_target);
+        break;
+    }
 }
 
 /**
@@ -142,20 +169,19 @@ void cmdctrl_handle_message(){
             // Message is correct size. Handle it.
 
             // Get speeds from message
-            float speeds[8];
-            speeds[0] = conversions_data_to_float(&msg[3], true);
-            speeds[1] = conversions_data_to_float(&msg[7], true);
-            speeds[2] = conversions_data_to_float(&msg[11], true);
-            speeds[3] = conversions_data_to_float(&msg[15], true);
-            speeds[4] = conversions_data_to_float(&msg[19], true);
-            speeds[5] = conversions_data_to_float(&msg[23], true);
-            speeds[6] = conversions_data_to_float(&msg[27], true);
-            speeds[7] = conversions_data_to_float(&msg[31], true);
+            raw_target[0] = conversions_data_to_float(&msg[3], true);
+            raw_target[1] = conversions_data_to_float(&msg[7], true);
+            raw_target[2] = conversions_data_to_float(&msg[11], true);
+            raw_target[3] = conversions_data_to_float(&msg[15], true);
+            raw_target[4] = conversions_data_to_float(&msg[19], true);
+            raw_target[5] = conversions_data_to_float(&msg[23], true);
+            raw_target[6] = conversions_data_to_float(&msg[27], true);
+            raw_target[7] = conversions_data_to_float(&msg[31], true);
 
             // Ensure speeds are in valid range
             for(unsigned int i = 0; i < 8; ++i){
-                if(speeds[i] < -1.0f) speeds[i] = -1.0f;
-                else if(speeds[i] > 1.0f) speeds[i] = 1.0f;
+                if(raw_target[i] < -1.0f) raw_target[i] = -1.0f;
+                else if(raw_target[i] > 1.0f) raw_target[i] = 1.0f;
             }
 
             // Update mode variable and LED color (if needed)
@@ -165,7 +191,7 @@ void cmdctrl_handle_message(){
             }
 
             // Update motor speeds
-            mc_set_raw(speeds);
+            mc_set_raw(raw_target);
 
             // Acknowledge message w/ no error.
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE);
@@ -186,6 +212,9 @@ void cmdctrl_handle_message(){
                 mc_invert[i] = inv & 1;
                 inv >>= 1;
             }
+
+            // Reapply saved speed when inversions change
+            cmdctrl_apply_saved_speed();
 
             // Acknowledge message w/ no error.
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE);

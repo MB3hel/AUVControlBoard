@@ -81,18 +81,23 @@ bool pccomm_read_and_parse(void){
                 // Handle end byte (special meaning when not escaped)
                 // End byte means the buffer now holds the entire message
 
-                // Calculate CRC of read data. Exclude last two bytes.
-                // Last two bytes are the CRC (big endian) appended to the original data
-                // First two bytes are message ID. These are INCLUDED in CRC calc.
-                uint16_t calc_crc = crc16_ccitt_false(pccomm_read_buf, pccomm_read_len - 2);
-                pccomm_read_crc = conversions_data_to_int16(&pccomm_read_buf[pccomm_read_len - 2], false);
-
-                if(pccomm_read_crc == calc_crc){
-                    // This is a complete, valid message
-                    return true;
-                }else{
-                    // Got a complete message, but it is invalid. Ignore it.
+                if(pccomm_read_len < 4){
+                    // Too short to contain message id and crc bits. Invalid message.
                     parse_started = false;
+                }else{
+                    // Calculate CRC of read data. Exclude last two bytes.
+                    // Last two bytes are the CRC (big endian) appended to the original data
+                    // First two bytes are message ID. These are INCLUDED in CRC calc.
+                    uint16_t calc_crc = crc16_ccitt_false(pccomm_read_buf, pccomm_read_len - 2);
+                    pccomm_read_crc = conversions_data_to_int16(&pccomm_read_buf[pccomm_read_len - 2], false);
+
+                    if(pccomm_read_crc == calc_crc){
+                        // This is a complete, valid message
+                        return true;
+                    }else{
+                        // Got a complete message, but it is invalid. Ignore it.
+                        parse_started = false;
+                    }
                 }
                 break;
             case ESCAPE_BYTE:
