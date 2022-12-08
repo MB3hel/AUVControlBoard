@@ -66,6 +66,8 @@ class ControlBoard:
             # Blocks until  a byte is available
             b = self.__ser.read()
 
+            # TODO: Implement this
+
     ## Wait to receive ack from control board
     #  @param msg_id ID of message to wait for ack
     #  @param timeout Time in seconds to wait for ack
