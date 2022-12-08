@@ -15,10 +15,19 @@
 #define MODE_SASSIST    3
 
 // LED colors for different modes
+// Different colors on different versions b/c LEDs are different
+// Designed to look visually similar
+#if defined(CONTROL_BOARD_V1)
 #define COLOR_RAW           100, 100, 0
 #define COLOR_LOCAL         10, 0, 100
 #define COLOR_GLOBAL        150, 50, 0
 #define COLOR_SASSIST       0, 100, 100
+#elif defined(CONTROL_BOARD_V2)
+#define COLOR_RAW           170, 40, 0
+#define COLOR_LOCAL         30, 0, 100
+#define COLOR_GLOBAL        255, 15, 0
+#define COLOR_SASSIST       0, 100, 100
+#endif
 
 // Acknowledge message error codes
 #define ACK_ERR_NONE                    0
@@ -45,7 +54,7 @@ static unsigned int mode;
 
 void cmdctrl_init(void){
     mode = MODE_RAW;
-    led_set(COLOR_RAW);
+    led_set(COLOR_SASSIST);
 }
 
 /**

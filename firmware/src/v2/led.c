@@ -21,6 +21,7 @@ void led_set(uint8_t r, uint8_t g, uint8_t b){
     // Thus, lowest duty cycle is max brightness
     // Multiply by 255 so 0 -> 0 and 255 -> 65535
     // This timer is 16-bit but colors specified as 8-bit
+
     TIM1->CCR1 = (255 - r) * 257;
     TIM4->CCR1 = (255 - g) * 257;
     TIM4->CCR2 = (255 - b) * 257;
