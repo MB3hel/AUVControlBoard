@@ -53,6 +53,8 @@ static unsigned int mode;
 /// CMDCTRL functions / implementation
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// TODO: Implement motor watchdog
+
 
 void cmdctrl_init(void){
     mode = MODE_RAW;
@@ -168,7 +170,28 @@ void cmdctrl_handle_message(){
             // Acknowledge message w/ no error.
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE);
         }
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'T', 'I', 'N', 'V'}))){
+        // Thruster inversion set command
+        // T, I, N, V, [inv]
+        // [inv] is an 8-bit int where MSB corresponds to thruster 8 and LSB thruster 1
+        //       1 = inverted. 0 = not inverted
+        
+        if(len != 5){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS);
+        }else{
+            // Message is correct size. Handle it.
+            uint8_t inv = msg[4];
+            for(unsigned int i = 0; i < 8; ++i){
+                mc_invert[i] = inv & 1;
+                inv >>= 1;
+            }
+
+            // Acknowledge message w/ no error.
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE);
+        }
     }else{
+        // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG);
     }
 }

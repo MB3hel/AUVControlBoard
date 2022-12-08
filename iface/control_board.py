@@ -241,6 +241,7 @@ class ControlBoard:
 
     ## Set thruster speeds in RAW mode
     #  @param speeds List of 8 speeds to send to control board. Must range from -1 to 1
+    #  @return Error code (AckError enum) from control board (or timeout)
     def set_raw(self, speeds: List[float], timeout = 0.1) -> AckError:
         # Validate provided data
         if len(speeds) != 8:
@@ -267,4 +268,21 @@ class ControlBoard:
         msg_id = self.__write_msg(bytes(data), True)
         return self.__wait_for_ack(msg_id, timeout)
 
+    ## Set thruster inversions (impacts all control modes)
+    #  @param inversions List of 8 booleans indicating if thruster is inverted. 
+    #                    True = inverted. False = not inverted.
+    #  @return Error code (AckError enum) from control board (or timeout)
+    def set_tinv(self, inversions: List[bool], timeout = 0.1) -> AckError:
+        # Construct message to send
+        data = bytearray()
+        data.extend(b'TINV')
+        inv_byte = 0
+        for i in range(8):
+            inv_byte <<= 1
+            if inversions[7 - i]:
+                inv_byte |= 1
+        data.append(inv_byte)
 
+        # Send the message and wait for acknowledgment
+        msg_id = self.__write_msg(bytes(data), True)
+        return self.__wait_for_ack(msg_id, timeout)
