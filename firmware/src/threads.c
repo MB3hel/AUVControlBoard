@@ -2,6 +2,7 @@
 #include <tusb.h>
 #include <limits.h>
 #include <pccomm.h>
+#include <cmdctrl.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -18,7 +19,7 @@ void communicate_task(void *arg){
     uint32_t notification;
 
     while(1){
-        // Wait until a notification is received
+        // Wait until a notification is received (blocks this thread)
         // notification value is a set of 32 notification bits
         xTaskNotifyWait(pdFALSE, UINT32_MAX, &notification, portMAX_DELAY);
 
@@ -27,7 +28,9 @@ void communicate_task(void *arg){
             // There is data to handle from the PC
             // Read and parse the data
             if(pccomm_read_and_parse()){
-                // TODO: Do something with the message
+                // Give the message to cmdctrl to handle (exclude last two bytes being CRC)
+                // Use the message's CRC as it's identifier
+                cmdctrl_handle_cmd(pccomm_read_crc, pccomm_read_buf, pccomm_read_len - 2);
             }
 
             // If there is still data to handle, ensure flag is set again

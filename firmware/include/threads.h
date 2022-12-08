@@ -12,8 +12,10 @@
 #define TASK_COMMUNICATE_SSIZE              (configMINIMAL_STACK_SIZE)
 
 // Task priorities
-#define TASK_USB_DEVICE_PRIORITY            (2)
-#define TASK_COMMUNICATE_PRIORITY           (1)
+#define TASK_USB_DEVICE_PRIORITY            (configMAX_PRIORITIES - 1)          // Must happen quickly for TUSB to work
+#define TASK_COMMUNICATE_PRIORITY           (configMAX_PRIORITIES - 2)          // Must handle usb data quickly
+                                                                                // Handling commands from PC is critical
+// TODO: Task to handle sensor data will be lower priority
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
