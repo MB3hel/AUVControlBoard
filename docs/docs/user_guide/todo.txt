@@ -12,3 +12,11 @@
 - Communicating with Control Board
     - Protocol
     - Specific messages
+
+
+
+- Messages
+    - Document ACK message, message id generation, ack error codes, etc
+    - RAW set
+    - TINV set
+        - Note that this will reapply the last set speed (in whatever mode) if changed
