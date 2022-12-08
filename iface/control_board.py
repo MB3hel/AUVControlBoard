@@ -224,14 +224,14 @@ class ControlBoard:
         # Calculate CRC and write it. CRC INCLUDES MESSAGE ID BYTES.
         # Each byte of CRC must also be escaped
         crc = self.__crc16_ccitt_false(msg, self.__crc16_ccitt_false(id_dat))
-        high_byte = (crc >> 8) & 0xFF
-        low_byte = crc & 0xFF
+        high_byte = ((crc >> 8) & 0xFF).to_bytes(1, 'little')
+        low_byte = (crc & 0xFF).to_bytes(1, 'little')
         if high_byte == START_BYTE or high_byte == END_BYTE or high_byte == ESCAPE_BYTE:
             self.__write_one(ESCAPE_BYTE)
-        self.__write_one(high_byte.to_bytes(1, 'little'))
+        self.__write_one(high_byte)
         if low_byte == START_BYTE or low_byte == END_BYTE or low_byte == ESCAPE_BYTE:
             self.__write_one(ESCAPE_BYTE)
-        self.__write_one(low_byte.to_bytes(1, 'little'))
+        self.__write_one(low_byte)
 
         # Write end byte
         self.__write_one(END_BYTE)
