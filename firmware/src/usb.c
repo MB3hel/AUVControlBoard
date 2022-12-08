@@ -6,6 +6,12 @@
 #include <FreeRTOS.h>
 
 
+// Special bytes for protocol
+#define START_BYTE          253
+#define END_BYTE            254
+#define ESCAPE_BYTE         255
+
+
 void usb_init(void){
 #if defined(CONTROL_BOARD_V1)
     // Set interrupt to highest allowed priority
@@ -29,37 +35,5 @@ void usb_init(void){
     USB_OTG_FS->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
     USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSBSEN;
     USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSASEN;
-#endif
-}
-
-void usb_device_task(void *argument){
-    tud_init(BOARD_TUD_RHPORT);
-    while(1){
-        // This call will block thread until there is / are event(s)
-        tud_task();
-    }
-}
-
-void usb_write(uint8_t *data, unsigned int len){
-    if(!tud_inited())
-        return;
-    tud_cdc_write(data, len);
-    tud_cdc_write_flush();
-}
-
-void usb_writestr(const char *msg){
-#if CHAR_BIT == 8
-    // char is an 8-bit int, so pointer cast is fine
-    // This is fast.
-    usb_write((uint8_t*)msg, strlen(msg));
-#else
-    // Copy data. This is significantly slower.
-    unsigned int len = strlen(msg);
-    uint8_t *data = pvPortMalloc(len * sizeof(uint8_t));
-    for(unsigned int i = 0; i < len; ++i){
-        data[i] = msg[i];
-    }
-    usb_write(data, len);
-    vPortFree(data);
 #endif
 }
