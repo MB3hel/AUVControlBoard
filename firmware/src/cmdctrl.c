@@ -48,7 +48,7 @@ static unsigned int mode;
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// CMDCTRL functions / implementatoin
+/// CMDCTRL functions / implementation
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -137,8 +137,6 @@ void cmdctrl_handle_message(){
         }else{
             // Message is correct size. Handle it.
 
-            led_set(0, 100, 0);
-
             // Get speeds from message
             float speeds[8];
             speeds[0] = conversions_data_to_float(&msg[3], true);
@@ -149,6 +147,12 @@ void cmdctrl_handle_message(){
             speeds[5] = conversions_data_to_float(&msg[23], true);
             speeds[6] = conversions_data_to_float(&msg[27], true);
             speeds[7] = conversions_data_to_float(&msg[31], true);
+
+            // Update mode variable and LED color (if needed)
+            if(mode != MODE_RAW){
+                mode = MODE_RAW;
+                led_set(COLOR_RAW);
+            }
 
             // Update motor speeds
             // TODO: Replace this with calls to a motor_control layer
