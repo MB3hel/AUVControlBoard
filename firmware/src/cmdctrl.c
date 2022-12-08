@@ -54,7 +54,7 @@ static unsigned int mode;
 
 void cmdctrl_init(void){
     mode = MODE_RAW;
-    led_set(COLOR_SASSIST);
+    led_set(COLOR_RAW);
 }
 
 /**
