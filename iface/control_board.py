@@ -22,6 +22,7 @@ class ControlBoard:
     ## Open communication with a control board
     #  @param port Serial port to communicate with control board by
     def __init__(self, port: str, debug = False):
+        self.__read_thread = None
         self.__id_mutex = threading.Lock()
         self.__msg_id = 0
         self.__debug = debug
