@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     cb = None
     try:
-        cb = ControlBoard(port, debug=True)
+        cb = ControlBoard(port)
     except:
         traceback.print_exc()
         print("Failed to open communication with control board.")
@@ -26,10 +26,3 @@ if __name__ == "__main__":
         traceback.print_exc()
         exit(1)
     print("RAW speed set.")
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        exit(0)
-    except:
-        exit(1)

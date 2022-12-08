@@ -79,8 +79,7 @@ void usb_device_task(void *argument){
 
         // If data now available, notify the communication task
         if(tud_cdc_available()){
-            // xTaskNotify(task_communicate_handle, NOTIF_COMM_DATA, eSetBits);
-            asm("nop");
+            xTaskNotify(task_communicate_handle, NOTIF_COMM_DATA, eSetBits);
         }
     }
 }

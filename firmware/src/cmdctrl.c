@@ -105,7 +105,7 @@ static void cmdctrl_acknowledge(uint16_t msg_id, uint8_t error_code){
 void cmdctrl_handle_message(){
     // Helper macros
     #define msg     pccomm_read_buf
-    #define len     pccomm_read_len
+    #define len     (pccomm_read_len - 2)
     #define msg_id  pccomm_read_crc
     #define MSG_STARTS_WITH(x)      data_startswith(msg, len, (x), sizeof((x)))
     #define MSG_EQUALS(x)           data_matches(msg, len, x, sizeof(x))
