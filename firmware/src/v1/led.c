@@ -6,23 +6,8 @@
 
 
 void led_init(void){
-    led_off();
-    led_rgb_set(0, 0, 0);
-}
-
-void led_on(void){
-    // No longer implemented. Pin used for THR1
-    asm("nop");
-}
-
-void led_off(void){
-    // No longer implemented. Pin used for THR1
-    asm("nop");
-}
-
-void led_toggle(void){
-    // No longer implemented. Pin used for THR1
-    asm("nop");
+    // All initialization handled in generated code
+    led_set(0, 0, 0);
 }
 
 static inline void dotstar_write(uint8_t val){
@@ -38,7 +23,7 @@ static inline void dotstar_write(uint8_t val){
     }
 }
 
-void led_rgb_set(uint8_t r, uint8_t g, uint8_t b){
+void led_set(uint8_t r, uint8_t g, uint8_t b){
     // ItsyBitsy M4 includes an RGB "dotstar" LED
     // The pins used for this are setup as gpio outputs in the MCC project
     // NOTE: Since this is bitbanged and requires fairly precise us level delays,

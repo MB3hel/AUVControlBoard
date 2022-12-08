@@ -12,23 +12,11 @@ void led_init(void){
     HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);           // G
     HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);           // B
 
-    led_off();
-    led_rgb_set(0, 0, 0);
+    led_set(0, 0, 0);
 }
 
-void led_on(void){
-    HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_RESET);
-}
 
-void led_off(void){
-    HAL_GPIO_WritePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin, GPIO_PIN_SET);
-}
-
-void led_toggle(void){
-    HAL_GPIO_TogglePin(BLUE_LED_GPIO_Port, BLUE_LED_Pin);
-}
-
-void led_rgb_set(uint8_t r, uint8_t g, uint8_t b){
+void led_set(uint8_t r, uint8_t g, uint8_t b){
     // 255 - [r,g,b] because LED is common anode
     // Thus, lowest duty cycle is max brightness
     // Multiply by 255 so 0 -> 0 and 255 -> 65535

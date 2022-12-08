@@ -90,7 +90,7 @@ void rgb_task(void *argument){
     while(1){
         hue = fmodf(hue + 5.0f, 359.0f);
         hsv_to_rgb(rgb, hue, sat, val);
-        led_rgb_set((uint8_t)(rgb[0] * 255), (uint8_t)(rgb[1] * 255), (uint8_t)(rgb[2] * 255));
+        led_set((uint8_t)(rgb[0] * 255), (uint8_t)(rgb[1] * 255), (uint8_t)(rgb[2] * 255));
         vTaskDelay(75 / portTICK_PERIOD_MS);
     }
 }
@@ -113,7 +113,6 @@ int main(void){
     init_frameworks();
     delay_init();
     led_init();
-    led_off();
     usb_init();
     thruster_init();
     // -------------------------------------------------------------------------
