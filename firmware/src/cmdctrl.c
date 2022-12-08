@@ -3,6 +3,7 @@
 #include <pccomm.h>
 #include <conversions.h>
 #include <thruster.h>
+#include <motor_control.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -30,9 +31,10 @@
 #endif
 
 // Acknowledge message error codes
-#define ACK_ERR_NONE                    0
-#define ACK_ERR_UNKNOWN_MSG             1
-#define ACK_ERR_INVALID_ARGS            2
+#define ACK_ERR_NONE                    0   // No error
+#define ACK_ERR_UNKNOWN_MSG             1   // The message is not recognized
+#define ACK_ERR_INVALID_ARGS            2   // Arguments are invalid (too many, too few, etc)
+#define ACK_ERR_INVALID_CMD             3   // Command is known, but invalid at this time
 // Note 255 reserved for timeout error codes
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -148,6 +150,12 @@ void cmdctrl_handle_message(){
             speeds[6] = conversions_data_to_float(&msg[27], true);
             speeds[7] = conversions_data_to_float(&msg[31], true);
 
+            // Ensure speeds are in valid range
+            for(unsigned int i = 0; i < 8; ++i){
+                if(speeds[i] < -1.0f) speeds[i] = -1.0f;
+                else if(speeds[i] > 1.0f) speeds[i] = 1.0f;
+            }
+
             // Update mode variable and LED color (if needed)
             if(mode != MODE_RAW){
                 mode = MODE_RAW;
@@ -155,8 +163,7 @@ void cmdctrl_handle_message(){
             }
 
             // Update motor speeds
-            // TODO: Replace this with calls to a motor_control layer
-            thruster_set(speeds);
+            mc_set_raw(speeds);
 
             // Acknowledge message w/ no error.
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE);
