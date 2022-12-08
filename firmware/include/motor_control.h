@@ -1,6 +1,12 @@
 #pragma once
 
 #include <matrix.h>
+#include <stdint.h>
+#include <stdbool.h>
+
+
+// Inverts positive and negative on specific thrusters
+extern bool mc_invert[8];
 
 
 /**

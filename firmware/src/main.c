@@ -9,6 +9,7 @@
 #include <threads.h>
 #include <cmdctrl.h>
 #include <conversions.h>
+#include <motor_control.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -25,6 +26,7 @@ int main(void){
     led_init();
     usb_init();
     thruster_init();
+    mc_init();
     cmdctrl_init();
     // -------------------------------------------------------------------------
     
