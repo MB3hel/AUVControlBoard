@@ -42,6 +42,8 @@ int main(void){
 
     // Start scheduler should never return. This should never run, but is
     // included to make debugging easier in case it does
+    taskDISABLE_INTERRUPTS();
+    led_set(255, 0, 0);
     while(1){
         asm("nop");
     }
