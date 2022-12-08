@@ -25,4 +25,4 @@ if __name__ == "__main__":
     except:
         traceback.print_exc()
         exit(1)
-    print("RAW set error code = {}".format(int(res)))
+    print("RAW set error code = {}".format(res.name))

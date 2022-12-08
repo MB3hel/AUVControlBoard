@@ -13,7 +13,7 @@ ESCAPE_BYTE = b'\xff'
 
 class ControlBoard:
 
-    class AckError:
+    class AckError(IntEnum):
         NONE = 0
         UNKNOWN_MSG = 1
         INVALID_ARGS = 2
@@ -163,7 +163,7 @@ class ControlBoard:
         ec = None
         with self.__ack_conds[msg_id]:
             if self.__ack_conds[msg_id].wait(timeout):
-                ec = self.__ack_errrs[msg_id]
+                ec = self.AckError(self.__ack_errrs[msg_id])
             else:
                 ec = self.AckError.TIMEOUT
         del self.__ack_conds[msg_id]
@@ -179,6 +179,7 @@ class ControlBoard:
 
     ## Send a message to control board (properly encoded)
     #  @param msg Raw message (payload bytes) to send
+    #  @param ack True if message needs to wait for ack (will setup structure to allow wait for ack)
     def __write_msg(self, msg: bytes, ack = False):
         global START_BYTE, END_BYTE, ESCAPE_BYTE    
 
@@ -191,6 +192,7 @@ class ControlBoard:
                 self.__msg_id = 0
 
         # Prepare ack structures if message will need ack
+        # This must be done before message is sent to ensure ack handled properly
         if ack:
             self.__prepare_for_ack(msg_id)
 
