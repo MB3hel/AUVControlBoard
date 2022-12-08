@@ -49,7 +49,8 @@ bool pccomm_read_and_parse(void){
         byte = tud_cdc_read_char();
 
         // If message queue is full, discard bytes
-        if(pccomm_read_len == sizeof(pccomm_read_buf))
+        // Allow normal code to run for start byte because it will zero len
+        if(byte != START_BYTE && pccomm_read_len == PCCOMM_MAX_MSG_LEN)
             continue;
 
         // Parse the meaning of this byte

@@ -123,6 +123,8 @@ void cmdctrl_handle_message(){
         }else{
             // Message is correct size. Handle it.
 
+            led_set(0, 100, 0);
+
             // Get speeds from message
             float speeds[8];
             speeds[0] = conversions_data_to_float(&msg[3], true);
