@@ -24,6 +24,7 @@
 #define ACK_ERR_NONE                    0
 #define ACK_ERR_UNKNOWN_MSG             1
 #define ACK_ERR_INVALID_ARGS            2
+// Note 255 reserved for timeout error codes
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -98,7 +99,7 @@ static void cmdctrl_acknowledge(uint16_t msg_id, uint8_t error_code){
     data[1] = 'C';
     data[2] = 'K';
     conversions_int16_to_data(msg_id, &data[3], false);
-    data[3] = error_code;
+    data[5] = error_code;
     pccomm_write(data, sizeof(data));
 }
 
@@ -143,6 +144,9 @@ void cmdctrl_handle_message(){
             // Update motor speeds
             // TODO: Replace this with calls to a motor_control layer
             thruster_set(speeds);
+
+            // Acknowledge message w/ no error.
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE);
         }
     }else{
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG);

@@ -14,7 +14,7 @@ uint16_t pccomm_read_crc = 0;
 static uint16_t curr_msg_id = 0;
 
 
-#define crc16_ccitt_false(data, len)      crc16_ccitt_false_partial((data), (len), 65535)  
+#define crc16_ccitt_false(data, len)      crc16_ccitt_false_partial((data), (len), 0xFFFF)  
 
 /**
  * Calculate 16-bit CRC (CCITT-FALSE) of the given data
@@ -24,7 +24,7 @@ static uint16_t curr_msg_id = 0;
  * @return uint16_t Calculated crc
  */
 uint16_t crc16_ccitt_false_partial(uint8_t *data, unsigned int len, uint16_t initial){
-    uint16_t crc = 0xFFFF;
+    uint16_t crc = initial;
     int pos = 0;
     while(pos < len){
         uint8_t b = data[pos];
@@ -81,7 +81,7 @@ bool pccomm_read_and_parse(void){
                 // Handle end byte (special meaning when not escaped)
                 // End byte means the buffer now holds the entire message
 
-                // Calculate CRC of read data. Exclude last two bytes and first two bytes.
+                // Calculate CRC of read data. Exclude last two bytes.
                 // Last two bytes are the CRC (big endian) appended to the original data
                 // First two bytes are message ID. These are INCLUDED in CRC calc.
                 uint16_t calc_crc = crc16_ccitt_false(pccomm_read_buf, pccomm_read_len - 2);
@@ -150,7 +150,8 @@ void pccomm_write(uint8_t *msg, unsigned int len){
 
     // Calculate CRC and write it. CRC INCLUDES MESSAGE ID BYTES!!!
     // Each byte of the CRC must also be escaped if it matches a special byte.
-    uint16_t crc = crc16_ccitt_false_partial(msg, len, crc16_ccitt_false(id_buf, 2));
+    uint16_t crc = crc16_ccitt_false(id_buf, 2);
+    crc = crc16_ccitt_false_partial(msg, len, crc);
     uint8_t high_byte = (crc >> 8) & 0xFF;
     uint8_t low_byte = crc & 0xFF;
     if(high_byte == START_BYTE || high_byte == END_BYTE || high_byte == ESCAPE_BYTE)

@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     cb = None
     try:
-        cb = ControlBoard(port, debug=True)
+        cb = ControlBoard(port, debug=False)
     except:
         traceback.print_exc()
         print("Failed to open communication with control board.")
@@ -21,8 +21,8 @@ if __name__ == "__main__":
     
     print("Setting RAW speed...")
     try:
-        cb.set_raw([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+        res = cb.set_raw([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     except:
         traceback.print_exc()
         exit(1)
-    print("RAW speed set.")
+    print("RAW set error code = {}".format(int(res)))
