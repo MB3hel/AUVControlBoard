@@ -158,7 +158,7 @@ void cmdctrl_handle_message(){
     if(MSG_STARTS_WITH(((uint8_t[]){'R', 'A', 'W'}))){
         // RAW speed set command
         // R, A, W, [speed_0], [speed_1], [speed_2], [speed_3], [speed_4], [speed_5], [speed_6], [speed_7]
-        // [speed_i] is a 32-bit float
+        // [speed_i] is a 32-bit float (little endian)
 
         if(len != 35){
             // Message is incorrect size
@@ -234,8 +234,50 @@ void cmdctrl_handle_message(){
 
         // Acknowledge message w/ no error.
         cmdctrl_acknowledge(msg_id, ACK_ERR_NONE);
-    }
-    else{
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'M', 'M', 'A', 'T', 'S'}))){
+        // Set Motor Matrix Row command
+        // M, M, A, T, S, [thruster_num], [data]
+        // [thruster_num] is an 8-bit int from 1-8 (inclusive on both ends)
+        // [data] is a set of 6 32-bit floats (24 bytes)
+        //        Lowest indices are lowest thruster number (little endian floats)
+
+        if(len != 30){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS);
+        }else{
+            // Message is correct size
+            
+            if(msg[5] > 8 || msg[5] < 1){
+                // Invalid thruster number
+                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS);
+            }else{
+                // Construct data array
+                // Note: there is no validation of motor matrix data
+                float data[6];
+                data[0] = conversions_data_to_float(&msg[6], true);
+                data[1] = conversions_data_to_float(&msg[10], true);
+                data[2] = conversions_data_to_float(&msg[14], true);
+                data[3] = conversions_data_to_float(&msg[18], true);
+                data[4] = conversions_data_to_float(&msg[22], true);
+                data[5] = conversions_data_to_float(&msg[26], true);
+
+                // Set the data
+                mc_set_dof_matrix(msg[5], data);
+
+                // Acknowledge message w/ no error.
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE);
+            }
+        }
+    }else if(MSG_EQUALS(((uint8_t[]){'M', 'M', 'A', 'T', 'U'}))){
+        // Motor Matrix Update command (call after all rows written)
+        // M, M, A, T, U
+
+        // Recalc things after motor matrix is fully updated
+        mc_recalc();
+
+        // Acknowledge message w/ no error.
+        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE);
+    }else{
         // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG);
     }
