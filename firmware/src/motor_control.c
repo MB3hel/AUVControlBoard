@@ -1,6 +1,7 @@
 
 #include <motor_control.h>
 #include <app.h>
+#include <matrix.h>
 #include <thruster.h>
 #include <FreeRTOS.h>
 #include <semphr.h>
@@ -10,6 +11,8 @@
 
 // Globals
 bool mc_invert[8];
+static float dof_matrix_dat[8*6];
+static matrix dof_matrix;
 
 // For motor watchdog
 static bool motors_killed;
@@ -28,6 +31,9 @@ void mc_wdog_timeout(TimerHandle_t timer);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void mc_init(void){
+    // Initialize matrices
+    matrix_init_static(&dof_matrix, dof_matrix_dat, 8, 6);
+
     // Create required RTOS objects
     motor_mutex = xSemaphoreCreateMutex();
     motor_wdog_timer = xTimerCreate(
@@ -48,7 +54,11 @@ void mc_init(void){
     }
 }
 
-void mc_set_motor_matrix(matrix *motor_mat){
+void mc_set_dof_matrix(unsigned int thruster_num, float *row_data){
+    matrix_set_row(&dof_matrix, thruster_num - 1, row_data);
+}
+
+void mc_recalc(void){
     // TODO: Implement actual math
 }
 
