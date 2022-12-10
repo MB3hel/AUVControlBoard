@@ -7,32 +7,46 @@
 #include <semphr.h>
 #include <timers.h>
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Macros
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #define MOTOR_WDOG_PERIOD_MS            1500
 
-// Globals
-bool mc_invert[8];
-static float dof_matrix_dat[8*6];
-static matrix dof_matrix;
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// For motor watchdog
-static bool motors_killed;
-TimerHandle_t motor_wdog_timer;
 
-// Ensures thread safe API for motor management
-// Necessary because motor watchdog callback runs in timer task context
-SemaphoreHandle_t motor_mutex;
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Globals
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Forward declaration b/c used in init
-void mc_wdog_timeout(TimerHandle_t timer);
+bool mc_invert[8];                                      // Tracks thruster inversions
+
+static float dof_matrix_arr[8*6];                       // Backing array for DoF matrix
+static matrix dof_matrix;                               // DoF matrix
+
+static float overlap_arrs[8][8];                        // Backing arrays for overlap vectors
+static matrix overlap_vectors[8];                       // overlaps vectors
+
+static bool motors_killed;                              // Motor (watchdog) state
+TimerHandle_t motor_wdog_timer;                         // Timer to implement motor watchdog
+
+SemaphoreHandle_t motor_mutex;                          // Ensures motor & watchdog access is thread safe
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Initialization & Setup
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void mc_wdog_timeout(TimerHandle_t timer);
+
 void mc_init(void){
     // Initialize matrices
-    matrix_init_static(&dof_matrix, dof_matrix_dat, 8, 6);
+    matrix_init_static(&dof_matrix, dof_matrix_arr, 8, 6);
+    for(unsigned int i = 0; i < 8; ++i)
+        matrix_init_static(&overlap_vectors[i], overlap_arrs[i], 8, 1);
 
     // Create required RTOS objects
     motor_mutex = xSemaphoreCreateMutex();
@@ -45,7 +59,7 @@ void mc_init(void){
     );
     asm("nop");
 
-    // Kill motors at startup
+    // Motors killed at startup
     motors_killed = true;
 
     // Default all motors to non-inverted
@@ -59,7 +73,42 @@ void mc_set_dof_matrix(unsigned int thruster_num, float *row_data){
 }
 
 void mc_recalc(void){
-    // TODO: Implement actual math
+    // Called when done updating DoF matrix
+
+    // Construct contribution  matrix (used to calculate overlap vectors)
+    float contribution_arr[8*6];
+    matrix contribution_matrix;
+    matrix_init_static(&contribution_matrix, contribution_arr, 8, 6);
+    for(size_t row = 0; row < contribution_matrix.rows; ++row){
+        for(size_t col = 0; col < contribution_matrix.cols; ++col){
+            float dof_item;
+            matrix_get_item(&dof_item, &dof_matrix, row, col);
+            matrix_set_item(&contribution_matrix, row, col, (dof_item != 0) ? 1 : 0);
+        }
+    }
+
+    // Construct overlap vectors
+    float rowdata[8];
+    float v_arr[6];
+    matrix v;
+    matrix_init_static(&v, v_arr, 6, 1);
+    for(size_t r = 0; r < contribution_matrix.rows; ++r){
+        matrix_init_static(&overlap_vectors[r], overlap_arrs[r], contribution_matrix.rows, 1);
+
+        // v = contribution_matrix row r transposed
+        matrix_get_row(rowdata, &contribution_matrix, r);
+        matrix_set_col(&v, 0, rowdata);
+
+        matrix_mul(&overlap_vectors[r], &contribution_matrix, &v);
+
+        for(size_t row = 0; row < overlap_vectors[r].rows; ++row){
+            for(size_t col = 0; col < overlap_vectors[r].cols; ++col){
+                float item;
+                matrix_get_item(&item, &overlap_vectors[r], row, col);
+                matrix_set_item(&overlap_vectors[r], row, col, (item != 0) ? 1 : 0);
+            }
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
