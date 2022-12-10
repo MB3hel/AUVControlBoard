@@ -1,49 +1,33 @@
-#include <threads.h>
+#include <app.h>
 #include <tusb.h>
 #include <limits.h>
 #include <pccomm.h>
 #include <cmdctrl.h>
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// Task configuration
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// Stack sizes
-#define TASK_USB_DEVICE_SSIZE               (192)                               // This is size used in CDC-MSC example
-#define TASK_COMMUNICATE_SSIZE              (6*configMINIMAL_STACK_SIZE)        // May call many levels of functions
-
-// Task priorities
-#define TASK_USB_DEVICE_PRIORITY            (configMAX_PRIORITIES - 1)          // Must happen quickly for TUSB to work
-#define TASK_COMMUNICATE_PRIORITY           (configMAX_PRIORITIES - 2)          // Must handle usb data quickly
-                                                                                // Handling commands from PC is critical
-// TODO: Task to handle sensor data will be lower priority
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///  Task Handles
+///  RTOS object handles
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-TaskHandle_t task_usb_device_handle;
-TaskHandle_t task_communicate_handle;
+// Task handles
+TaskHandle_t usb_device_task;
+TaskHandle_t cmdctrl_task;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Thread (task) functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define NOTIF_COMM_DATA             0x1
-
-
 /**
- * Thread to handle messages from the pc
+ * Command and control task
+ * cmdctrl (and motor_control) functions are not thread safe, thus only this thread
+ * should ever call such functions
  */
-void communicate_task(void *arg){
+void cmdctrl_task_func(void *arg){
     uint32_t notification;
+    
 
     while(1){
         // Wait until a notification is received (blocks this thread)
@@ -51,7 +35,7 @@ void communicate_task(void *arg){
         xTaskNotifyWait(pdFALSE, UINT32_MAX, &notification, portMAX_DELAY);
 
         // Handle the notification
-        if(notification & NOTIF_COMM_DATA){
+        if(notification & NOTIF_CMDCTRL_PCDAATA){
             // There is data to handle from the PC
             // Read and parse the data
             if(pccomm_read_and_parse()){
@@ -63,7 +47,7 @@ void communicate_task(void *arg){
             // This is necessary because read_and_parse may return true part way through reading data
             // Which means that usb_device_task will not notify again, but there is unhandled data
             if(tud_cdc_available())
-                xTaskNotify(task_communicate_handle, NOTIF_COMM_DATA, eSetBits);
+                xTaskNotify(cmdctrl_task, NOTIF_CMDCTRL_PCDAATA, eSetBits);
         }
     }
 }
@@ -71,7 +55,7 @@ void communicate_task(void *arg){
 /**
  * Thread to handle TinyUSB device mode events
  */
-void usb_device_task(void *argument){
+void usb_device_task_func(void *argument){
     tud_init(BOARD_TUD_RHPORT);
     while(1){
         // This call will block thread until there is / are event(s)
@@ -79,7 +63,7 @@ void usb_device_task(void *argument){
 
         // If data now available, notify the communication task
         if(tud_cdc_available()){
-            xTaskNotify(task_communicate_handle, NOTIF_COMM_DATA, eSetBits);
+            xTaskNotify(cmdctrl_task, NOTIF_CMDCTRL_PCDAATA, eSetBits);
         }
     }
 }
@@ -88,26 +72,26 @@ void usb_device_task(void *argument){
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// Thread management
+/// App initialization & management
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void threads_init(void){
+void app_init(void){
     // Create RTOS threads
     xTaskCreate(
-        usb_device_task,
+        usb_device_task_func,
         "usbd_task",
         TASK_USB_DEVICE_SSIZE,
         NULL,
         TASK_USB_DEVICE_PRIORITY,
-        &task_usb_device_handle
+        &usb_device_task
     );
     xTaskCreate(
-        communicate_task,
-        "comm_task",
-        TASK_COMMUNICATE_SSIZE,
+        cmdctrl_task_func,
+        "cmdctrl_task",
+        TASK_CMDCTRL_SSIZE,
         NULL,
-        TASK_COMMUNICATE_PRIORITY,
-        &task_communicate_handle
+        TASK_CMDCTRL_PRIORITY,
+        &cmdctrl_task
     );
 }
 
