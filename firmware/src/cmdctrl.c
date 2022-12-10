@@ -190,6 +190,10 @@ void cmdctrl_handle_message(){
                 led_set(COLOR_RAW);
             }
 
+            // Feed watchdog when speeds are set
+            // Important to call before speed set function in case currently killed
+            mc_wdog_feed();
+
             // Update motor speeds
             mc_set_raw(raw_target);
 

@@ -28,7 +28,6 @@ TaskHandle_t cmdctrl_task;
 void cmdctrl_task_func(void *arg){
     uint32_t notification;
     
-
     while(1){
         // Wait until a notification is received (blocks this thread)
         // notification value is a set of 32 notification bits
