@@ -21,6 +21,11 @@ void mc_init(void);
 void mc_set_motor_matrix(matrix *motor_mat);
 
 /**
+ * Feed (reset) motor watchdog
+ */
+void mc_wdog_feed(void);
+
+/**
  * Set motor speeds in RAW mode
  * @param speeds Array of 8 speeds (for each thruster). From -1.0 to 1.0
  */
