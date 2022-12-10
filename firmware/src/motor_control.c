@@ -57,7 +57,6 @@ void mc_init(void){
         NULL,
         mc_wdog_timeout
     );
-    asm("nop");
 
     // Motors killed at startup
     motors_killed = true;
