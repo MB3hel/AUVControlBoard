@@ -22,8 +22,10 @@ void mc_set_motor_matrix(matrix *motor_mat);
 
 /**
  * Feed (reset) motor watchdog
+ * @return Whether the motors were previously killed
  */
-void mc_wdog_feed(void);
+bool mc_wdog_feed(void);
+
 
 /**
  * Set motor speeds in RAW mode

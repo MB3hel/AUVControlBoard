@@ -224,9 +224,13 @@ void cmdctrl_handle_message(){
     }else if(MSG_EQUALS(((uint8_t[]){'W', 'D', 'G', 'F'}))){
         // Feed motor watchdog command
         // W, D, G, F
-        
+
         // Feed watchdog (as requested)
-        mc_wdog_feed();
+        bool was_killed = mc_wdog_feed();
+
+        // Restore last set speed if previously killed
+        if(was_killed)
+            cmdctrl_apply_saved_speed();
 
         // Acknowledge message w/ no error.
         cmdctrl_acknowledge(msg_id, ACK_ERR_NONE);

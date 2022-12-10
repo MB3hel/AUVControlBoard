@@ -66,13 +66,16 @@ void mc_wdog_timeout(TimerHandle_t timer){
     xSemaphoreGive(motor_mutex);
 }
 
-void mc_wdog_feed(void){
+bool mc_wdog_feed(void){
+    bool ret;
     xSemaphoreTake(motor_mutex, portMAX_DELAY);
     // If timer is inactive, this starts the timer
     // If timer is active, this resets the timer
     xTimerReset(motor_wdog_timer, portMAX_DELAY);
+    ret = motors_killed;
     motors_killed = false;
     xSemaphoreGive(motor_mutex);
+    return ret;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
