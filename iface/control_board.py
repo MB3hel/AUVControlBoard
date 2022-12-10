@@ -1,6 +1,7 @@
 
 import serial
 import struct
+import time
 from enum import IntEnum
 import threading
 from typing import List, Dict
@@ -22,6 +23,7 @@ class ControlBoard:
     ## Open communication with a control board
     #  @param port Serial port to communicate with control board by
     def __init__(self, port: str, debug = False):
+        self.__last_wdog_feed = 0
         self.__read_thread = None
         self.__id_mutex = threading.Lock()
         self.__msg_id = 0
@@ -285,4 +287,18 @@ class ControlBoard:
 
         # Send the message and wait for acknowledgment
         msg_id = self.__write_msg(bytes(data), True)
+        return self.__wait_for_ack(msg_id, timeout)
+
+    ## Keep motors alive even when speed should not change
+    #  If no speed set commands and no watchdog speed for long enough
+    #  (1500ms at time of writing) then control board will kill motors
+    #  Note: To avoid giving control board too much to process, feed commands
+    #  are limited to every 350ms at most frequent
+    def feed_motor_watchdog(self, timeout = 0.1) -> AckError:
+        # Limit watchdog feed rate
+        if time.time() - self.__last_wdog_feed < 0.35:
+            return self.AckError.NONE
+        
+        # Send command to feed watchdog and wait for ack
+        msg_id = self.__write_msg(b'WDGF', True)
         return self.__wait_for_ack(msg_id, timeout)

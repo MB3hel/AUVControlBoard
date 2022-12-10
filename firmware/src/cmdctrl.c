@@ -56,8 +56,6 @@ static float raw_target[8];
 /// CMDCTRL functions / implementation
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO: Implement motor watchdog
-
 
 void cmdctrl_init(void){
     // Initialize targets for all modes to result in no motion
@@ -223,7 +221,17 @@ void cmdctrl_handle_message(){
             // Acknowledge message w/ no error.
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE);
         }
-    }else{
+    }else if(MSG_EQUALS(((uint8_t[]){'W', 'D', 'G', 'F'}))){
+        // Feed motor watchdog command
+        // W, D, G, F
+        
+        // Feed watchdog (as requested)
+        mc_wdog_feed();
+
+        // Acknowledge message w/ no error.
+        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE);
+    }
+    else{
         // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG);
     }
