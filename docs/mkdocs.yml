@@ -9,10 +9,14 @@ nav:
   - Hardware:
     - Version 1: hardware/v1.md
     - Version 2: hardware/v2.md
+    - Off-Board Sensors: hardware/sensors.md
   - Firmware:
     - Overview: firmware/overview.md
     - Build and Flash: firmware/build.md
     - 6DOF Math: firmware/math.md
     - Firmware Development: firmware/developing.md
   - User Guide:
-    - Coming Eventually: none.md
+    - Preparing a Control Board: user_guide/preparing_board.md
+    - Using Control board: user_guide/general_use.md
+    - Communication Protocol: user_guide/comm_protocol.md
+    - Messages: user_guide/messages.md
