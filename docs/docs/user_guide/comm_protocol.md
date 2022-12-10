@@ -5,7 +5,9 @@ Communication with the control board relies on sending messages between the cont
 
 ## Hardware Communication Layer
 
-Messages are sent to the control board over the MCU's builtin USB port. The control board acts as a USB ACM CDC device. In practice, this means that it shows up as a serial (UART) port on the computer it is connected to. However, baud rate settings are irrelevant (and changing baud rates has no effect). As such, messages are sent to / received from the control board using "UART" with an undefined baud rate. It is still necessary to set a baud rate when opening a UART port (as that information is provided to the device on the other side), but the rate is unused. Additionally, it is expected to operate in 8N1 data mode (8 data bits, no parity, 1 stop bit)
+Messages are sent to the control board over the MCU's builtin USB port. The control board acts as a USB ACM CDC device. In practice, this means that it shows up as a serial (UART) port on the computer it is connected to. However, baud rate settings are irrelevant (and changing baud rates has no effect). As such, messages are sent to / received from the control board using "UART" with an undefined baud rate. It is still necessary to set a baud rate when opening a UART port (as that information is provided to the device on the other side), but the rate is unused. Additionally, it is expected to operate in 8N1 data mode (8 data bits, no parity, 1 stop bit).
+
+A stream of data is sent to the control board over this port. This data is interpreted as described below.
 
 
 ## Message Format and Construction
