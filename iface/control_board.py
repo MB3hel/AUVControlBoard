@@ -39,8 +39,12 @@ class ControlBoard:
     ## Cleanup on destruction
     def __del__(self):
         self.__stop = True
-        self.__read_thread.join()
-        self.__ser.close()
+        if self.__read_thread is not None:
+            self.__read_thread.join()
+        try:
+            self.__ser.close()
+        except:
+            pass
 
     ## Calculate the 16-bit CCITT-FALSE CRC of the given data
     #  @param msg The data to calculate CRC of
