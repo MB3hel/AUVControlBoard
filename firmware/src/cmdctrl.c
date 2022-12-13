@@ -4,6 +4,7 @@
 #include <conversions.h>
 #include <thruster.h>
 #include <motor_control.h>
+#include <FreeRTOS.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -128,17 +129,23 @@ void cmdctrl_apply_saved_speed(void){
  * Acknowledge receipt of a message
  * @param msg_id The ID of the message being acknowledged
  * @param error_code Error code for the acknowledge operation
+ * @param result Data to include as "result" in the ack message
+ * @param result_len Length of data
  */
-static void cmdctrl_acknowledge(uint16_t msg_id, uint8_t error_code){
-    // A, C, K, [message_id], [error_code]
+static void cmdctrl_acknowledge(uint16_t msg_id, uint8_t error_code, uint8_t *result, unsigned int result_len){
+    // A, C, K, [message_id], [error_code], [response]
     // [message_id] is a 16-bit number big endian
-    uint8_t data[6];
+    // [response] is arbitrary data
+    uint8_t *data = pvPortMalloc(sizeof(uint8_t) * (6 + result_len));
     data[0] = 'A';
     data[1] = 'C';
     data[2] = 'K';
     conversions_int16_to_data(msg_id, &data[3], false);
     data[5] = error_code;
-    pccomm_write(data, sizeof(data));
+    for(unsigned int i = 0; i < result_len; ++i)
+        data[6 + i] = result[i];
+    pccomm_write(data, 6 + result_len);
+    vPortFree(data);
 }
 
 void cmdctrl_handle_message(){
@@ -162,7 +169,7 @@ void cmdctrl_handle_message(){
 
         if(len != 35){
             // Message is incorrect size
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS);
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
         }else{
             // Message is correct size. Handle it.
 
@@ -196,7 +203,7 @@ void cmdctrl_handle_message(){
             mc_set_raw(raw_target);
 
             // Acknowledge message w/ no error.
-            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE);
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
     }else if(MSG_STARTS_WITH(((uint8_t[]){'T', 'I', 'N', 'V'}))){
         // Thruster inversion set command
@@ -206,7 +213,7 @@ void cmdctrl_handle_message(){
         
         if(len != 5){
             // Message is incorrect size
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS);
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
         }else{
             // Message is correct size. Handle it.
             uint8_t inv = msg[4];
@@ -219,7 +226,7 @@ void cmdctrl_handle_message(){
             cmdctrl_apply_saved_speed();
 
             // Acknowledge message w/ no error.
-            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE);
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
     }else if(MSG_EQUALS(((uint8_t[]){'W', 'D', 'G', 'F'}))){
         // Feed motor watchdog command
@@ -233,7 +240,7 @@ void cmdctrl_handle_message(){
             cmdctrl_apply_saved_speed();
 
         // Acknowledge message w/ no error.
-        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE);
+        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
     }else if(MSG_STARTS_WITH(((uint8_t[]){'M', 'M', 'A', 'T', 'S'}))){
         // Set Motor Matrix Row command
         // M, M, A, T, S, [thruster_num], [data]
@@ -243,13 +250,13 @@ void cmdctrl_handle_message(){
 
         if(len != 30){
             // Message is incorrect size
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS);
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
         }else{
             // Message is correct size
             
             if(msg[5] > 8 || msg[5] < 1){
                 // Invalid thruster number
-                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS);
+                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
             }else{
                 // Construct data array
                 // Note: there is no validation of motor matrix data
@@ -265,7 +272,7 @@ void cmdctrl_handle_message(){
                 mc_set_dof_matrix(msg[5], data);
 
                 // Acknowledge message w/ no error.
-                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE);
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
             }
         }
     }else if(MSG_EQUALS(((uint8_t[]){'M', 'M', 'A', 'T', 'U'}))){
@@ -276,10 +283,10 @@ void cmdctrl_handle_message(){
         mc_recalc();
 
         // Acknowledge message w/ no error.
-        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE);
+        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
     }else{
         // This is an unrecognized message
-        cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG);
+        cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG, NULL, 0);
     }
 }
 

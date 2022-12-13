@@ -4,7 +4,7 @@ import struct
 import time
 from enum import IntEnum
 import threading
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 
 START_BYTE = b'\xfd'
@@ -64,6 +64,7 @@ class ControlBoard:
         self.__stop = False
         self.__ack_conds: Dict[int, threading.Condition] = {}
         self.__ack_errrs: Dict[int, int] = {}
+        self.__ack_results: Dict[int, bytes] = {}
         self.__read_thread = threading.Thread(target=self.__read_task, daemon=True)
         self.__read_thread.start()
 
@@ -99,12 +100,13 @@ class ControlBoard:
     ## Handle an acknowledge message
     #  @param msg_id ID of the message being acknowledged
     #  @param error_code Result of message being acknowledged
-    def __handle_ack(self, msg_id: int, error_code: int):
+    def __handle_ack(self, msg_id: int, error_code: int, result: bytes):
         # Find a threading.Condition for the message being acknowledged
         # and set its result
         if msg_id in self.__ack_conds:
             with self.__ack_conds[msg_id]:
                 self.__ack_errrs[msg_id] = error_code
+                self.__ack_results[msg_id] = result
                 self.__ack_conds[msg_id].notify_all()
 
     ## Handle a message read from control board
@@ -121,10 +123,14 @@ class ControlBoard:
             # [error_code] is an unsigned 8-bit integer error code
             
             # Validate message length
-            if len(msg) == 6:
+            if len(msg) >= 6:
                 ack_id = struct.unpack(">H", msg[3:5])[0]
                 err = msg[5]
-                self.__handle_ack(ack_id, err)
+                if len(msg) > 6:
+                    result = msg[6:]
+                else:
+                    result = b''
+                self.__handle_ack(ack_id, err, result)
         
     ## Thread to repeatedly read from the control board serial port
     def __read_task(self):
@@ -139,8 +145,8 @@ class ControlBoard:
             # Blocks until  a byte is available
             b = self.__ser.read()
 
-            if self.__debug:
-                print("RB: {}".format(b))
+            # if self.__debug:
+            #     print("RB: {}".format(b))
 
             # Parse the meaning of this byte
             if parse_escaped:
@@ -192,28 +198,33 @@ class ControlBoard:
     #  @param msg_id Id of message to be sent
     def __prepare_for_ack(self, msg_id: int):
         self.__ack_errrs[msg_id] = 0
+        self.__ack_results[msg_id] = b''
         self.__ack_conds[msg_id] = threading.Condition()
 
     ## Wait to receive ack from control board
     #  @param msg_id ID of message to wait for ack
     #  @param timeout Time in seconds to wait for ack
-    def __wait_for_ack(self, msg_id: int, timeout: float) -> AckError:
+    def __wait_for_ack(self, msg_id: int, timeout: float) -> Tuple[AckError, bytes]:
         ec = None
+        res = None
         with self.__ack_conds[msg_id]:
             if self.__ack_conds[msg_id].wait(timeout):
                 ec = self.AckError(self.__ack_errrs[msg_id])
+                res = self.__ack_results[msg_id]
             else:
                 ec = self.AckError.TIMEOUT
+                res = b''
         del self.__ack_conds[msg_id]
         del self.__ack_errrs[msg_id]
-        return ec
+        del self.__ack_results[msg_id]
+        return ec, res
 
     ## Write one byte via serial
     #  @param b Single byte to write
     def __write_one(self, b: bytes):
+        # if self.__debug:
+        #     print("WB: {}".format(b))
         self.__ser.write(b)
-        if self.__debug:
-            print("WB: {}".format(b))
 
     ## Send a message to control board (properly encoded)
     #  @param msg Raw message (payload bytes) to send
@@ -294,14 +305,14 @@ class ControlBoard:
 
             # Send the message and wait for acknowledgement
             msg_id = self.__write_msg(bytes(msg), True)
-            ack = self.__wait_for_ack(msg_id, timeout)
+            ack, _ = self.__wait_for_ack(msg_id, timeout)
             if ack != self.AckError.NONE:
                 return ack
 
         # Send update command (tells control board that matrix changed; recalculates some things)
         msg = b'MMATU'
         msg_id = self.__write_msg(msg, True)
-        return self.__wait_for_ack(msg_id, timeout)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
 
     ## Set thruster speeds in RAW mode
     #  @param speeds List of 8 speeds to send to control board. Must range from -1 to 1
@@ -330,7 +341,8 @@ class ControlBoard:
 
         # Send the message and wait for acknowledgement
         msg_id = self.__write_msg(bytes(data), True)
-        return self.__wait_for_ack(msg_id, timeout)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
 
     ## Set thruster inversions (impacts all control modes)
     #  @param inversions List of 8 booleans indicating if thruster is inverted. 
@@ -349,7 +361,8 @@ class ControlBoard:
 
         # Send the message and wait for acknowledgment
         msg_id = self.__write_msg(bytes(data), True)
-        return self.__wait_for_ack(msg_id, timeout)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
 
     ## Keep motors alive even when speed should not change
     #  If no speed set commands and no watchdog speed for long enough
@@ -363,5 +376,6 @@ class ControlBoard:
         
         # Send command to feed watchdog and wait for ack
         msg_id = self.__write_msg(b'WDGF', True)
-        return self.__wait_for_ack(msg_id, timeout)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
 
