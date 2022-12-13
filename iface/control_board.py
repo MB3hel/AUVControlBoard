@@ -19,6 +19,37 @@ class ControlBoard:
         UNKNOWN_MSG = 1
         INVALID_ARGS = 2
         TIMEOUT = 255
+    
+    ## Representation of motor matrix using nested lists
+    class MotorMatrix:
+        def __init__(self):
+            self.__data: List[List[float]] = []
+            for row in range(8):
+                self.__data.append([])
+                for _ in range(6):
+                    self.__data[row].append(0.0)
+        
+        ## Set a row of the motor matrix
+        #  @param tnum Thruster number to set row for
+        #  @param data Row data for the given thruster. 6 element float list [x y z pitch roll yaw]
+        def set_row(self, tnum: int, data: List[float]):
+            if len(data) != 6:
+                return
+            if tnum > 8 or tnum < 1:
+                return
+            for i in range(6):
+                self.__data[tnum - 1][i] = float(data[i])
+        
+        ## Return motor matrix list representation
+        def raw(self) -> List[List[float]]:
+            # Python lists are passed around by reference and are mutable
+            # Thus, make a copy, don't return the list directly
+            copy_data: List[List[float]] = []
+            for row in range(8):
+                copy_data.append([])
+                for col in range(6):
+                    copy_data[row].append(self.__data[row][col])
+            return copy_data
 
     ## Open communication with a control board
     #  @param port Serial port to communicate with control board by
@@ -187,7 +218,7 @@ class ControlBoard:
     ## Send a message to control board (properly encoded)
     #  @param msg Raw message (payload bytes) to send
     #  @param ack True if message needs to wait for ack (will setup structure to allow wait for ack)
-    def __write_msg(self, msg: bytes, ack = False):
+    def __write_msg(self, msg: bytes, ack: bool = False):
         global START_BYTE, END_BYTE, ESCAPE_BYTE    
 
         # Generate the ID for this message and increment the global ID counter
@@ -244,11 +275,38 @@ class ControlBoard:
 
         return msg_id
 
+    ## Set the motor matrix defining the vehicle's thruster configuration
+    #  @param matrix Motor matrix object containing configuration to set
+    def set_motor_matrix(self, matrix: MotorMatrix, timeout: float = 0.1) -> AckError:
+        # Set each row one at a time
+        raw_data = matrix.raw()
+        for i in range(8):
+            # Create row set message
+            msg = bytearray()
+            msg.extend(b'MMATS')
+            msg.append(i + 1)
+            msg.extend(struct.pack("<f", raw_data[i][0]))
+            msg.extend(struct.pack("<f", raw_data[i][1]))
+            msg.extend(struct.pack("<f", raw_data[i][2]))
+            msg.extend(struct.pack("<f", raw_data[i][3]))
+            msg.extend(struct.pack("<f", raw_data[i][4]))
+            msg.extend(struct.pack("<f", raw_data[i][5]))
+
+            # Send the message and wait for acknowledgement
+            msg_id = self.__write_msg(bytes(msg), True)
+            ack = self.__wait_for_ack(msg_id, timeout)
+            if ack != self.AckError.NONE:
+                return ack
+
+        # Send update command (tells control board that matrix changed; recalculates some things)
+        msg = b'MMATU'
+        msg_id = self.__write_msg(msg, True)
+        return self.__wait_for_ack(msg_id, timeout)
 
     ## Set thruster speeds in RAW mode
     #  @param speeds List of 8 speeds to send to control board. Must range from -1 to 1
     #  @return Error code (AckError enum) from control board (or timeout)
-    def set_raw(self, speeds: List[float], timeout = 0.1) -> AckError:
+    def set_raw(self, speeds: List[float], timeout: float = 0.1) -> AckError:
         # Validate provided data
         if len(speeds) != 8:
             return
@@ -278,7 +336,7 @@ class ControlBoard:
     #  @param inversions List of 8 booleans indicating if thruster is inverted. 
     #                    True = inverted. False = not inverted.
     #  @return Error code (AckError enum) from control board (or timeout)
-    def set_tinv(self, inversions: List[bool], timeout = 0.1) -> AckError:
+    def set_tinv(self, inversions: List[bool], timeout: float = 0.1) -> AckError:
         # Construct message to send
         data = bytearray()
         data.extend(b'TINV')
@@ -298,7 +356,7 @@ class ControlBoard:
     #  (1500ms at time of writing) then control board will kill motors
     #  Note: To avoid giving control board too much to process, feed commands
     #  are limited to every 350ms at most frequent
-    def feed_motor_watchdog(self, timeout = 0.1) -> AckError:
+    def feed_motor_watchdog(self, timeout: float = 0.1) -> AckError:
         # Limit watchdog feed rate
         if time.time() - self.__last_wdog_feed < 0.35:
             return self.AckError.NONE
@@ -306,3 +364,4 @@ class ControlBoard:
         # Send command to feed watchdog and wait for ack
         msg_id = self.__write_msg(b'WDGF', True)
         return self.__wait_for_ack(msg_id, timeout)
+

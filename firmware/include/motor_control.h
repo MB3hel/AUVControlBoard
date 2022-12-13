@@ -18,7 +18,7 @@ void mc_init(void);
  * Note that the math implementation does not actually use a "motor matrix" as
  * described in the math docs. Rather the DoF matrix is directly constructed.
  * @param thruster_num Thruster for which the row data is being set (1-8 NOT 0-7)
- * @param row_data Data for the given thruster's row (8 element array)
+ * @param row_data Data for the given thruster's row (6 element array)
  */
 void mc_set_dof_matrix(unsigned int thruster_num, float *row_data);
 
