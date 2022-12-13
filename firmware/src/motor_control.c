@@ -6,6 +6,7 @@
 #include <FreeRTOS.h>
 #include <semphr.h>
 #include <timers.h>
+#include <cmdctrl.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -121,6 +122,7 @@ void mc_wdog_timeout(TimerHandle_t timer){
     xSemaphoreTake(motor_mutex, portMAX_DELAY);
     motors_killed = true;
     thruster_set((float[]){0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
+    cmdctrl_mwdog_change(false);
     xSemaphoreGive(motor_mutex);
 }
 
@@ -131,6 +133,8 @@ bool mc_wdog_feed(void){
     // If timer is active, this resets the timer
     xTimerReset(motor_wdog_timer, portMAX_DELAY);
     ret = motors_killed;
+    if(motors_killed)
+        cmdctrl_mwdog_change(true);
     motors_killed = false;
     xSemaphoreGive(motor_mutex);
     return ret;

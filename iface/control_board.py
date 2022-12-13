@@ -131,6 +131,16 @@ class ControlBoard:
                 else:
                     result = b''
                 self.__handle_ack(ack_id, err, result)
+        elif msg.startswith(b'WDGS'):
+            # Motor watchdog status message
+            # W, D, G, F, [status]
+            # [status]: 1 = enabled, 0 = killed
+            if self.__debug and len(msg) == 5:
+                if msg[4] == 1:
+                    print("Motors (re)enabled.")
+                else:
+                    print("Watchdog killed motors.")
+
         
     ## Thread to repeatedly read from the control board serial port
     def __read_task(self):

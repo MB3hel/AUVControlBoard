@@ -290,5 +290,9 @@ void cmdctrl_handle_message(){
     }
 }
 
+void cmdctrl_mwdog_change(bool motors_enabled){
+    pccomm_write((uint8_t[]){'W', 'D', 'G', 'S', motors_enabled}, 5);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
