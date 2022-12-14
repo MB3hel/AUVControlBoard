@@ -135,9 +135,11 @@ void SYS_Initialize ( void* data )
 
     TCC1_PWMInitialize();
 
-    EVSYS_Initialize();
+    SERCOM2_I2C_Initialize();
 
     TCC0_PWMInitialize();
+
+    EVSYS_Initialize();
 
 
 
