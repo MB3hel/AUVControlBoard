@@ -64,6 +64,14 @@ Used to set motor speeds in `RAW` mode. This command has the following format.
 `[speed_n]`: The speed of thruster `n` from -1.0 to 1.0. A 32-bit float (little endian).  
 This message will be acknowledged. The acknowledge message will contain no result data.
 
+**Local Speed Set**  
+Used to set motor speeds in `LOCAL` mode. This command has the following format.  
+```none
+'L', 'O', 'C', 'A', 'L', [x], [y], [z], [pitch], [roll], [yaw]
+```  
+`[x]`, `[y]`, `[z]`, `[pitch]`, `[roll]`, `[yaw]`: Speed for each DoF relative to the robot -1.0 to 1.0. A 32-bit float (little endian).  
+This message will be acknowledged. The acknowledge message will contain no result data.
+
 <!--TODO: Future other mode commands-->
 
 
