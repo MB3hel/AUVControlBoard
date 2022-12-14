@@ -11,18 +11,30 @@ static volatile bool i2c_success = false;
 
 
 void HAL_I2C_MasterTxCpltCallback (I2C_HandleTypeDef * hi2c){
+    // Signal that transaction is now finished
+    // This is ALWAYS run from IRQ handler (by inspection of generated hal)
+    static BaseType_t xHigherPriorityTaskWoken;
     i2c_success = true;
-    xSemaphoreGive(i2c_done_signal);
+    xSemaphoreGiveFromISR(i2c_done_signal, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void HAL_I2C_MasterRxCpltCallback (I2C_HandleTypeDef * hi2c){
+    // Signal that transaction is now finished
+    // This is ALWAYS run from IRQ handler (by inspection of generated hal)
+    static BaseType_t xHigherPriorityTaskWoken;
     i2c_success = true;
-    xSemaphoreGive(i2c_done_signal);
+    xSemaphoreGiveFromISR(i2c_done_signal, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c){
+    // Signal that transaction is now finished
+    // This is ALWAYS run from IRQ handler (by inspection of generated hal)
+    static BaseType_t xHigherPriorityTaskWoken;
     i2c_success = false;
-    xSemaphoreGive(i2c_done_signal);
+    xSemaphoreGiveFromISR(i2c_done_signal, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 
@@ -35,7 +47,7 @@ void i2c_init(void){
     i2c_done_signal = xSemaphoreCreateBinary();
 
     // I2C IRQ_Handler priority needs to be such that FreeRTOS functions can be called
-    // IRQ handlers may run the callback functions, which use the semaphore
+    // IRQ handlers run the callback functions, which use the semaphore
     NVIC_SetPriority(I2C1_EV_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
     NVIC_SetPriority(I2C1_ER_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
 
