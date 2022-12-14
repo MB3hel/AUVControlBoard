@@ -50,6 +50,14 @@ static unsigned int mode;
 // Last used raw mode target
 static float raw_target[8];
 
+// Last used local mode target
+static float local_x;
+static float local_y;
+static float local_z;
+static float local_pitch;
+static float local_roll;
+static float local_yaw;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -65,7 +73,13 @@ void cmdctrl_init(void){
     for(unsigned int i = 0; i < 8; ++i)
         raw_target[i] = 0.0f;
 
-    // TODO: Local mode (zero all)
+    // Local mode (zero all)
+    local_x = 0.0f;
+    local_y = 0.0f;
+    local_z = 0.0f;
+    local_pitch = 0.0f;
+    local_roll = 0.0f;
+    local_yaw = 0.0f;
 
     // TODO: Global mode (zero all)
 
@@ -284,6 +298,50 @@ void cmdctrl_handle_message(){
 
         // Acknowledge message w/ no error.
         cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'L', 'O', 'C', 'A', 'L'}))){
+        // LOCAL Speed Set
+        // L, O, C, A, L, [x], [y], [z], [pitch], [roll], [yaw]
+        // [x], [y], [z], [pitch], [roll], [yaw]  are 32-bit floats (little endian)
+
+        if(len != 29){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Message is correct size. Handle it.
+
+            // Get speeds from message
+            local_x = conversions_data_to_float(&msg[5], true);
+            local_y = conversions_data_to_float(&msg[9], true);
+            local_z = conversions_data_to_float(&msg[13], true);
+            local_pitch = conversions_data_to_float(&msg[17], true);
+            local_roll = conversions_data_to_float(&msg[21], true);
+            local_yaw = conversions_data_to_float(&msg[25], true);
+
+            // Ensure speeds are in valid range
+            #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
+            LIMIT(local_x);
+            LIMIT(local_y);
+            LIMIT(local_z);
+            LIMIT(local_pitch);
+            LIMIT(local_roll);
+            LIMIT(local_yaw);
+
+            // Update mode variable and LED color (if needed)
+            if(mode != MODE_LOCAL){
+                mode = MODE_LOCAL;
+                led_set(COLOR_LOCAL);
+            }
+
+            // Feed watchdog when speeds are set
+            // Important to call before speed set function in case currently killed
+            mc_wdog_feed();
+
+            // Update motor speeds
+            mc_set_local(local_x, local_y, local_z, local_pitch, local_roll, local_yaw);
+
+            // Acknowledge message w/ no error.
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+        }
     }else{
         // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG, NULL, 0);

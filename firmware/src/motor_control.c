@@ -165,5 +165,49 @@ void mc_set_raw(float *speeds){
     xSemaphoreGive(motor_mutex);
 }
 
+void mc_set_local(float x, float y, float z, float pitch, float roll, float yaw){
+    float target_arr[6];
+    matrix target;
+    matrix_init_static(&target, target_arr, 6, 1);
+    matrix_set_col(&target, 0, (float[]){x, y, z, pitch, roll, yaw});
+
+    // Limit input speeds to correct range
+    for(size_t i = 0; i < 6; ++i){
+        if(target_arr[i] > 1.0)
+            target_arr[i] = 1.0;
+        if(target_arr[i] < -1.0)
+            target_arr[i] = -1.0;
+    }
+
+    float speed_arr[8];
+    matrix speed_vec;
+    matrix_init_static(&speed_vec, speed_arr, 8, 1);
+
+    // Base speed calculation
+    matrix_mul(&speed_vec, &dof_matrix, &target);
+
+    // Scale motor speeds down as needed
+    while(true){
+        size_t idxrow, idxcol;
+        float mval;
+        matrix_absmax(&mval, &idxrow, &idxcol, &speed_vec);
+        if(mval <= 1)
+            break;
+        for(size_t i = 0; i < overlap_vectors[idxrow].rows; ++i){
+            float cval;
+            matrix_get_item(&cval, &overlap_vectors[idxrow], i, 0);
+            if(cval == 1){
+                matrix_get_item(&cval, &speed_vec, i, 0);
+                cval /= mval;
+                matrix_set_item(&speed_vec, i, 0, cval);
+            }
+        }
+    }    
+
+    // Speed array already contains motor speeds in order
+    // Because dof matrix rows are in order
+    mc_set_raw(speed_arr);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -324,6 +324,26 @@ class ControlBoard:
         msg_id = self.__write_msg(msg, True)
         ack, _ = self.__wait_for_ack(msg_id, timeout)
 
+    ## Set thruster inversions (impacts all control modes)
+    #  @param inversions List of 8 booleans indicating if thruster is inverted. 
+    #                    True = inverted. False = not inverted.
+    #  @return Error code (AckError enum) from control board (or timeout)
+    def set_tinv(self, inversions: List[bool], timeout: float = 0.1) -> AckError:
+        # Construct message to send
+        data = bytearray()
+        data.extend(b'TINV')
+        inv_byte = 0
+        for i in range(8):
+            inv_byte <<= 1
+            if inversions[7 - i]:
+                inv_byte |= 1
+        data.append(inv_byte)
+
+        # Send the message and wait for acknowledgment
+        msg_id = self.__write_msg(bytes(data), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+
     ## Set thruster speeds in RAW mode
     #  @param speeds List of 8 speeds to send to control board. Must range from -1 to 1
     #  @return Error code (AckError enum) from control board (or timeout)
@@ -354,22 +374,40 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
-    ## Set thruster inversions (impacts all control modes)
-    #  @param inversions List of 8 booleans indicating if thruster is inverted. 
-    #                    True = inverted. False = not inverted.
-    #  @return Error code (AckError enum) from control board (or timeout)
-    def set_tinv(self, inversions: List[bool], timeout: float = 0.1) -> AckError:
+    ## Set thruster speeds in LOCAL mode
+    #  All speeds are relative to robot (not world)
+    #  @param x Speed in +x translation DoF (-1.0 to +1.0)
+    #  @param y Speed in +y translation DoF (-1.0 to +1.0)
+    #  @param z Speed in +z translation DoF (-1.0 to +1.0)
+    #  @param pitch Speed in +pitch translation DoF (-1.0 to +1.0)
+    #  @param roll Speed in +roll translation DoF (-1.0 to +1.0)
+    #  @param yaw Speed in +yaw translation DoF (-1.0 to +1.0)
+    def set_local(self, x: float, y: float, z: float, pitch: float, roll: float, yaw: float, timeout: float = 0.1):
+        # Ensure provided data in valid range
+        def limit(v: float):
+            if v > 1.0:
+                return 1.0
+            if v < -1.0:
+                return -1.0
+            return v
+        x = limit(x)
+        y = limit(y)
+        z = limit(z)
+        pitch = limit(pitch)
+        roll = limit(roll)
+        yaw = limit(yaw)
+
         # Construct message to send
         data = bytearray()
-        data.extend(b'TINV')
-        inv_byte = 0
-        for i in range(8):
-            inv_byte <<= 1
-            if inversions[7 - i]:
-                inv_byte |= 1
-        data.append(inv_byte)
+        data.extend(b'LOCAL')
+        data.extend(struct.pack("<f", x))
+        data.extend(struct.pack("<f", y))
+        data.extend(struct.pack("<f", z))
+        data.extend(struct.pack("<f", pitch))
+        data.extend(struct.pack("<f", roll))
+        data.extend(struct.pack("<f", yaw))
 
-        # Send the message and wait for acknowledgment
+        # Send the message and wait for acknowledgement
         msg_id = self.__write_msg(bytes(data), True)
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack

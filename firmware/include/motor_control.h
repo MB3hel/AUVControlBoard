@@ -40,3 +40,13 @@ bool mc_wdog_feed(void);
  */
 void mc_set_raw(float *speeds);
 
+/**
+ * Set motor speeds in LOCAL mode. Target speeds are in DoF frame relative to robot, not world
+ * @param x Speed in +x translation DoF (-1.0 to +1.0)
+ * @param y Speed in +y translation DoF (-1.0 to +1.0)
+ * @param z Speed in +z translation DoF (-1.0 to +1.0)
+ * @param pitch Speed in +pitch rotation DoF (-1.o to +1.0)
+ * @param roll Speed in +roll rotation DoF (-1.o to +1.0)
+ * @param yaw Speed in +yaw rotation DoF (-1.o to +1.0)
+ */
+void mc_set_local(float x, float y, float z, float pitch, float roll, float yaw);
