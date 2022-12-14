@@ -5,6 +5,8 @@
 
 
 extern TIM_HandleTypeDef htim11;
+extern TIM_HandleTypeDef htim1;
+extern I2C_HandleTypeDef hi2c1;
 
 void NMI_Handler(void){
     taskDISABLE_INTERRUPTS();
@@ -58,9 +60,18 @@ void DebugMon_Handler(void){}
 // void SVC_Handler(void){}
 
 void TIM1_TRG_COM_TIM11_IRQHandler(void){
+    // HAL_TIM_IRQHandler(&htim1);
     HAL_TIM_IRQHandler(&htim11);
 }
 
 void OTG_FS_IRQHandler(void){
     tud_int_handler(0);
+}
+
+void I2C1_EV_IRQHandler(void){
+    HAL_I2C_EV_IRQHandler(&hi2c1);
+}
+
+void I2C1_ER_IRQHandler(void){
+    HAL_I2C_ER_IRQHandler(&hi2c1);
 }
