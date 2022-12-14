@@ -1,6 +1,7 @@
 #include <framework.h>
 #include <i2c.h>
 #include <FreeRTOS.h>
+#include <portmacro.h>
 #include <semphr.h>
 
 
@@ -10,7 +11,10 @@ static SemaphoreHandle_t i2c_done_signal;
 
 static void i2c_done_callback(uintptr_t contextHandle){
     // Signal that transaction is now finished
-    xSemaphoreGive(i2c_done_signal);
+    // This is ALWAYS run from IRQ handler (by inspection of generated plib)
+    static BaseType_t xHigherPriorityTaskWoken;
+    xSemaphoreGiveFromISR(i2c_done_signal, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 
@@ -24,6 +28,8 @@ void i2c_init(void){
 
     // I2C IRQ_Handler priority needs to be such that FreeRTOS functions can be called
     // IRQ Handler runs the done callback, which gives semaphore
+    NVIC_SetPriority(SERCOM2_0_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+    NVIC_SetPriority(SERCOM2_1_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
     NVIC_SetPriority(SERCOM2_2_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
 
     // Framework init initializes SERCOM2 as I2C
