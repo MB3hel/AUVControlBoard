@@ -50,6 +50,8 @@ void i2c_init(void){
     // IRQ handlers run the callback functions, which use the semaphore
     NVIC_SetPriority(I2C1_EV_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
     NVIC_SetPriority(I2C1_ER_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+    NVIC_EnableIRQ(I2C1_EV_IRQn);
+    NVIC_EnableIRQ(I2C1_ER_IRQn);
 
     // Framework init initializes I2C1
     // Clock and pin config also handled by generator project
@@ -62,17 +64,16 @@ bool i2c_perform(i2c_trans *trans){
         return false;
 
     if(trans->write_count > 0){
-        // Perform write first. No stop after write if data will be read.
-        uint32_t xfer_opts = 0;
-        if(trans->read_count != 0)
-            xfer_opts |= I2C_LAST_FRAME_NO_STOP;
+        // Perform write first.
+        
+        // TODO: No stop after write if data will be read.
+        //       This can be done using Seq operations
 
         // Perform write
-        HAL_I2C_Master_Seq_Transmit_IT(&hi2c1, 
+        HAL_I2C_Master_Transmit_IT(&hi2c1, 
             trans->address, 
             trans->write_buf, 
-            trans->write_count, 
-            xfer_opts);
+            trans->write_count);
 
         // Wait for write to finish
         xSemaphoreTake(i2c_done_signal, portMAX_DELAY);
