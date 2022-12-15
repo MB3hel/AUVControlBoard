@@ -3,6 +3,8 @@
 #include <framework.h>
 #include <led.h>
 
+extern void SERCOM2_I2C_InterruptHandler(void);
+
 void NMI_Handler(void){
     taskDISABLE_INTERRUPTS();
     led_set(255, 0, 0);
@@ -68,4 +70,20 @@ void USB_TRCPT0_Handler (void){
 
 void USB_TRCPT1_Handler (void){
     tud_int_handler(0);
+}
+
+void SERCOM2_0_Handler(void){
+    SERCOM2_I2C_InterruptHandler();
+}
+
+void SERCOM2_1_Handler(void){
+    SERCOM2_I2C_InterruptHandler();
+}
+
+void SERCOM2_2_Handler(void){
+    SERCOM2_I2C_InterruptHandler();
+}
+
+void SERCOM2_OTHER_Handler(void){
+    SERCOM2_I2C_InterruptHandler();
 }
