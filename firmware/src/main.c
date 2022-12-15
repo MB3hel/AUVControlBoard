@@ -10,6 +10,7 @@
 #include <cmdctrl.h>
 #include <conversions.h>
 #include <motor_control.h>
+#include <i2c.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -28,6 +29,7 @@ int main(void){
     thruster_init();
     mc_init();
     cmdctrl_init();
+    i2c_init();
     // -------------------------------------------------------------------------
     
     app_init();

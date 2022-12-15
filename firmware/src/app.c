@@ -3,6 +3,7 @@
 #include <limits.h>
 #include <pccomm.h>
 #include <cmdctrl.h>
+#include <bno055.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -12,6 +13,7 @@
 // Task handles
 TaskHandle_t usb_device_task;
 TaskHandle_t cmdctrl_task;
+TaskHandle_t imu_task;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -67,6 +69,31 @@ void usb_device_task_func(void *argument){
     }
 }
 
+/**
+ * Thread to handle IMU data
+ * I2C functions are thread safe (by mutex), so thread will block
+ * until it has I2C
+ */
+void imu_task_func(void *argument){
+    // Tracks if IMU configured currently
+    bool configured = false;
+
+    bno055_init();
+    while(1){
+        if(!configured){
+            // Configure IMU. Will succeed if IMU connected.
+            configured = bno055_configure();
+
+            // If configure fails, wait 1 second before trying again
+            if(!configured)
+                vTaskDelay(pdMS_TO_TICKS(1000));
+        }else{
+            // IMU is connected and has been configured
+            // TODO: Periodically read data
+        }
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -91,6 +118,14 @@ void app_init(void){
         NULL,
         TASK_CMDCTRL_PRIORITY,
         &cmdctrl_task
+    );
+    xTaskCreate(
+        imu_task_func,
+        "imu_task",
+        TASK_IMU_SSIZE,
+        NULL,
+        TASK_IMU_PRIORITY,
+        &imu_task
     );
 }
 
