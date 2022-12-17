@@ -63,23 +63,28 @@ bool i2c_perform(i2c_trans *trans){
     if(HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY)
         return false;
 
-    if(trans->write_count > 0){
-        // Perform write first.
+    if(trans->write_count > 0 && trans->read_count > 0){
+        // Write then read (repeated start between)
         
-        // TODO: No stop after write if data will be read.
-        //       This can be done using Seq operations
+        // No stop after write if data will be read.
+        uint32_t xfer_opts = 0;
+        if(trans->read_count > 0)
+            xfer_opts |= I2C_FIRST_FRAME;
+        else
+            xfer_opts |= I2C_FIRST_AND_LAST_FRAME;
 
-        // Perform write
-        HAL_I2C_Master_Transmit_IT(&hi2c1, 
-            trans->address, 
+        // Perform write (no stop after)
+        HAL_I2C_Master_Seq_Transmit_IT(&hi2c1, 
+            trans->address << 1, 
             trans->write_buf, 
-            trans->write_count);
+            trans->write_count,
+            I2C_FIRST_FRAME);
 
         // Wait for write to finish
         xSemaphoreTake(i2c_done_signal, portMAX_DELAY);
         
-        // If write fails, or no read phase, exit here
-        if(!i2c_success || trans->read_count == 0){
+        // If write fails, exit here
+        if(!i2c_success){
             // Must store copy of i2c_success before unlocking
             // Otherwise it is possible it would be modified again
             // before return actually happens
@@ -87,15 +92,45 @@ bool i2c_perform(i2c_trans *trans){
             xSemaphoreGive(i2c_mutex);
             return ret;
         }
-    }
 
-    if(trans->read_count > 0){
-        // Perform read. Read always ends with STOP, so no need for Seq operations
+        // Perform read
+        HAL_I2C_Master_Seq_Receive_IT(&hi2c1,
+            trans->address << 1,
+            trans->read_buf,
+            trans->read_count,
+            I2C_LAST_FRAME);
+
+        // Wait for read to finish
+        xSemaphoreTake(i2c_done_signal, portMAX_DELAY);
+
+        // Must store copy of i2c_success before unlocking
+        // Otherwise it is possible it would be modified again
+        // before return actually happens
+        bool ret = i2c_success;
+        xSemaphoreGive(i2c_mutex);
+        return ret;
+    }else if(trans->read_count > 0){
+        // Perform read only.
         HAL_I2C_Master_Receive_IT(&hi2c1,
-            trans->address,
+            trans->address << 1,
             trans->read_buf,
             trans->read_count);
+
+        // Wait for read to finish
+        xSemaphoreTake(i2c_done_signal, portMAX_DELAY);
+
+        // Must store copy of i2c_success before unlocking
+        // Otherwise it is possible it would be modified again
+        // before return actually happens
+        bool ret = i2c_success;
         xSemaphoreGive(i2c_mutex);
+        return ret;
+    }else if(trans->write_count > 0){
+        // Perform write only
+        HAL_I2C_Master_Transmit_IT(&hi2c1,
+            trans->address << 1,
+            trans->write_buf,
+            trans->write_count);
 
         // Wait for read to finish
         xSemaphoreTake(i2c_done_signal, portMAX_DELAY);
