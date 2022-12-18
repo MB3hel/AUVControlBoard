@@ -442,6 +442,9 @@ bool bno055_read(bno055_data *data){
         return false;
     
     // Parse data
+    // Note that z-axis data is negated intentionally.
+    // This is to ensure consistency with diagrams in datasheet. The z axis direction
+    // is reverse of what the datasheet shows.
     int16_t tmp16;
     tmp16 = ((int16_t)trans.read_buf[0]) | (((int16_t)trans.read_buf[1]) << 8);
     data->grav_x = tmp16 / 100.0f;
