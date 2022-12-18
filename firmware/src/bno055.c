@@ -432,8 +432,24 @@ bool bno055_set_axis(uint8_t mode){
 }
 
 bool bno055_read(bno055_data *data){
-    // TODO
-    return false;
+    // Read Gravity Vector
+    trans.write_buf[0] = BNO055_GRAVITY_DATA_X_LSB_ADDR;
+    trans.write_count = 1;
+    trans.read_count = 6;
+    if(!i2c_perform(&trans))
+        return false;
+    
+    // Parse data
+    int16_t tmp16;
+    tmp16 = ((int16_t)trans.read_buf[0]) | (((int16_t)trans.read_buf[1]) << 8);
+    data->grav_x = tmp16 / 100.0f;
+    tmp16 = ((int16_t)trans.read_buf[2]) | (((int16_t)trans.read_buf[3]) << 8);
+    data->grav_y = tmp16 / 100.0f;
+    tmp16 = ((int16_t)trans.read_buf[4]) | (((int16_t)trans.read_buf[5]) << 8);
+    data->grav_z = -tmp16 / 100.0f;
+
+    // Success
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
