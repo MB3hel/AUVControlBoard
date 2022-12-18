@@ -1,6 +1,8 @@
 
 #include <bno055.h>
 #include <i2c.h>
+#include <FreeRTOS.h>
+#include <task.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// BNO055 Info Macros
@@ -193,6 +195,26 @@
 #define OPMODE_CFG              0x00
 #define OPMODE_IMU              0X08
 
+// Axis remap register values
+#define REMAP_P0                0x21
+#define REMAP_P1                0x24
+#define REMAP_P2                0x24
+#define REMAP_P3                0x21
+#define REMAP_P4                0x24
+#define REMAP_P5                0x21
+#define REMAP_P6                0x21
+#define REMAP_P7                0x24
+
+// Axis sign register values
+#define SIGN_P0                 0x04
+#define SIGN_P1                 0x00
+#define SIGN_P2                 0x06
+#define SIGN_P3                 0x02
+#define SIGN_P4                 0x03
+#define SIGN_P5                 0x01
+#define SIGN_P6                 0x07
+#define SIGN_P7                 0x05
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -221,13 +243,197 @@ void bno055_init(void){
 }
 
 bool bno055_configure(void){
-    // TODO: Actually configure IMU. This is just done to test I2C.
-
+    // Read chip ID register to make sure right device is on bus
     trans.write_buf[0] = BNO055_CHIP_ID_ADDR;
     trans.write_count = 1;
     trans.read_count = 1;
-    i2c_perform(&trans);
+    if(!i2c_perform(&trans))
+        return false;
+    if(trans.read_buf[0] != BNO055_ID)
+        return false;
 
-    return false;   
+    // Put IMU in config mode
+    trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
+    trans.write_buf[1] = OPMODE_CFG;
+    trans.write_count = 2;
+    trans.read_count = 0;
+    if(!i2c_perform(&trans))
+        return false;
+
+    // Reset IMU
+    trans.write_buf[0] = BNO055_SYS_TRIGGER_ADDR;
+    trans.write_buf[1] = 0x20;
+    trans.write_count = 1;
+    trans.read_count = 0;
+    if(!i2c_perform(&trans))
+        return false;
+    
+    // Wait for reset to complete
+    vTaskDelay(pdMS_TO_TICKS(50));
+    unsigned int attempts = 0;
+    do{
+        trans.write_buf[0] = BNO055_CHIP_ID_ADDR;
+        trans.write_count = 1;
+        trans.read_count = 1;
+        if(!i2c_perform(&trans))
+            vTaskDelay(pdMS_TO_TICKS(10));
+        attempts++;
+        if(attempts > 50)
+            return false;
+    }while(trans.read_buf[0] != BNO055_ID);
+    vTaskDelay(pdMS_TO_TICKS(50));
+
+    // Set to normal power mode
+    trans.write_buf[0] = BNO055_PWR_MODE_ADDR;
+    trans.write_buf[1] = 0x00;
+    trans.write_count = 2;
+    trans.read_count = 0;
+    if(!i2c_perform(&trans))
+        return false;
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    // Zero page ID register
+    trans.write_buf[0] = BNO055_PAGE_ID_ADDR;
+    trans.write_buf[1] = 0x00;
+    trans.write_count = 2;
+    trans.read_count = 0;
+    if(!i2c_perform(&trans))
+        return false;
+
+    // TODO: Set units
+    // Windows fusion data output mode
+    // Acceleration: m/s^2
+    // Linear Accel & Grav Vec: m/s^2
+    // Gyro: dps
+    // Euler: degrees
+    // Temperature: Celcius
+    const uint8_t unitsel_val = 0b00000000;
+    trans.write_buf[0] = BNO055_UNIT_SEL_ADDR;
+    trans.write_buf[1] = unitsel_val;
+    trans.write_count = 2;
+    trans.read_count = 0;
+    if(!i2c_perform(&trans))
+        return false;
+
+    // Default Axis remap = P1
+    trans.write_buf[0] = BNO055_AXIS_MAP_CONFIG_ADDR;
+    trans.write_buf[1] = REMAP_P1;
+    trans.write_count = 2;
+    trans.read_count = 0;
+    if(!i2c_perform(&trans))
+        return false;
+
+    // Default Axis sign = P1
+    trans.write_buf[0] = BNO055_AXIS_MAP_SIGN_ADDR;
+    trans.write_buf[1] = SIGN_P1;
+    trans.write_count = 2;
+    trans.read_count = 0;
+    if(!i2c_perform(&trans))
+        return false;
+
+    // Clear sys trigger register
+    trans.write_buf[0] = BNO055_SYS_TRIGGER_ADDR;
+    trans.write_buf[1] = 0x00;
+    trans.write_count = 2;
+    trans.read_count = 0;
+    if(!i2c_perform(&trans))
+        return false;
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    // Set to IMU (fusion) operating mode
+    trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
+    trans.write_buf[1] = OPMODE_IMU;
+    trans.write_count = 2;
+    trans.read_count = 0;
+    if(!i2c_perform(&trans))
+        return false;
+    vTaskDelay(pdMS_TO_TICKS(20));
+
+    // Done configuring IMU
+    return true;   
 }
+
+bool bno055_set_axis(uint8_t mode){
+    uint8_t remap = 0x00;
+    uint8_t sign = 0x00;
+
+    // Set remap and sign registers
+    switch(mode){
+    case BNO055_AXIS_P0:
+        remap = REMAP_P0;
+        sign = SIGN_P0;
+        break;
+    case BNO055_AXIS_P1:
+        remap = REMAP_P1;
+        sign = SIGN_P1;
+        break;
+    case BNO055_AXIS_P2:
+        remap = REMAP_P2;
+        sign = SIGN_P2;
+        break;
+    case BNO055_AXIS_P3:
+        remap = REMAP_P3;
+        sign = SIGN_P3;
+        break;
+    case BNO055_AXIS_P4:
+        remap = REMAP_P4;
+        sign = SIGN_P4;
+        break;
+    case BNO055_AXIS_P5:
+        remap = REMAP_P5;
+        sign = SIGN_P5;
+        break;
+    case BNO055_AXIS_P6:
+        remap = REMAP_P6;
+        sign = SIGN_P6;
+        break;
+    case BNO055_AXIS_P7:
+        remap = REMAP_P7;
+        sign = SIGN_P7;
+        break;
+    }
+
+    // Put in CONFIG mode
+    trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
+    trans.write_buf[1] = OPMODE_CFG;
+    trans.write_count = 2;
+    trans.read_count = 0;
+    if(!i2c_perform(&trans))
+        return false;
+    vTaskDelay(25);
+
+    // Set remap
+    trans.write_buf[0] = BNO055_AXIS_MAP_CONFIG_ADDR;
+    trans.write_buf[1] = remap;
+    trans.write_count = 2;
+    trans.read_count = 0;
+    if(!i2c_perform(&trans))
+        return false;
+    vTaskDelay(pdMS_TO_TICKS(10));
+    
+    // Set sign
+    trans.write_buf[0] = BNO055_AXIS_MAP_SIGN_ADDR;
+    trans.write_buf[1] = sign;
+    trans.write_count = 2;
+    trans.read_count = 0;
+    if(!i2c_perform(&trans))
+        return false;
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    // Restore to IMU mode
+    trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
+    trans.write_buf[1] = OPMODE_IMU;
+    trans.write_count = 2;
+    trans.read_count = 0;
+    if(!i2c_perform(&trans))
+        return false;
+    vTaskDelay(pdMS_TO_TICKS(25));
+    return true;
+}
+
+bool bno055_read(bno055_data *data){
+    // TODO
+    return false;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
