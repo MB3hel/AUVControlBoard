@@ -77,6 +77,8 @@ void usb_device_task_func(void *argument){
 void imu_task_func(void *argument){
     // Tracks if IMU configured currently
     bool configured = false;
+    unsigned int read_failures = 0;
+    bno055_data data;
 
     bno055_init();
     while(1){
@@ -89,7 +91,16 @@ void imu_task_func(void *argument){
                 vTaskDelay(pdMS_TO_TICKS(1000));
         }else{
             // IMU is connected and has been configured
-            // TODO: Periodically read data
+            // Periodically read data
+            if(bno055_read(&data)){
+                read_failures = 0;
+            }else{
+                // Too many failures. Assume IMU no longer connected (or has reset)
+                read_failures++;
+                if(read_failures > 5)
+                    configured = false;
+            }
+            vTaskDelay(pdMS_TO_TICKS(15));
         }
     }
 }
