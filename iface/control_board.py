@@ -344,6 +344,19 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
+    ## Get sensor status (all sensors)
+    #  @return Tuple[AckError, bool, bool]  error, bno055_ready, ms5837_ready
+    def get_sensor_status(self, timeout: float = 0.1) -> Tuple[AckError, bool, bool]:
+        # Send the message and wait for acknowledgement
+        msg_id = self.__write_msg(b'SSTAT', True)
+        ack, res = self.__wait_for_ack(msg_id, timeout)
+        if ack != self.AckError.NONE:
+            return ack, False, False
+        bno055_ready = (res[0] & 0b00000001) == 1
+        ms5837_ready = (res[0] & 0b00000010) == 1
+        return ack, bno055_ready, ms5837_ready
+
+
     ## Set thruster speeds in RAW mode
     #  @param speeds List of 8 speeds to send to control board. Must range from -1 to 1
     #  @return Error code (AckError enum) from control board (or timeout)
