@@ -89,6 +89,8 @@ void imu_task_func(void *argument){
             // If configure fails, wait 1 second before trying again
             if(!configured)
                 vTaskDelay(pdMS_TO_TICKS(1000));
+            else
+                cmdctrl_bno055_status(true);
         }else{
             // IMU is connected and has been configured
             // Periodically read data
@@ -97,8 +99,10 @@ void imu_task_func(void *argument){
             }else{
                 // Too many failures. Assume IMU no longer connected (or has reset)
                 read_failures++;
-                if(read_failures > 5)
+                if(read_failures > 5){
                     configured = false;
+                    cmdctrl_bno055_status(false);
+                }
             }
             vTaskDelay(pdMS_TO_TICKS(15));
         }

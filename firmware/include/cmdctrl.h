@@ -23,3 +23,9 @@ void cmdctrl_apply_saved_speed(void);
  * @param motors_enabled True if motors enabled, False if motors killed
  */
 void cmdctrl_mwdog_change(bool motors_enabled);
+
+/**
+ * Set bno055 status
+ * @param status New status (ready = true; not ready = false)
+ */
+void cmdctrl_bno055_status(bool status);

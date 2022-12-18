@@ -58,6 +58,9 @@ static float local_pitch;
 static float local_roll;
 static float local_yaw;
 
+// Sensor status flags
+static bool bno055_ready;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -84,6 +87,9 @@ void cmdctrl_init(void){
     // TODO: Global mode (zero all)
 
     // TODO: Sassist mode (set valid bool to false)
+
+    // Initial sensor status
+    bno055_ready = false;
 
     // Default to raw mode
     mode = MODE_RAW;
@@ -342,6 +348,20 @@ void cmdctrl_handle_message(){
             // Acknowledge message w/ no error.
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
+    }else if(MSG_EQUALS(((uint8_t[]){'S', 'S', 'T', 'A', 'T'}))){
+        // Sensor status query
+        // S, S, T, A, T
+        // ACK contains data in the following format [sensor_status]
+        // [sensor_status] is an 8-bit int where each bit indicates if a sensor is ready
+        // bit 0 (LSB) is BNO055 status (1 = ready, 0 = not ready)
+        // bit 1 is MS5837 status (1 = ready, 0 = not ready)
+
+        uint8_t response[1];
+        response[0] = 0x00;
+        response[0] |= bno055_ready;
+        // TODO: response[0] |= (ms5837_ready << 1);
+
+        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response, 1);
     }else{
         // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG, NULL, 0);
@@ -350,6 +370,10 @@ void cmdctrl_handle_message(){
 
 void cmdctrl_mwdog_change(bool motors_enabled){
     pccomm_write((uint8_t[]){'W', 'D', 'G', 'S', motors_enabled}, 5);
+}
+
+void cmdctrl_bno055_status(bool status){
+    bno055_ready = status;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
