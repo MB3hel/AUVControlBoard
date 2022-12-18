@@ -236,6 +236,8 @@ static uint8_t read_buf[READ_BUF_SIZE];
 /// BNO055 Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#define bno055_perform(x)           i2c_perform_retries((x), 20, 5)
+
 void bno055_init(void){
     trans.address = BNO055_ADDR;
     trans.write_buf = write_buf;
@@ -247,7 +249,7 @@ bool bno055_configure(void){
     trans.write_buf[0] = BNO055_CHIP_ID_ADDR;
     trans.write_count = 1;
     trans.read_count = 1;
-    if(!i2c_perform(&trans))
+    if(!bno055_perform(&trans))
         return false;
     if(trans.read_buf[0] != BNO055_ID)
         return false;
@@ -257,7 +259,7 @@ bool bno055_configure(void){
     trans.write_buf[1] = OPMODE_CFG;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!i2c_perform(&trans))
+    if(!bno055_perform(&trans))
         return false;
 
     // Reset IMU
@@ -265,7 +267,7 @@ bool bno055_configure(void){
     trans.write_buf[1] = 0x20;
     trans.write_count = 1;
     trans.read_count = 0;
-    if(!i2c_perform(&trans))
+    if(!bno055_perform(&trans))
         return false;
     
     // Wait for reset to complete
@@ -275,7 +277,7 @@ bool bno055_configure(void){
         trans.write_buf[0] = BNO055_CHIP_ID_ADDR;
         trans.write_count = 1;
         trans.read_count = 1;
-        if(!i2c_perform(&trans))
+        if(!bno055_perform(&trans))
             vTaskDelay(pdMS_TO_TICKS(10));
         attempts++;
         if(attempts > 50)
@@ -288,7 +290,7 @@ bool bno055_configure(void){
     trans.write_buf[1] = 0x00;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!i2c_perform(&trans))
+    if(!bno055_perform(&trans))
         return false;
     vTaskDelay(pdMS_TO_TICKS(10));
 
@@ -297,7 +299,7 @@ bool bno055_configure(void){
     trans.write_buf[1] = 0x00;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!i2c_perform(&trans))
+    if(!bno055_perform(&trans))
         return false;
 
     // TODO: Set units
@@ -312,7 +314,7 @@ bool bno055_configure(void){
     trans.write_buf[1] = unitsel_val;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!i2c_perform(&trans))
+    if(!bno055_perform(&trans))
         return false;
 
     // Default Axis remap = P1
@@ -320,7 +322,7 @@ bool bno055_configure(void){
     trans.write_buf[1] = REMAP_P1;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!i2c_perform(&trans))
+    if(!bno055_perform(&trans))
         return false;
 
     // Default Axis sign = P1
@@ -328,7 +330,7 @@ bool bno055_configure(void){
     trans.write_buf[1] = SIGN_P1;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!i2c_perform(&trans))
+    if(!bno055_perform(&trans))
         return false;
 
     // Clear sys trigger register
@@ -336,7 +338,7 @@ bool bno055_configure(void){
     trans.write_buf[1] = 0x00;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!i2c_perform(&trans))
+    if(!bno055_perform(&trans))
         return false;
     vTaskDelay(pdMS_TO_TICKS(10));
 
@@ -345,7 +347,7 @@ bool bno055_configure(void){
     trans.write_buf[1] = OPMODE_IMU;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!i2c_perform(&trans))
+    if(!bno055_perform(&trans))
         return false;
     vTaskDelay(pdMS_TO_TICKS(20));
 
@@ -398,7 +400,7 @@ bool bno055_set_axis(uint8_t mode){
     trans.write_buf[1] = OPMODE_CFG;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!i2c_perform(&trans))
+    if(!bno055_perform(&trans))
         return false;
     vTaskDelay(25);
 
@@ -407,7 +409,7 @@ bool bno055_set_axis(uint8_t mode){
     trans.write_buf[1] = remap;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!i2c_perform(&trans))
+    if(!bno055_perform(&trans))
         return false;
     vTaskDelay(pdMS_TO_TICKS(10));
     
@@ -416,7 +418,7 @@ bool bno055_set_axis(uint8_t mode){
     trans.write_buf[1] = sign;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!i2c_perform(&trans))
+    if(!bno055_perform(&trans))
         return false;
     vTaskDelay(pdMS_TO_TICKS(10));
 
@@ -425,7 +427,7 @@ bool bno055_set_axis(uint8_t mode){
     trans.write_buf[1] = OPMODE_IMU;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!i2c_perform(&trans))
+    if(!bno055_perform(&trans))
         return false;
     vTaskDelay(pdMS_TO_TICKS(25));
     return true;
@@ -436,7 +438,7 @@ bool bno055_read(bno055_data *data){
     trans.write_buf[0] = BNO055_GRAVITY_DATA_X_LSB_ADDR;
     trans.write_count = 1;
     trans.read_count = 6;
-    if(!i2c_perform(&trans))
+    if(!bno055_perform(&trans))
         return false;
     
     // Parse data

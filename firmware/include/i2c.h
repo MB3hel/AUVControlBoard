@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <FreeRTOS.h>
+#include <task.h>
 
 
 typedef struct {
@@ -30,3 +32,13 @@ void i2c_init(void);
  * @return true on success, false on failure
  */
 bool i2c_perform(i2c_trans *trans);
+
+/**
+ * Perform an i2c transactions with multiple attempts if it fails
+ * 
+ * @param trans Pointer to transaction to perform
+ * @param delay_ms Time in milliseconds between retries
+ * @param max_retires Max number of attempts
+ * @return true on success; false if all retries fail
+ */
+bool i2c_perform_retries(i2c_trans *trans, unsigned int delay_ms, unsigned int max_retires);
