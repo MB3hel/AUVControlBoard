@@ -453,6 +453,21 @@ bool bno055_read(bno055_data *data){
     tmp16 = ((int16_t)trans.read_buf[4]) | (((int16_t)trans.read_buf[5]) << 8);
     data->grav_z = -tmp16 / 100.0f;
 
+    // Read Euler Angles
+    trans.write_buf[0] = BNO055_EULER_H_LSB_ADDR;
+    trans.write_count = 1;
+    trans.read_count = 6;
+    if(!bno055_perform(&trans))
+        return false;
+
+    // Parse data
+    tmp16 = ((int16_t)trans.read_buf[0]) | (((int16_t)trans.read_buf[1]) << 8);
+    data->euler_yaw = -tmp16 / 16.0f;
+    tmp16 = ((int16_t)trans.read_buf[2]) | (((int16_t)trans.read_buf[3]) << 8);
+    data->euler_roll = tmp16 / 16.0f;
+    tmp16 = ((int16_t)trans.read_buf[4]) | (((int16_t)trans.read_buf[5]) << 8);
+    data->euler_pitch = tmp16 / 16.0f;
+
     // Success
     return true;
 }
