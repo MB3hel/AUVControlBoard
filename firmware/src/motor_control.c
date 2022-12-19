@@ -36,6 +36,33 @@ SemaphoreHandle_t motor_mutex;                          // Ensures motor & watch
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Skew symmetric matrix from a vector
+ * 
+ * @param outmat Matrix to store output in (skew symmetric matrix 3x3)
+ * @param invec Vector (3x1) used to construct matrix
+ * @return MAT_ERR_x code 
+ */
+static int skew3(matrix *outmat, matrix *invec){
+    if(outmat->rows != 3 || outmat->cols != 3)
+        return MAT_ERR_SIZE;
+    float v[3];
+    if(invec->rows == 1){
+        if(invec->cols != 3)
+            return MAT_ERR_SIZE;
+        matrix_get_row(&v[0], invec, 0);
+    }else if(invec->cols == 1){
+        if(invec->rows != 3)
+            return MAT_ERR_SIZE;
+        matrix_get_col(&v[0], invec, 0);
+    }else{
+        return MAT_ERR_SIZE;
+    }
+    matrix_set_row(outmat, 0, (float[]){0, -v[2], v[1]});
+    matrix_set_row(outmat, 1, (float[]){v[2], 0, -v[0]});
+    matrix_set_row(outmat, 2, (float[]){-v[1], v[0], 0});
+    return MAT_ERR_NONE;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Initialization & Setup
@@ -207,6 +234,82 @@ void mc_set_local(float x, float y, float z, float pitch, float roll, float yaw)
     // Speed array already contains motor speeds in order
     // Because dof matrix rows are in order
     mc_set_raw(speed_arr);
+}
+
+void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw, float grav_x, float grav_y, float grav_z){
+    // Construct target motion vector
+    float target_arr[6];
+    matrix target;
+    matrix_init_static(&target, target_arr, 6, 1);
+    matrix_set_col(&target, 0, (float[]){x, y, z, pitch, roll, yaw});
+
+    // Construct gravity vector
+    float gvec_arr[3];
+    matrix gravity_vector;
+    matrix_init_static(&gravity_vector, gvec_arr, 3, 1);
+    matrix_set_col(&gravity_vector, 0, (float[]){grav_x, grav_y, grav_z});
+
+    // b is unit gravity vector
+    float b_arr[3];
+    float gravl2norm;
+    matrix b;
+    matrix_init_static(&b, b_arr, 3, 1);
+    matrix_l2vnorm(&gravl2norm, &gravity_vector);
+    matrix_sc_div(&b, &gravity_vector, gravl2norm);
+
+    // Expected unit gravity vector when "level"
+    float a_arr[3];
+    matrix a;
+    matrix_init_static(&a, a_arr, 3, 1);
+    matrix_set_col(&a, 0, (float[]){0, 0, -1});
+
+    float v_arr[3];
+    matrix v;
+    matrix_init_static(&v, v_arr, 3, 1);
+    matrix_vcross(&v, &a, &b);
+
+    float c;
+    matrix_vdot(&c, &a, &b);
+
+    float sk_arr[9];
+    matrix sk;
+    matrix_init_static(&sk, sk_arr, 3, 3);
+    skew3(&sk, &v);
+
+    float I_arr[9];
+    matrix I;
+    matrix_init_static(&I, I_arr, 3, 3);
+    matrix_ident(&I);
+
+    float R_arr[9];
+    matrix R;
+    matrix_init_static(&R, R_arr, 3, 3);
+    matrix_mul(&R, &sk, &sk);
+    matrix_sc_div(&R, &R, 1 + c);
+    matrix_add(&R, &R, &sk);
+    matrix_add(&R, &R, &I);
+
+    float tmp[6];
+    float tltarget_arr[3], rltarget_arr[3], tgtarget_arr[3], rgtarget_arr[3];
+    matrix tltarget, rltarget, tgtarget, rgtarget;
+    matrix_init_static(&tltarget, tltarget_arr, 3, 1);
+    matrix_init_static(&rltarget, rltarget_arr, 3, 1);
+    matrix_init_static(&tgtarget, tgtarget_arr, 3, 1);
+    matrix_init_static(&rgtarget, rgtarget_arr, 3, 1);
+    matrix_get_col(&tmp[0], &target, 0);
+    matrix_set_col(&tltarget, 0, &tmp[0]);
+    matrix_set_col(&rltarget, 0, &tmp[3]);
+
+    matrix_mul(&tgtarget, &R, &tltarget);
+    matrix_mul(&rgtarget, &R, &rltarget);
+
+    matrix_get_col(&tmp[0], &tgtarget, 0);
+    matrix_get_col(&tmp[3], &rgtarget, 0);
+
+    matrix_set_col(&target, 0, &tmp[0]);
+
+    // Target is now a local target (stored in order in target_arr)
+    mc_set_local(target_arr[0], target_arr[1], target_arr[2], target_arr[3], target_arr[4], target_arr[5]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
