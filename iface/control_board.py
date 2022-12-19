@@ -19,6 +19,16 @@ class ControlBoard:
         UNKNOWN_MSG = 1
         INVALID_ARGS = 2
         TIMEOUT = 255
+
+    class BNO055Axis(IntEnum):
+        P0 = 0
+        P1 = 1
+        P2 = 2
+        P3 = 3
+        P4 = 4
+        P5 = 5
+        P6 = 6
+        P7 = 7
     
     ## Representation of motor matrix using nested lists
     class MotorMatrix:
@@ -355,6 +365,15 @@ class ControlBoard:
         bno055_ready = (res[0] & 0b00000001) == 1
         ms5837_ready = (res[0] & 0b00000010) == 1
         return ack, bno055_ready, ms5837_ready
+
+    def set_bno055_axis(self, axis: BNO055Axis, timeout: float = 0.1) -> AckError:
+        msg = bytearray()
+        msg.extend(b'BNO055A')
+        msg.append(int(axis))
+
+        msg_id = self.__write_msg(bytes(msg), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
 
 
     ## Set thruster speeds in RAW mode
