@@ -91,7 +91,16 @@ This message will be acknowledged. The acknowledge message will contain no resul
 
 ## Queries
 
-*None for now*
+**Sensor Status Query**  
+Gets the status of all sensors (BNO055 and MS5837).  
+```none
+'S', 'S', 'T', 'A', 'T'
+```
+This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format  
+```none
+[status_byte]
+```  
+`[status_byte]`: Single byte containing bits for the status of all sensors. Bit 0 (LSB) is BNO055 status. Bit 1 is MS5837 status. A status bit of 1 indicates the sensor is "ready" (connected and can be used). A status bit of 0 indicates the sensor is "not ready".
 
 <!--TODO: Future sensor queries-->
 
