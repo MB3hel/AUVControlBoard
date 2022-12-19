@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 // Axis configurations
+// Note: Px macro needs to have value x
 #define BNO055_AXIS_P0          0
 #define BNO055_AXIS_P1          1
 #define BNO055_AXIS_P2          2

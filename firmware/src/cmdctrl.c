@@ -5,6 +5,7 @@
 #include <thruster.h>
 #include <motor_control.h>
 #include <FreeRTOS.h>
+#include <bno055.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -362,6 +363,26 @@ void cmdctrl_handle_message(){
         // TODO: response[0] |= (ms5837_ready << 1);
 
         cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response, 1);
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'A'}))){
+        // BNO055 Axis config command: sets axis remap for BNO055 IMU
+        // B, N, O, 0, 5, 5, A, [mode]
+        // [mode] is a single byte with value 0-7 for BNO055 axis config P0 to P7
+        // Modes are described in sensor's datasheet
+        if(len != 8){
+            // Wrong length
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Message is correct size. Handle it.
+
+            if(msg[7] > 7 || msg[7] < 0){
+                // Invalid mode
+                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+            }else{
+                // Valid mode. Set it.
+                bno055_set_axis(msg[7]);
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+            }
+        }
     }else{
         // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG, NULL, 0);
