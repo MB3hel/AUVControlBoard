@@ -58,6 +58,8 @@ void i2c_init(void){
 }
 
 bool i2c_perform(i2c_trans *trans){
+    HAL_StatusTypeDef status;
+
     xSemaphoreTake(i2c_mutex, portMAX_DELAY);
 
     if(HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY)
@@ -66,19 +68,17 @@ bool i2c_perform(i2c_trans *trans){
     if(trans->write_count > 0 && trans->read_count > 0){
         // Write then read (repeated start between)
         
-        // No stop after write if data will be read.
-        uint32_t xfer_opts = 0;
-        if(trans->read_count > 0)
-            xfer_opts |= I2C_FIRST_FRAME;
-        else
-            xfer_opts |= I2C_FIRST_AND_LAST_FRAME;
-
         // Perform write (no stop after)
-        HAL_I2C_Master_Seq_Transmit_IT(&hi2c1, 
+        status = HAL_I2C_Master_Seq_Transmit_IT(&hi2c1, 
             trans->address << 1, 
             trans->write_buf, 
             trans->write_count,
             I2C_FIRST_FRAME);
+
+        if(status != HAL_OK){
+            xSemaphoreGive(i2c_mutex);
+            return false;
+        }
 
         // Wait for write to finish
         xSemaphoreTake(i2c_done_signal, portMAX_DELAY);
@@ -94,11 +94,16 @@ bool i2c_perform(i2c_trans *trans){
         }
 
         // Perform read
-        HAL_I2C_Master_Seq_Receive_IT(&hi2c1,
+        status = HAL_I2C_Master_Seq_Receive_IT(&hi2c1,
             trans->address << 1,
             trans->read_buf,
             trans->read_count,
             I2C_LAST_FRAME);
+
+        if(status != HAL_OK){
+            xSemaphoreGive(i2c_mutex);
+            return false;
+        }
 
         // Wait for read to finish
         xSemaphoreTake(i2c_done_signal, portMAX_DELAY);
@@ -111,10 +116,15 @@ bool i2c_perform(i2c_trans *trans){
         return ret;
     }else if(trans->read_count > 0){
         // Perform read only.
-        HAL_I2C_Master_Receive_IT(&hi2c1,
+        status = HAL_I2C_Master_Receive_IT(&hi2c1,
             trans->address << 1,
             trans->read_buf,
             trans->read_count);
+
+        if(status != HAL_OK){
+            xSemaphoreGive(i2c_mutex);
+            return false;
+        }
 
         // Wait for read to finish
         xSemaphoreTake(i2c_done_signal, portMAX_DELAY);
@@ -127,10 +137,15 @@ bool i2c_perform(i2c_trans *trans){
         return ret;
     }else if(trans->write_count > 0){
         // Perform write only
-        HAL_I2C_Master_Transmit_IT(&hi2c1,
+        status = HAL_I2C_Master_Transmit_IT(&hi2c1,
             trans->address << 1,
             trans->write_buf,
             trans->write_count);
+
+        if(status != HAL_OK){
+            xSemaphoreGive(i2c_mutex);
+            return false;
+        }
 
         // Wait for read to finish
         xSemaphoreTake(i2c_done_signal, portMAX_DELAY);

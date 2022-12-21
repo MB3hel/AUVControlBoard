@@ -255,6 +255,8 @@ void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw
     matrix b;
     matrix_init_static(&b, b_arr, 3, 1);
     matrix_l2vnorm(&gravl2norm, &gravity_vector);
+    if(gravl2norm < 1)
+        return; // Invalid gravity vector
     matrix_sc_div(&b, &gravity_vector, gravl2norm);
 
     // Expected unit gravity vector when "level"

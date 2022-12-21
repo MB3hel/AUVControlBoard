@@ -415,7 +415,7 @@ void cmdctrl_handle_message(){
         }else{
             // Message is correct size. Handle it.
 
-            if(!bno055_ready){
+            if(!bno055_ready || (grav_x == 0 && grav_y == 0 && grav_z == 0)){
                 // Need BNO055 IMU data to use global mode.
                 // If not ready, then this command is invalid at this time
                 cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);

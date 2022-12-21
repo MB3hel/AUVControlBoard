@@ -21,7 +21,7 @@
 // Stack sizes
 #define TASK_USB_DEVICE_SSIZE               (192)                               // This is size used in CDC-MSC example
 #define TASK_CMDCTRL_SSIZE                  (6*configMINIMAL_STACK_SIZE)        // May call many levels of functions
-#define TASK_IMU_SSIZE                      (3*configMINIMAL_STACK_SIZE)        // Not too many levels of fcn calls
+#define TASK_IMU_SSIZE                      (6*configMINIMAL_STACK_SIZE)        // May call many levels of functions
 
 // Task priorities
 #define TASK_USB_DEVICE_PRIORITY            (configMAX_PRIORITIES - 1)          // Must happen quickly for TUSB to work
