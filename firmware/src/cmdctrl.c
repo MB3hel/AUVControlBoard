@@ -5,6 +5,7 @@
 #include <thruster.h>
 #include <motor_control.h>
 #include <FreeRTOS.h>
+#include <semphr.h>
 #include <bno055.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -59,6 +60,21 @@ static float local_pitch;
 static float local_roll;
 static float local_yaw;
 
+// Last used global mode target
+static float global_x;
+static float global_y;
+static float global_z;
+static float global_pitch;
+static float global_roll;
+static float global_yaw;
+
+// Current sensor data
+// Need mutex b/c don't want to read one value (eg x) then have others (y, z) changed before reading them
+static SemaphoreHandle_t sensor_data_mutex;
+static float grav_x;
+static float grav_y;
+static float grav_z;
+
 // Sensor status flags
 static bool bno055_ready;
 
@@ -91,6 +107,12 @@ void cmdctrl_init(void){
 
     // Initial sensor status
     bno055_ready = false;
+
+    // Initial sensor data
+    grav_x = 0;
+    grav_y = 0;
+    grav_z = 0;
+    sensor_data_mutex = xSemaphoreCreateMutex();
 
     // Default to raw mode
     mode = MODE_RAW;
@@ -383,6 +405,51 @@ void cmdctrl_handle_message(){
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
             }
         }
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'G', 'L', 'O', 'B', 'A', 'L'}))){
+        // GLOBAL speed set
+        // G, L, O, B, A, L, [x], [y], [z], [pitch], [roll], [yaw]
+        // [x], [y], [z], [pitch], [roll], [yaw]  are 32-bit floats (little endian)
+        if(len != 29){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Message is correct size. Handle it.
+
+            // Get speeds from message
+            global_x = conversions_data_to_float(&msg[5], true);
+            global_y = conversions_data_to_float(&msg[9], true);
+            global_z = conversions_data_to_float(&msg[13], true);
+            global_pitch = conversions_data_to_float(&msg[17], true);
+            global_roll = conversions_data_to_float(&msg[21], true);
+            global_yaw = conversions_data_to_float(&msg[25], true);
+
+            // Ensure speeds are in valid range
+            #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
+            LIMIT(global_x);
+            LIMIT(global_y);
+            LIMIT(global_z);
+            LIMIT(global_pitch);
+            LIMIT(global_roll);
+            LIMIT(global_yaw);
+
+            // Update mode variable and LED color (if needed)
+            if(mode != MODE_GLOBAL){
+                mode = MODE_GLOBAL;
+                led_set(COLOR_GLOBAL);
+            }
+
+            // Feed watchdog when speeds are set
+            // Important to call before speed set function in case currently killed
+            mc_wdog_feed();
+
+            // Update motor speeds
+            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+            mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, grav_x, grav_y, grav_z);
+            xSemaphoreGive(sensor_data_mutex);
+
+            // Acknowledge message w/ no error.
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+        }
     }else{
         // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG, NULL, 0);
@@ -395,6 +462,15 @@ void cmdctrl_mwdog_change(bool motors_enabled){
 
 void cmdctrl_bno055_status(bool status){
     bno055_ready = status;
+}
+
+void cmdctrl_bno055_data(bno055_data data){
+    xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+    grav_x = data.grav_x;
+    grav_y = data.grav_y;
+    grav_z = data.grav_z;
+    // TODO: Euler angles when needed
+    xSemaphoreGive(sensor_data_mutex);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

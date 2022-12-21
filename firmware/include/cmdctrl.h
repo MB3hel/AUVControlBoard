@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <bno055.h>
 
 /**
  * Initialize command and control of 
@@ -29,3 +30,9 @@ void cmdctrl_mwdog_change(bool motors_enabled);
  * @param status New status (ready = true; not ready = false)
  */
 void cmdctrl_bno055_status(bool status);
+
+/**
+ * Set bno055 data
+ * @param data New sensor data
+ */
+void cmdctrl_bno055_data(bno055_data data);

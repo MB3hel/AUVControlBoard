@@ -96,6 +96,7 @@ void imu_task_func(void *argument){
             // Periodically read data
             if(bno055_read(&data)){
                 read_failures = 0;
+                cmdctrl_bno055_data(data);
             }else{
                 // Too many failures. Assume IMU no longer connected (or has reset)
                 read_failures++;
