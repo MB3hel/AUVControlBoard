@@ -18,6 +18,7 @@ class ControlBoard:
         NONE = 0
         UNKNOWN_MSG = 1
         INVALID_ARGS = 2
+        INVALID_CMD = 3
         TIMEOUT = 255
 
     class BNO055Axis(IntEnum):
@@ -333,6 +334,7 @@ class ControlBoard:
         msg = b'MMATU'
         msg_id = self.__write_msg(msg, True)
         ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
 
     ## Set thruster inversions (impacts all control modes)
     #  @param inversions List of 8 booleans indicating if thruster is inverted. 
@@ -366,6 +368,9 @@ class ControlBoard:
         ms5837_ready = (res[0] & 0b00000010) == 1
         return ack, bno055_ready, ms5837_ready
 
+    ## Set axis configuration for BNO055 IMU
+    #  @param axis Axis configuration (see BNO055 datasheet) P0-P7 (BNO055Axis enum)
+    #  @return Error code (AckError enum) from control board (or timeout)
     def set_bno055_axis(self, axis: BNO055Axis, timeout: float = 0.1) -> AckError:
         msg = bytearray()
         msg.extend(b'BNO055A')
@@ -414,7 +419,7 @@ class ControlBoard:
     #  @param pitch Speed in +pitch translation DoF (-1.0 to +1.0)
     #  @param roll Speed in +roll translation DoF (-1.0 to +1.0)
     #  @param yaw Speed in +yaw translation DoF (-1.0 to +1.0)
-    def set_local(self, x: float, y: float, z: float, pitch: float, roll: float, yaw: float, timeout: float = 0.1):
+    def set_local(self, x: float, y: float, z: float, pitch: float, roll: float, yaw: float, timeout: float = 0.1) -> AckError:
         # Ensure provided data in valid range
         def limit(v: float):
             if v > 1.0:
@@ -432,6 +437,44 @@ class ControlBoard:
         # Construct message to send
         data = bytearray()
         data.extend(b'LOCAL')
+        data.extend(struct.pack("<f", x))
+        data.extend(struct.pack("<f", y))
+        data.extend(struct.pack("<f", z))
+        data.extend(struct.pack("<f", pitch))
+        data.extend(struct.pack("<f", roll))
+        data.extend(struct.pack("<f", yaw))
+
+        # Send the message and wait for acknowledgement
+        msg_id = self.__write_msg(bytes(data), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+
+    ## Set thruster speeds in GLOBAL mode
+    #  All speeds are relative to world (pitch and roll adjusted; NOT yaw adjusted)
+    #  @param x Speed in +x translation DoF (-1.0 to +1.0)
+    #  @param y Speed in +y translation DoF (-1.0 to +1.0)
+    #  @param z Speed in +z translation DoF (-1.0 to +1.0)
+    #  @param pitch Speed in +pitch translation DoF (-1.0 to +1.0)
+    #  @param roll Speed in +roll translation DoF (-1.0 to +1.0)
+    #  @param yaw Speed in +yaw translation DoF (-1.0 to +1.0)
+    def set_global(self, x: float, y: float, z: float, pitch: float, roll: float, yaw: float, timeout: float = 0.1) -> AckError:
+        # Ensure provided data in valid range
+        def limit(v: float):
+            if v > 1.0:
+                return 1.0
+            if v < -1.0:
+                return -1.0
+            return v
+        x = limit(x)
+        y = limit(y)
+        z = limit(z)
+        pitch = limit(pitch)
+        roll = limit(roll)
+        yaw = limit(yaw)
+
+        # Construct message to send
+        data = bytearray()
+        data.extend(b'GLOBAL')
         data.extend(struct.pack("<f", x))
         data.extend(struct.pack("<f", y))
         data.extend(struct.pack("<f", z))
