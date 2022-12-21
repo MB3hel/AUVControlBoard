@@ -402,7 +402,7 @@ bool bno055_set_axis(uint8_t mode){
     trans.read_count = 0;
     if(!bno055_perform(&trans))
         return false;
-    vTaskDelay(25);
+    vTaskDelay(pdMS_TO_TICKS(25));
 
     // Set remap
     trans.write_buf[0] = BNO055_AXIS_MAP_CONFIG_ADDR;

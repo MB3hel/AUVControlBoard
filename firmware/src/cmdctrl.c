@@ -409,46 +409,52 @@ void cmdctrl_handle_message(){
         // GLOBAL speed set
         // G, L, O, B, A, L, [x], [y], [z], [pitch], [roll], [yaw]
         // [x], [y], [z], [pitch], [roll], [yaw]  are 32-bit floats (little endian)
-        if(len != 29){
+        if(len != 30){
             // Message is incorrect size
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
         }else{
             // Message is correct size. Handle it.
 
-            // Get speeds from message
-            global_x = conversions_data_to_float(&msg[5], true);
-            global_y = conversions_data_to_float(&msg[9], true);
-            global_z = conversions_data_to_float(&msg[13], true);
-            global_pitch = conversions_data_to_float(&msg[17], true);
-            global_roll = conversions_data_to_float(&msg[21], true);
-            global_yaw = conversions_data_to_float(&msg[25], true);
+            if(!bno055_ready){
+                // Need BNO055 IMU data to use global mode.
+                // If not ready, then this command is invalid at this time
+                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+            }else{
+                // Get speeds from message
+                global_x = conversions_data_to_float(&msg[6], true);
+                global_y = conversions_data_to_float(&msg[10], true);
+                global_z = conversions_data_to_float(&msg[14], true);
+                global_pitch = conversions_data_to_float(&msg[18], true);
+                global_roll = conversions_data_to_float(&msg[22], true);
+                global_yaw = conversions_data_to_float(&msg[26], true);
 
-            // Ensure speeds are in valid range
-            #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
-            LIMIT(global_x);
-            LIMIT(global_y);
-            LIMIT(global_z);
-            LIMIT(global_pitch);
-            LIMIT(global_roll);
-            LIMIT(global_yaw);
+                // Ensure speeds are in valid range
+                #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
+                LIMIT(global_x);
+                LIMIT(global_y);
+                LIMIT(global_z);
+                LIMIT(global_pitch);
+                LIMIT(global_roll);
+                LIMIT(global_yaw);
 
-            // Update mode variable and LED color (if needed)
-            if(mode != MODE_GLOBAL){
-                mode = MODE_GLOBAL;
-                led_set(COLOR_GLOBAL);
+                // Update mode variable and LED color (if needed)
+                if(mode != MODE_GLOBAL){
+                    mode = MODE_GLOBAL;
+                    led_set(COLOR_GLOBAL);
+                }
+
+                // Feed watchdog when speeds are set
+                // Important to call before speed set function in case currently killed
+                mc_wdog_feed();
+
+                // Update motor speeds
+                xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+                mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, grav_x, grav_y, grav_z);
+                xSemaphoreGive(sensor_data_mutex);
+
+                // Acknowledge message w/ no error.
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
             }
-
-            // Feed watchdog when speeds are set
-            // Important to call before speed set function in case currently killed
-            mc_wdog_feed();
-
-            // Update motor speeds
-            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, grav_x, grav_y, grav_z);
-            xSemaphoreGive(sensor_data_mutex);
-
-            // Acknowledge message w/ no error.
-            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
     }else{
         // This is an unrecognized message
