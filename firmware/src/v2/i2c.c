@@ -2,6 +2,7 @@
 #include <i2c.h>
 #include <FreeRTOS.h>
 #include <semphr.h>
+#include <delay.h>
 
 extern I2C_HandleTypeDef hi2c1;
 
@@ -41,7 +42,58 @@ void HAL_I2C_AbortCpltCallback(I2C_HandleTypeDef *hi2c){
     asm("nop");
 }
 
+static void i2c_fix_sda_low(void){
+    // Works by setting SDA and SCL pins into GPIO mode and bit-banging clock
+    // cycles until the SDA line no longer reads as low
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    // Set pins into GPIO mode (generated code will have put them in SDA1 and SCL1 modes)
+    // SCL (PB8) as output
+    // SDA (PB9) as input
+    GPIO_InitStruct.Pin = GPIO_PIN_8;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    GPIO_InitStruct.Pin = GPIO_PIN_9;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    delay_ms(1);
+
+    // Bit-bang clock cycles while SDA remains low (~100kHz clock frequency)
+    // Limit max cycles to ensure this is never an infinite loop (eg if external pullups missing)
+    // In reality, should never take more than 10 clock cycles
+    unsigned int cycles = 0;
+    while(HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9) == GPIO_PIN_RESET){
+        if(cycles++ > 100)
+            break;
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
+        delay_us(10);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
+        delay_us(10);
+    }
+
+    // Set pins to I2C mode (SDA and SCL modes; same as generated code does)
+    GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    delay_ms(1);
+}
+
 void i2c_init(void){
+
+    // Sometimes (when device is reset at wrong time) a slave may be holding SDA low
+    // Best option in this case is to send clock pulses until it releases it
+    // This could be fixed in the case of the BNO055 using the reset pin to reset the IMU
+    // however, this cannot be done for the depth sensor. Thus, this method is relied on
+    // for both devices instead.
+    i2c_fix_sda_low();
+
     // Mutex used to ensure i2c API is thread-safe
     i2c_mutex = xSemaphoreCreateMutex();
 
