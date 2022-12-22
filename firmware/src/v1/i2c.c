@@ -3,6 +3,7 @@
 #include <FreeRTOS.h>
 #include <portmacro.h>
 #include <semphr.h>
+#include <delay.h>
 
 
 static SemaphoreHandle_t i2c_mutex;
@@ -17,8 +18,47 @@ static void i2c_done_callback(uintptr_t contextHandle){
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
+static void i2c_fix_sda_low(void){
+    // Works by setting SDA and SCL pins into GPIO mode and bit-banging clock
+    // cycles until the SDA line no longer reads as low
+
+    // Set pins into GPIO mode (generated code will have put them in SDA1 and SCL1 modes)
+    // SCL (PA13) as output
+    // SDA (PA12) as input
+    PORT_PinGPIOConfig(PORT_PIN_PA12);
+    PORT_GroupInputEnable(PORT_GROUP_0, 1 << 12);
+    PORT_PinGPIOConfig(PORT_PIN_PA13);
+    PORT_GroupOutputEnable(PORT_GROUP_0, 1 << 13);
+    delay_ms(1);
+
+    // Bit-bang clock cycles while SDA remains low (~100kHz clock frequency)
+    // Limit max cycles to ensure this is never an infinite loop (eg if external pullups missing)
+    // In reality, should never take more than 10 clock cycles
+    unsigned int cycles = 0;
+    while((PORT_GroupRead(PORT_GROUP_0) & (1 << 12))){
+        if(cycles++ > 100)
+            break;
+        PORT_GroupSet(PORT_GROUP_0, 1 << 13);
+        delay_us(10);
+        PORT_GroupClear(PORT_GROUP_0, 1 << 13);
+        delay_us(10);
+    }
+
+    // Set pins to I2C mode (SDA and SCL modes; same as generated code does)
+    PORT_PinPeripheralFunctionConfig(PORT_PIN_PA12, PERIPHERAL_FUNCTION_C);
+    PORT_PinPeripheralFunctionConfig(PORT_PIN_PA13, PERIPHERAL_FUNCTION_C);
+    delay_ms(1);
+}
 
 void i2c_init(void){
+
+    // Sometimes (when device is reset at wrong time) a slave may be holding SDA low
+    // Best option in this case is to send clock pulses until it releases it
+    // This could be fixed in the case of the BNO055 using the reset pin to reset the IMU
+    // however, this cannot be done for the depth sensor. Thus, this method is relied on
+    // for both devices instead.
+    i2c_fix_sda_low();
+
     // Mutex used to ensure i2c API is thread-safe
     i2c_mutex = xSemaphoreCreateMutex();
 
