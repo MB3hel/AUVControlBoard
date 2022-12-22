@@ -57,7 +57,7 @@ Used to configure the BNO055 IMU's axis orientation.
 ```none
 'B', 'N', 'O', '0', '5', '5', 'A', [config]
 ```
-`[config]`: A single byte. The value of this byte is between 0 and 7 (inclusive) representing on of the BNO055 axis configs (P0 to P7) as described in the BNO055 datasheet.  
+`[config]`: A single byte. The value of this byte is between 0 and 7 (inclusive) representing on of the BNO055 axis configs (P0 to P7) as described in the BNO055 datasheet. *Note: Changing the axis config changes IMU mode. Thus, there will be a brief time afterwards where the IMU may report zeros for all data.*  
 This message will be acknowledged. The acknowledge message will contain no result data.
 
 <!--TODO: Future sensor config commands-->
