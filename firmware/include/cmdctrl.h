@@ -12,7 +12,7 @@ void cmdctrl_init(void);
 /**
  * Handle a message received from the pc
  */
-void cmdctrl_handle_message();
+void cmdctrl_handle_message(void);
 
 /**
  * Reapply the last applied speed

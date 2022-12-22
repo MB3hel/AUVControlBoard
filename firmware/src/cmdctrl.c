@@ -191,7 +191,7 @@ static void cmdctrl_acknowledge(uint16_t msg_id, uint8_t error_code, uint8_t *re
     vPortFree(data);
 }
 
-void cmdctrl_handle_message(){
+void cmdctrl_handle_message(void){
     // Helper macros
     // First two bytes of message are message ID (so skip them for actual message content)
     // Also, skip last two bytes (these are message CRC)
