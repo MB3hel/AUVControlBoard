@@ -49,7 +49,15 @@ Thruster inversion set command is used to invert the positive and negative direc
 ```none
 'T', 'I', 'N', 'V', [inv]
 ```  
-`[inv]`: A single byte where each bit represents the inversion status of a thruster. The MSB (bit 7) corresponds to thruster 8 and the LSB corresponds to thruster 1 (bit + 1 = thruster). A bit value of 1 means the thruster is inverted. A bit value of 0 means the thruster is not inverted.
+`[inv]`: A single byte where each bit represents the inversion status of a thruster. The MSB (bit 7) corresponds to thruster 8 and the LSB corresponds to thruster 1 (bit + 1 = thruster). A bit value of 1 means the thruster is inverted. A bit value of 0 means the thruster is not inverted.  
+This message will be acknowledged. The acknowledge message will contain no result data.
+
+**BNO055 IMU Axis Configure Command**  
+Used to configure the BNO055 IMU's axis orientation.  
+```none
+'B', 'N', 'O', '0', '5', '5', 'A', [config]
+```
+`[config]`: A single byte. The value of this byte is between 0 and 7 (inclusive) representing on of the BNO055 axis configs (P0 to P7) as described in the BNO055 datasheet.  
 This message will be acknowledged. The acknowledge message will contain no result data.
 
 <!--TODO: Future sensor config commands-->
@@ -65,12 +73,20 @@ Used to set motor speeds in `RAW` mode. This command has the following format.
 This message will be acknowledged. The acknowledge message will contain no result data.
 
 **Local Speed Set**  
-Used to set motor speeds in `LOCAL` mode. This command has the following format.  
+Used to set motor speeds in `LOCAL` mode. This command has the following format  
 ```none
 'L', 'O', 'C', 'A', 'L', [x], [y], [z], [pitch], [roll], [yaw]
 ```  
 `[x]`, `[y]`, `[z]`, `[pitch]`, `[roll]`, `[yaw]`: Speed for each DoF relative to the robot -1.0 to 1.0. A 32-bit float (little endian).  
 This message will be acknowledged. The acknowledge message will contain no result data.
+
+**Global Speed Set**  
+Used to set motor speeds in `GLOBAL` mode. This command has the following format  
+```none
+'G', 'L', 'O', 'B', 'A', 'L', [x], [y], [z], [pitch], [roll], [yaw]
+```  
+`[x]`, `[y]`, `[z]`, `[pitch]`, `[roll]`, `[yaw]`: Speed for each DoF relative to the world (pitch and roll compensated; not yaw compensated) -1.0 to 1.0. A 32-bit float (little endian).  
+This message will be acknowledged. The acknowledge message will contain no result data. Note that if the IMU is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
 
 <!--TODO: Future other mode commands-->
 
