@@ -6,6 +6,7 @@
 #include <motor_control.h>
 #include <FreeRTOS.h>
 #include <semphr.h>
+#include <timers.h>
 #include <bno055.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -77,6 +78,9 @@ static volatile float grav_z;
 
 // Sensor status flags
 static bool bno055_ready;
+
+// Periodic reading of sensor data timer
+TimerHandle_t sensor_read_timer;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -164,6 +168,12 @@ void cmdctrl_apply_saved_speed(void){
     switch (mode){
     case MODE_RAW:
         mc_set_raw(raw_target);
+        break;
+    case MODE_LOCAL:
+        mc_set_local(local_x, local_y, local_z, local_pitch, local_roll, local_yaw);
+        break;
+    case MODE_GLOBAL:
+        mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw);
         break;
     }
 }
