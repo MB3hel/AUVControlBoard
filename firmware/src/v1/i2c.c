@@ -48,10 +48,14 @@ static void i2c_fix_sda_low(void){
     PORT_PinPeripheralFunctionConfig(PORT_PIN_PA12, PERIPHERAL_FUNCTION_C);
     PORT_PinPeripheralFunctionConfig(PORT_PIN_PA13, PERIPHERAL_FUNCTION_C);
     delay_ms(1);
+
+    // Need to re-initialize I2C SERCOM after doing this or it won't work
+    // May have to do with I2C SERCOM hardware getting in a bad state when pinmux changed
+    // and there are no longer pullup resistors
+    SERCOM2_I2C_Initialize();
 }
 
 void i2c_init(void){
-
     // Sometimes (when device is reset at wrong time) a slave may be holding SDA low
     // Best option in this case is to send clock pulses until it releases it
     // This could be fixed in the case of the BNO055 using the reset pin to reset the IMU
