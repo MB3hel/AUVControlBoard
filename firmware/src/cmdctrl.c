@@ -71,9 +71,9 @@ static float global_yaw;
 // Current sensor data
 // Need mutex b/c don't want to read one value (eg x) then have others (y, z) changed before reading them
 static SemaphoreHandle_t sensor_data_mutex;
-static float grav_x;
-static float grav_y;
-static float grav_z;
+static volatile float grav_x;
+static volatile float grav_y;
+static volatile float grav_z;
 
 // Sensor status flags
 static bool bno055_ready;
@@ -415,7 +415,13 @@ void cmdctrl_handle_message(){
         }else{
             // Message is correct size. Handle it.
 
-            if(!bno055_ready || (grav_x == 0 && grav_y == 0 && grav_z == 0)){
+            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+            float m_grav_x = grav_x;
+            float m_grav_y = grav_y;
+            float m_grav_z = grav_z;
+            xSemaphoreGive(sensor_data_mutex);
+
+            if(!bno055_ready || (m_grav_x == 0 && m_grav_y == 0 && m_grav_z == 0)){
                 // Need BNO055 IMU data to use global mode.
                 // If not ready, then this command is invalid at this time
                 cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
@@ -448,9 +454,7 @@ void cmdctrl_handle_message(){
                 mc_wdog_feed();
 
                 // Update motor speeds
-                xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-                mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, grav_x, grav_y, grav_z);
-                xSemaphoreGive(sensor_data_mutex);
+                mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, m_grav_x, m_grav_y, m_grav_z);
 
                 // Acknowledge message w/ no error.
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);

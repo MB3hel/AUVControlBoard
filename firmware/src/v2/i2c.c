@@ -37,6 +37,9 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c){
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
+void HAL_I2C_AbortCpltCallback(I2C_HandleTypeDef *hi2c){
+    asm("nop");
+}
 
 void i2c_init(void){
     // Mutex used to ensure i2c API is thread-safe
@@ -162,4 +165,3 @@ bool i2c_perform(i2c_trans *trans){
     xSemaphoreGive(i2c_mutex);
     return true;
 }
-
