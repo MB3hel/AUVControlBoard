@@ -36,7 +36,7 @@ void cmdctrl_task_func(void *arg){
         xTaskNotifyWait(pdFALSE, UINT32_MAX, &notification, portMAX_DELAY);
 
         // Handle the notification
-        if(notification & NOTIF_CMDCTRL_PCDAATA){
+        if(notification & NOTIF_CMDCTRL_PCDATA){
             // There is data to handle from the PC
             // Read and parse the data
             if(pccomm_read_and_parse()){
@@ -48,7 +48,7 @@ void cmdctrl_task_func(void *arg){
             // This is necessary because read_and_parse may return true part way through reading data
             // Which means that usb_device_task will not notify again, but there is unhandled data
             if(tud_cdc_available())
-                xTaskNotify(cmdctrl_task, NOTIF_CMDCTRL_PCDAATA, eSetBits);
+                xTaskNotify(cmdctrl_task, NOTIF_CMDCTRL_PCDATA, eSetBits);
         }
     }
 }
@@ -64,7 +64,7 @@ void usb_device_task_func(void *argument){
 
         // If data now available, notify the communication task
         if(tud_cdc_available()){
-            xTaskNotify(cmdctrl_task, NOTIF_CMDCTRL_PCDAATA, eSetBits);
+            xTaskNotify(cmdctrl_task, NOTIF_CMDCTRL_PCDATA, eSetBits);
         }
     }
 }
