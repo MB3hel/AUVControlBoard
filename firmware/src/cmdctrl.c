@@ -41,6 +41,11 @@
 #define ACK_ERR_INVALID_CMD             3   // Command is known, but invalid at this time
 // Note 255 reserved for timeout error codes
 
+
+
+#define SENSOR_DATA_PERIOD              20      // ms
+#define SPEED_PERIOD                    20      // ms
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -72,15 +77,18 @@ static float global_yaw;
 // Current sensor data
 // Need mutex b/c don't want to read one value (eg x) then have others (y, z) changed before reading them
 static SemaphoreHandle_t sensor_data_mutex;
-static volatile float grav_x;
-static volatile float grav_y;
-static volatile float grav_z;
+static bno055_data curr_bno055_data;
 
 // Sensor status flags
 static bool bno055_ready;
 
 // Periodic reading of sensor data timer
-TimerHandle_t sensor_read_timer;
+static bool periodic_bno055;
+static bool periodic_ms5837;
+static TimerHandle_t sensor_read_timer;
+
+// Used to periodically re-apply speeds in modes where 
+static TimerHandle_t periodic_speed_timer;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -89,6 +97,31 @@ TimerHandle_t sensor_read_timer;
 /// CMDCTRL functions / implementation
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+static void send_sensor_data(TimerHandle_t timer){
+    // Send the data for sensors as needed
+    if(periodic_bno055){
+        // TODO: NYI
+    }
+    if(periodic_ms5837){
+        // TODO: NYI
+    }
+
+    // Not using auto reload so that any time taken to
+    // enforce a duration between sends, not a rate of sending data
+    xTimerStart(sensor_read_timer, portMAX_DELAY);
+}
+
+static void periodic_reapply_speed(TimerHandle_t timer){
+    // Modes using sensor data (which may change) need to be periodically reapplied
+    if(mode == MODE_GLOBAL || mode == MODE_SASSIST){
+        cmdctrl_apply_saved_speed();
+    }
+
+    // Not using auto reload so that any time taken to
+    // enforce a duration between sets, not a rate of setting speeds
+    xTimerStart(periodic_speed_timer, portMAX_DELAY);
+}
 
 void cmdctrl_init(void){
     // Initialize targets for all modes to result in no motion
@@ -105,7 +138,13 @@ void cmdctrl_init(void){
     local_roll = 0.0f;
     local_yaw = 0.0f;
 
-    // TODO: Global mode (zero all)
+    // Global mode (zero all)
+    global_x = 0.0f;
+    global_y = 0.0f;
+    global_z = 0.0f;
+    global_pitch = 0.0f;
+    global_roll = 0.0f;
+    global_yaw = 0.0f;
 
     // TODO: Sassist mode (set valid bool to false)
 
@@ -113,10 +152,35 @@ void cmdctrl_init(void){
     bno055_ready = false;
 
     // Initial sensor data
-    grav_x = 0;
-    grav_y = 0;
-    grav_z = 0;
+    curr_bno055_data.euler_pitch = 0;
+    curr_bno055_data.euler_roll = 0;
+    curr_bno055_data.euler_yaw = 0;
+    curr_bno055_data.grav_x = 0;
+    curr_bno055_data.grav_y = 0;
+    curr_bno055_data.grav_z = 0;
     sensor_data_mutex = xSemaphoreCreateMutex();
+
+    // Periodic sensor data
+    periodic_bno055 = false;
+    periodic_ms5837 = false;
+    sensor_read_timer = xTimerCreate(
+        "sensor_read",
+        pdMS_TO_TICKS(SENSOR_DATA_PERIOD),
+        pdFALSE,                                // Don't auto reload
+        NULL,
+        send_sensor_data
+    );
+    xTimerStart(sensor_read_timer, portMAX_DELAY);
+
+    // Periodic speed reapply
+    periodic_speed_timer = xTimerCreate(
+        "periodic_speed",
+        pdMS_TO_TICKS(SPEED_PERIOD),
+        pdFALSE,
+        NULL,
+        periodic_reapply_speed
+    );
+    xTimerStart(periodic_speed_timer, portMAX_DELAY);
 
     // Default to raw mode
     mode = MODE_RAW;
@@ -165,6 +229,8 @@ bool data_startswith(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_
  * Apply the last saved speed for the current mode
  */
 void cmdctrl_apply_saved_speed(void){
+    float m_grav_x, m_grav_y, m_grav_z;
+
     switch (mode){
     case MODE_RAW:
         mc_set_raw(raw_target);
@@ -173,7 +239,12 @@ void cmdctrl_apply_saved_speed(void){
         mc_set_local(local_x, local_y, local_z, local_pitch, local_roll, local_yaw);
         break;
     case MODE_GLOBAL:
-        mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw);
+        xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+        m_grav_x = curr_bno055_data.grav_x;
+        m_grav_y = curr_bno055_data.grav_y;
+        m_grav_z = curr_bno055_data.grav_z;
+        xSemaphoreGive(sensor_data_mutex);
+        mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, m_grav_x, m_grav_y, m_grav_z);
         break;
     }
 }
@@ -241,6 +312,9 @@ void cmdctrl_handle_message(void){
                 if(raw_target[i] < -1.0f) raw_target[i] = -1.0f;
                 else if(raw_target[i] > 1.0f) raw_target[i] = 1.0f;
             }
+
+            // Reset time until periodic speed set
+            xTimerReset(periodic_speed_timer, portMAX_DELAY);
 
             // Update mode variable and LED color (if needed)
             if(mode != MODE_RAW){
@@ -365,6 +439,9 @@ void cmdctrl_handle_message(void){
             LIMIT(local_roll);
             LIMIT(local_yaw);
 
+            // Reset time until periodic speed set
+            xTimerReset(periodic_speed_timer, portMAX_DELAY);
+
             // Update mode variable and LED color (if needed)
             if(mode != MODE_LOCAL){
                 mode = MODE_LOCAL;
@@ -426,9 +503,9 @@ void cmdctrl_handle_message(void){
             // Message is correct size. Handle it.
 
             xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            float m_grav_x = grav_x;
-            float m_grav_y = grav_y;
-            float m_grav_z = grav_z;
+            float m_grav_x = curr_bno055_data.grav_x;
+            float m_grav_y = curr_bno055_data.grav_y;
+            float m_grav_z = curr_bno055_data.grav_z;
             xSemaphoreGive(sensor_data_mutex);
 
             if(!bno055_ready || (m_grav_x == 0 && m_grav_y == 0 && m_grav_z == 0)){
@@ -452,6 +529,9 @@ void cmdctrl_handle_message(void){
                 LIMIT(global_pitch);
                 LIMIT(global_roll);
                 LIMIT(global_yaw);
+
+                // Reset time until periodic speed set
+                xTimerReset(periodic_speed_timer, portMAX_DELAY);
 
                 // Update mode variable and LED color (if needed)
                 if(mode != MODE_GLOBAL){
@@ -486,10 +566,7 @@ void cmdctrl_bno055_status(bool status){
 
 void cmdctrl_bno055_data(bno055_data data){
     xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-    grav_x = data.grav_x;
-    grav_y = data.grav_y;
-    grav_z = data.grav_z;
-    // TODO: Euler angles when needed
+    curr_bno055_data = data;
     xSemaphoreGive(sensor_data_mutex);
 }
 
