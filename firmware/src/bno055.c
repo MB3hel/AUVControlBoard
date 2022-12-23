@@ -478,8 +478,10 @@ bool bno055_read(bno055_data *data){
         return false;
 
     // Parse data
+    // Note that yaw goes the opposite direction of the coord system defined by
+    // control board, hence, yaw = 360 - yaw (since yaw from 0 to 360) 
     tmp16 = ((int16_t)trans.read_buf[0]) | (((int16_t)trans.read_buf[1]) << 8);
-    data->euler_yaw = -tmp16 / 16.0f;
+    data->euler_yaw = 360.0f - (tmp16 / 16.0f);
     tmp16 = ((int16_t)trans.read_buf[2]) | (((int16_t)trans.read_buf[3]) << 8);
     data->euler_roll = tmp16 / 16.0f;
     tmp16 = ((int16_t)trans.read_buf[4]) | (((int16_t)trans.read_buf[5]) << 8);
