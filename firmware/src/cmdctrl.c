@@ -601,27 +601,32 @@ void cmdctrl_handle_message(void){
         // Response contains [grav_x], [grav_y], [grav_z], [euler_pitch], [euler_roll], [euler_yaw]
         // where each value is a 32-bit float little endian
 
-        // Store current readings
-        xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-        float m_grav_x = curr_bno055_data.grav_x;
-        float m_grav_y = curr_bno055_data.grav_y;
-        float m_grav_z = curr_bno055_data.grav_z;
-        float m_euler_pitch = curr_bno055_data.euler_pitch;
-        float m_euler_roll = curr_bno055_data.euler_roll;
-        float m_euler_yaw = curr_bno055_data.euler_yaw;
-        xSemaphoreGive(sensor_data_mutex);
+        if(!bno055_ready){
+            // Sensor not ready. This command is not valid right now.
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+        }else{
+            // Store current readings
+            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+            float m_grav_x = curr_bno055_data.grav_x;
+            float m_grav_y = curr_bno055_data.grav_y;
+            float m_grav_z = curr_bno055_data.grav_z;
+            float m_euler_pitch = curr_bno055_data.euler_pitch;
+            float m_euler_roll = curr_bno055_data.euler_roll;
+            float m_euler_yaw = curr_bno055_data.euler_yaw;
+            xSemaphoreGive(sensor_data_mutex);
 
-        // Construct response data
-        uint8_t response_data[24];
-        conversions_float_to_data(m_grav_x, &response_data[0], true);
-        conversions_float_to_data(m_grav_y, &response_data[4], true);
-        conversions_float_to_data(m_grav_z, &response_data[8], true);
-        conversions_float_to_data(m_euler_pitch, &response_data[12], true);
-        conversions_float_to_data(m_euler_roll, &response_data[16], true);
-        conversions_float_to_data(m_euler_yaw, &response_data[20], true);
+            // Construct response data
+            uint8_t response_data[24];
+            conversions_float_to_data(m_grav_x, &response_data[0], true);
+            conversions_float_to_data(m_grav_y, &response_data[4], true);
+            conversions_float_to_data(m_grav_z, &response_data[8], true);
+            conversions_float_to_data(m_euler_pitch, &response_data[12], true);
+            conversions_float_to_data(m_euler_roll, &response_data[16], true);
+            conversions_float_to_data(m_euler_yaw, &response_data[20], true);
 
-        // Send ack with response data
-        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 24);
+            // Send ack with response data
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 24);
+        }
     }else if(MSG_STARTS_WITH(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'P'}))){
         // BNO055 periodic read configure
         // B, N, O, 0, 5, 5, P, [enable]
