@@ -100,6 +100,13 @@ Used to feed the motor watchdog so it does not kill the motors. This command has
 ```
 This message will be acknowledged. The acknowledge message will contain no result data.
 
+**BNO055 Periodic Read**  
+Used to enable / disable periodic reading of BNO055 data. This will only impact data being sent from control board to the pc. The control board itself will continue to read and use IMU data.  
+```none
+'B', 'N', 'O', '0', '5', '5', 'P', [enable]
+```  
+`[enable]` is an 8-bit integer with a value of either 1 or 0. If 1, reading data periodically is enabled. If 0, reading data periodically is disabled.  
+This message will be acknowledged. The acknowledge message will contain no result data.
 
 <hr />
 
@@ -117,6 +124,18 @@ This message will be acknowledged. If acknowledged with no error, the response w
 [status_byte]
 ```  
 `[status_byte]`: Single byte containing bits for the status of all sensors. Bit 0 (LSB) is BNO055 status. Bit 1 is MS5837 status. A status bit of 1 indicates the sensor is "ready" (connected and can be used). A status bit of 0 indicates the sensor is "not ready".
+
+
+**BNO055 Read**  
+Reads BNO055 IMU data once.  
+```none
+'B', 'N', 'O', '0', '5', '5', 'R'
+```  
+This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format. Note that this is the same format as the data contained within the BNO055 data status message.  
+```none
+[gyro_x], [gyro_y], [gyro_z], [euler_pitch], [euler_roll], [euler_yaw]
+```  
+Each value is a 32-bit float, little endian.
 
 <!--TODO: Future sensor queries-->
 
@@ -149,5 +168,12 @@ Motor watch status message is used by the control board to notify the PC about c
 'W', 'D', 'G', 'S', [status]
 ```
 `[status]` is a single byte. A value of 1 indicates the motors are enabled. A value of zero indicates the motors are currently killed by the watchdog.
+
+**BNO055 Data Status**  
+Used by the control board to periodically send IMU data to the PC. Only sent when BNO055 periodic reads are enabled via the BNO055 periodic read command. The message has the following format  
+```none
+'B', 'N', 'O', '0', '5', '5', 'D', [gyro_x], [gyro_y], [gyro_z], [euler_pitch], [euler_roll], [euler_yaw]
+```  
+Each value is a 32-bit float, little endian.
 
 <!--TODO: Future status messages (sensors)-->
