@@ -1,4 +1,6 @@
 site_name: AUV Control Board
+repo_url: https://github.com/MB3hel/AUVControlBoard
+edit_uri: blob/main/docs/docs
 theme:
     name: readthedocs
     highlightjs: true
