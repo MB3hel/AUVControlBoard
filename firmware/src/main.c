@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2022 Marcus Behel
  * 
  * This file is part of AUVControlBoard-Firmware.

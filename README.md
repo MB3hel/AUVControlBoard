@@ -14,7 +14,7 @@ The Control Board is a coprocessor designed to assist a main computer (typically
 
 ## License
 
-- The firmware (`firmware` directory) is licensed under the GPU General Public License version 3.0 or later (GPL-3.0-or-later). Note that third party code contained in the firmware directory (`firmware/thirdparty`) is **not** covered by this license. Third party code is distributed under the terms of the software's own license. License files are included for such third party software.
+- The firmware (`firmware` directory) is licensed under the GPU General Public License version 3 or later (GPL-3.0-or-later). Note that third party code contained in the firmware directory (`firmware/thirdparty`) is **not** covered by this license. Third party code is distributed under the terms of the software's own license. License files are included for such third party software.
 - The documentation (`docs` directory) is currently all rights reserved
 - The interface scripts (`iface` directory) is currently all rights reserved
 - The reference information (`references`) is a collection of various resources from various sources. These are all publicly accessible (and downloadable) resources (at time of writing), but are not owned by or licensed by this project in any way. The license terms of these resources depend on the specific resource.

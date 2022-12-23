@@ -550,6 +550,12 @@ void cmdctrl_handle_message(void){
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
             }
         }
+    }else if(MSG_EQUALS(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'R'}))){
+        // One-shot read of BNO055 data (all data)
+        // TODO: Implement
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'P', 'E', 'R'}))){
+        // Sensor periodic read configure
+        // TODO: Implement
     }else{
         // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG, NULL, 0);

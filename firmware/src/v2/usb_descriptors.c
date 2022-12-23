@@ -1,6 +1,25 @@
+/*
+ * Copyright 2022 Marcus Behel
+ * 
+ * This file is part of AUVControlBoard-Firmware.
+ * 
+ * AUVControlBoard-Firmware is free software: you can redistribute it and/or modify it under the terms of the GNU 
+ * General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your 
+ * option) any later version.
+ * 
+ * AUVControlBoard-Firmware is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even 
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for 
+ * more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with AUVControlBoard-Firmware. If not, see 
+ * <https://www.gnu.org/licenses/>. 
+ * 
+ */
+
 /**
  * USB descriptors used by TinyUSB
- * HIGH SPEED mode things removed since TinyUSB does not support HIGH speed on SAMD51
+ * HIGH SPEED mode things removed since TinyUSB does not support HIGH speed on SAMD51 (used in v1). Thus HS not used in
+ * this firmware to maintain compatability with v1 (samd51 based).
  * https://docs.tinyusb.org/en/latest/reference/supported.html
  * 
  * @file usb_descriptors.c
