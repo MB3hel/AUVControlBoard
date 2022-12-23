@@ -7,10 +7,17 @@ The Control Board is a coprocessor designed to assist a main computer (typically
 
 ## Repository Structure
 
-- `iface`: Contains reference implementation to communicate with and use control board. Written in python.
 - `docs`: Documentation for users of the control board. This is a mkdocs project.
 - `firmware`: PlatformIO project and source code for ControlBoard firmware.
+- `iface`: Contains reference implementation to communicate with and use control board. Written in python.
 - `references`: Various links and pdfs providing information about components and libraries used on the control board. Intended for firmware developers.
+
+## License
+
+- The firmware (`firmware` directory) is licensed under the GPU General Public License version 3.0 or later (GPL-3.0-or-later).
+- The documentation (`docs` directory) is currently all rights reserved
+- The interface scripts (`iface` directory) is currently all rights reserved
+- The reference information (`references`) is a collection of various resources from various sources. These are all publicly accessible (and downloadable) resources (at time of writing), but are not owned by or licensed by this project in any way. The license terms of these resources depend on the specific resource.
 
 
 ## View Documentation
