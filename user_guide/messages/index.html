@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Messages - AUV Control Board</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Messages";
+        var mkdocs_page_input_path = "user_guide\\messages.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <script src="../../js/jquery-3.6.0.min.js" defer></script>
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> AUV Control Board
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Hardware</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hardware/v1/">Version 1</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hardware/v2/">Version 2</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hardware/sensors/">Off-Board Sensors</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Firmware</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/build/">Build and Flash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/math/">6DOF Math</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/developing/">Firmware Development</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../preparing_board/">Preparing a Control Board</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../general_use/">Using Control board</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../comm_protocol/">Communication Protocol</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="./">Messages</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#types-of-messages">Types of Messages</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#message-definition-conventions">Message Definition Conventions</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#commands">Commands</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#configuration-commands">Configuration Commands</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#motor-control-commands">Motor Control Commands</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#other-commands">Other Commands</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#queries">Queries</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#acknowledgements">Acknowledgements</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#status-messages">Status Messages</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">AUV Control Board</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" alt="Docs"></a> &raquo;</li>
+          <li>User Guide &raquo;</li><li>Messages</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="messages">Messages</h1>
+<p>This section describes what specific messages are sent to / received from the control board and what they do / mean. This does not address how messages are constructed or sent. For such information, see <a href="../comm_protocol/">Communication Protocol</a>.</p>
+<p><em>Note: The Communication Protocol page uses the term "payload" for the data being transferred and "message" for the formatted / fully constructed set of data. Here, what we refer to as "messages" are actually the "payload" data, not the constructed data.</em></p>
+<h2 id="types-of-messages">Types of Messages</h2>
+<ul>
+<li><strong>Commands</strong>: Messages instructing an action be taken. These messages must be acknowledged upon receipt. The acknowledgement typically contains no data. Sent from PC to control board.</li>
+<li><strong>Queries</strong>: Messages requesting information. These messages must be acknowledged upon receipt. The acknowledgement will contain the requested information. Sent from PC to control board.</li>
+<li><strong>Acknowledgements</strong>: A very specific type of message acknowledging receipt of another message (with an error code and optional data). Sent from control board to PC.</li>
+<li><strong>Status Messages</strong>: Unprompted messages containing information about state / data changes. Sent from control board to PC.</li>
+</ul>
+<h2 id="message-definition-conventions">Message Definition Conventions</h2>
+<p>In the following sections, the following standard is used to describe message contents:</p>
+<ul>
+<li>Each message's contents are shown as a comma separated list of bytes. Each comma separated item is a single byte, with one exception for parameters (as described below)</li>
+<li>Parameters are shown inside square brackets. Parameters represent a value that will be described in more detail below the message structure information. Parameters can be multiple bytes (even though they take only one entry between commas).</li>
+<li>ASCII characters are shown in single quotes. These are single byte unsigned ASCII characters.</li>
+<li>Numbers are not contained within any symbols. Numbers may be in hex (prefix 0x), binary (prefix 0b), or decimal (no prefix).</li>
+</ul>
+<hr />
+
+<h2 id="commands">Commands</h2>
+<h3 id="configuration-commands">Configuration Commands</h3>
+<p><strong>Motor Matrix Set</strong><br />
+Motor matrix set command is used to set a single row of the motor matrix. It has the following format  </p>
+<pre><code class="language-none">'M', 'M', 'A', 'T', 'S', [thruster_num], [x], [y], [z], [pitch], [roll], [yaw]
+</code></pre>
+<p><code>[thruster_num]</code>: A single byte who'se unsigned value is the thruster number the row data should be set for (1-8).<br />
+<code>[x]</code>, <code>[y]</code>, <code>[z]</code>, <code>[pitch]</code>, <code>[roll]</code>, <code>[yaw]</code>: Columns of the motor matrix row being set. Each is a 32-bit float (little endian).<br />
+This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<p><strong>Motor Matrix Update</strong><br />
+Motor matrix update command is used to inform the control board the motor matrix has changed. Causes the control board to perform some calculations with the new motor matrix. This should be sent after writing all rows of the motor matrix that should change using the motor matrix set command. The motor matrix update command has the following format  </p>
+<pre><code class="language-none">'M', 'M', 'A', 'T', 'U'
+</code></pre>
+<p>This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<p><strong>Thruster Inversion Set</strong><br />
+Thruster inversion set command is used to invert the positive and negative direction of thrusters. It has the following format  </p>
+<pre><code class="language-none">'T', 'I', 'N', 'V', [inv]
+</code></pre>
+<p><code>[inv]</code>: A single byte where each bit represents the inversion status of a thruster. The MSB (bit 7) corresponds to thruster 8 and the LSB corresponds to thruster 1 (bit + 1 = thruster). A bit value of 1 means the thruster is inverted. A bit value of 0 means the thruster is not inverted.<br />
+This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<p><strong>BNO055 IMU Axis Configure Command</strong><br />
+Used to configure the BNO055 IMU's axis orientation.  </p>
+<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'A', [config]
+</code></pre>
+<p><code>[config]</code>: A single byte. The value of this byte is between 0 and 7 (inclusive) representing on of the BNO055 axis configs (P0 to P7) as described in the BNO055 datasheet. <em>Note: Changing the axis config changes IMU mode. Thus, there will be a brief time afterwards where the IMU may report zeros for all data.</em><br />
+This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<!--TODO: Future sensor config commands-->
+
+<h3 id="motor-control-commands">Motor Control Commands</h3>
+<p><strong>Raw Speed Set</strong><br />
+Used to set motor speeds in <code>RAW</code> mode. This command has the following format.  </p>
+<pre><code class="language-none">'R', 'A', 'W', [speed_1], [speed_2], [speed_3], [speed_4], [speed_5], [speed_6], [speed_7], [speed_8]
+</code></pre>
+<p><code>[speed_n]</code>: The speed of thruster <code>n</code> from -1.0 to 1.0. A 32-bit float (little endian).<br />
+This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<p><strong>Local Speed Set</strong><br />
+Used to set motor speeds in <code>LOCAL</code> mode. This command has the following format  </p>
+<pre><code class="language-none">'L', 'O', 'C', 'A', 'L', [x], [y], [z], [pitch], [roll], [yaw]
+</code></pre>
+<p><code>[x]</code>, <code>[y]</code>, <code>[z]</code>, <code>[pitch]</code>, <code>[roll]</code>, <code>[yaw]</code>: Speed for each DoF relative to the robot -1.0 to 1.0. A 32-bit float (little endian).<br />
+This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<p><strong>Global Speed Set</strong><br />
+Used to set motor speeds in <code>GLOBAL</code> mode. This command has the following format  </p>
+<pre><code class="language-none">'G', 'L', 'O', 'B', 'A', 'L', [x], [y], [z], [pitch], [roll], [yaw]
+</code></pre>
+<p><code>[x]</code>, <code>[y]</code>, <code>[z]</code>, <code>[pitch]</code>, <code>[roll]</code>, <code>[yaw]</code>: Speed for each DoF relative to the world (pitch and roll compensated; not yaw compensated) -1.0 to 1.0. A 32-bit float (little endian).<br />
+This message will be acknowledged. The acknowledge message will contain no result data. Note that if the IMU is not working properly, this command will be acknowledged with the "Invalid Command" error code. <em>This can occur if the axis config of the IMU is changed immediately before issuing this command.</em></p>
+<!--TODO: Future other mode commands-->
+
+<h3 id="other-commands">Other Commands</h3>
+<p><strong>Feed Motor Watchdog</strong><br />
+Used to feed the motor watchdog so it does not kill the motors. This command has the following format  </p>
+<pre><code class="language-none">'W', 'D', 'G', 'F'
+</code></pre>
+<p>This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<p><strong>BNO055 Periodic Read</strong><br />
+Used to enable / disable periodic reading of BNO055 data. This will only impact data being sent from control board to the pc. The control board itself will continue to read and use IMU data.  </p>
+<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'P', [enable]
+</code></pre>
+<p><code>[enable]</code> is an 8-bit integer with a value of either 1 or 0. If 1, reading data periodically is enabled. If 0, reading data periodically is disabled.<br />
+This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<hr />
+
+<h2 id="queries">Queries</h2>
+<p><strong>Sensor Status Query</strong><br />
+Gets the status of all sensors (BNO055 and MS5837).  </p>
+<pre><code class="language-none">'S', 'S', 'T', 'A', 'T'
+</code></pre>
+<p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format  </p>
+<pre><code class="language-none">[status_byte]
+</code></pre>
+<p><code>[status_byte]</code>: Single byte containing bits for the status of all sensors. Bit 0 (LSB) is BNO055 status. Bit 1 is MS5837 status. A status bit of 1 indicates the sensor is "ready" (connected and can be used). A status bit of 0 indicates the sensor is "not ready".</p>
+<p><strong>BNO055 Read</strong><br />
+Reads BNO055 IMU data once.  </p>
+<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'R'
+</code></pre>
+<p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format. Note that this is the same format as the data contained within the BNO055 data status message.  </p>
+<pre><code class="language-none">[gyro_x], [gyro_y], [gyro_z], [euler_pitch], [euler_roll], [euler_yaw]
+</code></pre>
+<p>Each value is a 32-bit float, little endian.</p>
+<!--TODO: Future sensor queries-->
+
+<hr />
+
+<h2 id="acknowledgements">Acknowledgements</h2>
+<p>An acknowledgement message has the following format  </p>
+<pre><code class="language-none">'A', 'C', 'K', [ack_id], [error_code], [result]
+</code></pre>
+<p><code>[ack_id]</code>: The ID of the message being acknowledged. Unsigned 16-bit integer (big endian).<br />
+<code>[error_code]</code>: A single byte error code.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0 = None: No error.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1 = Unknown Message: Control board does not recognize the message.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2 = Invalid arguments: Message is recognized, but arguments are invalid<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3 = Invalid Command: Command is known, but is not valid at this time.<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;255 = Reserved: Control board will not use this code. Typically used as timeout.<br />
+<code>[result]</code>: Optional data of variable size attached to the acknowledge message. Its size, format, and meaning depends on the message being acknowledged.</p>
+<hr />
+
+<h2 id="status-messages">Status Messages</h2>
+<p><strong>Motor Watchdog Status</strong><br />
+Motor watch status message is used by the control board to notify the PC about changes to motor (watchdog) state. It has the following format  </p>
+<pre><code class="language-none">'W', 'D', 'G', 'S', [status]
+</code></pre>
+<p><code>[status]</code> is a single byte. A value of 1 indicates the motors are enabled. A value of zero indicates the motors are currently killed by the watchdog.</p>
+<p><strong>BNO055 Data Status</strong><br />
+Used by the control board to periodically send IMU data to the PC. Only sent when BNO055 periodic reads are enabled via the BNO055 periodic read command. The message has the following format  </p>
+<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'D', [gyro_x], [gyro_y], [gyro_z], [euler_pitch], [euler_roll], [euler_yaw]
+</code></pre>
+<p>Each value is a 32-bit float, little endian.</p>
+<!--TODO: Future status messages (sensors)-->
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../comm_protocol/" class="btn btn-neutral float-left" title="Communication Protocol"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../comm_protocol/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme_extra.js" defer></script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>

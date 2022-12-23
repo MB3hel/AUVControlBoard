@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Build and Flash - AUV Control Board</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Build and Flash";
+        var mkdocs_page_input_path = "firmware\\build.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <script src="../../js/jquery-3.6.0.min.js" defer></script>
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> AUV Control Board
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Hardware</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hardware/v1/">Version 1</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hardware/v2/">Version 2</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hardware/sensors/">Off-Board Sensors</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Firmware</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="./">Build and Flash</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#building">Building</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#flashing">Flashing</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../math/">6DOF Math</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../developing/">Firmware Development</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/preparing_board/">Preparing a Control Board</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/general_use/">Using Control board</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/comm_protocol/">Communication Protocol</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/messages/">Messages</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">AUV Control Board</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" alt="Docs"></a> &raquo;</li>
+          <li>Firmware &raquo;</li><li>Build and Flash</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="build-and-flash">Build and Flash</h1>
+<p><em>Note: Run all commands shown in the <code>firmware</code> folder of the repo.</em></p>
+<h2 id="building">Building</h2>
+<p>Install the Required Tools:</p>
+<ul>
+<li><a href="https://cmake.org/">CMake</a> (version <code>3.20.0</code> or newer)</li>
+<li><a href="https://ninja-build.org/">Ninja</a></li>
+<li><a href="https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads">GNU Arm Toolchain</a></li>
+</ul>
+<p><em>Make sure <code>cmake</code>, <code>ninja</code>, and <code>arm-none-eabi-gcc</code> are in your <code>PATH</code>.</em></p>
+<p>Build the firmware using the commands below. Replace <code>[preset]</code> with <code>v1</code> or <code>v2</code>. Replace <code>[config]</code> with <code>debug</code>, <code>release</code>, <code>minsizerel</code>, or <code>relwithdebinfo</code>.</p>
+<pre><code class="language-sh">cmake --preset=[preset]
+cmake --build --preset=[preset]-[config]
+</code></pre>
+<h2 id="flashing">Flashing</h2>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Flash Method</th>
+<th>Tool Alias</th>
+<th>Required software</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v1</td>
+<td>sam-ba (via bootloader)</td>
+<td><code>bossa</code></td>
+<td><a href="http://www.shumatech.com/web/products/bossa">BOSSA</a> (specifically bossac / bossa-cli)</td>
+</tr>
+<tr>
+<td>v1</td>
+<td>uf2conv (via bootloader)</td>
+<td><code>uf2conv</code></td>
+<td>None</td>
+</tr>
+<tr>
+<td>v2</td>
+<td>dfu-util (via bootloader)</td>
+<td><code>dfu-util</code></td>
+<td><a href="https://dfu-util.sourceforge.net/">dfu-util</a></td>
+</tr>
+<tr>
+<td>v2</td>
+<td>STM32CubeProgrammer DFU (via bootloader)</td>
+<td><code>stm32-dfu</code></td>
+<td><a href="https://www.st.com/en/development-tools/stm32cubeprog.html">STM32CubeProgrammer</a></td>
+</tr>
+<tr>
+<td>v2</td>
+<td>STM32CubeProgrammer ST-LINK v2</td>
+<td><code>stm32-stlink2</code></td>
+<td><a href="https://www.st.com/en/development-tools/stm32cubeprog.html">STM32CubeProgrammer</a></td>
+</tr>
+</tbody>
+</table>
+<p><em>Note: required tool (<code>bossac</code>, <code>dfu-util</code>, <code>STM32_Programmer_CLI</code>) must be in your <code>PATH</code>.</em></p>
+<p>To flash, run the <code>flash.py</code> script. It is a wrapper that will call one of the above tools</p>
+<pre><code class="language-sh">python3 flash.py [version] [config] -u [tool]
+</code></pre>
+<ul>
+<li><code>[version]</code> is either <code>v1</code> or <code>v2</code></li>
+<li><code>[config]</code> is the configuration you want to flash (same as configuration built: <code>Debug</code>, <code>Release</code>, <code>MinSizeRel</code>, or <code>RelWithDebInfo</code>)</li>
+<li><code>[tool]</code> is one of the above upload tool aliases.</li>
+</ul>
+<p><em>Note that most tools will only work if the target board is in bootloader mode. To enter bootloader mode:</em></p>
+<ul>
+<li><em><strong>v1:</strong> Press the reset button twice quickly (double press).</em></li>
+<li><em><strong>v2:</strong> Hold the BOOT button. While holding it, press and release the NRST button. Then release the boot button.</em></li>
+</ul>
+<p><em>Make sure to enter bootloader mode before flashing!</em></p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../overview/" class="btn btn-neutral float-left" title="Overview"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../math/" class="btn btn-neutral float-right" title="6DOF Math">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../overview/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../math/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme_extra.js" defer></script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>

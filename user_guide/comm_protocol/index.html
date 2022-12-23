@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Communication Protocol - AUV Control Board</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Communication Protocol";
+        var mkdocs_page_input_path = "user_guide\\comm_protocol.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <script src="../../js/jquery-3.6.0.min.js" defer></script>
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> AUV Control Board
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Hardware</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hardware/v1/">Version 1</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hardware/v2/">Version 2</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hardware/sensors/">Off-Board Sensors</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Firmware</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/build/">Build and Flash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/math/">6DOF Math</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/developing/">Firmware Development</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../preparing_board/">Preparing a Control Board</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../general_use/">Using Control board</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="./">Communication Protocol</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#hardware-communication-layer">Hardware Communication Layer</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#message-format-and-construction">Message Format and Construction</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../messages/">Messages</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">AUV Control Board</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" alt="Docs"></a> &raquo;</li>
+          <li>User Guide &raquo;</li><li>Communication Protocol</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="communication-protocol">Communication Protocol</h1>
+<p>Communication with the control board relies on sending messages between the control board and PC. This section focuses on how messages are sent, not what messages are sent.</p>
+<h2 id="hardware-communication-layer">Hardware Communication Layer</h2>
+<p>Messages are sent to the control board over the MCU's builtin USB port. The control board acts as a USB ACM CDC device. In practice, this means that it shows up as a serial (UART) port on the computer it is connected to. However, baud rate settings are irrelevant (and changing baud rates has no effect). As such, messages are sent to / received from the control board using "UART" with an undefined baud rate. It is still necessary to set a baud rate when opening a UART port (as that information is provided to the device on the other side), but the rate is unused. Additionally, it is expected to operate in 8N1 data mode (8 data bits, no parity, 1 stop bit).</p>
+<p>A stream of data is sent to the control board over this port. This data is interpreted as described below.</p>
+<h2 id="message-format-and-construction">Message Format and Construction</h2>
+<p>The messages sent to / received from the control board have a specific format. Each message transfers a raw set of bytes (unsigned byte array). This set of bytes is the "payload data" of the message. The "payload data" is the data that is actually being send via the message. Messages are limited to a maximum payload size of 96 bytes.</p>
+<p>To be able to identify what data is part of a single message, it is necessary to add some additional information around the payload. The control board uses a special byte to indicate the start of a message (<code>START_BYTE</code>) and another one to identify the end of a message (<code>END_BYTE</code>). </p>
+<p>Since the payload could itself contain a start or end byte, there is also an escape byte (<code>ESCAPE_BYTE</code>) used to escape a <code>START_BYTE</code>, <code>END_BYTE</code>, or an <code>ESCAPE_BYTE</code> in the payload. </p>
+<ul>
+<li><code>START_BYTE</code> becomes <code>ESCAPE_BYTE</code>, <code>START_BYTE</code></li>
+<li><code>END_BYTE</code> becomes <code>ESCAPE_BYTE</code>, <code>END_BYTE</code></li>
+<li><code>ESCAPE_BYTE</code> becomes <code>ESCAPE_BYTE</code>, <code>ESCAPE_BYTE</code></li>
+</ul>
+<p>This is similar to escaping a quote in a string using a backslash.</p>
+<p>For the control board:
+- <code>START_BYTE</code> = 253 (unsigned 8-bit) = -3 (signed 8-bit)
+- <code>END_BYTE</code> = 254 (unsigned 8-bit) = -2 (signed 8-bit)
+- <code>ESCAPE_BYTE</code> = 255 (unsigned 8-bit) = -1 (signed 8-bit)</p>
+<p>In addition to the control bytes and the payload, each message contains two other pieces of information: </p>
+<ul>
+<li>
+<p>First, each message includes a prepended&ast; ID number (16-bit unsigned big-endian integer). These ID numbers are required to be unique <strong>only in one direction</strong>. This means that two messages sent from the PC to the control board cannot have the same id. Likewise, two messages sent from the control board to the PC cannot have the same id. However, a message sent from PC to control board <strong>can</strong> have the same id as another message sent from control board to PC.</p>
+<p><em>Note that in practice, eventually (after 65535 messages sent one way) ID numbers must eventually repeat. This is acceptable as long as no two messages that are sent "close together" have the same id. Effectively, no two "active" messages in a single direction may have the same ID (what "active" means can vary, but in practice by the time 65,000 messages have been sent, old messages can be assumed inactive).</em></p>
+</li>
+<li>
+<p>Second, each message has a CRC appended to it. This is a 16-bit CRC using the CCITT-FALSE algorithm. It is appended&ast; to the message big endian. The CRC is calculated on the concatenation of the message id bytes and the raw (unescaped) payload bytes.</p>
+</li>
+<li>
+<p>Just like the payload data, when prepending or appending message id or crc, it is necessary to escape bytes that are equal to control bytes (start, end, escape).</p>
+<p>&ast;<em>Note that append and prepend still mean contained between control (start and end) bytes.</em></p>
+</li>
+</ul>
+<p>This results in message construction looking like the following (the "payload" is the raw message being sent).</p>
+<p><img alt="" src="../img/comm_protocol_construction.png" /></p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../general_use/" class="btn btn-neutral float-left" title="Using Control board"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../messages/" class="btn btn-neutral float-right" title="Messages">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../general_use/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../messages/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme_extra.js" defer></script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>

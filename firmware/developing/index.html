@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Firmware Development - AUV Control Board</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Firmware Development";
+        var mkdocs_page_input_path = "firmware\\developing.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <script src="../../js/jquery-3.6.0.min.js" defer></script>
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
+      <script>hljs.initHighlightingOnLoad();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> AUV Control Board
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Hardware</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hardware/v1/">Version 1</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hardware/v2/">Version 2</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hardware/sensors/">Off-Board Sensors</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Firmware</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../overview/">Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build/">Build and Flash</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../math/">6DOF Math</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="./">Firmware Development</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#build-and-flash">Build and Flash</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#debugging">Debugging</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#generator-projects">Generator Projects</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#why-generators">Why Generators</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#running-the-generators">Running the Generator(s)</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#control-board-v1">Control Board v1</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#control-board-v2">Control Board v2</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#importing-from-generators">Importing from Generators</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#development-using-vscode">Development using VSCode</a>
+    </li>
+    </ul>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/preparing_board/">Preparing a Control Board</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/general_use/">Using Control board</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/comm_protocol/">Communication Protocol</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/messages/">Messages</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">AUV Control Board</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" alt="Docs"></a> &raquo;</li>
+          <li>Firmware &raquo;</li><li>Firmware Development</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="firmware-development">Firmware Development</h1>
+<h2 id="build-and-flash">Build and Flash</h2>
+<p>Building and flashing the firmware should follow the same process described <a href="../build/">here</a>.</p>
+<h2 id="debugging">Debugging</h2>
+<p>OpenOCD config files exist in <code>tools/debug</code>. The following configurations exist</p>
+<table>
+<thead>
+<tr>
+<th>ControlBoard Version</th>
+<th>Debugger / Debug Probe</th>
+<th>Config Name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v1</td>
+<td>CMSIS-DAP&ast;</td>
+<td><code>cb_v1_via_cmsisdap.cfg</code></td>
+</tr>
+<tr>
+<td>v2</td>
+<td>ST-LINK v2</td>
+<td><code>cb_v2_via_stlink2.cfg</code></td>
+</tr>
+</tbody>
+</table>
+<p>&ast;There is a firmware for a Raspberry Pi Pico to turn it into a CMSIS-DAP debugger. This is a variant of the Picoprobe firmware.</p>
+<p><em>Note that <a href="https://openocd.org/">OpenOCD</a> must be installed and in the <code>PATH</code>.</em></p>
+<h2 id="generator-projects">Generator Projects</h2>
+<p>Each version of ControlBoard has an associated "Generator" project. These are projects used with the chip manufacturer's tools to generate startup / configuration / library code for the chip.</p>
+<p><em>Note: If you are just building the firmware you do not need to understand the generator projects. The necessary portions of each project are copied to the <code>thirdparty</code> folder. These are used for building. The generator projects are only used if something that was generated needs to be changed (or something new needs to be generated).</em></p>
+<h3 id="why-generators">Why Generators</h3>
+<p>The decision to use generator projects comes down to the following</p>
+<ol>
+<li>
+<p>There are multiple versions of Control Board with multiple chips. Using generators to create chip-specific initialization code reduces the chip-specific versions of the firmware that must be written / maintained.</p>
+</li>
+<li>
+<p>The generators are often required to use the manufacturer's HAL (or make using the HAL much easier). Use of the manufacturer's HAL / libraries reduces development time and makes maintenance easier (especially for those less familiar with the codebase).</p>
+</li>
+<li>
+<p>Having a GUI tool (which these generators usually are) to configure the system is an easy way to quickly understand the architecture of the system (clocks, peripheral use, pinout, etc).</p>
+</li>
+</ol>
+<h3 id="running-the-generators">Running the Generator(s)</h3>
+<h4 id="control-board-v1">Control Board v1</h4>
+<p>Control Board v1 uses an Adafruit ItsyBitsy M4 board (Microchip ATSAMD51G19A chip). The generator used for this project is <a href="https://www.microchip.com/en-us/tools-resources/configure/mplab-code-configurator">MCC Standalone</a>. This tool is available for download on Windows, macOS, and Linux. Tested with v5.2.1 of MCC Standalone.</p>
+<p>Once installed</p>
+<ul>
+<li>Launch the application</li>
+<li>Make sure the Harmony Content Path is set in <code>Tools</code> &gt; <code>Options</code>. This should only need to be done once per computer. Recommended path is <code>~/.mcc/harmony/v3</code>.</li>
+<li><code>File</code> &gt; <code>Load Configuration</code></li>
+<li>Choose <code>generator_projects/ControlBoard_v1/firmware/ControlBoard_v1/ControlBoard_v1.mc3</code></li>
+<li>You will likely be prompted to install MPLAB Harmony content. Install it.</li>
+<li>Click "Generate" in the top left.</li>
+</ul>
+<h4 id="control-board-v2">Control Board v2</h4>
+<p>Control Board v2 uses a WeAct Studio Black Pill board (STMicro STM32F411CEU chip). The generator used for this project is <a href="https://www.st.com/en/development-tools/stm32cubemx.html">STM32CubeMX</a>. This tool is available for download on Windows, macOS, and Linux. Tested with v6.6.1 of STM32CubeMX.</p>
+<p>Once installed</p>
+<ul>
+<li>Launch the application</li>
+<li><code>File</code> &gt; <code>Load Project</code></li>
+<li>Choose <code>generator_projects/ControlBoard_v2/ControlBoard_v2.ioc</code></li>
+<li>Install any required packs (as prompted)</li>
+<li>Click "Generate Code" in the top right.</li>
+</ul>
+<h3 id="importing-from-generators">Importing from Generators</h3>
+<p>After running the generator (as described above) the generated code must be imported to the project. The import process is mostly just copying generated files, however some files are modified slightly. The import process is handled by the <code>import_from_generator.py</code> script. If additional components are added in the generator projects, this script may need to be modified to import additional components. When this script is run, it will prompt a version of control board to import generated code for. This script must be run after each time the generator project is modified and code is re-generated.</p>
+<h2 id="development-using-vscode">Development using VSCode</h2>
+<p>Install the <code>C/C++</code> and <code>CMake Tools</code> extensions, then open this folder in VSCode. Choose one of the configure presets on the bottom bar. Then, choose a build preset. Finally, click build.</p>
+<p>To debug, install the <code>Cortex-Debug</code> extension in VSCode. Copy <code>tools/debug/launch.json</code> to <code>.vscode</code>. <em>MAKE SURE TO BUILD DEBUG CONFIG BEFORE LAUNCHING DEBUG SESSION. IT WILL NOT BUILD AUTOMATICALLY.</em></p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../math/" class="btn btn-neutral float-left" title="6DOF Math"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../user_guide/preparing_board/" class="btn btn-neutral float-right" title="Preparing a Control Board">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../math/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../user_guide/preparing_board/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script>var base_url = '../..';</script>
+    <script src="../../js/theme_extra.js" defer></script>
+    <script src="../../js/theme.js" defer></script>
+      <script src="../../search/main.js" defer></script>
+    <script defer>
+        window.onload = function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        };
+    </script>
+
+</body>
+</html>
