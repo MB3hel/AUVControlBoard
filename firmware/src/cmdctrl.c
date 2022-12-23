@@ -214,7 +214,7 @@ void cmdctrl_init(void){
  * @return true If arrays match
  * @return false If arrays do not match
  */
-bool data_matches(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_t len_b){
+static bool data_matches(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_t len_b){
     if(len_a != len_b)
         return false;
     for(uint32_t i = 0; i < len_a; ++i){
@@ -233,7 +233,7 @@ bool data_matches(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_t l
  * @return true If array a starts with array b
  * @return false If array a does not start with array b
  */
-bool data_startswith(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_t len_b){
+static bool data_startswith(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_t len_b){
     if(len_a < len_b)
         return false;
     for(uint32_t i = 0; i < len_b; ++i){
@@ -570,7 +570,31 @@ void cmdctrl_handle_message(void){
         }
     }else if(MSG_EQUALS(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'R'}))){
         // One-shot read of BNO055 data (all data)
-        // TODO: Implement
+        // B, N, O, 0, 5, 5, R
+        // Response contains [grav_x], [grav_y], [grav_z], [euler_pitch], [euler_roll], [euler_yaw]
+        // where each value is a 32-bit float little endian
+
+        // Store current readings
+        xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+        float m_grav_x = curr_bno055_data.grav_x;
+        float m_grav_y = curr_bno055_data.grav_y;
+        float m_grav_z = curr_bno055_data.grav_z;
+        float m_euler_pitch = curr_bno055_data.euler_pitch;
+        float m_euler_roll = curr_bno055_data.euler_roll;
+        float m_euler_yaw = curr_bno055_data.euler_yaw;
+        xSemaphoreGive(sensor_data_mutex);
+
+        // Construct response data
+        uint8_t response_data[24];
+        conversions_float_to_data(m_grav_x, &response_data[0], true);
+        conversions_float_to_data(m_grav_y, &response_data[4], true);
+        conversions_float_to_data(m_grav_z, &response_data[8], true);
+        conversions_float_to_data(m_euler_pitch, &response_data[12], true);
+        conversions_float_to_data(m_euler_roll, &response_data[16], true);
+        conversions_float_to_data(m_euler_yaw, &response_data[20], true);
+
+        // Send ack with response data
+        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 24);
     }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'P', 'E', 'R'}))){
         // Sensor periodic read configure
         // TODO: Implement
