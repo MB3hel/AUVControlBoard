@@ -16,6 +16,7 @@
 #
 
 import serial
+import copy
 import struct
 import time
 from enum import IntEnum
@@ -47,6 +48,15 @@ class ControlBoard:
         P6 = 6
         P7 = 7
     
+    class BNO055Data:
+        def __init__(self):
+            self.grav_x: float = 0.0
+            self.grav_y: float = 0.0
+            self.grav_z: float = 0.0
+            self.euler_pitch: float = 0.0
+            self.euler_roll: float = 0.0
+            self.euler_yaw: float = 0.0
+
     ## Representation of motor matrix using nested lists
     class MotorMatrix:
         def __init__(self):
@@ -81,6 +91,7 @@ class ControlBoard:
     ## Open communication with a control board
     #  @param port Serial port to communicate with control board by
     def __init__(self, port: str, debug = False):
+        self.__bno055_data = self.BNO055Data()
         self.__last_wdog_feed = 0
         self.__read_thread = None
         self.__id_mutex = threading.Lock()
@@ -372,18 +383,6 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
-    ## Get sensor status (all sensors)
-    #  @return Tuple[AckError, bool, bool]  error, bno055_ready, ms5837_ready
-    def get_sensor_status(self, timeout: float = 0.1) -> Tuple[AckError, bool, bool]:
-        # Send the message and wait for acknowledgement
-        msg_id = self.__write_msg(b'SSTAT', True)
-        ack, res = self.__wait_for_ack(msg_id, timeout)
-        if ack != self.AckError.NONE:
-            return ack, False, False
-        bno055_ready = (res[0] & 0b00000001) == 1
-        ms5837_ready = (res[0] & 0b00000010) == 1
-        return ack, bno055_ready, ms5837_ready
-
     ## Set axis configuration for BNO055 IMU
     #  @param axis Axis configuration (see BNO055 datasheet) P0-P7 (BNO055Axis enum)
     #  @return Error code (AckError enum) from control board (or timeout)
@@ -396,6 +395,41 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
+
+    ## Get sensor status (all sensors)
+    #  @return Tuple[AckError, bool, bool]  error, bno055_ready, ms5837_ready
+    def get_sensor_status(self, timeout: float = 0.1) -> Tuple[AckError, bool, bool]:
+        # Send the message and wait for acknowledgement
+        msg_id = self.__write_msg(b'SSTAT', True)
+        ack, res = self.__wait_for_ack(msg_id, timeout)
+        if ack != self.AckError.NONE:
+            return ack, False, False
+        bno055_ready = (res[0] & 0b00000001) == 1
+        ms5837_ready = (res[0] & 0b00000010) == 1
+        return ack, bno055_ready, ms5837_ready
+
+    ## Read current BNO055 data. This is a single read. Does not start periodic reads
+    #  Use get_bno055_data to get the last read data (either from this or a periodic read)
+    #  @return Tuple[AckError, BNO055Data] data is invalid if AckError is not NONE
+    def read_bno055_once(self, timeout: float = 0.1) -> AckError:
+        msg_id = self.__write_msg(b'BNO055R', True)
+        ack, res = self.__wait_for_ack(msg_id, timeout)
+        if ack != self.AckError.NONE:
+            return ack, self.BNO055Data()
+        print(res)
+        new_data = self.BNO055Data()
+        new_data.grav_x = struct.unpack("<f", res[0:4])[0]
+        new_data.grav_y = struct.unpack("<f", res[4:8])[0]
+        new_data.grav_z = struct.unpack("<f", res[8:12])[0]
+        new_data.euler_pitch = struct.unpack("<f", res[12:16])[0]
+        new_data.euler_roll = struct.unpack("<f", res[16:20])[0]
+        new_data.euler_yaw = struct.unpack("<f", res[20:24])[0]
+        self.__bno055_data = new_data
+        return ack
+
+
+    def get_bno055_data(self) -> BNO055Data:
+        return copy.copy(self.__bno055_data)
 
     ## Set thruster speeds in RAW mode
     #  @param speeds List of 8 speeds to send to control board. Must range from -1 to 1
