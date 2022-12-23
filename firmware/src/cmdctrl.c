@@ -118,8 +118,35 @@ static TimerHandle_t periodic_speed_timer;
 
 static void send_sensor_data(TimerHandle_t timer){
     // Send the data for sensors as needed
-    if(periodic_bno055){
-        // TODO: NYI
+    if(periodic_bno055 && bno055_ready){
+        // Store current readings
+        xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+        float m_grav_x = curr_bno055_data.grav_x;
+        float m_grav_y = curr_bno055_data.grav_y;
+        float m_grav_z = curr_bno055_data.grav_z;
+        float m_euler_pitch = curr_bno055_data.euler_pitch;
+        float m_euler_roll = curr_bno055_data.euler_roll;
+        float m_euler_yaw = curr_bno055_data.euler_yaw;
+        xSemaphoreGive(sensor_data_mutex);
+
+        // Construct message
+        uint8_t bno055_data[31];
+        bno055_data[0] = 'B';
+        bno055_data[1] = 'N';
+        bno055_data[2] = 'O';
+        bno055_data[3] = '0';
+        bno055_data[4] = '5';
+        bno055_data[5] = '5';
+        bno055_data[6] = 'D';
+        conversions_float_to_data(m_grav_x, &bno055_data[7], true);
+        conversions_float_to_data(m_grav_y, &bno055_data[11], true);
+        conversions_float_to_data(m_grav_z, &bno055_data[15], true);
+        conversions_float_to_data(m_euler_pitch, &bno055_data[19], true);
+        conversions_float_to_data(m_euler_roll, &bno055_data[23], true);
+        conversions_float_to_data(m_euler_yaw, &bno055_data[27], true);
+
+        // Send message (status message from CB to PC)
+        pccomm_write(bno055_data, 31);
     }
     if(periodic_ms5837){
         // TODO: NYI
@@ -595,9 +622,17 @@ void cmdctrl_handle_message(void){
 
         // Send ack with response data
         cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 24);
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'P', 'E', 'R'}))){
-        // Sensor periodic read configure
-        // TODO: Implement
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'P'}))){
+        // BNO055 periodic read configure
+        // B, N, O, 0, 5, 5, P, [enable]
+        // [enable] is 1 or 0 (8-bit int) 1 = true (periodic read enabled). 0 = false (not enabled)
+        
+        if(len != 8){
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            periodic_bno055 = msg[7];
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+        }
     }else{
         // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG, NULL, 0);

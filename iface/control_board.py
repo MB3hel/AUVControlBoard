@@ -178,8 +178,11 @@ class ControlBoard:
                     print("Motors (re)enabled.")
                 else:
                     print("Watchdog killed motors.")
-
-        
+        elif msg.startswith(b'BNO055D'):
+            # BNO055 data status message
+            if len(msg) == 31:
+                self.__bno055_parse(msg[7:])
+   
     ## Thread to repeatedly read from the control board serial port
     def __read_task(self):
         # Holds message being received
@@ -334,6 +337,8 @@ class ControlBoard:
 
         return msg_id
 
+
+
     ## Set the motor matrix defining the vehicle's thruster configuration
     #  @param matrix Motor matrix object containing configuration to set
     def set_motor_matrix(self, matrix: MotorMatrix, timeout: float = 0.1) -> AckError:
@@ -396,6 +401,7 @@ class ControlBoard:
         return ack
 
 
+
     ## Get sensor status (all sensors)
     #  @return Tuple[AckError, bool, bool]  error, bno055_ready, ms5837_ready
     def get_sensor_status(self, timeout: float = 0.1) -> Tuple[AckError, bool, bool]:
@@ -408,6 +414,17 @@ class ControlBoard:
         ms5837_ready = (res[0] & 0b00000010) == 1
         return ack, bno055_ready, ms5837_ready
 
+    ## Parse byte data from BNO055 readings into the data class object
+    def __bno055_parse(self, data: bytes):
+        new_data = self.BNO055Data()
+        new_data.grav_x = struct.unpack("<f", data[0:4])[0]
+        new_data.grav_y = struct.unpack("<f", data[4:8])[0]
+        new_data.grav_z = struct.unpack("<f", data[8:12])[0]
+        new_data.euler_pitch = struct.unpack("<f", data[12:16])[0]
+        new_data.euler_roll = struct.unpack("<f", data[16:20])[0]
+        new_data.euler_yaw = struct.unpack("<f", data[20:24])[0]
+        self.__bno055_data = new_data
+
     ## Read current BNO055 data. This is a single read. Does not start periodic reads
     #  Use get_bno055_data to get the last read data (either from this or a periodic read)
     #  @return Tuple[AckError, BNO055Data] data is invalid if AckError is not NONE
@@ -416,20 +433,21 @@ class ControlBoard:
         ack, res = self.__wait_for_ack(msg_id, timeout)
         if ack != self.AckError.NONE:
             return ack, self.BNO055Data()
-        print(res)
-        new_data = self.BNO055Data()
-        new_data.grav_x = struct.unpack("<f", res[0:4])[0]
-        new_data.grav_y = struct.unpack("<f", res[4:8])[0]
-        new_data.grav_z = struct.unpack("<f", res[8:12])[0]
-        new_data.euler_pitch = struct.unpack("<f", res[12:16])[0]
-        new_data.euler_roll = struct.unpack("<f", res[16:20])[0]
-        new_data.euler_yaw = struct.unpack("<f", res[20:24])[0]
-        self.__bno055_data = new_data
+        self.__bno055_parse(res)
         return ack
 
+    def read_bno055_periodic(self, enable: bool, timeout: float = 0.1) -> AckError:
+        msg = bytearray()
+        msg.extend(b'BNO055P')
+        msg.append(1 if enable else 0)
+        msg_id = self.__write_msg(bytes(msg), True)
+        ack, res = self.__wait_for_ack(msg_id, timeout)
+        return ack
 
     def get_bno055_data(self) -> BNO055Data:
         return copy.copy(self.__bno055_data)
+
+
 
     ## Set thruster speeds in RAW mode
     #  @param speeds List of 8 speeds to send to control board. Must range from -1 to 1
