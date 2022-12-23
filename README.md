@@ -21,9 +21,4 @@ The Control Board is a coprocessor designed to assist a main computer (typically
 
 ## View Documentation
 
-```sh
-cd docs
-python3 -m pip install mkdocs
-mkdocs serve
-# Open http://localhost:8000/ in a web browser
-```
+[https://mb3hel.github.io/AUVControlBoard/](https://mb3hel.github.io/AUVControlBoard/)
