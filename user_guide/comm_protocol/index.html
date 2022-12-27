@@ -122,10 +122,12 @@
 <li><code>ESCAPE_BYTE</code> becomes <code>ESCAPE_BYTE</code>, <code>ESCAPE_BYTE</code></li>
 </ul>
 <p>This is similar to escaping a quote in a string using a backslash.</p>
-<p>For the control board:
-- <code>START_BYTE</code> = 253 (unsigned 8-bit) = -3 (signed 8-bit)
-- <code>END_BYTE</code> = 254 (unsigned 8-bit) = -2 (signed 8-bit)
-- <code>ESCAPE_BYTE</code> = 255 (unsigned 8-bit) = -1 (signed 8-bit)</p>
+<p>For the control board:</p>
+<ul>
+<li><code>START_BYTE</code> = 253 (unsigned 8-bit) = -3 (signed 8-bit)</li>
+<li><code>END_BYTE</code> = 254 (unsigned 8-bit) = -2 (signed 8-bit)</li>
+<li><code>ESCAPE_BYTE</code> = 255 (unsigned 8-bit) = -1 (signed 8-bit)</li>
+</ul>
 <p>In addition to the control bytes and the payload, each message contains two other pieces of information: </p>
 <ul>
 <li>
@@ -133,7 +135,7 @@
 <p><em>Note that in practice, eventually (after 65535 messages sent one way) ID numbers must eventually repeat. This is acceptable as long as no two messages that are sent "close together" have the same id. Effectively, no two "active" messages in a single direction may have the same ID (what "active" means can vary, but in practice by the time 65,000 messages have been sent, old messages can be assumed inactive).</em></p>
 </li>
 <li>
-<p>Second, each message has a CRC appended to it. This is a 16-bit CRC using the CCITT-FALSE algorithm. It is appended&ast; to the message big endian. The CRC is calculated on the concatenation of the message id bytes and the raw (unescaped) payload bytes.</p>
+<p>Second, each message has a CRC appended&ast; to it. This is a 16-bit CRC using the CCITT-FALSE algorithm. It is appended&ast; to the message big endian. The CRC is calculated on the concatenation of the message id bytes and the raw (unescaped) payload bytes.</p>
 </li>
 <li>
 <p>Just like the payload data, when prepending or appending message id or crc, it is necessary to escape bytes that are equal to control bytes (start, end, escape).</p>
