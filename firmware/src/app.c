@@ -151,19 +151,19 @@ void depth_task_func(void *argument){
             if(!configured)
                 vTaskDelay(pdMS_TO_TICKS(1000));
             else
-                /* TODO: cmdctrl_ms5837_status(true)*/;
+                cmdctrl_ms5837_status(true);
         }else{
             // sensor is connected and has been configured
             // Periodically read data
             if(ms5837_read(&data)){
                 read_failures = 0;
-                /* TODO: cmdctrl_bno055_data(data) */;
+                cmdctrl_ms5837_data(data);
             }else{
                 // Too many failures. Assume sensor no longer connected (or has reset)
                 read_failures++;
                 if(read_failures > 5){
                     configured = false;
-                   /* TODO: cmdctrl_ms5837_status(false)*/;
+                   cmdctrl_ms5837_status(false);
                 }
             }
             vTaskDelay(pdMS_TO_TICKS(15));

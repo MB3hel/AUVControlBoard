@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <bno055.h>
+#include <ms5837.h>
 
 /**
  * Initialize command and control of 
@@ -54,3 +55,15 @@ void cmdctrl_bno055_status(bool status);
  * @param data New sensor data
  */
 void cmdctrl_bno055_data(bno055_data data);
+
+/**
+ * Set ms5837 status
+ * @param status New status (ready = true; not ready = false)
+ */
+void cmdctrl_ms5837_status(bool status);
+
+/**
+ * Set ms5837 data
+ * @param data New sensor data
+ */
+void cmdctrl_ms5837_data(ms5837_data data);

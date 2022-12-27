@@ -96,9 +96,11 @@ static float global_yaw;
 // Need mutex b/c don't want to read one value (eg x) then have others (y, z) changed before reading them
 static SemaphoreHandle_t sensor_data_mutex;
 static bno055_data curr_bno055_data;
+static ms5837_data curr_ms5837_data;
 
 // Sensor status flags
 static bool bno055_ready;
+static bool ms5837_ready;
 
 // Periodic reading of sensor data timer
 static bool periodic_bno055;
@@ -655,6 +657,16 @@ void cmdctrl_bno055_status(bool status){
 void cmdctrl_bno055_data(bno055_data data){
     xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
     curr_bno055_data = data;
+    xSemaphoreGive(sensor_data_mutex);
+}
+
+void cmdctrl_ms5837_status(bool status){
+    ms5837_ready = status;
+}
+
+void cmdctrl_ms5837_data(ms5837_data data){
+    xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+    curr_ms5837_data = data;
     xSemaphoreGive(sensor_data_mutex);
 }
 
