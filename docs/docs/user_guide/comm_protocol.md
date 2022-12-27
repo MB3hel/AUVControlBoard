@@ -25,6 +25,7 @@ Since the payload could itself contain a start or end byte, there is also an esc
 This is similar to escaping a quote in a string using a backslash.
 
 For the control board:
+
 - `START_BYTE` = 253 (unsigned 8-bit) = -3 (signed 8-bit)
 - `END_BYTE` = 254 (unsigned 8-bit) = -2 (signed 8-bit)
 - `ESCAPE_BYTE` = 255 (unsigned 8-bit) = -1 (signed 8-bit)
@@ -35,7 +36,7 @@ In addition to the control bytes and the payload, each message contains two othe
 
     *Note that in practice, eventually (after 65535 messages sent one way) ID numbers must eventually repeat. This is acceptable as long as no two messages that are sent "close together" have the same id. Effectively, no two "active" messages in a single direction may have the same ID (what "active" means can vary, but in practice by the time 65,000 messages have been sent, old messages can be assumed inactive).*
 
-- Second, each message has a CRC appended to it. This is a 16-bit CRC using the CCITT-FALSE algorithm. It is appended&ast; to the message big endian. The CRC is calculated on the concatenation of the message id bytes and the raw (unescaped) payload bytes.
+- Second, each message has a CRC appended&ast; to it. This is a 16-bit CRC using the CCITT-FALSE algorithm. It is appended&ast; to the message big endian. The CRC is calculated on the concatenation of the message id bytes and the raw (unescaped) payload bytes.
 - Just like the payload data, when prepending or appending message id or crc, it is necessary to escape bytes that are equal to control bytes (start, end, escape).
 
     &ast;*Note that append and prepend still mean contained between control (start and end) bytes.*

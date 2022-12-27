@@ -1,4 +1,4 @@
-# AUV Control Board Documentatoin
+# AUV Control Board Documentation
 
 AUV Control Board is a low-cost open-source motion controller for (Autonomous) Underwater Vehicles. It is designed for vehicles with fixed position thrusters and supports motion in 6 degrees of freedom.
 
