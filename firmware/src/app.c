@@ -204,6 +204,14 @@ void app_init(void){
         TASK_IMU_PRIORITY,
         &imu_task
     );
+    xTaskCreate(
+        depth_task_func,
+        "depth_task",
+        TASK_DEPTH_SSZIE,
+        NULL,
+        TASK_DEPTH_PRIORITY,
+        &depth_task
+    );
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
