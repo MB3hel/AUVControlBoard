@@ -22,6 +22,7 @@
 #include <pccomm.h>
 #include <cmdctrl.h>
 #include <bno055.h>
+#include <ms5837.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -32,6 +33,7 @@
 TaskHandle_t usb_device_task;
 TaskHandle_t cmdctrl_task;
 TaskHandle_t imu_task;
+TaskHandle_t depth_task;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -121,6 +123,47 @@ void imu_task_func(void *argument){
                 if(read_failures > 5){
                     configured = false;
                     cmdctrl_bno055_status(false);
+                }
+            }
+            vTaskDelay(pdMS_TO_TICKS(15));
+        }
+    }
+}
+
+/**
+ * Thread to handle depth sensor data
+ * I2C functions are thread safe (by mutex), so thread will block
+ * until it has I2C
+ */
+void depth_task_func(void *argument){
+    // Tracks if IMU configured currently
+    bool configured = false;
+    unsigned int read_failures = 0;
+    ms5837_data data;
+
+    ms5837_init();
+    while(1){
+        if(!configured){
+            // Configure sensor. Will succeed if sensor connected.
+            configured = ms5837_configure();
+
+            // If configure fails, wait 1 second before trying again
+            if(!configured)
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            else
+                /* TODO: cmdctrl_ms5837_status(true)*/;
+        }else{
+            // sensor is connected and has been configured
+            // Periodically read data
+            if(ms5837_read(&data)){
+                read_failures = 0;
+                /* TODO: cmdctrl_bno055_data(data) */;
+            }else{
+                // Too many failures. Assume sensor no longer connected (or has reset)
+                read_failures++;
+                if(read_failures > 5){
+                    configured = false;
+                   /* TODO: cmdctrl_ms5837_status(false)*/;
                 }
             }
             vTaskDelay(pdMS_TO_TICKS(15));

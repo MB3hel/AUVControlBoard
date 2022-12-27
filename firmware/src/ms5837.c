@@ -56,9 +56,23 @@ void ms5837_init(void){
 }
 
 bool ms5837_configure(void){
+    // TODO: Reset command
+    
+    // TODO: Read all PROM bytes
 
+    // TODO: crc4 calculation & validate data
+    return false;
 }
 
 bool ms5837_read(ms5837_data *data){
+    // TODO: Convert D1
 
+    // TODO: Read ADC
+
+    // TODO: Convert D2
+
+    // TODO: Read ADC
+
+    // TODO: Calculate values
+    return false;
 }
