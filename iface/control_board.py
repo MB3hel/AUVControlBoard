@@ -56,6 +56,10 @@ class ControlBoard:
             self.euler_pitch: float = 0.0
             self.euler_roll: float = 0.0
             self.euler_yaw: float = 0.0
+    
+    class MS5837Data:
+        def __init__(self):
+            self.depth: float = 0.0
 
     ## Representation of motor matrix using nested lists
     class MotorMatrix:
@@ -92,6 +96,7 @@ class ControlBoard:
     #  @param port Serial port to communicate with control board by
     def __init__(self, port: str, debug = False):
         self.__bno055_data = self.BNO055Data()
+        self.__ms5837_data = self.MS5837Data()
         self.__last_wdog_feed = 0
         self.__read_thread = None
         self.__id_mutex = threading.Lock()
@@ -182,6 +187,10 @@ class ControlBoard:
             # BNO055 data status message
             if len(msg) == 31:
                 self.__bno055_parse(msg[7:])
+        elif msg.startswith(b'MS5837D'):
+            # MS5837 data status message
+            if len(msg) == 11:
+                self.__ms5837_parse(msg[7:])
    
     ## Thread to repeatedly read from the control board serial port
     def __read_task(self):
@@ -427,15 +436,19 @@ class ControlBoard:
 
     ## Read current BNO055 data. This is a single read. Does not start periodic reads
     #  Use get_bno055_data to get the last read data (either from this or a periodic read)
-    #  @return Tuple[AckError, BNO055Data] data is invalid if AckError is not NONE
+    #  @return AckError
     def read_bno055_once(self, timeout: float = 0.1) -> AckError:
         msg_id = self.__write_msg(b'BNO055R', True)
         ack, res = self.__wait_for_ack(msg_id, timeout)
         if ack != self.AckError.NONE:
-            return ack, self.BNO055Data()
+            return ack
         self.__bno055_parse(res)
         return ack
 
+    ## Enable / disable periodic status messages with BNO055 data. The periodically
+    #  received data will be stored and is retrievable with get_bno055_data
+    #  @param enable True to enable periodic reads. False to disable.
+    #  @return AckError indicating success of processing this command.
     def read_bno055_periodic(self, enable: bool, timeout: float = 0.1) -> AckError:
         msg = bytearray()
         msg.extend(b'BNO055P')
@@ -444,8 +457,46 @@ class ControlBoard:
         ack, res = self.__wait_for_ack(msg_id, timeout)
         return ack
 
+    ## Get current BNO055 data. Current data is latest of either periodically received
+    #  status messages or data received from a read_bno055_once call.
+    #  @return BNO055Data object containing latest data
     def get_bno055_data(self) -> BNO055Data:
         return copy.copy(self.__bno055_data)
+
+    ## Parse byte data from BNO055 readings into the data class object
+    def __ms5837_parse(self, data: bytes):
+        new_data = self.MS5837Data()
+        new_data.depth = struct.unpack("<f", data[0:4])[0]
+        self.__ms5837_data = new_data
+
+    ## Read current MS5837 data. This is a single read. Does not start periodic reads
+    #  Use get_ms5837_data to get the last read data (either from this or a periodic read)
+    #  @return AckError
+    def read_ms5837_once(self, timeout: float = 0.1) -> AckError:
+        msg_id = self.__write_msg(b'MS5837R', True)
+        ack, res = self.__wait_for_ack(msg_id, timeout)
+        if ack != self.AckError.NONE:
+            return ack
+        self.__ms5837_parse(res)
+        return ack
+
+    ## Enable / disable periodic status messages with MS5837 data. The periodically
+    #  received data will be stored and is retrievable with get_ms5837_data
+    #  @param enable True to enable periodic reads. False to disable.
+    #  @return AckError indicating success of processing this command.
+    def read_ms5837_periodic(self, enable: bool, timeout: float = 0.1) -> AckError:
+        msg = bytearray()
+        msg.extend(b'MS5837P')
+        msg.append(1 if enable else 0)
+        msg_id = self.__write_msg(bytes(msg), True)
+        ack, res = self.__wait_for_ack(msg_id, timeout)
+        return ack
+
+    ## Get current MS5837 data. Current data is latest of either periodically received
+    #  status messages or data received from a read_ms5837_once call.
+    #  @return MS5837Data object containing latest data
+    def get_ms5837_data(self) -> MS5837Data:
+        return copy.copy(self.__ms5837_data)
 
 
 
