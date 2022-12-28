@@ -47,9 +47,9 @@ static float overlap_arrs[8][8];                        // Backing arrays for ov
 static matrix overlap_vectors[8];                       // overlaps vectors
 
 static bool motors_killed;                              // Motor (watchdog) state
-TimerHandle_t motor_wdog_timer;                         // Timer to implement motor watchdog
+static TimerHandle_t motor_wdog_timer;                  // Timer to implement motor watchdog
 
-SemaphoreHandle_t motor_mutex;                          // Ensures motor & watchdog access is thread safe
+static SemaphoreHandle_t motor_mutex;                   // Ensures motor & watchdog access is thread safe
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -85,7 +85,7 @@ static int skew3(matrix *outmat, matrix *invec){
 /// Initialization & Setup
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void mc_wdog_timeout(TimerHandle_t timer);
+static void mc_wdog_timeout(TimerHandle_t timer);
 
 void mc_init(void){
     // Initialize matrices
@@ -162,7 +162,7 @@ void mc_recalc(void){
 /// Motor Watchdog
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void mc_wdog_timeout(TimerHandle_t timer){
+static void mc_wdog_timeout(TimerHandle_t timer){
     xSemaphoreTake(motor_mutex, portMAX_DELAY);
     motors_killed = true;
     thruster_set((float[]){0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
