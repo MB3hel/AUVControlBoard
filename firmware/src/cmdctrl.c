@@ -151,7 +151,24 @@ static void send_sensor_data(TimerHandle_t timer){
         pccomm_write(bno055_data, 31);
     }
     if(periodic_ms5837){
-        // TODO: NYI
+        // Store current readings
+        xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+        float m_depth_m = curr_ms5837_data.depth_m;
+        xSemaphoreGive(sensor_data_mutex);
+
+        // Construct message
+        uint8_t ms5837_data[11];
+        ms5837_data[0] = 'M';
+        ms5837_data[1] = 'S';
+        ms5837_data[2] = '5';
+        ms5837_data[3] = '8';
+        ms5837_data[4] = '3';
+        ms5837_data[5] = '7';
+        ms5837_data[6] = 'D';
+        conversions_float_to_data(m_depth_m, &ms5837_data[7], true);
+
+        // Send message (status message from CB to PC)
+        pccomm_write(ms5837_data, 11);
     }
 
     // Not using auto reload so that any time taken to
@@ -638,6 +655,39 @@ void cmdctrl_handle_message(void){
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
         }else{
             periodic_bno055 = msg[7];
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+        }
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'M', 'S', '5', '8', '3', '7', 'R'}))){
+        // One-shot read of BNO055 data (all data)
+        // M, S, 5, 8, 3, 7, R
+        // Response contains [depth_m]
+        // where each value is a 32-bit float little endian
+
+        if(!ms5837_ready){
+            // Sensor not ready. This command is not valid right now.
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+        }else{
+            // Store current readings
+            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+            float m_depth_m = curr_ms5837_data.depth_m;
+            xSemaphoreGive(sensor_data_mutex);
+
+            // Construct response data
+            uint8_t response_data[4];
+            conversions_float_to_data(m_depth_m, &response_data[0], true);
+
+            // Send ack with response data
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 4);
+        }
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'M', 'S', '5', '8', '3', '7', 'P'}))){
+        // MS5837 periodic read configure
+        // M, S, 5, 8, 3, 7, P, [enable]
+        // [enable] is 1 or 0 (8-bit int) 1 = true (periodic read enabled). 0 = false (not enabled)
+        
+        if(len != 8){
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            periodic_ms5837 = msg[7];
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
     }else{
