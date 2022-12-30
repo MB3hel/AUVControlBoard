@@ -46,7 +46,7 @@
 
 The following section covers math to calculate individual motor speeds to achieve the desired motion with a 6 degree of freedom system (6DoF = 3 translation and 3 rotation). The math remains valid for motor configurations where motion in some DoFs is not possible.
 
-[motor_control_math.py](./math_res/numpy_motor_math.py) is an implementation of the motor control math using numpy. It is used for prototyping / testing.
+*[motor_control_math.py](./math_res/numpy_motor_math.py) is an implementation of the motor control math using numpy. It is used for prototyping / testing.*
 
 
 ### Motor Matrix
@@ -226,7 +226,7 @@ This is built on top of global mode. Thus, stability assist mode calculates the 
 
 ### Orientation Closed-Loop Control
 
-[orientation_math.py](./math_res/orientation_math.py) is an implementation of the orientation closed-loop math using numpy. It is used for prototyping / testing.
+*[orientation_math.py](./math_res/orientation_math.py) is an implementation of the orientation closed-loop math using numpy. It is used for prototyping / testing.*
 
 Separate PID controllers are used to track the target pitch, roll, and yaw. This allows the output of each PID to be used as a "speed" for one DoF for global mode.
 
@@ -253,4 +253,39 @@ This minimum angle quaternion ($q_\textrm{diff}$) is then converted to euler ang
 Depth closed-loop control is implemented using a PID. This PID's output is used as the target speed in the z DoF. The error is the difference between the current depth sensor reading and the specified target depth (in meters; negative for below the surface).
 
 
-<!-- TODO: IMU angle accumulation. -->
+## IMU Angle Accumulation
+
+*[accumulate_angles.py](./math_res/accumulate_angles.py) is an implementation of the math used to determine the difference between two quaternions (used to determine change in euler angles for accumulation).*
+
+The euler and quaternion values provided by the IMU are not directly useful for tracking multiple rotations of the vehicle. Unlike simply integrating gyroscope data, euler angles (pitch, roll, yaw) and quaternions do not track the number of times the vehicle has rotated about a particular axis.
+
+While integrating raw gyro data would provide this, such a solution would not be rotations about the robot's axes, not the world's axes (gyro z of 500 does not necessarily mean the robot has yawed 500 degrees; the robot could have been oriented at a pitch of 90).
+
+To address this, it is necessary to track changes between subsequent quaternions from the IMU. Quaternions are used for three reasons
+
+1. Firmware bugs in some BNO055 firmware versions lead to unstable euler angles
+2. It is mathematically easier to determine the "shortest rotation" between two quaternions
+3. Quaternions still allow accumulation to work in "gimbal lock" situations
+
+The idea is to compare each quaternion read from the IMU with the previous quaternion received from the IMU (note that quaternions of all zeros are ignored to avoid issues with invalid IMU data after exiting config mode). For each read quaternion:
+
+- Calculate the shortest set of rotations from the previous to the current quaternion
+- Convert the shortest angle to euler angles
+- Add the pitch, roll, and yaw from the shortest euler angles to accumulated pitch, roll, and yaw variables
+- Note that if the IMU axis config changes, the accumulated data should be zeroed and the previously read quaternion discarded.
+
+This method makes the assumption that the smallest rotation between two quaternions is the most probable path the robot took to change its orientation. This is an approximation, however it is a fairly good one as long as sample rate of data is sufficiently high. This method of approximation effectively liberalizes motion between two rotations. The specifics of the path are lost. However, if the sample rate is high enough, the length of the path is sufficiently small that this is a good approximation.
+
+The second "issue" with this approximation has to do with rotations exceeding 180 degrees. The method for determining shortest path between two quaternions will be incorrect if the vehicle rotates more than 180 degrees in any axis (because the shortest path would have involved rotating the other direction). To guarantee rotations between two samples never exceed 180 degrees, the max measured rotation rate of the gyro is considered. For the BNO055 this is 2000 degrees per second. Thus, with a sample period of $l$ milliseconds, the largest angle change between samples is
+
+$\frac{2000 \textrm{ deg}}{1 \textrm{ sec}} \cdot \frac{1 \textrm{ sec}}{1000 \textrm{ ms}} \cdot \frac{l \textrm{ ms}}{1 \textrm{ sample}} = 2l \textrm{ deg / sample}$  
+
+To ensure that changes of more than 180 degrees do not occur, the following must be satisfied
+
+$2l < 180 \rightarrow l < 90 \textrm{ milliseconds}$
+
+However, it is possible for some samples from the IMU to be delayed (ie I2C bus busy with another sensor) or lost (I2C failure). Thus, it is necessary to choose a value for $l$ that allows for at least one sample to be lost. When a sample is lost, this doubles the effective time between samples. Thus, it is necessary to half $l$
+
+$l < 45 \textrm{ milliseconds}$
+
+By further reducing $l$ it is possible to allow for larger delays or more lost samples. The current firmware samples IMU data every 15ms (the max rate supported by the BNO055 in fusion mode is 100Hz = 10ms period). Using $l=15 \textrm{ ms}$ it is possible for 5 consecutive samples to be lost while still guaranteeing that no more than 90ms passes between valid samples (thus still ensuring no more than 180 degree change between samples).
