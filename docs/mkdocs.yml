@@ -6,6 +6,9 @@ theme:
     highlightjs: true
 markdown_extensions:
   - attr_list
+  - mdx_math:
+      enable_dollar_delimiter: True
+extra_javascript: ['https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML']
 nav:
   - Home: index.md
   - Hardware:
@@ -15,7 +18,7 @@ nav:
   - Firmware:
     - Overview: firmware/overview.md
     - Build and Flash: firmware/build.md
-    - 6DOF Math: firmware/math.md
+    - Math: firmware/math.md
     - Firmware Development: firmware/developing.md
   - User Guide:
     - Preparing a Control Board: user_guide/preparing_board.md

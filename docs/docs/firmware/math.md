@@ -1,6 +1,4 @@
-# 6DOF Math
-
-[motor_control_math.py](./math_res/numpy_motor_math.py) is an implementation of the motor control math using numpy. It is used for prototyping / testing.
+# Control Math
 
 
 ## Coordinate System Definition
@@ -44,9 +42,11 @@
 </center>
 
 
-## 6DOF Motor Math
+## 6DOF Motor Control Math
 
 The following section covers math to calculate individual motor speeds to achieve the desired motion with a 6 degree of freedom system (6DoF = 3 translation and 3 rotation). The math remains valid for motor configurations where motion in some DoFs is not possible.
+
+[motor_control_math.py](./math_res/numpy_motor_math.py) is an implementation of the motor control math using numpy. It is used for prototyping / testing.
 
 
 ### Motor Matrix
@@ -215,3 +215,42 @@ Then each of the translation and rotation targets can be rotated by multiplicati
 <center>
 ![](./math_res/apply_rotation.png){: style="height:100px;"}
 </center>
+
+
+## Stability Assist Mode Math
+
+Stability assist mode is used to abstract a "2D" working plane to control the vehicle in. This is done by using closed-loop control to maintain pitch, roll, and depth in 3D space (leaving the x, y, and yaw DoFs). Optionally, closed-loop control can also be used for yaw leaving just the x and y DoFs.
+
+This is built on top of global mode. Thus, stability assist mode calculates the current desired speed in each degree of freedom managed by closed loop controllers (pitch, roll, depth, and sometimes yaw). The speeds in other DoFs are specified by the PC just as they would be in global mode.
+
+
+### Orientation Closed-Loop Control
+
+[orientation_math.py](./math_res/orientation_math.py) is an implementation of the orientation closed-loop math using numpy. It is used for prototyping / testing.
+
+Separate PID controllers are used to track the target pitch, roll, and yaw. This allows the output of each PID to be used as a "speed" for one DoF for global mode.
+
+The target (desired) orientation is specified using Euler angles (3-2-1, ZYX), however it will be converted to a Quaternion before use. The use of euler angles allows easily "ignoring" yaw in the event that only pitch and roll are to be managed by closed-loop controllers.
+
+The current angle is read from the IMU (as a quaternion due to bugs in some versions of the BNO055 firmware with its euler angles). It is converted to euler angles (ZYX) additionally. The target orientation is specified using euler angles (ZYX) from the PC. If yaw is not managed by closed-loop control, the current yaw from the IMU reading is copied into the target euler angles (replacing the target yaw). This ensures that the yaw difference between the target and current angle will be zero.
+
+Next, the target is converted to a quaternion. The angle between the current and target quaternion is then calculated. This is done using the following
+
+$q_\textrm{diff} = (q_\textrm{target}) (q_\textrm{current})^{-1}$
+
+However, this is not guaranteed to be the minimal angle between the current and target quaternions. If the dot product of the two quaternions is negative, the following equation is instead used to get the minimum angle.
+
+$q_\textrm{diff} = (q_\textrm{target}) (-q_\textrm{current})^{-1}$
+
+
+This minimum angle quaternion ($q_\textrm{diff}$) is then converted to euler angles. The pitch, roll, and yaw of the euler angles are used as the current error for the pitch, roll, and yaw closed-loop PID controllers.
+
+![](./math_res/construct_orientation_errors.png)
+
+
+### Depth Closed-Loop Control
+
+Depth closed-loop control is implemented using a PID. This PID's output is used as the target speed in the z DoF. The error is the difference between the current depth sensor reading and the specified target depth (in meters; negative for below the surface).
+
+
+<!-- TODO: IMU angle accumulation. -->
