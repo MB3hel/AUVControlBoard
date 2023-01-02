@@ -133,9 +133,9 @@ Reads BNO055 IMU data once.
 ```  
 This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format. Note that this is the same format as the data contained within the BNO055 data status message.  
 ```none
-[gyro_x], [gyro_y], [gyro_z], [euler_pitch], [euler_roll], [euler_yaw]
+[gyro_x], [gyro_y], [gyro_z], [quat_w], [quat_x], [quat_y], [quat_z]
 ```  
-Each value is a 32-bit float, little endian.
+Each value is a 32-bit float, little endian. `grav_` values are components of the gravity vector. `quat_` values are components of the orientation quaternion.
 
 <!--TODO: Future sensor queries-->
 
@@ -172,8 +172,8 @@ Motor watch status message is used by the control board to notify the PC about c
 **BNO055 Data Status**  
 Used by the control board to periodically send IMU data to the PC. Only sent when BNO055 periodic reads are enabled via the BNO055 periodic read command. The message has the following format  
 ```none
-'B', 'N', 'O', '0', '5', '5', 'D', [gyro_x], [gyro_y], [gyro_z], [euler_pitch], [euler_roll], [euler_yaw]
+'B', 'N', 'O', '0', '5', '5', 'D', [gyro_x], [gyro_y], [gyro_z], [quat_w], [quat_x], [quat_y], [quat_z]
 ```  
-Each value is a 32-bit float, little endian.
+Each value is a 32-bit float, little endian. `grav_` values are components of the gravity vector. `quat_` values are components of the orientation quaternion.
 
 <!--TODO: Future status messages (sensors)-->
