@@ -53,9 +53,10 @@ class ControlBoard:
             self.grav_x: float = 0.0
             self.grav_y: float = 0.0
             self.grav_z: float = 0.0
-            self.euler_pitch: float = 0.0
-            self.euler_roll: float = 0.0
-            self.euler_yaw: float = 0.0
+            self.quat_w: float = 0.0
+            self.quat_x: float = 0.0
+            self.quat_y: float = 0.0
+            self.quat_z: float = 0.0
     
     class MS5837Data:
         def __init__(self):
@@ -185,7 +186,7 @@ class ControlBoard:
                     print("Watchdog killed motors.")
         elif msg.startswith(b'BNO055D'):
             # BNO055 data status message
-            if len(msg) == 31:
+            if len(msg) == 35:
                 self.__bno055_parse(msg[7:])
         elif msg.startswith(b'MS5837D'):
             # MS5837 data status message
@@ -429,9 +430,10 @@ class ControlBoard:
         new_data.grav_x = struct.unpack("<f", data[0:4])[0]
         new_data.grav_y = struct.unpack("<f", data[4:8])[0]
         new_data.grav_z = struct.unpack("<f", data[8:12])[0]
-        new_data.euler_pitch = struct.unpack("<f", data[12:16])[0]
-        new_data.euler_roll = struct.unpack("<f", data[16:20])[0]
-        new_data.euler_yaw = struct.unpack("<f", data[20:24])[0]
+        new_data.quat_w = struct.unpack("<f", data[12:16])[0]
+        new_data.quat_x = struct.unpack("<f", data[16:20])[0]
+        new_data.quat_y = struct.unpack("<f", data[20:24])[0]
+        new_data.quat_y = struct.unpack("<f", data[24:28])[0]
         self.__bno055_data = new_data
 
     ## Read current BNO055 data. This is a single read. Does not start periodic reads
