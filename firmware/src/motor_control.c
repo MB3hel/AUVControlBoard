@@ -331,15 +331,5 @@ void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw
     mc_set_local(target_arr[0], target_arr[1], target_arr[2], target_arr[3], target_arr[4], target_arr[5]);
 }
 
-void mc_set_sassist1(float x, float y, float yaw, float pitch_target, float roll_target, float depth_target, 
-        float curr_pitch, float curr_roll, float curr_depth, float grav_x, float grav_y, float grav_z){
-    // TODO
-}
-
-void mc_set_sassist2(float x, float y, float pitch_target, float roll_target, float yaw_target, float depth_target, 
-        float curr_pitch, float curr_roll, float curr_depth, float grav_x, float grav_y, float grav_z){
-    // TODO: Replicate sassist1 stuff, but enable the yaw PID
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
