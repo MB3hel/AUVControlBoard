@@ -470,20 +470,25 @@ bool bno055_read(bno055_data *data){
     tmp16 = ((int16_t)trans.read_buf[4]) | (((int16_t)trans.read_buf[5]) << 8);
     data->grav_z = -tmp16 / 100.0f;
 
-    // Read Euler Angles
-    trans.write_buf[0] = BNO055_EULER_H_LSB_ADDR;
+    // Read Orientation Quaternion
+    trans.write_buf[0] = BNO055_QUATERNION_DATA_W_LSB_ADDR;
     trans.write_count = 1;
-    trans.read_count = 6;
+    trans.read_count = 8;
     if(!bno055_perform(&trans))
         return false;
 
     // Parse data
-    tmp16 = ((int16_t)trans.read_buf[0]) | (((int16_t)trans.read_buf[1]) << 8);
-    data->euler_yaw = tmp16 / 16.0f;
-    tmp16 = ((int16_t)trans.read_buf[2]) | (((int16_t)trans.read_buf[3]) << 8);
-    data->euler_roll = tmp16 / 16.0f;
-    tmp16 = ((int16_t)trans.read_buf[4]) | (((int16_t)trans.read_buf[5]) << 8);
-    data->euler_pitch = tmp16 / 16.0f;
+    // TODO: Determine if directions of rotation match coord system as defined by control board math
+    //       and how axes are defined for acceleration (grav) vector
+    //       If not, need to transform the quaternion to make the coord systems match.
+    tmp16 = (((uint16_t)trans.read_buf[1]) << 8) | ((uint16_t)trans.read_buf[0]);
+    data->quat_w = tmp16 / 16384.0f;
+    tmp16 = (((uint16_t)trans.read_buf[3]) << 8) | ((uint16_t)trans.read_buf[2]);
+    data->quat_x = tmp16 / 16384.0f;
+    tmp16 = (((uint16_t)trans.read_buf[5]) << 8) | ((uint16_t)trans.read_buf[4]);
+    data->quat_y = tmp16 / 16384.0f;
+    tmp16 = (((uint16_t)trans.read_buf[7]) << 8) | ((uint16_t)trans.read_buf[6]);
+    data->quat_z = tmp16 / 16384.0f;
 
     // Success
     return true;

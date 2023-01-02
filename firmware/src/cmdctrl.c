@@ -126,13 +126,14 @@ static void send_sensor_data(TimerHandle_t timer){
         float m_grav_x = curr_bno055_data.grav_x;
         float m_grav_y = curr_bno055_data.grav_y;
         float m_grav_z = curr_bno055_data.grav_z;
-        float m_euler_pitch = curr_bno055_data.euler_pitch;
-        float m_euler_roll = curr_bno055_data.euler_roll;
-        float m_euler_yaw = curr_bno055_data.euler_yaw;
+        float m_quat_w = curr_bno055_data.quat_w;
+        float m_quat_x = curr_bno055_data.quat_x;
+        float m_quat_y = curr_bno055_data.quat_y;
+        float m_quat_z = curr_bno055_data.quat_z;
         xSemaphoreGive(sensor_data_mutex);
 
         // Construct message
-        uint8_t bno055_data[31];
+        uint8_t bno055_data[35];
         bno055_data[0] = 'B';
         bno055_data[1] = 'N';
         bno055_data[2] = 'O';
@@ -143,9 +144,10 @@ static void send_sensor_data(TimerHandle_t timer){
         conversions_float_to_data(m_grav_x, &bno055_data[7], true);
         conversions_float_to_data(m_grav_y, &bno055_data[11], true);
         conversions_float_to_data(m_grav_z, &bno055_data[15], true);
-        conversions_float_to_data(m_euler_pitch, &bno055_data[19], true);
-        conversions_float_to_data(m_euler_roll, &bno055_data[23], true);
-        conversions_float_to_data(m_euler_yaw, &bno055_data[27], true);
+        conversions_float_to_data(m_quat_w, &bno055_data[19], true);
+        conversions_float_to_data(m_quat_x, &bno055_data[23], true);
+        conversions_float_to_data(m_quat_y, &bno055_data[27], true);
+        conversions_float_to_data(m_quat_z, &bno055_data[31], true);
 
         // Send message (status message from CB to PC)
         pccomm_write(bno055_data, 31);
@@ -216,9 +218,10 @@ void cmdctrl_init(void){
     bno055_ready = false;
 
     // Initial sensor data
-    curr_bno055_data.euler_pitch = 0;
-    curr_bno055_data.euler_roll = 0;
-    curr_bno055_data.euler_yaw = 0;
+    curr_bno055_data.quat_w = 0;
+    curr_bno055_data.quat_x = 0;
+    curr_bno055_data.quat_y = 0;
+    curr_bno055_data.quat_z = 0;
     curr_bno055_data.grav_x = 0;
     curr_bno055_data.grav_y = 0;
     curr_bno055_data.grav_z = 0;
@@ -629,22 +632,24 @@ void cmdctrl_handle_message(void){
             float m_grav_x = curr_bno055_data.grav_x;
             float m_grav_y = curr_bno055_data.grav_y;
             float m_grav_z = curr_bno055_data.grav_z;
-            float m_euler_pitch = curr_bno055_data.euler_pitch;
-            float m_euler_roll = curr_bno055_data.euler_roll;
-            float m_euler_yaw = curr_bno055_data.euler_yaw;
+            float m_quat_w = curr_bno055_data.quat_w;
+            float m_quat_x = curr_bno055_data.quat_x;
+            float m_quat_y = curr_bno055_data.quat_y;
+            float m_quat_z = curr_bno055_data.quat_z;
             xSemaphoreGive(sensor_data_mutex);
 
             // Construct response data
-            uint8_t response_data[24];
+            uint8_t response_data[28];
             conversions_float_to_data(m_grav_x, &response_data[0], true);
             conversions_float_to_data(m_grav_y, &response_data[4], true);
             conversions_float_to_data(m_grav_z, &response_data[8], true);
-            conversions_float_to_data(m_euler_pitch, &response_data[12], true);
-            conversions_float_to_data(m_euler_roll, &response_data[16], true);
-            conversions_float_to_data(m_euler_yaw, &response_data[20], true);
+            conversions_float_to_data(m_quat_w, &response_data[12], true);
+            conversions_float_to_data(m_quat_x, &response_data[16], true);
+            conversions_float_to_data(m_quat_y, &response_data[20], true);
+            conversions_float_to_data(m_quat_z, &response_data[24], true);
 
             // Send ack with response data
-            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 24);
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 28);
         }
     }else if(MSG_STARTS_WITH(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'P'}))){
         // BNO055 periodic read configure

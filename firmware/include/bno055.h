@@ -34,7 +34,7 @@
 
 typedef struct{
     float grav_x, grav_y, grav_z;
-    float euler_pitch, euler_roll, euler_yaw;
+    float quat_w, quat_x, quat_y, quat_z;
 } bno055_data;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
