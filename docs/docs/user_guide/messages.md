@@ -108,6 +108,14 @@ Used to enable / disable periodic reading of BNO055 data. This will only impact 
 `[enable]` is an 8-bit integer with a value of either 1 or 0. If 1, reading data periodically is enabled. If 0, reading data periodically is disabled.  
 This message will be acknowledged. The acknowledge message will contain no result data.
 
+**MS5837 Periodic Read**  
+Used to enable / disable periodic reading of MS5837 data. This will only impact data being sent from control board to the pc. The control board itself will continue to read and use depth sensor data.  
+```none
+'M', 'S', '5', '8', '3', '7', 'P', [enable]
+```  
+`[enable]` is an 8-bit integer with a value of either 1 or 0. If 1, reading data periodically is enabled. If 0, reading data periodically is disabled.  
+This message will be acknowledged. The acknowledge message will contain no result data.
+
 <hr />
 
 
@@ -136,6 +144,18 @@ This message will be acknowledged. If acknowledged with no error, the response w
 [gyro_x], [gyro_y], [gyro_z], [quat_w], [quat_x], [quat_y], [quat_z]
 ```  
 Each value is a 32-bit float, little endian. `grav_` values are components of the gravity vector. `quat_` values are components of the orientation quaternion.
+
+
+**MS5837 Read**  
+Reads MS5837 data once.  
+```none
+'M', 'S', '5', '8', '3', '7', 'R'
+```  
+This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format. Note that this is the same format as the data contained within the MS5837 data status message.  
+```none
+[depth_m]
+```  
+`depth_m` is a 32-bit float, little endian.
 
 <!--TODO: Future sensor queries-->
 
@@ -175,5 +195,12 @@ Used by the control board to periodically send IMU data to the PC. Only sent whe
 'B', 'N', 'O', '0', '5', '5', 'D', [gyro_x], [gyro_y], [gyro_z], [quat_w], [quat_x], [quat_y], [quat_z]
 ```  
 Each value is a 32-bit float, little endian. `grav_` values are components of the gravity vector. `quat_` values are components of the orientation quaternion.
+
+**MS5837 Data Status**  
+Used by the control board to periodically send IMU data to the PC. Only sent when BNO055 periodic reads are enabled via the BNO055 periodic read command. The message has the following format  
+```none
+'M', 'S', '5', '8', '3', '7', 'D', [depth_m]
+```  
+`depth_m` is a 32-bit float, little endian.
 
 <!--TODO: Future status messages (sensors)-->
