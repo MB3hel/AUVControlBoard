@@ -42,7 +42,7 @@ void euler_rad2deg(euler_t *dest, euler_t *src);
  * @param dest Quaternion to store data in
  * @param src Euler angles to read and convert
  */
-void euler_to_quaternion(quaternion_t *dest, euler_t *src);
+void euler_to_quat(quaternion_t *dest, euler_t *src);
 
 
 
@@ -50,4 +50,44 @@ void euler_to_quaternion(quaternion_t *dest, euler_t *src);
 /// Quaternion operations
 ////////////////////////////////////////////////////////////////////////////////
 
-// TODO
+/**
+ * Multiply quaternion by a scalar
+ * dest = a * b
+ */
+void quat_multiply_scalar(quaternion_t *dest, quaternion_t *a, float b);
+
+/**
+ * Divide quaternion by a scalar
+ * dest = a / b
+ */
+void quat_divide_scalar(quaternion_t *dest, quaternion_t *a, float b);
+
+/**
+ * Multiply two quaternions
+ * dest = a * b
+ */
+void quat_multiply(quaternion_t *dest, quaternion_t *a, quaternion_t *b);
+
+/**
+ * Calculate inverse of quaternion
+ * dest = (src)^(-1)
+ */
+void quat_inverse(quaternion_t *dest, quaternion_t *src);
+
+/**
+ * Calculate conjugate of quaternion
+ * dest = (src)*
+ */
+void quat_conjugate(quaternion_t *dest, quaternion_t *src);
+
+/**
+ * Calculate magnitude of quaternion
+ * dest = |src|
+ */
+void quat_magnitude(float *dest, quaternion_t *src);
+
+/**
+ * Calculate dot product of two quaternions
+ * dest = a • b
+ */
+void quat_dot(float *dest, quaternion_t *a, quaternion_t *b);
