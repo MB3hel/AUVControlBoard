@@ -68,10 +68,15 @@ void quat_divide_scalar(quaternion_t *dest, quaternion_t *a, float b){
 }
 
 void quat_multiply(quaternion_t *dest, quaternion_t *a, quaternion_t *b){
-    dest->w = a->w * b->w - a->x * b->x - a->y * b->y - a->z * b->z;
-    dest->x = a->w * b->x + a->x * b->w + a->y * b->z - a->z * b->y;
-    dest->y = a->w * b->y - a->x * b->z + a->y * b->w + a->z * b->x;
-    dest->z = a->w * b->z + a->x * b->y - a->y * b->x + a->z * b->w;
+    // Note: using temp w, x, y, z vars because dest may be the same as a or b
+    float w = a->w * b->w - a->x * b->x - a->y * b->y - a->z * b->z;
+    float x = a->w * b->x + a->x * b->w + a->y * b->z - a->z * b->y;
+    float y = a->w * b->y - a->x * b->z + a->y * b->w + a->z * b->x;
+    float z = a->w * b->z + a->x * b->y - a->y * b->x + a->z * b->w;
+    dest->w = w;
+    dest->x = x;
+    dest->y = y;
+    dest->z = z;
 }
 
 void quat_inverse(quaternion_t *dest, quaternion_t *src){
