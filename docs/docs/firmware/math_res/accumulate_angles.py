@@ -129,7 +129,7 @@ print()
 
 # Calculate smallest explication of angle change between the two given quaternions
 diff_quat = Quaternion()
-if curr_quat.dot(curr_quat) < 0:
+if curr_quat.dot(prev_quat) < 0:
     diff_quat = curr_quat.multiply(prev_quat.multiply_scalar(-1).inverse())
 else:
     diff_quat = curr_quat.multiply(prev_quat.inverse())
