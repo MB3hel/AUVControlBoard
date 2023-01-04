@@ -17,6 +17,7 @@
  */
 
 #include <bno055.h>
+#include <angles.h>
 #include <i2c.h>
 #include <FreeRTOS.h>
 #include <task.h>
@@ -246,6 +247,10 @@ static i2c_trans trans;
 static uint8_t write_buf[WRITE_BUF_SIZE];
 static uint8_t read_buf[READ_BUF_SIZE];
 
+static quaternion_t prev_quat;
+static bool prev_quat_valid;
+static float accum_pitch, accum_roll, accum_yaw;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -259,6 +264,12 @@ void bno055_init(void){
     trans.address = BNO055_ADDR;
     trans.write_buf = write_buf;
     trans.read_buf = read_buf;
+
+    prev_quat_valid = false;
+    
+    accum_pitch = 0.0f;
+    accum_roll = 0.0f;
+    accum_yaw = 0.0f;
 }
 
 bool bno055_configure(void){
@@ -412,6 +423,11 @@ bool bno055_set_axis(uint8_t mode){
         break;
     }
 
+    // Reset accumulated angles when axis config changes
+    accum_pitch = 0.0f;
+    accum_roll = 0.0f;
+    accum_yaw = 0.0f;
+
     // Put in CONFIG mode
     trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
     trans.write_buf[1] = OPMODE_CFG;
@@ -489,6 +505,32 @@ bool bno055_read(bno055_data *data){
     data->quat_y = tmp16 / 16384.0f;
     tmp16 = (((uint16_t)trans.read_buf[7]) << 8) | ((uint16_t)trans.read_buf[6]);
     data->quat_z = tmp16 / 16384.0f;
+
+    quaternion_t curr_quat;
+    curr_quat.w = data->quat_w;
+    curr_quat.x = data->quat_x;
+    curr_quat.y = data->quat_y;
+    curr_quat.z = data->quat_z;
+
+    if(prev_quat_valid){
+        // Accumulation math
+        quaternion_t diff_quat;
+        float dot_f;
+        quat_dot(&dot_f, &curr_quat, &prev_quat);
+        if(dot_f < 0){
+            quat_multiply_scalar(&diff_quat, &prev_quat, -1);
+        }
+        quat_inverse(&diff_quat, &diff_quat);
+        quat_multiply(&diff_quat, &curr_quat, &diff_quat);
+        euler_t diff_euler;
+        quat_to_euler(&diff_euler, &diff_quat);
+        euler_rad2deg(&diff_euler, &diff_euler);
+    }
+
+    // Prev quat valid if it is not all zeros (all zeros happen when IMU fusion data not ready yet)
+    prev_quat = curr_quat;
+    prev_quat_valid = 
+        (prev_quat.w != 0) || (prev_quat.x != 0) || (prev_quat.y != 0) || (prev_quat.z != 0);
 
     // Success
     return true;

@@ -53,7 +53,7 @@ Thruster inversion set command is used to invert the positive and negative direc
 This message will be acknowledged. The acknowledge message will contain no result data.
 
 **BNO055 IMU Axis Configure Command**  
-Used to configure the BNO055 IMU's axis orientation.  
+Used to configure the BNO055 IMU's axis orientation. *Note: This will also reset the accumulated euler angles to zero*.  
 ```none
 'B', 'N', 'O', '0', '5', '5', 'A', [config]
 ```
