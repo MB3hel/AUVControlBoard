@@ -91,3 +91,10 @@ void quat_magnitude(float *dest, quaternion_t *src);
  * dest = a • b
  */
 void quat_dot(float *dest, quaternion_t *a, quaternion_t *b);
+
+/**
+ * Convert quaternion to euler
+ * @param dest Euler to store data in (will be in radians)
+ * @param src Quaternion angles to read and convert
+ */
+void quat_to_euler(euler_t *dest, quaternion_t *src);

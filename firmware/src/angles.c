@@ -101,3 +101,22 @@ void quat_dot(float *dest, quaternion_t *a, quaternion_t *b){
     *dest = a->w*b->w + a->x*b->x + a->y*b->y + a->z*b->z;
 }
 
+void quat_to_euler(euler_t *dest, quaternion_t *src){
+    // Pitch (about x axis)
+    float t0 = 2.0f * (src->w * src->x + src->y * src->z);
+    float t1 = 1.0f - 2.0f * (src->x * src->x + src->y * src->y);
+    dest->pitch = atan2f(t0, t1);
+    
+    // Roll (about y axis)
+    float t2 = 2.0f * (src->w * src->y - src->z * src->x);
+    t2 = (t2 > 1.0f) ? 1.0f : t2;
+    t2 = (t2 < -1.0f) ? -1.0f : t2;
+    dest->roll = asinf(t2);
+    
+    // Yaw (about z axis)
+    float t3 = 2.0f * (src->w * src->z + src->x * src->y);
+    float t4 = 1.0f - 2.0f * (src->y * src->y + src->z * src->z);
+    dest->yaw = atan2f(t3, t4);
+
+    dest->is_deg = false;
+}
