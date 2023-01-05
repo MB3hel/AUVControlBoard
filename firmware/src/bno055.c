@@ -519,18 +519,28 @@ bool bno055_read(bno055_data *data){
         quat_dot(&dot_f, &curr_quat, &prev_quat);
         if(dot_f < 0){
             quat_multiply_scalar(&diff_quat, &prev_quat, -1);
+        }else{
+            quat_multiply_scalar(&diff_quat, &prev_quat, 1);
         }
         quat_inverse(&diff_quat, &diff_quat);
         quat_multiply(&diff_quat, &curr_quat, &diff_quat);
         euler_t diff_euler;
         quat_to_euler(&diff_euler, &diff_quat);
         euler_rad2deg(&diff_euler, &diff_euler);
+        accum_pitch += diff_euler.pitch;
+        accum_roll += diff_euler.roll;
+        accum_yaw += diff_euler.yaw;
     }
 
     // Prev quat valid if it is not all zeros (all zeros happen when IMU fusion data not ready yet)
     prev_quat = curr_quat;
     prev_quat_valid = 
         (prev_quat.w != 0) || (prev_quat.x != 0) || (prev_quat.y != 0) || (prev_quat.z != 0);
+
+    // Add accumulated values to sensor data object
+    data->accum_pitch = accum_pitch;
+    data->accum_roll = accum_roll;
+    data->accum_yaw = accum_yaw;
 
     // Success
     return true;

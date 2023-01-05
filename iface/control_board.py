@@ -57,6 +57,9 @@ class ControlBoard:
             self.quat_x: float = 0.0
             self.quat_y: float = 0.0
             self.quat_z: float = 0.0
+            self.accum_pitch: float = 0.0
+            self.accum_roll: float = 0.0
+            self.accum_yaw: float = 0.0
     
     class MS5837Data:
         def __init__(self):
@@ -186,7 +189,7 @@ class ControlBoard:
                     print("Watchdog killed motors.")
         elif msg.startswith(b'BNO055D'):
             # BNO055 data status message
-            if len(msg) == 35:
+            if len(msg) == 47:
                 self.__bno055_parse(msg[7:])
         elif msg.startswith(b'MS5837D'):
             # MS5837 data status message
@@ -433,7 +436,10 @@ class ControlBoard:
         new_data.quat_w = struct.unpack("<f", data[12:16])[0]
         new_data.quat_x = struct.unpack("<f", data[16:20])[0]
         new_data.quat_y = struct.unpack("<f", data[20:24])[0]
-        new_data.quat_y = struct.unpack("<f", data[24:28])[0]
+        new_data.quat_z = struct.unpack("<f", data[24:28])[0]
+        new_data.accum_pitch = struct.unpack("<f", data[28:32])[0]
+        new_data.accum_roll = struct.unpack("<f", data[32:36])[0]
+        new_data.accum_yaw = struct.unpack("<f", data[36:40])[0]
         self.__bno055_data = new_data
 
     ## Read current BNO055 data. This is a single read. Does not start periodic reads

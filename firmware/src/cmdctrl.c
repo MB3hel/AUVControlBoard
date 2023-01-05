@@ -130,10 +130,13 @@ static void send_sensor_data(TimerHandle_t timer){
         float m_quat_x = curr_bno055_data.quat_x;
         float m_quat_y = curr_bno055_data.quat_y;
         float m_quat_z = curr_bno055_data.quat_z;
+        float m_accum_pitch = curr_bno055_data.accum_pitch;
+        float m_accum_roll = curr_bno055_data.accum_roll;
+        float m_accum_yaw = curr_bno055_data.accum_yaw;
         xSemaphoreGive(sensor_data_mutex);
 
         // Construct message
-        uint8_t bno055_data[35];
+        uint8_t bno055_data[47];
         bno055_data[0] = 'B';
         bno055_data[1] = 'N';
         bno055_data[2] = 'O';
@@ -148,9 +151,12 @@ static void send_sensor_data(TimerHandle_t timer){
         conversions_float_to_data(m_quat_x, &bno055_data[23], true);
         conversions_float_to_data(m_quat_y, &bno055_data[27], true);
         conversions_float_to_data(m_quat_z, &bno055_data[31], true);
+        conversions_float_to_data(m_accum_pitch, &bno055_data[35], true);
+        conversions_float_to_data(m_accum_roll, &bno055_data[39], true);
+        conversions_float_to_data(m_accum_yaw, &bno055_data[43], true);
 
         // Send message (status message from CB to PC)
-        pccomm_write(bno055_data, 31);
+        pccomm_write(bno055_data, 47);
     }
     if(periodic_ms5837){
         // Store current readings
@@ -636,10 +642,13 @@ void cmdctrl_handle_message(void){
             float m_quat_x = curr_bno055_data.quat_x;
             float m_quat_y = curr_bno055_data.quat_y;
             float m_quat_z = curr_bno055_data.quat_z;
+            float m_accum_pitch = curr_bno055_data.accum_pitch;
+            float m_accum_roll = curr_bno055_data.accum_roll;
+            float m_accum_yaw = curr_bno055_data.accum_yaw;
             xSemaphoreGive(sensor_data_mutex);
 
             // Construct response data
-            uint8_t response_data[28];
+            uint8_t response_data[40];
             conversions_float_to_data(m_grav_x, &response_data[0], true);
             conversions_float_to_data(m_grav_y, &response_data[4], true);
             conversions_float_to_data(m_grav_z, &response_data[8], true);
@@ -647,9 +656,12 @@ void cmdctrl_handle_message(void){
             conversions_float_to_data(m_quat_x, &response_data[16], true);
             conversions_float_to_data(m_quat_y, &response_data[20], true);
             conversions_float_to_data(m_quat_z, &response_data[24], true);
+            conversions_float_to_data(m_accum_pitch, &response_data[28], true);
+            conversions_float_to_data(m_accum_roll, &response_data[32], true);
+            conversions_float_to_data(m_accum_yaw, &response_data[36], true);
 
             // Send ack with response data
-            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 28);
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 40);
         }
     }else if(MSG_STARTS_WITH(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'P'}))){
         // BNO055 periodic read configure
