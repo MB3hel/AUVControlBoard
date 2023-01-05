@@ -19,6 +19,7 @@ import serial
 import copy
 import struct
 import time
+import math
 from enum import IntEnum
 import threading
 from typing import List, Dict, Tuple
@@ -57,6 +58,9 @@ class ControlBoard:
             self.quat_x: float = 0.0
             self.quat_y: float = 0.0
             self.quat_z: float = 0.0
+            self.euler_pitch: float = 0.0
+            self.euler_roll: float = 0.0
+            self.euler_yaw: float = 0.0
             self.accum_pitch: float = 0.0
             self.accum_roll: float = 0.0
             self.accum_yaw: float = 0.0
@@ -430,6 +434,8 @@ class ControlBoard:
     ## Parse byte data from BNO055 readings into the data class object
     def __bno055_parse(self, data: bytes):
         new_data = self.BNO055Data()
+        
+        # Parse data
         new_data.grav_x = struct.unpack("<f", data[0:4])[0]
         new_data.grav_y = struct.unpack("<f", data[4:8])[0]
         new_data.grav_z = struct.unpack("<f", data[8:12])[0]
@@ -440,6 +446,22 @@ class ControlBoard:
         new_data.accum_pitch = struct.unpack("<f", data[28:32])[0]
         new_data.accum_roll = struct.unpack("<f", data[32:36])[0]
         new_data.accum_yaw = struct.unpack("<f", data[36:40])[0]
+
+        # Calculate euler angles (ZYX) from quaternion
+        t0 = +2.0 * (new_data.quat_w * new_data.quat_x + new_data.quat_y * new_data.quat_z)
+        t1 = +1.0 - 2.0 * (new_data.quat_x * new_data.quat_x + new_data.quat_y * new_data.quat_y)
+        new_data.euler_pitch = math.atan2(t0, t1)
+        t2 = +2.0 * (new_data.quat_w * new_data.quat_y - new_data.quat_z * new_data.quat_x)
+        t2 = +1.0 if t2 > +1.0 else t2
+        t2 = -1.0 if t2 < -1.0 else t2
+        new_data.euler_roll = math.asin(t2)
+        t3 = +2.0 * (new_data.quat_w * new_data.quat_z + new_data.quat_x * new_data.quat_y)
+        t4 = +1.0 - 2.0 * (new_data.quat_y * new_data.quat_y + new_data.quat_z * new_data.quat_z)
+        new_data.euler_yaw = math.atan2(t3, t4)
+        new_data.euler_pitch *= 180.0 / math.pi
+        new_data.euler_roll *= 180.0 / math.pi
+        new_data.euler_yaw *= 180.0 / math.pi
+
         self.__bno055_data = new_data
 
     ## Read current BNO055 data. This is a single read. Does not start periodic reads
