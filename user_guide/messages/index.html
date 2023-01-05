@@ -13,7 +13,7 @@
       <script>
         // Current page data
         var mkdocs_page_name = "Messages";
-        var mkdocs_page_input_path = "user_guide\\messages.md";
+        var mkdocs_page_input_path = "user_guide/messages.md";
         var mkdocs_page_url = null;
       </script>
     
@@ -59,7 +59,7 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../firmware/build/">Build and Flash</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/math/">6DOF Math</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/math/">Math</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../firmware/developing/">Firmware Development</a>
                   </li>
@@ -111,15 +111,14 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../.." class="icon icon-home" alt="Docs"></a> &raquo;</li>
-          <li>User Guide &raquo;</li><li>Messages</li>
+          <li>User Guide &raquo;</li>
+      <li>Messages</li>
     <li class="wy-breadcrumbs-aside">
-        <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/user_guide/messages.md"
-          class="icon icon-github"> Edit on GitHub</a>
+          <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/user_guide/messages.md" class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
 </div>
-
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
@@ -164,7 +163,7 @@ Thruster inversion set command is used to invert the positive and negative direc
 <p><code>[inv]</code>: A single byte where each bit represents the inversion status of a thruster. The MSB (bit 7) corresponds to thruster 8 and the LSB corresponds to thruster 1 (bit + 1 = thruster). A bit value of 1 means the thruster is inverted. A bit value of 0 means the thruster is not inverted.<br />
 This message will be acknowledged. The acknowledge message will contain no result data.</p>
 <p><strong>BNO055 IMU Axis Configure Command</strong><br />
-Used to configure the BNO055 IMU's axis orientation.  </p>
+Used to configure the BNO055 IMU's axis orientation. <em>Note: This will also reset the accumulated euler angles to zero</em>.  </p>
 <pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'A', [config]
 </code></pre>
 <p><code>[config]</code>: A single byte. The value of this byte is between 0 and 7 (inclusive) representing on of the BNO055 axis configs (P0 to P7) as described in the BNO055 datasheet. <em>Note: Changing the axis config changes IMU mode. Thus, there will be a brief time afterwards where the IMU may report zeros for all data.</em><br />
@@ -204,6 +203,12 @@ Used to enable / disable periodic reading of BNO055 data. This will only impact 
 </code></pre>
 <p><code>[enable]</code> is an 8-bit integer with a value of either 1 or 0. If 1, reading data periodically is enabled. If 0, reading data periodically is disabled.<br />
 This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<p><strong>MS5837 Periodic Read</strong><br />
+Used to enable / disable periodic reading of MS5837 data. This will only impact data being sent from control board to the pc. The control board itself will continue to read and use depth sensor data.  </p>
+<pre><code class="language-none">'M', 'S', '5', '8', '3', '7', 'P', [enable]
+</code></pre>
+<p><code>[enable]</code> is an 8-bit integer with a value of either 1 or 0. If 1, reading data periodically is enabled. If 0, reading data periodically is disabled.<br />
+This message will be acknowledged. The acknowledge message will contain no result data.</p>
 <hr />
 
 <h2 id="queries">Queries</h2>
@@ -220,9 +225,17 @@ Reads BNO055 IMU data once.  </p>
 <pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'R'
 </code></pre>
 <p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format. Note that this is the same format as the data contained within the BNO055 data status message.  </p>
-<pre><code class="language-none">[gyro_x], [gyro_y], [gyro_z], [euler_pitch], [euler_roll], [euler_yaw]
+<pre><code class="language-none">[gyro_x], [gyro_y], [gyro_z], [quat_w], [quat_x], [quat_y], [quat_z]
 </code></pre>
-<p>Each value is a 32-bit float, little endian.</p>
+<p>Each value is a 32-bit float, little endian. <code>grav_</code> values are components of the gravity vector. <code>quat_</code> values are components of the orientation quaternion.</p>
+<p><strong>MS5837 Read</strong><br />
+Reads MS5837 data once.  </p>
+<pre><code class="language-none">'M', 'S', '5', '8', '3', '7', 'R'
+</code></pre>
+<p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format. Note that this is the same format as the data contained within the MS5837 data status message.  </p>
+<pre><code class="language-none">[depth_m]
+</code></pre>
+<p><code>depth_m</code> is a 32-bit float, little endian.</p>
 <!--TODO: Future sensor queries-->
 
 <hr />
@@ -249,9 +262,14 @@ Motor watch status message is used by the control board to notify the PC about c
 <p><code>[status]</code> is a single byte. A value of 1 indicates the motors are enabled. A value of zero indicates the motors are currently killed by the watchdog.</p>
 <p><strong>BNO055 Data Status</strong><br />
 Used by the control board to periodically send IMU data to the PC. Only sent when BNO055 periodic reads are enabled via the BNO055 periodic read command. The message has the following format  </p>
-<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'D', [gyro_x], [gyro_y], [gyro_z], [euler_pitch], [euler_roll], [euler_yaw]
+<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'D', [gyro_x], [gyro_y], [gyro_z], [quat_w], [quat_x], [quat_y], [quat_z]
 </code></pre>
-<p>Each value is a 32-bit float, little endian.</p>
+<p>Each value is a 32-bit float, little endian. <code>grav_</code> values are components of the gravity vector. <code>quat_</code> values are components of the orientation quaternion.</p>
+<p><strong>MS5837 Data Status</strong><br />
+Used by the control board to periodically send IMU data to the PC. Only sent when BNO055 periodic reads are enabled via the BNO055 periodic read command. The message has the following format  </p>
+<pre><code class="language-none">'M', 'S', '5', '8', '3', '7', 'D', [depth_m]
+</code></pre>
+<p><code>depth_m</code> is a 32-bit float, little endian.</p>
 <!--TODO: Future status messages (sensors)-->
               
             </div>
@@ -292,6 +310,7 @@ Used by the control board to periodically send IMU data to the PC. Only sent whe
     <script>var base_url = '../..';</script>
     <script src="../../js/theme_extra.js" defer></script>
     <script src="../../js/theme.js" defer></script>
+      <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML" defer></script>
       <script src="../../search/main.js" defer></script>
     <script defer>
         window.onload = function () {

@@ -5,15 +5,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>6DOF Math - AUV Control Board</title>
+    <title>Math - AUV Control Board</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "6DOF Math";
-        var mkdocs_page_input_path = "firmware\\math.md";
+        var mkdocs_page_name = "Math";
+        var mkdocs_page_input_path = "firmware/math.md";
         var mkdocs_page_url = null;
       </script>
     
@@ -59,7 +59,7 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../build/">Build and Flash</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="./">6DOF Math</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="./">Math</a>
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#coordinate-system-definition">Coordinate System Definition</a>
     </li>
@@ -67,7 +67,7 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#robot-thruster-arrangement">Robot Thruster Arrangement</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#6dof-motor-math">6DOF Motor Math</a>
+    <li class="toctree-l2"><a class="reference internal" href="#6dof-motor-control-math">6DOF Motor Control Math</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#motor-matrix">Motor Matrix</a>
     </li>
@@ -80,6 +80,16 @@
     <li class="toctree-l3"><a class="reference internal" href="#global-targets">Global Targets</a>
     </li>
         </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#stability-assist-mode-math">Stability Assist Mode Math</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#orientation-closed-loop-control">Orientation Closed-Loop Control</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#depth-closed-loop-control">Depth Closed-Loop Control</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#imu-angle-accumulation">IMU Angle Accumulation</a>
     </li>
     </ul>
                   </li>
@@ -111,20 +121,18 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../.." class="icon icon-home" alt="Docs"></a> &raquo;</li>
-          <li>Firmware &raquo;</li><li>6DOF Math</li>
+          <li>Firmware &raquo;</li>
+      <li>Math</li>
     <li class="wy-breadcrumbs-aside">
-        <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/firmware/math.md"
-          class="icon icon-github"> Edit on GitHub</a>
+          <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/firmware/math.md" class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
 </div>
-
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="6dof-math">6DOF Math</h1>
-<p><a href="../math_res/numpy_motor_math.py">motor_control_math.py</a> is an implementation of the motor control math using numpy. It is used for prototyping / testing.</p>
+                <h1 id="control-math">Control Math</h1>
 <h2 id="coordinate-system-definition">Coordinate System Definition</h2>
 <ul>
 <li>The coordinate system is defined by the images below</li>
@@ -166,8 +174,9 @@
 <p><center>
 <img alt="" src="../math_res/thruster_config.png" style="height:400px;" />
 </center></p>
-<h2 id="6dof-motor-math">6DOF Motor Math</h2>
+<h2 id="6dof-motor-control-math">6DOF Motor Control Math</h2>
 <p>The following section covers math to calculate individual motor speeds to achieve the desired motion with a 6 degree of freedom system (6DoF = 3 translation and 3 rotation). The math remains valid for motor configurations where motion in some DoFs is not possible.</p>
+<p><em><a href="../math_res/numpy_motor_math.py">motor_control_math.py</a> is an implementation of the motor control math using numpy. It is used for prototyping / testing.</em></p>
 <h3 id="motor-matrix">Motor Matrix</h3>
 <p>The motor matrix is generated based on physical frame and thruster configuration. The motor matrix associates motor numbers with their contributions to motion in different degrees of freedom.</p>
 <p>The motor matrix can be thought of as a "table" where each column represents one degree of freedom and each row represents a motor. Each column is a set of motor speeds that cause motion <strong>only</strong> in the column's degree of freedom (and in the positive direction and at maximum possible speed). There are always 7 columns in the matrix. The number of rows is equal to the number of motors. Note that the motor numbers can be in any order (ie row order does not matter) whereas columns must be ordered as shown in the image below.</p>
@@ -272,6 +281,58 @@ endwhile
 <p><center>
 <img alt="" src="../math_res/apply_rotation.png" style="height:100px;" />
 </center></p>
+<h2 id="stability-assist-mode-math">Stability Assist Mode Math</h2>
+<p>Stability assist mode is used to abstract a "2D" working plane to control the vehicle in. This is done by using closed-loop control to maintain pitch, roll, and depth in 3D space (leaving the x, y, and yaw DoFs). Optionally, closed-loop control can also be used for yaw leaving just the x and y DoFs.</p>
+<p>This is built on top of global mode. Thus, stability assist mode calculates the current desired speed in each degree of freedom managed by closed loop controllers (pitch, roll, depth, and sometimes yaw). The speeds in other DoFs are specified by the PC just as they would be in global mode.</p>
+<h3 id="orientation-closed-loop-control">Orientation Closed-Loop Control</h3>
+<p><em><a href="../math_res/orientation_math.py">orientation_math.py</a> is an implementation of the orientation closed-loop math using numpy. It is used for prototyping / testing.</em></p>
+<p>Separate PID controllers are used to track the target pitch, roll, and yaw. This allows the output of each PID to be used as a "speed" for one DoF for global mode.</p>
+<p>The target (desired) orientation is specified using Euler angles (3-2-1, ZYX), however it will be converted to a Quaternion before use. The use of euler angles allows easily "ignoring" yaw in the event that only pitch and roll are to be managed by closed-loop controllers.</p>
+<p>The current angle is read from the IMU (as a quaternion due to bugs in some versions of the BNO055 firmware with its euler angles). It is converted to euler angles (ZYX) additionally. The target orientation is specified using euler angles (ZYX) from the PC. If yaw is not managed by closed-loop control, the current yaw from the IMU reading is copied into the target euler angles (replacing the target yaw). This ensures that the yaw difference between the target and current angle will be zero.</p>
+<p>Next, the target is converted to a quaternion. The angle between the current and target quaternion is then calculated. This is done using the following</p>
+<p>
+<script type="math/tex">q_\textrm{diff} = (q_\textrm{target}) (q_\textrm{current})^{-1}</script>
+</p>
+<p>However, this is not guaranteed to be the minimal angle between the current and target quaternions. If the dot product of the two quaternions is negative, the following equation is instead used to get the minimum angle.</p>
+<p>
+<script type="math/tex">q_\textrm{diff} = (q_\textrm{target}) (-q_\textrm{current})^{-1}</script>
+</p>
+<p>This minimum angle quaternion (<script type="math/tex">q_\textrm{diff}</script>) is then converted to euler angles. The pitch, roll, and yaw of the euler angles are used as the current error for the pitch, roll, and yaw closed-loop PID controllers.</p>
+<p><img alt="" src="../math_res/construct_orientation_errors.png" /></p>
+<h3 id="depth-closed-loop-control">Depth Closed-Loop Control</h3>
+<p>Depth closed-loop control is implemented using a PID. This PID's output is used as the target speed in the z DoF. The error is the difference between the current depth sensor reading and the specified target depth (in meters; negative for below the surface).</p>
+<h2 id="imu-angle-accumulation">IMU Angle Accumulation</h2>
+<p><em><a href="../math_res/accumulate_angles.py">accumulate_angles.py</a> is an implementation of the math used to determine the difference between two quaternions (used to determine change in euler angles for accumulation).</em></p>
+<p>The euler and quaternion values provided by the IMU are not directly useful for tracking multiple rotations of the vehicle. Unlike simply integrating gyroscope data, euler angles (pitch, roll, yaw) and quaternions do not track the number of times the vehicle has rotated about a particular axis.</p>
+<p>While integrating raw gyro data would provide this, such a solution would not be rotations about the robot's axes, not the world's axes (gyro z of 500 does not necessarily mean the robot has yawed 500 degrees; the robot could have been oriented at a pitch of 90).</p>
+<p>To address this, it is necessary to track changes between subsequent quaternions from the IMU. Quaternions are used for three reasons</p>
+<ol>
+<li>Firmware bugs in some BNO055 firmware versions lead to unstable euler angles</li>
+<li>It is mathematically easier to determine the "shortest rotation" between two quaternions</li>
+<li>Quaternions still allow accumulation to work in "gimbal lock" situations</li>
+</ol>
+<p>The idea is to compare each quaternion read from the IMU with the previous quaternion received from the IMU (note that quaternions of all zeros are ignored to avoid issues with invalid IMU data after exiting config mode). For each read quaternion:</p>
+<ul>
+<li>Calculate the shortest set of rotations from the previous to the current quaternion</li>
+<li>Convert the shortest angle to euler angles</li>
+<li>Add the pitch, roll, and yaw from the shortest euler angles to accumulated pitch, roll, and yaw variables</li>
+<li>Note that if the IMU axis config changes, the accumulated data should be zeroed and the previously read quaternion discarded.</li>
+</ul>
+<p>This method makes the assumption that the smallest rotation between two quaternions is the most probable path the robot took to change its orientation. This is an approximation, however it is a fairly good one as long as sample rate of data is sufficiently high. The specifics of the path are lost. However, if the sample rate is high enough, the length of the path is sufficiently small that this is a good approximation.</p>
+<p>The second "issue" with this approximation has to do with rotations exceeding 180 degrees. The method for determining shortest path between two quaternions will be incorrect if the vehicle rotates more than 180 degrees in any axis (because the shortest path would have involved rotating the other direction). To guarantee rotations between two samples never exceed 180 degrees, the max measured rotation rate of the gyro is considered. For the BNO055 this is 2000 degrees per second. Thus, with a sample period of <script type="math/tex">l</script> milliseconds, the largest angle change between samples is</p>
+<p>
+<script type="math/tex">\frac{2000 \textrm{ deg}}{1 \textrm{ sec}} \cdot \frac{1 \textrm{ sec}}{1000 \textrm{ ms}} \cdot \frac{l \textrm{ ms}}{1 \textrm{ sample}} = 2l \textrm{ deg / sample}</script>
+</p>
+<p>To ensure that changes of more than 180 degrees do not occur, the following must be satisfied</p>
+<p>
+<script type="math/tex">2l < 180 \rightarrow l < 90 \textrm{ milliseconds}</script>
+</p>
+<p>However, it is possible for some samples from the IMU to be delayed (ie I2C bus busy with another sensor) or lost (I2C failure). Thus, it is necessary to choose a value for <script type="math/tex">l</script> that allows for at least one sample to be lost. When a sample is lost, this doubles the effective time between samples. Thus, it is necessary to half <script type="math/tex">l</script>
+</p>
+<p>
+<script type="math/tex">l < 45 \textrm{ milliseconds}</script>
+</p>
+<p>By further reducing <script type="math/tex">l</script> it is possible to allow for larger delays or more lost samples. The current firmware samples IMU data every 15ms (the max rate supported by the BNO055 in fusion mode is 100Hz = 10ms period). Using <script type="math/tex">l=15 \textrm{ ms}</script> it is possible for 5 consecutive samples to be lost while still guaranteeing that no more than 90ms passes between valid samples (thus still ensuring no more than 180 degree change between samples).</p>
               
             </div>
           </div><footer>
@@ -314,6 +375,7 @@ endwhile
     <script>var base_url = '../..';</script>
     <script src="../../js/theme_extra.js" defer></script>
     <script src="../../js/theme.js" defer></script>
+      <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML" defer></script>
       <script src="../../search/main.js" defer></script>
     <script defer>
         window.onload = function () {
