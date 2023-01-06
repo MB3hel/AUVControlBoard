@@ -530,6 +530,84 @@ class ControlBoard:
 
 
 
+    ## Tune STABILITY_ASSIST pitch hold PID
+    #  @param kp Proportional gain
+    #  @param ki Integral gain
+    #  @param kd Derivative gain
+    #  @param kf Feed-forward gain
+    #  @param limit Max output of PID (controls max speed in sassist mode)
+    #  @return AckError
+    def tune_sassist_pitch(self, kp: float, ki: float, kd: float, kf: float, limit: float, timeout: int) -> AckError:
+        msg = bytearray()
+        msg.extend(b'SASSISTTNP')
+        msg.extend(struct.pack("<f", kp))
+        msg.extend(struct.pack("<f", ki))
+        msg.extend(struct.pack("<f", kd))
+        msg.extend(struct.pack("<f", kf))
+        msg.extend(struct.pack("<f", abs(limit)))
+        msg_id = self.__write_msg(bytes(msg), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+
+    ## Tune STABILITY_ASSIST roll hold PID
+    #  @param kp Proportional gain
+    #  @param ki Integral gain
+    #  @param kd Derivative gain
+    #  @param kf Feed-forward gain
+    #  @param limit Max output of PID (controls max speed in sassist mode)
+    #  @return AckError
+    def tune_sassist_roll(self, kp: float, ki: float, kd: float, kf: float, limit: float, timeout: int) -> AckError:
+        msg = bytearray()
+        msg.extend(b'SASSISTTNR')
+        msg.extend(struct.pack("<f", kp))
+        msg.extend(struct.pack("<f", ki))
+        msg.extend(struct.pack("<f", kd))
+        msg.extend(struct.pack("<f", kf))
+        msg.extend(struct.pack("<f", abs(limit)))
+        msg_id = self.__write_msg(bytes(msg), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+
+    ## Tune STABILITY_ASSIST yaw hold PID
+    #  @param kp Proportional gain
+    #  @param ki Integral gain
+    #  @param kd Derivative gain
+    #  @param kf Feed-forward gain
+    #  @param limit Max output of PID (controls max speed in sassist mode)
+    #  @return AckError
+    def tune_sassist_yaw(self, kp: float, ki: float, kd: float, kf: float, limit: float, timeout: int) -> AckError:
+        msg = bytearray()
+        msg.extend(b'SASSISTTNY')
+        msg.extend(struct.pack("<f", kp))
+        msg.extend(struct.pack("<f", ki))
+        msg.extend(struct.pack("<f", kd))
+        msg.extend(struct.pack("<f", kf))
+        msg.extend(struct.pack("<f", abs(limit)))
+        msg_id = self.__write_msg(bytes(msg), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+
+    ## Tune STABILITY_ASSIST depth hold PID
+    #  @param kp Proportional gain
+    #  @param ki Integral gain
+    #  @param kd Derivative gain
+    #  @param kf Feed-forward gain
+    #  @param limit Max output of PID (controls max speed in sassist mode)
+    #  @return AckError
+    def tune_sassist_depth(self, kp: float, ki: float, kd: float, kf: float, limit: float, timeout: int) -> AckError:
+        msg = bytearray()
+        msg.extend(b'SASSISTTND')
+        msg.extend(struct.pack("<f", kp))
+        msg.extend(struct.pack("<f", ki))
+        msg.extend(struct.pack("<f", kd))
+        msg.extend(struct.pack("<f", kf))
+        msg.extend(struct.pack("<f", abs(limit)))
+        msg_id = self.__write_msg(bytes(msg), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+
+
+
     ## Set thruster speeds in RAW mode
     #  @param speeds List of 8 speeds to send to control board. Must range from -1 to 1
     #  @return Error code (AckError enum) from control board (or timeout)
