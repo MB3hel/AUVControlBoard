@@ -402,14 +402,14 @@ void mc_sassist_tune_depth(float kp, float ki, float kd, float kf, float limit){
 }
 
 void mc_set_sassist1(float x, float y, float yaw, 
-        quaternion_t target, 
+        euler_t target, 
         quaternion_t current,
         float grav_x, float grav_y, float grav_z){
     // TODO
 }
 
 void mc_set_sassist2(float x, float y, float yaw, 
-        quaternion_t target, 
+        euler_t target, 
         quaternion_t current,
         float grav_x, float grav_y, float grav_z){
     // TODO
