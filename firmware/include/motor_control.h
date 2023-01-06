@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <angles.h>
 
 
 // Inverts positive and negative on specific thrusters
@@ -83,3 +84,80 @@ void mc_set_local(float x, float y, float z, float pitch, float roll, float yaw)
  * @param grav_z Gravity vector z component
  */
 void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw, float grav_x, float grav_y, float grav_z);
+
+/**
+ * Tune stability assist mode pitch pid
+ * @param kp Proportional gain
+ * @param ki Integral gain
+ * @param kd Derivative gain
+ * @param kf Feed-forward gain
+ * @param limit Magnitude of max PID output (max = limit, min = -limit). Must be positive
+ */
+void mc_sassist_tune_pitch(float kp, float ki, float kd, float kf, float limit);
+
+/**
+ * Tune stability assist mode roll pid
+ * @param kp Proportional gain
+ * @param ki Integral gain
+ * @param kd Derivative gain
+ * @param kf Feed-forward gain
+ * @param limit Magnitude of max PID output (max = limit, min = -limit). Must be positive
+ */
+void mc_sassist_tune_roll(float kp, float ki, float kd, float kf, float limit);
+
+/**
+ * Tune stability assist mode yaw pid
+ * @param kp Proportional gain
+ * @param ki Integral gain
+ * @param kd Derivative gain
+ * @param kf Feed-forward gain
+ * @param limit Magnitude of max PID output (max = limit, min = -limit). Must be positive
+ */
+void mc_sassist_tune_yaw(float kp, float ki, float kd, float kf, float limit);
+
+/**
+ * Tune stability assist mode depth pid
+ * @param kp Proportional gain
+ * @param ki Integral gain
+ * @param kd Derivative gain
+ * @param kf Feed-forward gain
+ * @param limit Magnitude of max PID output (max = limit, min = -limit). Must be positive
+ */
+void mc_sassist_tune_depth(float kp, float ki, float kd, float kf, float limit);
+
+/**
+ * Set motor speeds in STABILITY_ASSIST mode. Abstracts a 2D plane in which the robot is controlled.
+ * The other dimensions are handled by closed-loop control. 
+ * Variant 1 requires speeds specified for x, y, and yaw DoFs and uses closed-loop control 
+ * for depth (z), pitch, and roll. Speeds are in world-relative (GLOBAL) DoFs
+ * @param x Speed in +x DoF (-1.0 to +1.0)
+ * @param y Speed in +y DoF (-1.0 to +1.0)
+ * @param yaw Speed in +yaw DoF (-1.0 to +1.0)
+ * @param target Target orientation quaternion (yaw difference from current is ignored)
+ * @param current Current orientation quaternion
+ * @param grav_x Current gravity vector x component
+ * @param grav_y Current gravity vector y component
+ * @param grav_z Current gravity vector z component
+ */
+void mc_set_sassist1(float x, float y, float yaw, 
+        quaternion_t target, 
+        quaternion_t current,
+        float grav_x, float grav_y, float grav_z);
+
+/**
+ * Set motor speeds in STABILITY_ASSIST mode. Abstracts a 2D plane in which the robot is controlled.
+ * The other dimensions are handled by closed-loop control. 
+ * Variant 2 requires speeds specified for x and y DoFs and uses closed-loop control 
+ * for depth (z), pitch, roll, and yaw. Speeds are in world-relative (GLOBAL) DoFs
+ * @param x Speed in +x DoF (-1.0 to +1.0)
+ * @param y Speed in +y DoF (-1.0 to +1.0)
+ * @param target Target orientation quaternion
+ * @param current Current orientation quaternion
+ * @param grav_x Current gravity vector x component
+ * @param grav_y Current gravity vector y component
+ * @param grav_z Current gravity vector z component
+ */
+void mc_set_sassist2(float x, float y, float yaw, 
+        quaternion_t target, 
+        quaternion_t current,
+        float grav_x, float grav_y, float grav_z);
