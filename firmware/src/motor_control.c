@@ -24,6 +24,7 @@
 #include <semphr.h>
 #include <timers.h>
 #include <cmdctrl.h>
+#include <pid.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -50,6 +51,9 @@ static bool motors_killed;                              // Motor (watchdog) stat
 static TimerHandle_t motor_wdog_timer;                  // Timer to implement motor watchdog
 
 static SemaphoreHandle_t motor_mutex;                   // Ensures motor & watchdog access is thread safe
+
+// PID controllers for SASSIST mode
+static pid_controller_t pitch_pid, roll_pid, yaw_pid, depth_pid;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -92,6 +96,36 @@ void mc_init(void){
     matrix_init_static(&dof_matrix, dof_matrix_arr, 8, 6);
     for(unsigned int i = 0; i < 8; ++i)
         matrix_init_static(&overlap_vectors[i], overlap_arrs[i], 8, 1);
+
+    // Initialize pid controllers
+    pitch_pid.kP = 0.0f;
+    pitch_pid.kI = 0.0f;
+    pitch_pid.kD = 0.0f;
+    pitch_pid.kF = 0.0f;
+    pitch_pid.min = -1.0f;
+    pitch_pid.max = 1.0f;
+    PID_RESET(pitch_pid);
+    roll_pid.kP = 0.0f;
+    roll_pid.kI = 0.0f;
+    roll_pid.kD = 0.0f;
+    roll_pid.kF = 0.0f;
+    roll_pid.min = -1.0f;
+    roll_pid.max = 1.0f;
+    PID_RESET(roll_pid);
+    yaw_pid.kP = 0.0f;
+    yaw_pid.kI = 0.0f;
+    yaw_pid.kD = 0.0f;
+    yaw_pid.kF = 0.0f;
+    yaw_pid.min = -1.0f;
+    yaw_pid.max = 1.0f;
+    PID_RESET(yaw_pid);
+    depth_pid.kP = 0.0f;
+    depth_pid.kI = 0.0f;
+    depth_pid.kD = 0.0f;
+    depth_pid.kF = 0.0f;
+    depth_pid.min = -1.0f;
+    depth_pid.max = 1.0f;
+    PID_RESET(depth_pid);
 
     // Create required RTOS objects
     motor_mutex = xSemaphoreCreateMutex();
@@ -329,6 +363,56 @@ void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw
 
     // Target is now a local target (stored in order in target_arr)
     mc_set_local(target_arr[0], target_arr[1], target_arr[2], target_arr[3], target_arr[4], target_arr[5]);
+}
+
+void mc_sassist_tune_pitch(float kp, float ki, float kd, float kf, float limit){
+    pitch_pid.kP = kp;
+    pitch_pid.kI = ki;
+    pitch_pid.kD = kd;
+    pitch_pid.kF = kf;
+    pitch_pid.max = limit;
+    pitch_pid.min = -limit;
+}
+
+void mc_sassist_tune_roll(float kp, float ki, float kd, float kf, float limit){
+    roll_pid.kP = kp;
+    roll_pid.kI = ki;
+    roll_pid.kD = kd;
+    roll_pid.kF = kf;
+    roll_pid.max = limit;
+    roll_pid.min = -limit;
+}
+
+void mc_sassist_tune_yaw(float kp, float ki, float kd, float kf, float limit){
+    yaw_pid.kP = kp;
+    yaw_pid.kI = ki;
+    yaw_pid.kD = kd;
+    yaw_pid.kF = kf;
+    yaw_pid.max = limit;
+    yaw_pid.min = -limit;
+}
+
+void mc_sassist_tune_depth(float kp, float ki, float kd, float kf, float limit){
+    depth_pid.kP = kp;
+    depth_pid.kI = ki;
+    depth_pid.kD = kd;
+    depth_pid.kF = kf;
+    depth_pid.max = limit;
+    depth_pid.min = -limit;
+}
+
+void mc_set_sassist1(float x, float y, float yaw, 
+        quaternion_t target, 
+        quaternion_t current,
+        float grav_x, float grav_y, float grav_z){
+    // TODO
+}
+
+void mc_set_sassist2(float x, float y, float yaw, 
+        quaternion_t target, 
+        quaternion_t current,
+        float grav_x, float grav_y, float grav_z){
+    // TODO
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
