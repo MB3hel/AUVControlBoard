@@ -133,16 +133,18 @@ void mc_sassist_tune_depth(float kp, float ki, float kd, float kf, float limit);
  * @param x Speed in +x DoF (-1.0 to +1.0)
  * @param y Speed in +y DoF (-1.0 to +1.0)
  * @param yaw Speed in +yaw DoF (-1.0 to +1.0)
- * @param target Target orientation (ZYX euler; yaw is ignored)
- * @param current Current orientation quaternion
+ * @param target_euler Target orientation (ZYX euler; yaw is ignored)
+ * @param curr_quat Current orientation quaternion
  * @param grav_x Current gravity vector x component
  * @param grav_y Current gravity vector y component
  * @param grav_z Current gravity vector z component
  */
 void mc_set_sassist1(float x, float y, float yaw, 
-        euler_t target, 
-        quaternion_t current,
-        float grav_x, float grav_y, float grav_z);
+        euler_t target_euler, 
+        float target_depth,
+        quaternion_t curr_quat,
+        float grav_x, float grav_y, float grav_z,
+        float curr_depth);
 
 /**
  * Set motor speeds in STABILITY_ASSIST mode. Abstracts a 2D plane in which the robot is controlled.
@@ -151,13 +153,15 @@ void mc_set_sassist1(float x, float y, float yaw,
  * for depth (z), pitch, roll, and yaw. Speeds are in world-relative (GLOBAL) DoFs
  * @param x Speed in +x DoF (-1.0 to +1.0)
  * @param y Speed in +y DoF (-1.0 to +1.0)
- * @param target Target orientation (ZYX euler)
- * @param current Current orientation quaternion
+ * @param target_euler Target orientation (ZYX euler)
+ * @param curr_quat Current orientation quaternion
  * @param grav_x Current gravity vector x component
  * @param grav_y Current gravity vector y component
  * @param grav_z Current gravity vector z component
  */
-void mc_set_sassist2(float x, float y, float yaw, 
-        euler_t target, 
-        quaternion_t current,
-        float grav_x, float grav_y, float grav_z);
+void mc_set_sassist2(float x, float y, 
+        euler_t target_euler, 
+        float target_depth,
+        quaternion_t curr_quat,
+        float grav_x, float grav_y, float grav_z,
+        float curr_depth);

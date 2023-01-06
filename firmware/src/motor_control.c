@@ -402,17 +402,84 @@ void mc_sassist_tune_depth(float kp, float ki, float kd, float kf, float limit){
 }
 
 void mc_set_sassist1(float x, float y, float yaw, 
-        euler_t target, 
-        quaternion_t current,
-        float grav_x, float grav_y, float grav_z){
-    // TODO
+        euler_t target_euler, 
+        float target_depth,
+        quaternion_t curr_quat,
+        float grav_x, float grav_y, float grav_z,
+        float curr_depth){
+
+    // Convert current to euler
+    euler_t curr_euler;
+    quat_to_euler(&curr_euler, &curr_quat);
+
+    // Copy current euler to target euler
+    target_euler.yaw = curr_euler.yaw;
+
+    // Convert target euler to quaternion
+    quaternion_t target_quat;
+    euler_to_quat(&target_quat, &target_euler);
+
+    // Calculate min angle between current and target quaternions
+    quaternion_t diff_quat;
+    float dot_f;
+    quat_dot(&dot_f, &target_quat, &curr_quat);
+    if(dot_f < 0){
+        quat_multiply_scalar(&diff_quat, &curr_quat, -1);
+    }else{
+        quat_multiply_scalar(&diff_quat, &curr_quat, 1);
+    }
+    quat_inverse(&diff_quat, &diff_quat);
+    quat_multiply(&diff_quat, &target_quat, &diff_quat);
+
+    // Convert quaternion to euler
+    euler_t diff_euler;
+    quat_to_euler(&diff_euler, &diff_quat);
+
+    // Calculate z, pitch, and roll speeds using PID
+    float pitch = pid_calculate(&pitch_pid, diff_euler.pitch);
+    float roll = pid_calculate(&roll_pid, diff_euler.roll);
+    float z = pid_calculate(&depth_pid, curr_depth - target_depth);
+
+    mc_set_global(x, y, z, pitch, roll, yaw, grav_x, grav_y, grav_z);
 }
 
-void mc_set_sassist2(float x, float y, float yaw, 
-        euler_t target, 
-        quaternion_t current,
-        float grav_x, float grav_y, float grav_z){
-    // TODO
+void mc_set_sassist2(float x, float y, 
+        euler_t target_euler, 
+        float target_depth,
+        quaternion_t curr_quat,
+        float grav_x, float grav_y, float grav_z,
+        float curr_depth){
+    // Convert current to euler
+    euler_t curr_euler;
+    quat_to_euler(&curr_euler, &curr_quat);
+
+    // Convert target euler to quaternion
+    quaternion_t target_quat;
+    euler_to_quat(&target_quat, &target_euler);
+
+    // Calculate min angle between current and target quaternions
+    quaternion_t diff_quat;
+    float dot_f;
+    quat_dot(&dot_f, &target_quat, &curr_quat);
+    if(dot_f < 0){
+        quat_multiply_scalar(&diff_quat, &curr_quat, -1);
+    }else{
+        quat_multiply_scalar(&diff_quat, &curr_quat, 1);
+    }
+    quat_inverse(&diff_quat, &diff_quat);
+    quat_multiply(&diff_quat, &target_quat, &diff_quat);
+
+    // Convert quaternion to euler
+    euler_t diff_euler;
+    quat_to_euler(&diff_euler, &diff_quat);
+
+    // Calculate z, pitch, and roll speeds using PID
+    float pitch = pid_calculate(&pitch_pid, diff_euler.pitch);
+    float roll = pid_calculate(&roll_pid, diff_euler.roll);
+    float yaw = pid_calculate(&yaw_pid, diff_euler.yaw);
+    float z = pid_calculate(&depth_pid, curr_depth - target_depth);
+
+    mc_set_global(x, y, z, pitch, roll, yaw, grav_x, grav_y, grav_z);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
