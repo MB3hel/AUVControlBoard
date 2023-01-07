@@ -60,7 +60,15 @@ Used to configure the BNO055 IMU's axis orientation. *Note: This will also reset
 `[config]`: A single byte. The value of this byte is between 0 and 7 (inclusive) representing on of the BNO055 axis configs (P0 to P7) as described in the BNO055 datasheet. *Note: Changing the axis config changes IMU mode. Thus, there will be a brief time afterwards where the IMU may report zeros for all data.*  
 This message will be acknowledged. The acknowledge message will contain no result data.
 
-<!--TODO: Future sensor config commands-->
+**Stability Assist Mode PID Tune Command**  
+Used to tune stability assist mode PID controllers. It has the following format  
+```none  
+'S', 'A', 'S', 'S', 'I', 'S', 'T', 'T', 'N', [which], [kp], [ki], [kd], [kf], [limit]
+```  
+`[which]` indicates which PID to tune ('P' = pitch hold, 'R' = roll hold, 'Y' = yaw hold, 'D' = depth hold).  
+`[kp]`, `[ki]`, `[kd]`, and `[kf]` are proportional, integral, derivative, and feed-forward gains (32-bit float little endian).  
+`[limit]` Is the PID controller's max output (limits max speed in the controlled DoF). Must be between 0.0 and 1.0. 32-bit float little endian.
+
 
 ### Motor Control Commands
 

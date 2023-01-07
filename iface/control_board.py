@@ -539,12 +539,15 @@ class ControlBoard:
     #  @return AckError
     def tune_sassist_pitch(self, kp: float, ki: float, kd: float, kf: float, limit: float, timeout: int) -> AckError:
         msg = bytearray()
+        limit = abs(limit)
+        if limit > 1.0:
+            limit = 1.0
         msg.extend(b'SASSISTTNP')
         msg.extend(struct.pack("<f", kp))
         msg.extend(struct.pack("<f", ki))
         msg.extend(struct.pack("<f", kd))
         msg.extend(struct.pack("<f", kf))
-        msg.extend(struct.pack("<f", abs(limit)))
+        msg.extend(struct.pack("<f", limit))
         msg_id = self.__write_msg(bytes(msg), True)
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
@@ -558,12 +561,15 @@ class ControlBoard:
     #  @return AckError
     def tune_sassist_roll(self, kp: float, ki: float, kd: float, kf: float, limit: float, timeout: int) -> AckError:
         msg = bytearray()
+        limit = abs(limit)
+        if limit > 1.0:
+            limit = 1.0
         msg.extend(b'SASSISTTNR')
         msg.extend(struct.pack("<f", kp))
         msg.extend(struct.pack("<f", ki))
         msg.extend(struct.pack("<f", kd))
         msg.extend(struct.pack("<f", kf))
-        msg.extend(struct.pack("<f", abs(limit)))
+        msg.extend(struct.pack("<f", limit))
         msg_id = self.__write_msg(bytes(msg), True)
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
@@ -577,12 +583,15 @@ class ControlBoard:
     #  @return AckError
     def tune_sassist_yaw(self, kp: float, ki: float, kd: float, kf: float, limit: float, timeout: int) -> AckError:
         msg = bytearray()
+        limit = abs(limit)
+        if limit > 1.0:
+            limit = 1.0
         msg.extend(b'SASSISTTNY')
         msg.extend(struct.pack("<f", kp))
         msg.extend(struct.pack("<f", ki))
         msg.extend(struct.pack("<f", kd))
         msg.extend(struct.pack("<f", kf))
-        msg.extend(struct.pack("<f", abs(limit)))
+        msg.extend(struct.pack("<f", limit))
         msg_id = self.__write_msg(bytes(msg), True)
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
@@ -596,12 +605,15 @@ class ControlBoard:
     #  @return AckError
     def tune_sassist_depth(self, kp: float, ki: float, kd: float, kf: float, limit: float, timeout: int) -> AckError:
         msg = bytearray()
+        limit = abs(limit)
+        if limit > 1.0:
+            limit = 1.0
         msg.extend(b'SASSISTTND')
         msg.extend(struct.pack("<f", kp))
         msg.extend(struct.pack("<f", ki))
         msg.extend(struct.pack("<f", kd))
         msg.extend(struct.pack("<f", kf))
-        msg.extend(struct.pack("<f", abs(limit)))
+        msg.extend(struct.pack("<f", limit))
         msg_id = self.__write_msg(bytes(msg), True)
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
