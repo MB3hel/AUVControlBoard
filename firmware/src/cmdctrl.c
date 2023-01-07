@@ -340,10 +340,36 @@ void cmdctrl_apply_saved_speed(void){
         mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, m_grav_x, m_grav_y, m_grav_z);
         break;
     case MODE_SASSIST:
-        if(sassist_valid && sassist_variant == 1){
-            // TODO
-        }else if(sassist_valid && sassist_variant == 2){
-            // TODO
+        if(sassist_valid){
+            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+            float m_grav_x = curr_bno055_data.grav_x;
+            float m_grav_y = curr_bno055_data.grav_y;
+            float m_grav_z = curr_bno055_data.grav_z;
+            quaternion_t m_quat;
+            m_quat.w = curr_bno055_data.quat_w;
+            m_quat.x = curr_bno055_data.quat_x;
+            m_quat.y = curr_bno055_data.quat_y;
+            m_quat.z = curr_bno055_data.quat_z;
+            float m_depth = curr_ms5837_data.depth_m;
+            xSemaphoreGive(sensor_data_mutex);
+            if(sassist_variant == 1){
+                mc_set_sassist1(sassist_x, 
+                    sassist_y, 
+                    sassist_yaw, 
+                    sassist_target_euler, 
+                    sassist_depth_target, 
+                    m_quat,
+                    m_grav_x, m_grav_y, m_grav_z,
+                    m_depth);
+            }else if(sassist_variant == 2){
+                mc_set_sassist2(sassist_x, 
+                    sassist_y, 
+                    sassist_target_euler, 
+                    sassist_depth_target, 
+                    m_quat,
+                    m_grav_x, m_grav_y, m_grav_z,
+                    m_depth);
+            }
         }
         break;
     }
