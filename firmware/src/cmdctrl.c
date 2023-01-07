@@ -92,6 +92,16 @@ static float global_pitch;
 static float global_roll;
 static float global_yaw;
 
+// Last used sassist mode target
+static bool sassist_valid;
+static unsigned int sassist_variant;
+static float sassist_x;
+static float sassist_y;
+static float sassist_yaw;
+static euler_t sassist_target_euler;
+static float sassist_depth_target;
+
+
 // Current sensor data
 // Need mutex b/c don't want to read one value (eg x) then have others (y, z) changed before reading them
 static SemaphoreHandle_t sensor_data_mutex;
@@ -218,10 +228,20 @@ void cmdctrl_init(void){
     global_roll = 0.0f;
     global_yaw = 0.0f;
 
-    // TODO: Sassist mode (set valid bool to false)
+    // Sassist mode (set valid bool to false)
+    sassist_valid = false;
+    sassist_variant = 1;
+    sassist_x = 0.0f;
+    sassist_y = 0.0f;
+    sassist_yaw = 0.0f;
+    sassist_target_euler.pitch = 0.0f;
+    sassist_target_euler.roll = 0.0f;
+    sassist_target_euler.yaw = 0.0f;
+    sassist_depth_target = 0.0f;
 
     // Initial sensor status
     bno055_ready = false;
+    ms5837_ready = false;
 
     // Initial sensor data
     curr_bno055_data.quat_w = 0;
@@ -318,6 +338,13 @@ void cmdctrl_apply_saved_speed(void){
         m_grav_z = curr_bno055_data.grav_z;
         xSemaphoreGive(sensor_data_mutex);
         mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, m_grav_x, m_grav_y, m_grav_z);
+        break;
+    case MODE_SASSIST:
+        if(sassist_valid && sassist_variant == 1){
+            // TODO
+        }else if(sassist_valid && sassist_variant == 2){
+            // TODO
+        }
         break;
     }
 }
@@ -736,6 +763,77 @@ void cmdctrl_handle_message(void){
                 break;
             }
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+        }
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'A', 'S', 'S', 'I', 'S', 'T', 'S', 'T', '1'}))){
+        // STABILITY ASSIST speed set variant 1
+        // S, A, S, S, I, S, T, 1, [x], [y], [yaw], [target_pitch], [target_roll], [target_depth]
+        // [x], [y], [yaw], [target_pitch], [target_roll], [target_depth] are 32-bit floats (little endian)
+        if(len != 32){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Message is correct size. Handle it.
+
+            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+            float m_grav_x = curr_bno055_data.grav_x;
+            float m_grav_y = curr_bno055_data.grav_y;
+            float m_grav_z = curr_bno055_data.grav_z;
+            quaternion_t m_quat;
+            m_quat.w = curr_bno055_data.quat_w;
+            m_quat.x = curr_bno055_data.quat_x;
+            m_quat.y = curr_bno055_data.quat_y;
+            m_quat.z = curr_bno055_data.quat_z;
+            float m_depth = curr_ms5837_data.depth_m;
+            xSemaphoreGive(sensor_data_mutex);
+
+            if(!bno055_ready || (m_grav_x == 0 && m_grav_y == 0 && m_grav_z == 0) || !ms5837_ready){
+                // Need BNO055 IMU data to use sassist mode.
+                // Also need MS5837 data to use sassist mode
+                // If not ready, then this command is invalid at this time
+                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+            }else{
+                // Get arguments from message
+                sassist_valid = true;
+                sassist_variant = 1;
+                sassist_x = conversions_data_to_float(&msg[8], true);
+                sassist_y = conversions_data_to_float(&msg[12], true);
+                sassist_yaw = conversions_data_to_float(&msg[16], true);
+                sassist_target_euler.pitch = conversions_data_to_float(&msg[20], true);
+                sassist_target_euler.roll = conversions_data_to_float(&msg[24], true);
+                sassist_depth_target = conversions_data_to_float(&msg[28], true);
+
+                // Ensure speeds are in valid range
+                #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
+                LIMIT(sassist_x);
+                LIMIT(sassist_y);
+                LIMIT(sassist_yaw);
+
+                // Reset time until periodic speed set
+                xTimerReset(periodic_speed_timer, portMAX_DELAY);
+
+                // Update mode variable and LED color (if needed)
+                if(mode != MODE_SASSIST){
+                    mode = MODE_SASSIST;
+                    led_set(COLOR_SASSIST);
+                }
+
+                // Feed watchdog when speeds are set
+                // Important to call before speed set function in case currently killed
+                mc_wdog_feed();
+
+                // Update motor speeds
+                mc_set_sassist1(sassist_x, 
+                    sassist_y, 
+                    sassist_yaw, 
+                    sassist_target_euler, 
+                    sassist_depth_target, 
+                    m_quat,
+                    m_grav_x, m_grav_y, m_grav_z,
+                    m_depth);
+
+                // Acknowledge message w/ no error.
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+            }
         }
     }else{
         // This is an unrecognized message

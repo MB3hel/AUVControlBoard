@@ -32,7 +32,7 @@ void euler_rad2deg(euler_t *dest, euler_t *src){
     dest->is_deg = true;
 }
 
-void euler_to_quaternion(quaternion_t *dest, euler_t *src){
+void euler_to_quat(quaternion_t *dest, euler_t *src){
     euler_t src_rad;
     euler_deg2rad(&src_rad, src);
     float cr = cosf(src_rad.roll * 0.5f);
