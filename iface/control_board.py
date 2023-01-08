@@ -726,6 +726,71 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
+    ## Set thruster speeds in STABILITY_ASSIST mode (variant 1)
+    #  @param x Speed in +x translation DoF (world relative; same as global mode)
+    #  @param y Speed in +y translation DoF (world relative; same as global mode)
+    #  @param yaw Speed in +yaw translation DoF (world relative; same as global mode)
+    #  @param target_pitch Target pitch in degrees
+    #  @param target_roll Target roll in degrees
+    #  @param target_depth Target depth in meters (negative for below surface)
+    def set_sassist1(self, x: float, y: float, yaw: float, target_pitch: float, target_roll: float, target_depth: float, timeout: float) -> AckError:
+        def limit(v: float):
+            if v > 1.0:
+                return 1.0
+            if v < -1.0:
+                return -1.0
+            return v
+        x = limit(x)
+        y = limit(y)
+        yaw = limit(yaw)
+        
+        # Construct message to send
+        data = bytearray()
+        data.extend(b'SASSISTST1')
+        data.extend(struct.pack("<f", x))
+        data.extend(struct.pack("<f", y))
+        data.extend(struct.pack("<f", yaw))
+        data.extend(struct.pack("<f", target_pitch))
+        data.extend(struct.pack("<f", target_roll))
+        data.extend(struct.pack("<f", target_depth))
+
+        # Send the message and wait for acknowledgement
+        msg_id = self.__write_msg(bytes(data), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+    
+    ## Set thruster speeds in STABILITY_ASSIST mode (variant 2)
+    #  @param x Speed in +x translation DoF (world relative; same as global mode)
+    #  @param y Speed in +y translation DoF (world relative; same as global mode)
+    #  @param target_pitch Target pitch in degrees
+    #  @param target_roll Target roll in degrees
+    #  @param target_yaw Target yaw in degrees
+    #  @param target_depth Target depth in meters (negative for below surface)
+    def set_sassist2(self, x: float, y: float, target_pitch: float, target_roll: float, target_yaw: float, target_depth: float, timeout: float) -> AckError:
+        def limit(v: float):
+            if v > 1.0:
+                return 1.0
+            if v < -1.0:
+                return -1.0
+            return v
+        x = limit(x)
+        y = limit(y)
+        
+        # Construct message to send
+        data = bytearray()
+        data.extend(b'SASSISTST2')
+        data.extend(struct.pack("<f", x))
+        data.extend(struct.pack("<f", y))
+        data.extend(struct.pack("<f", target_pitch))
+        data.extend(struct.pack("<f", target_roll))
+        data.extend(struct.pack("<f", target_yaw))
+        data.extend(struct.pack("<f", target_depth))
+
+        # Send the message and wait for acknowledgement
+        msg_id = self.__write_msg(bytes(data), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+
     ## Keep motors alive even when speed should not change
     #  If no speed set commands and no watchdog speed for long enough
     #  (1500ms at time of writing) then control board will kill motors
