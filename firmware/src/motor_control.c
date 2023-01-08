@@ -436,6 +436,9 @@ void mc_set_sassist1(float x, float y, float yaw,
     quat_to_euler(&diff_euler, &diff_quat);
 
     // Calculate z, pitch, and roll speeds using PID
+    pitch_pid.setpoint = target_euler.pitch;
+    roll_pid.setpoint = target_euler.roll;
+    depth_pid.setpoint = target_depth;
     float pitch = pid_calculate(&pitch_pid, diff_euler.pitch);
     float roll = pid_calculate(&roll_pid, diff_euler.roll);
     float z = pid_calculate(&depth_pid, curr_depth - target_depth);
@@ -474,6 +477,10 @@ void mc_set_sassist2(float x, float y,
     quat_to_euler(&diff_euler, &diff_quat);
 
     // Calculate z, pitch, and roll speeds using PID
+    pitch_pid.setpoint = target_euler.pitch;
+    roll_pid.setpoint = target_euler.roll;
+    yaw_pid.setpoint = target_euler.yaw;
+    depth_pid.setpoint = target_depth;
     float pitch = pid_calculate(&pitch_pid, diff_euler.pitch);
     float roll = pid_calculate(&roll_pid, diff_euler.roll);
     float yaw = pid_calculate(&yaw_pid, diff_euler.yaw);
