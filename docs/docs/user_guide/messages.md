@@ -96,7 +96,19 @@ Used to set motor speeds in `GLOBAL` mode. This command has the following format
 `[x]`, `[y]`, `[z]`, `[pitch]`, `[roll]`, `[yaw]`: Speed for each DoF relative to the world (pitch and roll compensated; not yaw compensated) -1.0 to 1.0. A 32-bit float (little endian).  
 This message will be acknowledged. The acknowledge message will contain no result data. Note that if the IMU is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
 
-<!--TODO: Future other mode commands-->
+**Stability Assist Speed Set (Variant 1)**  
+Used to set motor speeds in `STABILITY_ASSIST` mode using a speed for yaw. This command has the following format  
+```none  
+'S', 'A', 'S', 'S', 'I', 'S', 'T', 'S', 'T', '1', [x], [y], [yaw], [target_pitch], [target_roll], [target_depth]
+```  
+Each value is a 32-bit float little endian.  This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
+
+**Stability Assist Speed Set (Variant 2)**  
+Used to set motor speeds in `STABILITY_ASSIST` mode using a PID to maintain a target yaw. This command has the following format  
+```none  
+'S', 'A', 'S', 'S', 'I', 'S', 'T', 'S', 'T', '2', [x], [y], [target_pitch], [target_roll], [target_yaw], [target_depth]
+```  
+Each value is a 32-bit float little endian.  This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
 
 
 ### Other Commands
