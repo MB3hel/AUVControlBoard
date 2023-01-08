@@ -27,6 +27,7 @@
  */
 
 #include "tusb.h"
+#include "stm32f4xx_ll_utils.h"
 
 // These need to not change after first use or driver may require manual uninstall
 // See TinyUSB examples usb_descriptors.c for more details
@@ -125,21 +126,19 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid){
     if ( index == 0){
         memcpy(&_desc_str[1], string_desc_arr[0], 2);
         chr_count = 1;
-    }/*else if(index == 3){
-        // NOTE: SAMD51 specific
+    }else if(index == 3){
+        // NOTE: STM32F4 specific
         // Get chip serial number as a string
-        // Values of word are concatenated as hex strings
-        // Concatenated word3, word2, word1, word0 order
+        //Values of word are concatenated as hex strings
+        // Concatenated word2, word1, word0
         // Upper bits of each word first
         // Use this as serial descriptor string
-        // Addresses from datasheet page 59
         const char *translation = 
                 (const char[]){'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-        const volatile uint32_t *word0 = (uint32_t*)0x008061FC;
-        const volatile uint32_t *word1 = (uint32_t*)0x00806010;
-        const volatile uint32_t *word2 = (uint32_t*)0x00806014;
-        const volatile uint32_t *word3 = (uint32_t*)0x00806018;
-        uint32_t *data = (uint32_t[]){*word3, *word1, *word2, *word0};
+        const volatile uint32_t word0 = LL_GetUID_Word0();
+        const volatile uint32_t word1 = LL_GetUID_Word1();
+        const volatile uint32_t word2 = LL_GetUID_Word2();
+        uint32_t *data = (uint32_t[]){word2, word1, word0};
         unsigned int idx = 1;
         for(unsigned int w = 0; w < 4; ++w){
             _desc_str[idx++] = translation[(data[w] & 0xF0000000) >> 28];
@@ -151,8 +150,8 @@ uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid){
             _desc_str[idx++] = translation[(data[w] & 0x000000F0) >> 4];
             _desc_str[idx++] = translation[(data[w] & 0x0000000F) >> 0];
         }
-        chr_count = 32;
-    }*/else{
+        chr_count = 24;
+    }else{
         // Note: the 0xEE index string is a Microsoft OS 1.0 Descriptors.
         // https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/microsoft-defined-usb-descriptors
 
