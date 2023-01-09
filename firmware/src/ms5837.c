@@ -57,7 +57,7 @@ static uint8_t read_buf[READ_BUF_SIZE];
 
 #define ms5837_perform(x)           i2c_perform_retries((x), 20, 5)
 
-static uint16_t prom_data[6];
+static uint16_t prom_data[8];
 
 /**
  * crc4 function as defined in sensor datasheet (p10)
