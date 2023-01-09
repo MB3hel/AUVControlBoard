@@ -57,6 +57,7 @@ static uint8_t read_buf[READ_BUF_SIZE];
 
 #define ms5837_perform(x)           i2c_perform_retries((x), 20, 5)
 
+// Note: Size of 8 is important because of how crc code works
 static uint16_t prom_data[8];
 
 /**
