@@ -43,10 +43,10 @@ def main() -> int:
         return 1
     
     ############################################################################
-    # Dry run settings
+    # Settings
     ############################################################################
     print()
-    print("Input dry run settings: ")
+    print("Input settings: ")
     speed = input("Speed (-1.0 to 1.0; default = 0.3): ")
     duration = input("Duration (sec; default = 1.0):")
     try:
@@ -64,7 +64,7 @@ def main() -> int:
     print()
 
     ############################################################################
-    # Dry run
+    # Motor test
     ############################################################################
     print("Enter a thruster number 1-8 to run that thruster at the specified speed for the specified duration. Enter q to exit.")
     while True:
