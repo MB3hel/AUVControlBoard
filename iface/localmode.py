@@ -3,6 +3,7 @@
 from control_board import ControlBoard
 import sys
 import time
+import threading
 from serial import SerialException
 from typing import Callable
 
@@ -47,7 +48,7 @@ def main() -> int:
     # Local mode set
     ############################################################################
 
-    print("Setting local mode vector...")
+    print("Setting local mode vector...", end="")
     #                x    y    z    p    r    y
     if cb.set_local(0.0, 0.3, 0.0, 0.0, 0.0, 0.0) == ControlBoard.AckError.NONE:
         print("Done.")
@@ -55,9 +56,18 @@ def main() -> int:
         print("Fail.")
         return 1
     
-    print("Press enter to stop...")
+    t_stop = False
+    def do_feed():
+        while not t_stop:
+            cb.feed_motor_watchdog()
+            time.sleep(0.25)
+    t = threading.Thread(daemon=True, target=do_feed)
+    print("Press enter to stop...", end="")
+    input("")
+    t_stop = True
+    t.join()
 
-    print("Stopping...")
+    print("Stopping...", end="")
     if cb.set_local(0.0, 0.0, 0.0, 0.0, 0.0, 0.0) == ControlBoard.AckError.NONE:
         print("Done.")
     else:
