@@ -512,8 +512,15 @@ bool bno055_read(bno055_data *data){
     curr_quat.y = data->quat_y;
     curr_quat.z = data->quat_z;
 
-    if(prev_quat_valid){
+    bool quat_same = (curr_quat.w == prev_quat.w) && 
+            (curr_quat.x == prev_quat.x) &&
+            (curr_quat.y == prev_quat.y) &&
+            (curr_quat.z == prev_quat.z);
+
+    if(prev_quat_valid && !quat_same){
         // Accumulation math
+        // Note that floating point errors lead to a small diff even if quaternions are the same
+        // thus, don't run the math if quaternions are unchanged
         quaternion_t diff_quat;
         float dot_f;
         quat_dot(&dot_f, &curr_quat, &prev_quat);
