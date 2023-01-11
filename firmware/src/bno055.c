@@ -427,6 +427,7 @@ bool bno055_set_axis(uint8_t mode){
     accum_pitch = 0.0f;
     accum_roll = 0.0f;
     accum_yaw = 0.0f;
+    prev_quat_valid = false;
 
     // Put in CONFIG mode
     trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
