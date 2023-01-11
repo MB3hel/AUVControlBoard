@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 
 from control_board import ControlBoard
 import sys
