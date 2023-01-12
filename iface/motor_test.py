@@ -74,10 +74,14 @@ def main() -> int:
             break
         try:
             thr = int(res)
-            
+
+            if thr < 1 or thr > 8:
+                raise Exception()
+            idx = thr - 1
+
             # Set desired speed
             speeds = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-            speeds[thr] = speed
+            speeds[idx] = speed
             attempt = 0
             while cb.set_raw(speeds) != ControlBoard.AckError.NONE:
                 attempt += 1
@@ -93,7 +97,7 @@ def main() -> int:
                 time.sleep(0.1)
 
             # Stop the thruster
-            speeds[thr] = 0.0
+            speeds[idx] = 0.0
             attempt = 0
             while cb.set_raw(speeds) != ControlBoard.AckError.NONE:
                 attempt += 1
