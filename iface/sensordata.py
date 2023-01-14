@@ -19,6 +19,21 @@ def main() -> int:
     cb = ControlBoard(port)
 
     ############################################################################
+    # Query sensor status
+    ############################################################################
+    print("Query sensor status...", end="")
+    res, bno055, ms5837 = cb.get_sensor_status()
+    if res != ControlBoard.AckError.NONE:
+        print("Fail.")
+        return 1
+    print("Done.")
+    print("BNO055: {}".format("Ready" if bno055 else "Not Ready"))
+    print("MS5837: {}".format("Ready" if ms5837 else "Not Ready"))
+    print()
+
+    time.sleep(2)
+
+    ############################################################################
     # Setup
     ############################################################################
     print("Set axis config...", end="")

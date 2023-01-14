@@ -62,6 +62,7 @@ def main() -> int:
             cb.feed_motor_watchdog()
             time.sleep(0.25)
     t = threading.Thread(daemon=True, target=do_feed)
+    t.start()
     print("Press enter to stop...", end="")
     input("")
     t_stop = True

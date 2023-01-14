@@ -427,8 +427,8 @@ class ControlBoard:
         ack, res = self.__wait_for_ack(msg_id, timeout)
         if ack != self.AckError.NONE:
             return ack, False, False
-        bno055_ready = (res[0] & 0b00000001) == 1
-        ms5837_ready = (res[0] & 0b00000010) == 1
+        bno055_ready = (res[0] & 0b00000001) != 0
+        ms5837_ready = (res[0] & 0b00000010) != 0
         return ack, bno055_ready, ms5837_ready
 
     ## Parse byte data from BNO055 readings into the data class object

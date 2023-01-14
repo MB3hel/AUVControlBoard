@@ -595,7 +595,7 @@ void cmdctrl_handle_message(void){
         uint8_t response[1];
         response[0] = 0x00;
         response[0] |= bno055_ready;
-        // TODO: response[0] |= (ms5837_ready << 1);
+        response[0] |= (ms5837_ready << 1);
 
         cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response, 1);
     }else if(MSG_STARTS_WITH(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'A'}))){
