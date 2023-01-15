@@ -133,7 +133,20 @@ void i2c_init(void){
 bool i2c_perform(i2c_trans *trans){
     HAL_StatusTypeDef status;
 
-    xSemaphoreTake(i2c_mutex, portMAX_DELAY);
+    // I2C runs at 100kHz clock
+    // A transaction with 64 bytes read and write each would be 128*8=1024 bits
+    // 1/100kHz = 10us per bit
+    // 1024 * 10 = 10240us bit transfer time = 1.024ms
+    // Assume some clock stretching and delays with ACK up to 30us per byte
+    // 128*30 = 3.840ms
+    // Thus a "large" transaction should finish within 5ms
+    // Assume it is possible for a few to be queued up.
+    // Thus wait for at most 25ms (5 queued large transactions)
+    // If this fails, something is probably stuck and will never release the mutex
+    // This is also a small enough amount of time to not fully break most threads
+    // calling this function
+    if(!xSemaphoreTake(i2c_mutex, pdMS_TO_TICKS(25)))
+        return false;
 
     if(HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY)
         return false;
