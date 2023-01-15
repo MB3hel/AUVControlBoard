@@ -537,7 +537,7 @@ class ControlBoard:
     #  @param kf Feed-forward gain
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @return AckError
-    def tune_sassist_pitch(self, kp: float, ki: float, kd: float, kf: float, limit: float, timeout: int) -> AckError:
+    def tune_sassist_pitch(self, kp: float, ki: float, kd: float, kf: float, limit: float, timeout: float = 0.1) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -559,7 +559,7 @@ class ControlBoard:
     #  @param kf Feed-forward gain
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @return AckError
-    def tune_sassist_roll(self, kp: float, ki: float, kd: float, kf: float, limit: float, timeout: int) -> AckError:
+    def tune_sassist_roll(self, kp: float, ki: float, kd: float, kf: float, limit: float, timeout: float = 0.1) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -581,7 +581,7 @@ class ControlBoard:
     #  @param kf Feed-forward gain
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @return AckError
-    def tune_sassist_yaw(self, kp: float, ki: float, kd: float, kf: float, limit: float, timeout: int) -> AckError:
+    def tune_sassist_yaw(self, kp: float, ki: float, kd: float, kf: float, limit: float, timeout: float = 0.1) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -603,7 +603,7 @@ class ControlBoard:
     #  @param kf Feed-forward gain
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @return AckError
-    def tune_sassist_depth(self, kp: float, ki: float, kd: float, kf: float, limit: float, timeout: int) -> AckError:
+    def tune_sassist_depth(self, kp: float, ki: float, kd: float, kf: float, limit: float, timeout: float = 0.1) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -733,7 +733,7 @@ class ControlBoard:
     #  @param target_pitch Target pitch in degrees
     #  @param target_roll Target roll in degrees
     #  @param target_depth Target depth in meters (negative for below surface)
-    def set_sassist1(self, x: float, y: float, yaw: float, target_pitch: float, target_roll: float, target_depth: float, timeout: float) -> AckError:
+    def set_sassist1(self, x: float, y: float, yaw: float, target_pitch: float, target_roll: float, target_depth: float, timeout: float = 0.1) -> AckError:
         def limit(v: float):
             if v > 1.0:
                 return 1.0
@@ -766,7 +766,7 @@ class ControlBoard:
     #  @param target_roll Target roll in degrees
     #  @param target_yaw Target yaw in degrees
     #  @param target_depth Target depth in meters (negative for below surface)
-    def set_sassist2(self, x: float, y: float, target_pitch: float, target_roll: float, target_yaw: float, target_depth: float, timeout: float) -> AckError:
+    def set_sassist2(self, x: float, y: float, target_pitch: float, target_roll: float, target_yaw: float, target_depth: float, timeout: float = 0.1) -> AckError:
         def limit(v: float):
             if v > 1.0:
                 return 1.0
