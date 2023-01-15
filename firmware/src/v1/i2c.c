@@ -115,11 +115,13 @@ bool i2c_perform(i2c_trans *trans){
     // If this fails, something is probably stuck and will never release the mutex
     // This is also a small enough amount of time to not fully break most threads
     // calling this function
-    if(!xSemaphoreTake(i2c_mutex, pdMS_TO_TICKS(25)))
+    if(xSemaphoreTake(i2c_mutex, pdMS_TO_TICKS(25)) == pdFALSE)
         return false;
 
-    if(SERCOM2_I2C_IsBusy())
+    if(SERCOM2_I2C_IsBusy()){
+        xSemaphoreGive(i2c_mutex);
         return false;
+    }
     
     if(trans->write_count > 0 && trans->read_count > 0){
         // Both write and read
