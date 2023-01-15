@@ -148,8 +148,10 @@ bool i2c_perform(i2c_trans *trans){
     if(xSemaphoreTake(i2c_mutex, pdMS_TO_TICKS(25)) == pdFALSE)
         return false;
 
-    if(HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY)
+    if(HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY){
+        xSemaphoreGive(i2c_mutex);
         return false;
+    }
 
     if(trans->write_count > 0 && trans->read_count > 0){
         // Write then read (repeated start between)
