@@ -163,9 +163,24 @@ bool i2c_perform(i2c_trans *trans){
     }
 
     // Wait for transaction to finish
-    // A timeout is used to ensure that even if something is configured very wrong, this won't hold the i2c mutex forever
-    // TODO: Implement timeout
-    xSemaphoreTake(i2c_done_signal, portMAX_DELAY);
+    // A timeout is used to ensure that even if something is configured very wrong (such that transmit appears to start
+    // but interrupt never occurs), this won't hold the i2c mutex forever
+    // The timeout is far longer than the operation should take.
+    // With a 100kHz clock, each bit takes 10us to transmit. Thus expected time is 10us*(read_count+write_count)*8
+    // However, clock stretching can occur. To account for this, allow 50us between bytes. Thus
+    // max_time = 50us*(read_count+write_count) + 10us*(read_count+write_count)*8 = 130us*(read_count+write_count)
+    // For a safety margin, round up to 200us per byte. Thus timeout in ms = ceil(200*(read_count+write_count)/1000)
+    // = ceil((read_count+write_count)/5) = floor((read_count+write_count+4)/5) 
+    // = integer division of (read_count+write_count+4) by 5
+    // Then for extra margin, add 5ms
+    unsigned int timeout_ms = (trans->read_count + trans->write_count + 4) / 5;
+    if(xSemaphoreTake(i2c_done_signal, pdMS_TO_TICKS(timeout_ms + 5)) == pdFALSE){
+        // Timed out while waiting for transfer done signal
+        SERCOM2_I2C_TransferAbort();                            // Interrupt won't occur after this is done running
+        while(xSemaphoreTake(i2c_done_signal, 0) == pdTRUE);    // Zero the semaphore (may have been given before abort)
+        xSemaphoreGive(i2c_mutex);
+        return false;
+    }
 
     // I2C transaction completed
     SERCOM_I2C_ERROR result = SERCOM2_I2C_ErrorGet();
