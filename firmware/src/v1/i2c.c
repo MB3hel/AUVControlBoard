@@ -65,7 +65,7 @@ static void i2c_fix_sda_low(void){
     // Set pins to I2C mode (SDA and SCL modes; same as generated code does)
     PORT_PinPeripheralFunctionConfig(PORT_PIN_PA12, PERIPHERAL_FUNCTION_C);
     PORT_PinPeripheralFunctionConfig(PORT_PIN_PA13, PERIPHERAL_FUNCTION_C);
-    delay_ms(1);
+    delay_ms(5);
 
     // Need to re-initialize I2C SERCOM after doing this or it won't work
     // May have to do with I2C SERCOM hardware getting in a bad state when pinmux changed
@@ -73,7 +73,7 @@ static void i2c_fix_sda_low(void){
     SERCOM2_I2C_Initialize();
 }
 
-void i2c_init(void){
+void i2c_init(){
     // Sometimes (when device is reset at wrong time) a slave may be holding SDA low
     // Best option in this case is to send clock pulses until it releases it
     // This could be fixed in the case of the BNO055 using the reset pin to reset the IMU
@@ -119,6 +119,21 @@ bool i2c_perform(i2c_trans *trans){
         return false;
 
     if(SERCOM2_I2C_IsBusy()){
+        if ((SERCOM2_REGS->I2CM.SERCOM_STATUS & SERCOM_I2CM_STATUS_BUSSTATE_Msk) == SERCOM_I2CM_STATUS_BUSSTATE(0x03U)){
+            // Busy state indicates that some other master owns the bus
+            // There is no other master, thus this is impossible
+            // In practice, noise on the I2C lines can cause this (even seemingly small amounts of noise)
+            // Thus, if this happens, the bus must be forced back into an idle state
+
+            // This function disables, then re-enables the bus and forces it into an idle state
+            // SERCOM2_I2C_TransferAbort();
+
+            // Note that this can occur while a sensor is holding SDA low. In this case, it is necessary to re-init i2c entirely
+            // including the bit-banged i2c low fix
+            i2c_fix_sda_low();
+            // SERCOM2_I2C_Initialize();    // Already called by i2c_fix_sda_low
+        }
+
         xSemaphoreGive(i2c_mutex);
         return false;
     }
@@ -148,40 +163,21 @@ bool i2c_perform(i2c_trans *trans){
     }
 
     // Wait for transaction to finish
-    // Note that there is a strange "bug" with the SAMD51 chip(s) that can cause the I2C hardware state machine
-    // to get stuck in a bad state.
-    // This state results in no I2C operations being performed and interrupts never being called, however
-    // no error bits are set, busstate remains valid, and no error interrupt occurs. The operation just never happens.
-    // This can be triggered by a number of things. The easiest way to replicate it for testing has been to introduce
-    // some noise to the lines by tapping the i2c pins with a dry finger.
-    // Since this bad state is undetectable from software, it will appear that the i2c transaction starts successfully,
-    // however no interrupt ever occurs. Thus, the semaphore is not given and the following line would wait forever.
-    // Thus, a timeout is added while waiting for the signal.
-    // The timeout is far longer than the operation should take.
-    // With a 100kHz clock, each bit takes 10us to transmit. Thus expected time is 10us*(read_count+write_count)*8
-    // However, clock stretching can occur. To account for this, allow 50us between bytes. Thus
-    // max_time = 50us*(read_count+write_count) + 10us*(read_count+write_count)*8 = 130us*(read_count+write_count)
-    // For a safety margin, round up to 200us per byte. Thus timeout in ms = ceil(200*(read_count+write_count)/1000)
-    // = ceil((read_count+write_count)/5) = floor((read_count+write_count+4)/5) 
-    // = integer division of (read_count+write_count+4) by 5
-    // Then for extra margin, add 5ms
-    unsigned int timeout_ms = (trans->read_count + trans->write_count + 4) / 5;
-    if(xSemaphoreTake(i2c_done_signal, pdMS_TO_TICKS(timeout_ms + 5)) == pdFALSE){
-        // Failed to wait for semaphore. Hardware is probably in a bad state
-        // The only way I have found to fix this is to disable then re-enable the sercom i2c hardware
-        // However, to make sure plib object remains in correct state, use plib functions to re-initialize bus
-        // Also need to make sure sda not stuck low (could have entered bad state while SDA low)
-        // Thus, just re-initialize i2c.
-        // Note that this function calls SERCOM2_I2C_Initialize, which is what actually fixes the bad hardware state
-        i2c_fix_sda_low();
-        // SERCOM2_I2C_Initialize();
-        while(xSemaphoreTake(i2c_done_signal, 0) == pdTRUE);        // Zero semaphore
-        xSemaphoreGive(i2c_mutex);
-        return false;
-    }
+    // A timeout is used to ensure that even if something is configured very wrong, this won't hold the i2c mutex forever
+    // TODO: Implement timeout
+    xSemaphoreTake(i2c_done_signal, portMAX_DELAY);
 
     // I2C transaction completed
     SERCOM_I2C_ERROR result = SERCOM2_I2C_ErrorGet();
+
+    if(result == SERCOM_I2C_ERROR_BUS){
+        // Bus error occurs when hardware gets in a bad state
+        // Only known solution is to re-initialize
+        // Also, need to handle the case where sda is low when this happens, thus fix sda low is called
+        i2c_fix_sda_low();
+        // SERCOM2_I2C_Initialize();
+    }
+
     xSemaphoreGive(i2c_mutex);
     return result == SERCOM_I2C_ERROR_NONE;
 }
