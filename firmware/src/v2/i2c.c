@@ -78,7 +78,7 @@ static void i2c_fix_sda_low(void){
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-    delay_ms(1);
+    delay_ms(5);
 
     // Bit-bang clock cycles while SDA remains low (~100kHz clock frequency)
     // Limit max cycles to ensure this is never an infinite loop (eg if external pullups missing)
@@ -100,7 +100,17 @@ static void i2c_fix_sda_low(void){
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-    delay_ms(1);
+    delay_ms(5);
+}
+
+static void i2c_reinit(void){
+    HAL_I2C_DeInit(&hi2c1);
+    delay_us(100);
+    HAL_I2C_Init(&hi2c1);
+    NVIC_SetPriority(I2C1_EV_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+    NVIC_SetPriority(I2C1_ER_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
+    NVIC_EnableIRQ(I2C1_EV_IRQn);
+    NVIC_EnableIRQ(I2C1_ER_IRQn);
 }
 
 void i2c_init(void){
@@ -180,7 +190,18 @@ bool i2c_perform(i2c_trans *trans){
 
         if(status != HAL_OK){
 
-            
+            if(__HAL_I2C_GET_FLAG(&hi2c1, I2C_FLAG_BUSY) != RESET){
+                // This occurs when timeout waiting for the bus to no longer be in busy state
+                // The only reason this would be in a busy state is if another master were using the bus
+                // This is not possible in this system. Thus, this happens due to noise on I2C lines
+                // usually from hot-plugging sensors. Thus, this should be ignored by manually clearing the flag.
+                // BUSY flag cannot be written (it is only able to be cleared by hardware)
+                // So the only solution is to reset the I2C peripheral...
+                // Unfortunately, this noise may have also caused a sensor to get stuck holding SDA low
+                // Thus, need to handle that too here.
+                i2c_fix_sda_low();
+                i2c_reinit();
+            }
 
             xSemaphoreGive(i2c_mutex);
             return false;
@@ -212,6 +233,18 @@ bool i2c_perform(i2c_trans *trans){
             I2C_LAST_FRAME);
 
         if(status != HAL_OK){
+
+            if(__HAL_I2C_GET_FLAG(&hi2c1, I2C_FLAG_BUSY) != RESET){
+                // This occurs when timeout waiting for the bus to no longer be in busy state
+                // The only reason this would be in a busy state is if another master were using the bus
+                // This is not possible in this system. Thus, this happens due to noise on I2C lines
+                // usually from hot-plugging sensors. Thus, this should be ignored by manually clearing the flag.
+                // Unfortunately, this noise may have also caused a sensor to get stuck holding SDA low
+                // Thus, need to handle that too here.
+                i2c_fix_sda_low();
+                i2c_reinit();
+            }
+
             xSemaphoreGive(i2c_mutex);
             return false;
         }
@@ -238,6 +271,18 @@ bool i2c_perform(i2c_trans *trans){
             trans->read_count);
 
         if(status != HAL_OK){
+
+            if(__HAL_I2C_GET_FLAG(&hi2c1, I2C_FLAG_BUSY) != RESET){
+                // This occurs when timeout waiting for the bus to no longer be in busy state
+                // The only reason this would be in a busy state is if another master were using the bus
+                // This is not possible in this system. Thus, this happens due to noise on I2C lines
+                // usually from hot-plugging sensors. Thus, this should be ignored by manually clearing the flag.
+                // Unfortunately, this noise may have also caused a sensor to get stuck holding SDA low
+                // Thus, need to handle that too here.
+                i2c_fix_sda_low();
+                i2c_reinit();
+            }
+
             xSemaphoreGive(i2c_mutex);
             return false;
         }
@@ -264,6 +309,18 @@ bool i2c_perform(i2c_trans *trans){
             trans->write_count);
 
         if(status != HAL_OK){
+
+            if(__HAL_I2C_GET_FLAG(&hi2c1, I2C_FLAG_BUSY) != RESET){
+                // This occurs when timeout waiting for the bus to no longer be in busy state
+                // The only reason this would be in a busy state is if another master were using the bus
+                // This is not possible in this system. Thus, this happens due to noise on I2C lines
+                // usually from hot-plugging sensors. Thus, this should be ignored by manually clearing the flag.
+                // Unfortunately, this noise may have also caused a sensor to get stuck holding SDA low
+                // Thus, need to handle that too here.
+                i2c_fix_sda_low();
+                i2c_reinit();
+            }
+
             xSemaphoreGive(i2c_mutex);
             return false;
         }
