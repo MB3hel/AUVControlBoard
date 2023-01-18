@@ -408,7 +408,7 @@ class ControlBoard:
     ## Set axis configuration for BNO055 IMU
     #  @param axis Axis configuration (see BNO055 datasheet) P0-P7 (BNO055Axis enum)
     #  @return Error code (AckError enum) from control board (or timeout)
-    def set_bno055_axis(self, axis: BNO055Axis, timeout: float = 0.1) -> AckError:
+    def set_bno055_axis(self, axis: BNO055Axis, timeout: float = 0.15) -> AckError:
         msg = bytearray()
         msg.extend(b'BNO055A')
         msg.append(int(axis))
