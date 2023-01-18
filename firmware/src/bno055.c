@@ -463,7 +463,7 @@ bool bno055_set_axis(uint8_t mode){
     trans.read_count = 0;
     if(!bno055_perform(&trans))
         return false;
-    vTaskDelay(pdMS_TO_TICKS(25));
+    vTaskDelay(pdMS_TO_TICKS(35));
     return true;
 }
 
