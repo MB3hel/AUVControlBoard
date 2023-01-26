@@ -168,7 +168,7 @@ static void send_sensor_data(TimerHandle_t timer){
         // Send message (status message from CB to PC)
         pccomm_write(bno055_data, 47);
     }
-    if(periodic_ms5837){
+    if(periodic_ms5837 & ms5837_ready){
         // Store current readings
         xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
         float m_depth_m = curr_ms5837_data.depth_m;
