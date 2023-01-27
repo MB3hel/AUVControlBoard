@@ -164,6 +164,18 @@ cmake --build --preset=[preset]-[config]
 </tbody>
 </table>
 <p><em>Note: required tool (<code>bossac</code>, <code>dfu-util</code>, <code>STM32_Programmer_CLI</code>) must be in your <code>PATH</code>.</em></p>
+<p>Before flashing, the chip needs to enter its bootloader (unless using a debug probe such as the stlink2 to flash)</p>
+<ul>
+<li>
+<p><em>If a board is already flashed, it can be rebooted into its bootloader using the <code>reboot_bootloader.py</code> script in the <code>firmware</code> directory. Otherwise, use the hardware method described below.</em></p>
+</li>
+<li>
+<p><em><strong>v1:</strong> Press the reset button twice quickly (double press).</em></p>
+</li>
+<li>
+<p><em><strong>v2:</strong> Hold the BOOT button. While holding it, press and release the NRST button. Then release the boot button.</em></p>
+</li>
+</ul>
 <p>To flash, run the <code>flash.py</code> script. It is a wrapper that will call one of the above tools</p>
 <pre><code class="language-sh">python3 flash.py [version] [config] -u [tool]
 </code></pre>
@@ -172,12 +184,6 @@ cmake --build --preset=[preset]-[config]
 <li><code>[config]</code> is the configuration you want to flash (same as configuration built: <code>Debug</code>, <code>Release</code>, <code>MinSizeRel</code>, or <code>RelWithDebInfo</code>)</li>
 <li><code>[tool]</code> is one of the above upload tool aliases.</li>
 </ul>
-<p><em>Note that most tools will only work if the target board is in bootloader mode. To enter bootloader mode:</em></p>
-<ul>
-<li><em><strong>v1:</strong> Press the reset button twice quickly (double press).</em></li>
-<li><em><strong>v2:</strong> Hold the BOOT button. While holding it, press and release the NRST button. Then release the boot button.</em></li>
-</ul>
-<p><em>Make sure to enter bootloader mode before flashing!</em></p>
               
             </div>
           </div><footer>
