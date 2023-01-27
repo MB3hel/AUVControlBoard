@@ -178,6 +178,11 @@ bool i2c_perform(i2c_trans *trans){
         return false;
     }
 
+    // Zero semaphore (in case it has been given; sometimes happens when hotplugging sensors)
+    // Not known to be an issue with STM32 HAL API, however doesn't hurt since it was an issue
+    // with v1 (SAMD51 chip).
+    while(xSemaphoreTake(i2c_done_signal, 0) == pdTRUE);
+
     if(trans->write_count > 0 && trans->read_count > 0){
         // Write then read (repeated start between)
         
