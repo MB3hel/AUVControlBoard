@@ -29,6 +29,7 @@
 #include <conversions.h>
 #include <motor_control.h>
 #include <i2c.h>
+#include <wdt.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -41,6 +42,7 @@ int main(void){
     // -------------------------------------------------------------------------
     init_frameworks();
     conversions_init();
+    wdt_init();
     delay_init();
     led_init();
     usb_init();

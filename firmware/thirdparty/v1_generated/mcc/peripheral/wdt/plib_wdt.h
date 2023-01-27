@@ -1,21 +1,18 @@
 /*******************************************************************************
-  Timer/Counter for Control(TCC) Peripheral Library Interface Header File
+  Watch Dog Timer PLIB.
 
-  Company
+  Company:
     Microchip Technology Inc.
 
-  File Name
-    plib_tcc_common.h
+  File Name:
+    plib_wdt.h
 
-  Summary
-    TCC peripheral library interface.
+  Summary:
+    Interface definition of WDT PLIB.
 
-  Description
-    This file defines the interface to the TCC peripheral library. This
-    library provides access to and control of the associated peripheral
-    instance.
-
-
+  Description:
+    This file defines the interface for the WDT Plib.
+    It allows user to setup timeout duration and restart watch dog timer.
 *******************************************************************************/
 
 // DOM-IGNORE-BEGIN
@@ -43,22 +40,22 @@
 *******************************************************************************/
 // DOM-IGNORE-END
 
-#ifndef PLIB_TCC_COMMON_H    // Guards against multiple inclusion
-#define PLIB_TCC_COMMON_H
+#ifndef PLIB_WDT_H    // Guards against multiple inclusion
+#define PLIB_WDT_H
 
 // *****************************************************************************
 // *****************************************************************************
 // Section: Included Files
 // *****************************************************************************
 // *****************************************************************************
-/*  This section lists the other files that are included in this file.
-*/
 
+#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include "device.h"
 
 // DOM-IGNORE-BEGIN
-#ifdef __cplusplus  // Provide C++ Compatibility
+#ifdef __cplusplus // Provide C++ Compatibility
 
     extern "C" {
 
@@ -70,30 +67,33 @@
 // Section: Data Types
 // *****************************************************************************
 // *****************************************************************************
-/*  The following data type definitions are used by the functions in this
-    interface and should be considered part it.
-*/
+
+
+// *****************************************************************************
+// *****************************************************************************
+// Section: Interface Routines
+// *****************************************************************************
 // *****************************************************************************
 
-typedef void (*TCC_CALLBACK)( uint32_t status, uintptr_t context );
-// *****************************************************************************
+void WDT_Enable( void );
 
-typedef struct
-{
-    TCC_CALLBACK callback_fn;
-    uintptr_t context;
-}TCC_CALLBACK_OBJECT;
+void WDT_Disable( void );
 
-typedef enum 
-{
-    TCC_COMMAND_NONE,
-    TCC_COMMAND_START_RETRIGGER,
-    TCC_COMMAND_STOP,
-    TCC_COMMAND_FORCE_UPDATE,
-    TCC_COMMAND_READ_SYNC
-}TCC_COMMAND;
+void WDT_EnableWindowMode( void );
 
+void WDT_DisableWindowMode( void );
 
+bool WDT_IsEnabled(void);
+
+bool WDT_IsAlwaysOn(void);
+
+bool WDT_IsWindowModeEnabled(void);
+
+void WDT_TimeoutPeriodSet(uint8_t TimeoutPeriod);
+
+void WDT_Clear( void );
+
+void WDT_ClearWithSync( void );
 
 
 // DOM-IGNORE-BEGIN
@@ -104,4 +104,4 @@ typedef enum
 #endif
 // DOM-IGNORE-END
 
-#endif /* PLIB_TCC_COMMON_H */
+#endif /* PLIB_WDT_H */

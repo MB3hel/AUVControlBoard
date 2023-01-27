@@ -23,6 +23,7 @@
 #include <cmdctrl.h>
 #include <bno055.h>
 #include <ms5837.h>
+#include <wdt.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -35,8 +36,22 @@ TaskHandle_t cmdctrl_task;
 TaskHandle_t imu_task;
 TaskHandle_t depth_task;
 
+// Timers
+TimerHandle_t wdt_feed_timer;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Timer handlers
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void wdt_feed_timer_handler(TimerHandle_t handle){
+    xTaskNotify(cmdctrl_task, NOTIF_FEED_WDT, eSetBits);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Thread (task) functions
@@ -49,7 +64,9 @@ TaskHandle_t depth_task;
  */
 void cmdctrl_task_func(void *arg){
     uint32_t notification;
-    
+
+    xTimerStart(wdt_feed_timer, portMAX_DELAY);
+
     while(1){
         // Wait until a notification is received (blocks this thread)
         // notification value is a set of 32 notification bits
@@ -69,6 +86,9 @@ void cmdctrl_task_func(void *arg){
             // Which means that usb_device_task will not notify again, but there is unhandled data
             if(tud_cdc_available())
                 xTaskNotify(cmdctrl_task, NOTIF_CMDCTRL_PCDATA, eSetBits);
+        }
+        if(notification & NOTIF_FEED_WDT){
+            wdt_feed();
         }
     }
 }
@@ -179,6 +199,9 @@ void depth_task_func(void *argument){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void app_init(void){
+    // Create RTOS objects
+    wdt_feed_timer = xTimerCreate("wdt_feed_timer", pdMS_TO_TICKS(350), pdTRUE, NULL, wdt_feed_timer_handler);
+
     // Create RTOS threads
     xTaskCreate(
         usb_device_task_func,
