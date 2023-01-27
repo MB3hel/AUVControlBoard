@@ -215,7 +215,7 @@ scp -r firmware/build user@remote_ip:cboard-flash/
 </code></pre>
 <p>Finally, reboot the control board to bootloader and flash</p>
 <pre><code class="language-sh"># Run on remote computer (via ssh)
-./reboot_bootloader.py
+./reboot_bootloader.py [port]
 ./flash.py [version] [config] -p [port]
 </code></pre>
               
