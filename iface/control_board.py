@@ -129,6 +129,10 @@ class ControlBoard:
         except:
             pass
 
+    ## Reset control board
+    def reset(self):
+        self.__write_msg(b'RESET\x0D\x1E', False)
+
     ## Calculate the 16-bit CCITT-FALSE CRC of the given data
     #  @param msg The data to calculate CRC of
     #  @param initial Initial CRC value to use (use 65535 by default)
