@@ -9,14 +9,24 @@ import time
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Flash control board firmware.")
-    parser.add_argument("cboard_rev", type=str, choices=["v1", "v2"], help="Which control board revision to flash firmware for.")
-    parser.add_argument("config", type=str, choices=["Debug", "Release", "MinSizeRel", "RelWithDebInfo"], help="Which build type to flash.")
+    parser.add_argument("cboard_rev", type=str.lower, choices=["v1", "v2"], help="Which control board revision to flash firmware for.")
+    parser.add_argument("config", type=str.lower, choices=["debug", "release", "minsizerel", "relwithdebinfo"], help="Which build type to flash.")
     parser.add_argument("-u", dest="uploader", metavar="uploader", default="auto", type=str, choices=["auto", "bossa", "uf2conv", "dfu-util", "stm32-dfu", "stm32-stlink2"], help="Which tool to use to upload firmware. Available tools depend on target board.")
     parser.add_argument("-p", dest="port", metavar="port", type=str, default="auto", help="Port to upload to. Meaning depends on uploader.")
     args = parser.parse_args()
 
     script_dir = os.path.dirname(__file__)
     
+    # Fix config case to match cmake folder names (needed for case sensitive filesystems)
+    if args.config.lower() == "debug":
+        args.config = "Debug"
+    elif args.config.lower() == "release":
+        args.config = "Release"
+    elif args.config == "minsizerel":
+        args.config = "MinSizeRel"
+    elif args.config == "relwithdebinfo":
+        args.config = "RelWithDebInfo"
+
     if args.cboard_rev == "v1":
         # Assign default uploader for v1
         if args.uploader == "auto":
