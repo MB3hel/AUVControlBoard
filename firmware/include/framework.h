@@ -42,6 +42,8 @@ static inline __attribute__((always_inline)) void init_frameworks(void){
 #include <stm32f4xx_hal.h>
 #include <stm32cubemx_main.h>
 
+extern RTC_HandleTypeDef hrtc;
+
 extern void stm32cubemx_main(void);
 
 static inline __attribute__((always_inline)) void init_frameworks(void){
@@ -50,6 +52,25 @@ static inline __attribute__((always_inline)) void init_frameworks(void){
 
     // Initialize STM32CubeMX generated code
     stm32cubemx_main();
+
+    // Reboot to bootloader is implemented by writing backup register then resetting
+    // See usb.c for details
+    if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0) == 0x3851FDEB){
+        // Clear so next boot is normal
+        HAL_PWR_EnableBkUpAccess();
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0x00000000);
+        HAL_PWR_DisableBkUpAccess();
+
+        // Jump to bootloader
+        HAL_SuspendTick();
+        HAL_RCC_DeInit();
+        HAL_DeInit();
+        HAL_FLASH_Unlock();
+        HAL_FLASH_OB_Unlock();
+        __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
+        __set_MSP(*((uint32_t*) 0x00000000));
+        ((void (*)(void)) *((uint32_t*) 0x00000004))();
+    }
 }
 
 #endif
