@@ -13,7 +13,7 @@
       <script>
         // Current page data
         var mkdocs_page_name = "Build and Flash";
-        var mkdocs_page_input_path = "firmware/build.md";
+        var mkdocs_page_input_path = "firmware\\build.md";
         var mkdocs_page_url = null;
       </script>
     
@@ -63,6 +63,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#flashing">Flashing</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#flashing-remotely">Flashing Remotely</a>
+    </li>
     </ul>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../math/">Math</a>
@@ -95,14 +97,15 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../.." class="icon icon-home" alt="Docs"></a> &raquo;</li>
-          <li>Firmware &raquo;</li>
-      <li>Build and Flash</li>
+          <li>Firmware &raquo;</li><li>Build and Flash</li>
     <li class="wy-breadcrumbs-aside">
-          <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/firmware/build.md" class="icon icon-github"> Edit on GitHub</a>
+        <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/firmware/build.md"
+          class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
 </div>
+
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
@@ -184,6 +187,37 @@ cmake --build --preset=[preset]-[config]
 <li><code>[config]</code> is the configuration you want to flash (same as configuration built: <code>Debug</code>, <code>Release</code>, <code>MinSizeRel</code>, or <code>RelWithDebInfo</code>)</li>
 <li><code>[tool]</code> is one of the above upload tool aliases.</li>
 </ul>
+<h2 id="flashing-remotely">Flashing Remotely</h2>
+<p>Sometimes, it is useful to flash firmware without connecting directly to the control board. Typically, this is done in-system where the embedded computer using the control board (Jetson, Raspberry Pi, etc) is used to flash the control board without gaining physical access to the control board. Instead an ssh connection to the remote computer is used.</p>
+<p>There are a few requirements to be able to flash remotely</p>
+<ul>
+<li>The control board must already be running some version of the firmware. This is necessary to be able to enter bootloader mode without access to the buttons on the board.</li>
+<li>The remote computer must have a flash tool installed. For v1 this should be <code>bossac</code> and for v2 this should be <code>dfu-util</code>. These are available as packages for most Linux distributions (<code>bossa-cli</code> and <code>dfu-util</code> respectively for Debian and Ubuntu based systems).</li>
+<li>You must have ssh (and by extension scp) access to the remote system (typically via ethernet tether)</li>
+</ul>
+<p>On the build computer (laptop, etc) build the firmware as described above. Then, login to the remote system via ssh and create a directory to hold control board flash stuff (name can be changed as desired)</p>
+<pre><code class="language-sh"># Run on remote computer (via ssh)
+cd ~
+mkdir cboard-flash
+</code></pre>
+<p>Then on the build computer, use scp to copy the <code>flash.py</code> and <code>reboot_bootloader.py</code> scripts to this folder</p>
+<pre><code class="language-sh"># Run on build laptop
+scp firmware/flash.py user@remote_ip:cboard-flash/
+scp firmware/reboot_bootloader.py user@remote_ip:cboard-flash/
+</code></pre>
+<p>Next copy the <code>build</code> folder. You can just copy the binaries themselves, but the folder hierarchy must be maintained.</p>
+<pre><code class="language-sh"># Run on remote computer (via ssh)
+# Delete old build folder first
+rm -r ~/cboard-flash/build
+
+# Run on build laptop
+scp -r firmware/build user@remote_ip:cboard-flash/
+</code></pre>
+<p>Finally, reboot the control board to bootloader and flash</p>
+<pre><code class="language-sh"># Run on remote computer (via ssh)
+./reboot_bootloader.py
+./flash.py [version] [config] -p [port]
+</code></pre>
               
             </div>
           </div><footer>
