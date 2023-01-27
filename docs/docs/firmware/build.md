@@ -95,6 +95,6 @@ Finally, reboot the control board to bootloader and flash
 
 ```sh
 # Run on remote computer (via ssh)
-./reboot_bootloader.py
+./reboot_bootloader.py [port]
 ./flash.py [version] [config] -p [port]
 ```
