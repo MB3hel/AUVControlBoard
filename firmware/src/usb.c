@@ -86,8 +86,7 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
             *a = DOUBLE_TAP_MAGIC;
 
             // Reset the system now
-            TIMERS_WDT_RESET_NOW();
-            dotstar_set(0, 0, 255);
+            NVIC_SystemReset();
             while(1);
 #elif defined (CONTROL_BOARD_V2)
             // Reboot by setting a value in a backup register (0)
