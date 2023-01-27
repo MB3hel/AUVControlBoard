@@ -137,6 +137,9 @@ bool i2c_perform(i2c_trans *trans){
         xSemaphoreGive(i2c_mutex);
         return false;
     }
+
+    // Zero semaphore (in case it has been given; sometimes happens when hotplugging sensors)
+    while(xSemaphoreTake(i2c_done_signal, 0) == pdTRUE);
     
     if(trans->write_count > 0 && trans->read_count > 0){
         // Both write and read
