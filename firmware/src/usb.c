@@ -29,6 +29,10 @@
 #define END_BYTE            254
 #define ESCAPE_BYTE         255
 
+#if defined(CONTROL_BOARD_V2)
+extern RTC_HandleTypeDef hrtc;
+#endif
+
 
 void usb_init(void){
 #if defined(CONTROL_BOARD_V1)
@@ -54,4 +58,46 @@ void usb_init(void){
     USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSBSEN;
     USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSASEN;
 #endif
+}
+
+void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
+    // Run when line state changes
+    // DTR = Data Terminal Ready
+    // RTS = Ready to Send
+    // DRT usually set when terminal connected
+
+    // sam-ba upload protocol uses a 1200bps "touch" to trigger a reset
+    // Handle this as expected
+    // Not strictly necessary, but prevents having to press reset button to program
+    // 1200bps "touch" means opening the port at 1200bps then closing it again (quickly)
+    // Nothing is implemented here with timing. It just boots to bootloader when
+    // a 1200bps connection is closed
+    if (!dtr && itf == 0) {
+        cdc_line_coding_t coding;
+        tud_cdc_get_line_coding(&coding);
+        if (coding.bit_rate == 1200){
+#if defined(CONTROL_BOARD_V1)
+            // Special things to reboot to bootloader instead of main program
+            // Must match bootloader. Taken from Adafruit/ArduinoCore-samd Reset.cpp
+            // THIS IS SPECIFIC TO ITSY BITSY M4!!!
+            #define DOUBLE_TAP_MAGIC             0xf01669efUL
+            #define BOOT_DOUBLE_TAP_ADDRESS     (HSRAM_ADDR + HSRAM_SIZE - 4)
+            volatile unsigned long *a = (unsigned long *)BOOT_DOUBLE_TAP_ADDRESS;
+            *a = DOUBLE_TAP_MAGIC;
+
+            // Reset the system now
+            TIMERS_WDT_RESET_NOW();
+            dotstar_set(0, 0, 255);
+            while(1);
+#elif defined (CONTROL_BOARD_V2)
+            // Reboot by setting a value in a backup register (0)
+            // After system reset, if this is set will branch to bootloader
+            // This ensures that system is in reset state when entering bootloader
+            HAL_PWR_EnableBkUpAccess();
+            HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0x3851FDEB);
+            HAL_PWR_DisableBkUpAccess();
+            NVIC_SystemReset();
+#endif
+        }
+    }
 }

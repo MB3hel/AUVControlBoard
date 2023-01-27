@@ -32,15 +32,45 @@
 #include <wdt.h>
 
 
+#if defined(CONTROL_BOARD_V2)
+extern RTC_HandleTypeDef hrtc;
+#endif
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Program Entry point / startup
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main(void){
+    init_frameworks();
+
+    // -------------------------------------------------------------------------
+    // Bootloader check (v2 only)
+    // -------------------------------------------------------------------------
+#if defined(CONTROL_BOARD_V2)
+    // Reboot to bootloader is implemented by writing backup register then resetting
+    // See usb.c for details
+    if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0) == 0x3851FDEB){
+        // Clear so next boot is normal
+        HAL_PWR_EnableBkUpAccess();
+        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0x12345678);
+        HAL_PWR_DisableBkUpAccess();
+
+        // Jump to bootloader
+        HAL_SuspendTick();
+        HAL_RCC_DeInit();
+        HAL_DeInit();
+        HAL_FLASH_Unlock();
+        HAL_FLASH_OB_Unlock();
+        __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
+        __set_MSP(*((uint32_t*) 0x00000000));
+        ((void (*)(void)) *((uint32_t*) 0x00000004))();
+    }
+#endif
+
     // -------------------------------------------------------------------------
     // System & Peripheral Initialization
     // -------------------------------------------------------------------------
-    init_frameworks();
     conversions_init();
     wdt_init();
     delay_init();
