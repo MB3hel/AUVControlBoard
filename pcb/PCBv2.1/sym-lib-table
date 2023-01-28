@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name "cboard")(type "KiCad")(uri "C:/Users/mbehe/Projects/AUVControlBoard/pcb/lib/cboard.kicad_sym")(options "")(descr ""))
+)

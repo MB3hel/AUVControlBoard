@@ -10,6 +10,7 @@ The Control Board is a coprocessor designed to assist a main computer (typically
 - `docs`: Documentation for users of the control board. This is a mkdocs project.
 - `firmware`: PlatformIO project and source code for ControlBoard firmware.
 - `iface`: Contains reference implementation to communicate with and use control board. Written in python.
+- `pcb`: Contains PCB design files for v2.1
 - `references`: Various links and pdfs providing information about components and libraries used on the control board. Intended for firmware developers.
 
 ## License
