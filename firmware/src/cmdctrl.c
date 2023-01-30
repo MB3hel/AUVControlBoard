@@ -158,7 +158,7 @@ static void send_sensor_data(TimerHandle_t timer){
         conversions_float_to_data(m_accum_yaw, &bno055_data[31], true);
 
         // Send message (status message from CB to PC)
-        pccomm_write(bno055_data, 47);
+        pccomm_write(bno055_data, 35);
     }
     if(periodic_ms5837 & ms5837_ready){
         // Store current readings
@@ -325,23 +325,13 @@ void cmdctrl_apply_saved_speed(void){
         break;
     case MODE_GLOBAL:
         xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-        m_grav_x = curr_bno055_data.grav_x;
-        m_grav_y = curr_bno055_data.grav_y;
-        m_grav_z = curr_bno055_data.grav_z;
         xSemaphoreGive(sensor_data_mutex);
         mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, m_grav_x, m_grav_y, m_grav_z);
         break;
     case MODE_SASSIST:
         if(sassist_valid){
             xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            float m_grav_x = curr_bno055_data.grav_x;
-            float m_grav_y = curr_bno055_data.grav_y;
-            float m_grav_z = curr_bno055_data.grav_z;
-            quaternion_t m_quat;
-            m_quat.w = curr_bno055_data.quat_w;
-            m_quat.x = curr_bno055_data.quat_x;
-            m_quat.y = curr_bno055_data.quat_y;
-            m_quat.z = curr_bno055_data.quat_z;
+            quaternion_t m_quat = curr_bno055_data.curr_quat;
             float m_depth = curr_ms5837_data.depth_m;
             xSemaphoreGive(sensor_data_mutex);
             if(sassist_variant == 1){
@@ -621,9 +611,7 @@ void cmdctrl_handle_message(void){
             // Message is correct size. Handle it.
 
             xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            float m_grav_x = curr_bno055_data.grav_x;
-            float m_grav_y = curr_bno055_data.grav_y;
-            float m_grav_z = curr_bno055_data.grav_z;
+            quaternion_t m_quat = curr_bno055_data.curr_quat;
             xSemaphoreGive(sensor_data_mutex);
 
             if(!bno055_ready || (m_grav_x == 0 && m_grav_y == 0 && m_grav_z == 0)){
@@ -680,33 +668,24 @@ void cmdctrl_handle_message(void){
         }else{
             // Store current readings
             xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            float m_grav_x = curr_bno055_data.grav_x;
-            float m_grav_y = curr_bno055_data.grav_y;
-            float m_grav_z = curr_bno055_data.grav_z;
-            float m_quat_w = curr_bno055_data.quat_w;
-            float m_quat_x = curr_bno055_data.quat_x;
-            float m_quat_y = curr_bno055_data.quat_y;
-            float m_quat_z = curr_bno055_data.quat_z;
+            quaternion_t m_quat = curr_bno055_data.curr_quat;
             float m_accum_pitch = curr_bno055_data.accum_pitch;
             float m_accum_roll = curr_bno055_data.accum_roll;
             float m_accum_yaw = curr_bno055_data.accum_yaw;
             xSemaphoreGive(sensor_data_mutex);
 
             // Construct response data
-            uint8_t response_data[40];
-            conversions_float_to_data(m_grav_x, &response_data[0], true);
-            conversions_float_to_data(m_grav_y, &response_data[4], true);
-            conversions_float_to_data(m_grav_z, &response_data[8], true);
-            conversions_float_to_data(m_quat_w, &response_data[12], true);
-            conversions_float_to_data(m_quat_x, &response_data[16], true);
-            conversions_float_to_data(m_quat_y, &response_data[20], true);
-            conversions_float_to_data(m_quat_z, &response_data[24], true);
-            conversions_float_to_data(m_accum_pitch, &response_data[28], true);
-            conversions_float_to_data(m_accum_roll, &response_data[32], true);
-            conversions_float_to_data(m_accum_yaw, &response_data[36], true);
+            uint8_t response_data[28];
+            conversions_float_to_data(m_quat.w, &response_data[0], true);
+            conversions_float_to_data(m_quat.x, &response_data[4], true);
+            conversions_float_to_data(m_quat.y, &response_data[8], true);
+            conversions_float_to_data(m_quat.z, &response_data[12], true);
+            conversions_float_to_data(m_accum_pitch, &response_data[16], true);
+            conversions_float_to_data(m_accum_roll, &response_data[20], true);
+            conversions_float_to_data(m_accum_yaw, &response_data[24], true);
 
             // Send ack with response data
-            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 40);
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 28);
         }
     }else if(MSG_STARTS_WITH(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'P'}))){
         // BNO055 periodic read configure
@@ -793,14 +772,7 @@ void cmdctrl_handle_message(void){
             // Message is correct size. Handle it.
 
             xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            float m_grav_x = curr_bno055_data.grav_x;
-            float m_grav_y = curr_bno055_data.grav_y;
-            float m_grav_z = curr_bno055_data.grav_z;
-            quaternion_t m_quat;
-            m_quat.w = curr_bno055_data.quat_w;
-            m_quat.x = curr_bno055_data.quat_x;
-            m_quat.y = curr_bno055_data.quat_y;
-            m_quat.z = curr_bno055_data.quat_z;
+            quaternion_t m_quat = curr_bno055_data.curr_quat;
             float m_depth = curr_ms5837_data.depth_m;
             xSemaphoreGive(sensor_data_mutex);
 
@@ -864,14 +836,7 @@ void cmdctrl_handle_message(void){
             // Message is correct size. Handle it.
 
             xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            float m_grav_x = curr_bno055_data.grav_x;
-            float m_grav_y = curr_bno055_data.grav_y;
-            float m_grav_z = curr_bno055_data.grav_z;
-            quaternion_t m_quat;
-            m_quat.w = curr_bno055_data.quat_w;
-            m_quat.x = curr_bno055_data.quat_x;
-            m_quat.y = curr_bno055_data.quat_y;
-            m_quat.z = curr_bno055_data.quat_z;
+            quaternion_t m_quat = curr_bno055_data.curr_quat;
             float m_depth = curr_ms5837_data.depth_m;
             xSemaphoreGive(sensor_data_mutex);
 
