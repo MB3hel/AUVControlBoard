@@ -48,6 +48,6 @@ void debug_log(const char *msg){
         len = PCCOMM_MAX_MSG_LEN - 5;
     for(unsigned int i = 0; i < len; ++i)
         buf[5+i] = msg[i];
-    pccomm_write(buf, len);
+    pccomm_write(buf, len + 5);
 #endif
 }
