@@ -177,6 +177,8 @@ Using this algorithm the earlier example results in the following scaled speed v
 
 ### Global Targets
 
+***Note: Information here is outdated and incorrect. Gravity vectors are no longer used!***
+
 Instead of providing desired motion relative to the robot's orientation, it is often easier to specify motion relative to the world (at least partially). This requires knowing information about the robot's orientation in 3D space. However, for this application the robot's heading will be ignored (meaning x and y are relative to the robot's orientation, but z is world-relative). 
 
 This effectively turns the target vector previously provided into a pseudo world-relative motion target (DoFs are world coordinate system DoFs not robot coordinate system DoFs). *However, y still means forward relative to robot heading **not** relative to the world coordinate system (same idea for x too).*
