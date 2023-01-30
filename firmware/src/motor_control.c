@@ -25,6 +25,7 @@
 #include <timers.h>
 #include <cmdctrl.h>
 #include <pid.h>
+#include <math.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -261,6 +262,11 @@ void mc_set_local(float x, float y, float z, float pitch, float roll, float yaw)
 }
 
 void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw, quaternion_t curr_quat){
+    // Convert orientation to euler (need rotation matrix with pitch and roll only; no yaw)
+    euler_t curr_euler;
+    quat_to_euler(&curr_euler, &curr_quat);
+    euler_deg2rad(&curr_euler, &curr_euler);
+    
     // Construct target motion vector
     float target_arr[6];
     matrix target;
@@ -268,18 +274,16 @@ void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw
     matrix_set_col(&target, 0, (float[]){x, y, z, pitch, roll, yaw});
 
     // Use current orientation quaternion to construct rotation matrix
-    matrix R;
+    float cp = cosf(curr_euler.pitch);
+    float sp = sinf(curr_euler.pitch);
+    float cr = cosf(curr_euler.roll);
+    float sr = sinf(curr_euler.roll);
     float R_arr[9];
+    matrix R;
     matrix_init_static(&R, R_arr, 3, 3);
-    float qw = curr_quat.w;
-    float qx = curr_quat.x;
-    float qy = curr_quat.y;
-    float qz = curr_quat.z;
-    float n = qw*qw + qx*qx + qy*qy + qz*qz;
-    float s = (n == 0) ? (0.0f) : (2.0f / n);
-    matrix_set_row(&R, 0, (float[]){1 - s*(qy*qy + qz*qz),          s*(qx*qy - qw*qz),          s*(qx*qz + qw*qy)});
-    matrix_set_row(&R, 1, (float[]){s*(qx*qy + qw*qz),              1 - s*(qx*qx + qz*qz),      s*(qy*qz - qw*qx)});
-    matrix_set_row(&R, 2, (float[]){s*(qx*qz - qw*qy),              s*(qy*qz + qw*qx),          1 - s*(qx*qx + qy*qy)});
+    matrix_set_row(&R, 0, (float[]){cr, sr*sp, sr*cp});
+    matrix_set_row(&R, 1, (float[]){0, cp, -sp});
+    matrix_set_row(&R, 2, (float[]){-sr, sp*cr, cr*cp});
 
     // Split translation and rotation targets (t = translation, r = rotation)
     // Seperate vectors for global and localized targets(g = global l = localized)

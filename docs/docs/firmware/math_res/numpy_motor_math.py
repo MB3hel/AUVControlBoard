@@ -139,9 +139,6 @@ for r in range(np.size(contribution_matrix, axis=0)):
 # Current orientation in degrees (used in global mode)
 curr_euler = Euler(90.0, 0.0, 0.0)
 
-# BNO055 gives quaternion, so implement the math here same way
-curr_quat = curr_euler.to_quaternion()
-
 
 ################################################################################
 # Target Motion Information
@@ -160,17 +157,21 @@ target_is_global = True
 ################################################################################
 
 if target_is_global:
-    w = curr_quat.w
-    x = curr_quat.x
-    y = curr_quat.y
-    z = curr_quat.z
-    n = w*w + x*x + y*y + z*z
-    s = np.float32(0) if n == 0 else np.float32(2) / n
-    R = np.matrix([
-        [1 - s*(y*y + z*z),         s*(x*y - w*z),          s*(x*z + w*y)],
-        [s*(x*y + w*z),             1 - s*(x*x + z*z),      s*(y*z - w*x)],
-        [s*(x*z - w*y),             s*(y*z + w*x),          1 - s*(x*x + y*y)]
+    cp = np.cos(np.deg2rad(curr_euler.pitch))
+    sp = np.sin(np.deg2rad(curr_euler.pitch))
+    cr = np.cos(np.deg2rad(curr_euler.roll))
+    sr = np.sin(np.deg2rad(curr_euler.roll))
+    R_x = np.matrix([
+        [   1,      0,      0       ],
+        [   0,      cp,     -sp     ],
+        [   0,      sp,     cp      ]
     ], dtype=np.float32)
+    R_y = np.matrix([
+        [   cr,     0,      sr      ],
+        [   0 ,     1,      0       ],
+        [   -sr,    0,      cr      ]
+    ], dtype=np.float32)
+    R = np.matmul(R_y, R_x)
     target_1d = target.flatten().A1
     translation = target_1d[0:3].reshape(3, 1)
     rotation = target_1d[3:6].reshape(3, 1)
