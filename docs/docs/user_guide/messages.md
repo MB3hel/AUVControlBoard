@@ -223,4 +223,10 @@ Used by the control board to periodically send IMU data to the PC. Only sent whe
 ```  
 `depth_m` is a 32-bit float, little endian.
 
-<!--TODO: Future status messages (sensors)-->
+
+**Debug Status Messages**  
+Used only during development. These will not occur on release builds of the firmware. These are arbitrary messages sent by the control board to the PC for the firmware developer's use during development.  They have the following format
+```none
+'D', 'E', 'B', 'U', 'G', [msg]
+```  
+`msg` is arbitrary data (usually ascii string).
