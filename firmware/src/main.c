@@ -30,6 +30,7 @@
 #include <motor_control.h>
 #include <i2c.h>
 #include <wdt.h>
+#include <debug.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -42,7 +43,12 @@ int main(void){
     // -------------------------------------------------------------------------
     init_frameworks();
     conversions_init();
+
+#ifdef NDEBUG
+    // Enable watchdog only on debug builds
     wdt_init();
+#endif
+
     delay_init();
     led_init();
     usb_init();
@@ -62,10 +68,6 @@ int main(void){
 
     // Start scheduler should never return. This should never run, but is
     // included to make debugging easier in case it does
-    taskDISABLE_INTERRUPTS();
-    led_set(255, 0, 0);
-    while(1){
-        asm("nop");
-    }
+    debug_halt(HALT_EC_SCHEDRET);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -19,48 +19,28 @@
 
 #include <tusb.h>
 #include <framework.h>
-#include <led.h>
+#include <debug.h>
 
 extern void SERCOM2_I2C_InterruptHandler(void);
 
 void NMI_Handler(void){
-    taskDISABLE_INTERRUPTS();
-    led_set(255, 0, 0);
-    while(1){
-        asm("nop");
-    }
+    debug_halt(HALT_EC_FAULTIRQ);
 }
 
 void HardFault_Handler(void){
-    taskDISABLE_INTERRUPTS();
-    led_set(255, 0, 0);
-    while(1){
-        asm("nop");
-    }
+    debug_halt(HALT_EC_FAULTIRQ);
 }
 
 void MemManage_Handler(void){
-    taskDISABLE_INTERRUPTS();
-    led_set(255, 0, 0);
-    while(1){
-        asm("nop");
-    }
+    debug_halt(HALT_EC_FAULTIRQ);
 }
 
 void BusFault_Handler(void){
-    taskDISABLE_INTERRUPTS();
-    led_set(255, 0, 0);
-    while(1){
-        asm("nop");
-    }
+    debug_halt(HALT_EC_FAULTIRQ);
 }
 
 void UsageFault_Handler(void){
-    taskDISABLE_INTERRUPTS();
-    led_set(255, 0, 0);
-    while(1){
-        asm("nop");
-    }
+    debug_halt(HALT_EC_FAULTIRQ);
 }
 
 void DebugMon_Handler(void){}

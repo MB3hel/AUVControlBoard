@@ -146,15 +146,14 @@ static inline void pccomm_write_one(uint8_t b){
 }
 
 void pccomm_write(uint8_t *msg, unsigned int len){
-    
+    taskENTER_CRITICAL();
+
     // Write start byte
     pccomm_write_one(START_BYTE);
     
     // Write message id (big endian). Escape it as needed.
-    taskENTER_CRITICAL();
     uint16_t msg_id = curr_msg_id;
     curr_msg_id++;
-    taskEXIT_CRITICAL();
     uint8_t id_buf[2];
     conversions_int16_to_data(msg_id, id_buf, false);
     if(id_buf[0] == START_BYTE || id_buf[0] == END_BYTE || id_buf[0] == ESCAPE_BYTE)
@@ -189,4 +188,6 @@ void pccomm_write(uint8_t *msg, unsigned int len){
 
     // Write the message now
     tud_cdc_write_flush();
+
+    taskEXIT_CRITICAL();
 }

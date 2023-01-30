@@ -18,7 +18,7 @@
 
 #include <tusb.h>
 #include <framework.h>
-#include <led.h>
+#include <debug.h>
 
 
 extern TIM_HandleTypeDef htim11;
@@ -26,43 +26,23 @@ extern TIM_HandleTypeDef htim1;
 extern I2C_HandleTypeDef hi2c1;
 
 void NMI_Handler(void){
-    taskDISABLE_INTERRUPTS();
-    led_set(255, 0, 0);
-    while(1){
-        asm("nop");
-    }
+    debug_halt(HALT_EC_FAULTIRQ);
 }
 
 void HardFault_Handler(void){
-    taskDISABLE_INTERRUPTS();
-    led_set(255, 0, 0);
-    while(1){
-        asm("nop");
-    }
+    debug_halt(HALT_EC_FAULTIRQ);
 }
 
 void MemManage_Handler(void){
-    taskDISABLE_INTERRUPTS();
-    led_set(255, 0, 0);
-    while(1){
-        asm("nop");
-    }
+    debug_halt(HALT_EC_FAULTIRQ);
 }
 
 void BusFault_Handler(void){
-    taskDISABLE_INTERRUPTS();
-    led_set(255, 0, 0);
-    while(1){
-        asm("nop");
-    }
+    debug_halt(HALT_EC_FAULTIRQ);
 }
 
 void UsageFault_Handler(void){
-    taskDISABLE_INTERRUPTS();
-    led_set(255, 0, 0);
-    while(1){
-        asm("nop");
-    }
+    debug_halt(HALT_EC_FAULTIRQ);
 }
 
 void DebugMon_Handler(void){}

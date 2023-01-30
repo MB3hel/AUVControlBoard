@@ -19,7 +19,7 @@
 #include <FreeRTOSConfig.h>
 #include <FreeRTOS.h>
 #include <task.h>
-#include <led.h>
+#include <debug.h>
 
 
 
@@ -28,27 +28,15 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void vAssertCalled(const char *file, unsigned int line){
-    taskDISABLE_INTERRUPTS();
-    led_set(255, 0, 0);
-    while(1){
-        asm("nop");
-    }
+    debug_halt(HALT_EC_ASSERT);
 }
 
 void vApplicationMallocFailedHook(void){
-    taskDISABLE_INTERRUPTS();
-    led_set(255, 0, 0);
-    while(1){
-        asm("nop");
-    }
+    debug_halt(HALT_EC_MALLOC_FAIL);
 }
 
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName){
-    taskDISABLE_INTERRUPTS();
-    led_set(255, 0, 0);
-    while(1){
-        asm("nop");
-    }
+    debug_halt(HALT_EC_SOVERFLOW);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
