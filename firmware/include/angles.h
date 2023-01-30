@@ -98,3 +98,18 @@ void quat_dot(float *dest, quaternion_t *a, quaternion_t *b);
  * @param src Quaternion angles to read and convert
  */
 void quat_to_euler(euler_t *dest, quaternion_t *src);
+
+/**
+ * Flip x axis of quaternion
+ */
+void quat_flip_x(quaternion_t *src, quaternion_t *dest);
+
+/**
+ * Flip y axis of quaternion
+ */
+void quat_flip_y(quaternion_t *src, quaternion_t *dest);
+
+/**
+ * Flip z axis of quaternion
+ */
+void quat_flip_z(quaternion_t *src, quaternion_t *dest);

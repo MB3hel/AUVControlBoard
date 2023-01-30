@@ -120,3 +120,48 @@ void quat_to_euler(euler_t *dest, quaternion_t *src){
 
     dest->is_deg = false;
 }
+
+void quat_flip_x(quaternion_t *src, quaternion_t *dest){
+    // Flip the x axis
+    src->w = dest->w;
+    src->x = -dest->x;
+    src->y = dest->y;
+    src->z = dest->z;
+
+    // Now have reverse handedness since odd number axis inversions
+    // Thus flip all axes
+    src->w = src->w;
+    src->x = -src->x;
+    src->y = -src->y;
+    src->z = -src->z;
+}
+
+void quat_flip_y(quaternion_t *src, quaternion_t *dest){
+    // Flip the y axis
+    src->w = dest->w;
+    src->x = dest->x;
+    src->y = -dest->y;
+    src->z = dest->z;
+
+    // Now have reverse handedness since odd number axis inversions
+    // Thus flip all axes
+    src->w = src->w;
+    src->x = -src->x;
+    src->y = -src->y;
+    src->z = -src->z;
+}
+
+void quat_flip_z(quaternion_t *src, quaternion_t *dest){
+    // Flip the z axis
+    src->w = dest->w;
+    src->x = dest->x;
+    src->y = dest->y;
+    src->z = -dest->z;
+
+    // Now have reverse handedness since odd number axis inversions
+    // Thus flip all axes
+    src->w = src->w;
+    src->x = -src->x;
+    src->y = -src->y;
+    src->z = -src->z;
+}

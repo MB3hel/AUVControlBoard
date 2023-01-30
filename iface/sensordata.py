@@ -37,7 +37,7 @@ def main() -> int:
     # Setup
     ############################################################################
     print("Set axis config...", end="")
-    if cb.set_bno055_axis(ControlBoard.BNO055Axis.P5) == ControlBoard.AckError.NONE:
+    if cb.set_bno055_axis(ControlBoard.BNO055Axis.P6) == ControlBoard.AckError.NONE:
         print("Done.")
     else:
         print("Fail.")

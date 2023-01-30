@@ -440,8 +440,8 @@ void mc_set_sassist1(float x, float y, float yaw,
     roll_pid.setpoint = target_euler.roll;
     depth_pid.setpoint = target_depth;
     float pitch = pid_calculate(&pitch_pid, diff_euler.pitch);
-    float roll = pid_calculate(&roll_pid, diff_euler.roll);
-    float z = pid_calculate(&depth_pid, curr_depth - target_depth);
+    float roll = -1 * pid_calculate(&roll_pid, diff_euler.roll);
+    float z = -1 * pid_calculate(&depth_pid, curr_depth - target_depth);
 
     mc_set_global(x, y, z, pitch, roll, yaw, grav_x, grav_y, grav_z);
 }
@@ -482,9 +482,9 @@ void mc_set_sassist2(float x, float y,
     yaw_pid.setpoint = target_euler.yaw;
     depth_pid.setpoint = target_depth;
     float pitch = pid_calculate(&pitch_pid, diff_euler.pitch);
-    float roll = pid_calculate(&roll_pid, diff_euler.roll);
+    float roll = -1 * pid_calculate(&roll_pid, diff_euler.roll);
     float yaw = pid_calculate(&yaw_pid, diff_euler.yaw);
-    float z = pid_calculate(&depth_pid, curr_depth - target_depth);
+    float z = -1 * pid_calculate(&depth_pid, curr_depth - target_depth);
 
     mc_set_global(x, y, z, pitch, roll, yaw, grav_x, grav_y, grav_z);
 }

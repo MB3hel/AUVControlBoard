@@ -229,7 +229,7 @@
 #define SIGN_P2                 0x06
 #define SIGN_P3                 0x02
 #define SIGN_P4                 0x03
-#define SIGN_P5                 0x01
+#define SIGN_P5                 0x00
 #define SIGN_P6                 0x07
 #define SIGN_P7                 0x05
 
@@ -481,9 +481,9 @@ bool bno055_read(bno055_data *data){
     // is reverse of what the datasheet shows.
     int16_t tmp16;
     tmp16 = ((int16_t)trans.read_buf[0]) | (((int16_t)trans.read_buf[1]) << 8);
-    data->grav_x = tmp16 / 100.0f;
+    data->grav_x = -tmp16 / 100.0f;
     tmp16 = ((int16_t)trans.read_buf[2]) | (((int16_t)trans.read_buf[3]) << 8);
-    data->grav_y = tmp16 / 100.0f;
+    data->grav_y = -tmp16 / 100.0f;
     tmp16 = ((int16_t)trans.read_buf[4]) | (((int16_t)trans.read_buf[5]) << 8);
     data->grav_z = -tmp16 / 100.0f;
 
@@ -512,6 +512,9 @@ bool bno055_read(bno055_data *data){
     curr_quat.x = data->quat_x;
     curr_quat.y = data->quat_y;
     curr_quat.z = data->quat_z;
+
+    // Mirror y axis of quaternion (roll is wrong sign convention)
+    // quat_flip_y(&curr_quat, &curr_quat);
 
     bool quat_same = (curr_quat.w == prev_quat.w) && 
             (curr_quat.x == prev_quat.x) &&

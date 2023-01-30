@@ -791,7 +791,7 @@ void cmdctrl_handle_message(void){
             }
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'A', 'S', 'S', 'I', 'S', 'T', 'S', 'T', '1'}))){
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'A', 'S', 'S', 'I', 'S', 'T', '1'}))){
         // STABILITY ASSIST speed set variant 1
         // S, A, S, S, I, S, T, 1, [x], [y], [yaw], [target_pitch], [target_roll], [target_depth]
         // [x], [y], [yaw], [target_pitch], [target_roll], [target_depth] are 32-bit floats (little endian)
@@ -862,7 +862,7 @@ void cmdctrl_handle_message(void){
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
             }
         }
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'A', 'S', 'S', 'I', 'S', 'T', 'S', 'T', '2'}))){
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'A', 'S', 'S', 'I', 'S', 'T', '2'}))){
         // STABILITY ASSIST speed set variant 2
         // S, A, S, S, I, S, T, 1, [x], [y], [target_pitch], [target_roll], [target_yaw], [target_depth]
         // [x], [y], [yaw], [target_pitch], [target_roll], [target_depth] are 32-bit floats (little endian)

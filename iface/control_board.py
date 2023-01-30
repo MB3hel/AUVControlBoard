@@ -750,7 +750,7 @@ class ControlBoard:
         
         # Construct message to send
         data = bytearray()
-        data.extend(b'SASSISTST1')
+        data.extend(b'SASSIST1')
         data.extend(struct.pack("<f", x))
         data.extend(struct.pack("<f", y))
         data.extend(struct.pack("<f", yaw))
@@ -782,7 +782,7 @@ class ControlBoard:
         
         # Construct message to send
         data = bytearray()
-        data.extend(b'SASSISTST2')
+        data.extend(b'SASSIST2')
         data.extend(struct.pack("<f", x))
         data.extend(struct.pack("<f", y))
         data.extend(struct.pack("<f", target_pitch))
