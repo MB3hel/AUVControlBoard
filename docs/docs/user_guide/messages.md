@@ -136,6 +136,13 @@ Used to enable / disable periodic reading of MS5837 data. This will only impact 
 `[enable]` is an 8-bit integer with a value of either 1 or 0. If 1, reading data periodically is enabled. If 0, reading data periodically is disabled.  
 This message will be acknowledged. The acknowledge message will contain no result data.
 
+**Reset Command**  
+This command is used to rest the control board itself. This will reset the microcontroller on the control board, thus the USB device will disconnect and reconnect (note that if your program still holds the port when this happens, the USB device will likely be assigned a different port number).
+```none
+'R', 'E', 'S', 'E', 'T', 0x0D, 0x1E
+```
+
+
 <hr />
 
 
