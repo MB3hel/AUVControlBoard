@@ -65,10 +65,6 @@ def main() -> int:
         else:
             os.system("clear")
         
-        print("Grav X: {}".format(imu_data.grav_x))
-        print("Grav Y: {}".format(imu_data.grav_y))
-        print("Grav Z: {}".format(imu_data.grav_z))
-        print()
         print("Pitch: {}".format(imu_data.euler_pitch))
         print("Roll: {}".format(imu_data.euler_roll))
         print("Yaw: {}".format(imu_data.euler_yaw))

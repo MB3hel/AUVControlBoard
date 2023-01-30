@@ -51,9 +51,6 @@ class ControlBoard:
     
     class BNO055Data:
         def __init__(self):
-            self.grav_x: float = 0.0
-            self.grav_y: float = 0.0
-            self.grav_z: float = 0.0
             self.quat_w: float = 0.0
             self.quat_x: float = 0.0
             self.quat_y: float = 0.0
@@ -200,7 +197,7 @@ class ControlBoard:
                     print("Watchdog killed motors.")
         elif msg.startswith(b'BNO055D'):
             # BNO055 data status message
-            if len(msg) == 47:
+            if len(msg) == 35:
                 self.__bno055_parse(msg[7:])
         elif msg.startswith(b'MS5837D'):
             # MS5837 data status message
