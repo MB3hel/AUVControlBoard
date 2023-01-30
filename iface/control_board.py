@@ -440,16 +440,13 @@ class ControlBoard:
         new_data = self.BNO055Data()
         
         # Parse data
-        new_data.grav_x = struct.unpack("<f", data[0:4])[0]
-        new_data.grav_y = struct.unpack("<f", data[4:8])[0]
-        new_data.grav_z = struct.unpack("<f", data[8:12])[0]
-        new_data.quat_w = struct.unpack("<f", data[12:16])[0]
-        new_data.quat_x = struct.unpack("<f", data[16:20])[0]
-        new_data.quat_y = struct.unpack("<f", data[20:24])[0]
-        new_data.quat_z = struct.unpack("<f", data[24:28])[0]
-        new_data.accum_pitch = struct.unpack("<f", data[28:32])[0]
-        new_data.accum_roll = struct.unpack("<f", data[32:36])[0]
-        new_data.accum_yaw = struct.unpack("<f", data[36:40])[0]
+        new_data.quat_w = struct.unpack("<f", data[0:4])[0]
+        new_data.quat_x = struct.unpack("<f", data[4:8])[0]
+        new_data.quat_y = struct.unpack("<f", data[8:12])[0]
+        new_data.quat_z = struct.unpack("<f", data[12:16])[0]
+        new_data.accum_pitch = struct.unpack("<f", data[16:20])[0]
+        new_data.accum_roll = struct.unpack("<f", data[20:24])[0]
+        new_data.accum_yaw = struct.unpack("<f", data[24:28])[0]
 
         # Calculate euler angles (ZYX) from quaternion
         t0 = +2.0 * (new_data.quat_w * new_data.quat_x + new_data.quat_y * new_data.quat_z)

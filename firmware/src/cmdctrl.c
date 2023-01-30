@@ -134,20 +134,14 @@ static void send_sensor_data(TimerHandle_t timer){
     if(periodic_bno055 && bno055_ready){
         // Store current readings
         xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-        float m_grav_x = curr_bno055_data.grav_x;
-        float m_grav_y = curr_bno055_data.grav_y;
-        float m_grav_z = curr_bno055_data.grav_z;
-        float m_quat_w = curr_bno055_data.quat_w;
-        float m_quat_x = curr_bno055_data.quat_x;
-        float m_quat_y = curr_bno055_data.quat_y;
-        float m_quat_z = curr_bno055_data.quat_z;
+        quaternion_t m_quat = curr_bno055_data.curr_quat;
         float m_accum_pitch = curr_bno055_data.accum_pitch;
         float m_accum_roll = curr_bno055_data.accum_roll;
         float m_accum_yaw = curr_bno055_data.accum_yaw;
         xSemaphoreGive(sensor_data_mutex);
 
         // Construct message
-        uint8_t bno055_data[47];
+        uint8_t bno055_data[35];
         bno055_data[0] = 'B';
         bno055_data[1] = 'N';
         bno055_data[2] = 'O';
@@ -155,16 +149,13 @@ static void send_sensor_data(TimerHandle_t timer){
         bno055_data[4] = '5';
         bno055_data[5] = '5';
         bno055_data[6] = 'D';
-        conversions_float_to_data(m_grav_x, &bno055_data[7], true);
-        conversions_float_to_data(m_grav_y, &bno055_data[11], true);
-        conversions_float_to_data(m_grav_z, &bno055_data[15], true);
-        conversions_float_to_data(m_quat_w, &bno055_data[19], true);
-        conversions_float_to_data(m_quat_x, &bno055_data[23], true);
-        conversions_float_to_data(m_quat_y, &bno055_data[27], true);
-        conversions_float_to_data(m_quat_z, &bno055_data[31], true);
-        conversions_float_to_data(m_accum_pitch, &bno055_data[35], true);
-        conversions_float_to_data(m_accum_roll, &bno055_data[39], true);
-        conversions_float_to_data(m_accum_yaw, &bno055_data[43], true);
+        conversions_float_to_data(m_quat.w, &bno055_data[7], true);
+        conversions_float_to_data(m_quat.x, &bno055_data[11], true);
+        conversions_float_to_data(m_quat.y, &bno055_data[15], true);
+        conversions_float_to_data(m_quat.z, &bno055_data[19], true);
+        conversions_float_to_data(m_accum_pitch, &bno055_data[23], true);
+        conversions_float_to_data(m_accum_roll, &bno055_data[27], true);
+        conversions_float_to_data(m_accum_yaw, &bno055_data[31], true);
 
         // Send message (status message from CB to PC)
         pccomm_write(bno055_data, 47);
@@ -245,13 +236,13 @@ void cmdctrl_init(void){
     ms5837_ready = false;
 
     // Initial sensor data
-    curr_bno055_data.quat_w = 0;
-    curr_bno055_data.quat_x = 0;
-    curr_bno055_data.quat_y = 0;
-    curr_bno055_data.quat_z = 0;
-    curr_bno055_data.grav_x = 0;
-    curr_bno055_data.grav_y = 0;
-    curr_bno055_data.grav_z = 0;
+    curr_bno055_data.curr_quat.w = 0;
+    curr_bno055_data.curr_quat.x = 0;
+    curr_bno055_data.curr_quat.y = 0;
+    curr_bno055_data.curr_quat.z = 0;
+    curr_bno055_data.accum_pitch = 0;
+    curr_bno055_data.accum_roll = 0;
+    curr_bno055_data.accum_yaw = 0;
     sensor_data_mutex = xSemaphoreCreateMutex();
 
     // Periodic sensor data

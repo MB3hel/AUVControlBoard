@@ -468,25 +468,6 @@ bool bno055_set_axis(uint8_t mode){
 }
 
 bool bno055_read(bno055_data *data){
-    // Read Gravity Vector
-    trans.write_buf[0] = BNO055_GRAVITY_DATA_X_LSB_ADDR;
-    trans.write_count = 1;
-    trans.read_count = 6;
-    if(!bno055_perform(&trans))
-        return false;
-    
-    // Parse data
-    // Note that z-axis data is negated intentionally.
-    // This is to ensure consistency with diagrams in datasheet. The z axis direction
-    // is reverse of what the datasheet shows.
-    int16_t tmp16;
-    tmp16 = ((int16_t)trans.read_buf[0]) | (((int16_t)trans.read_buf[1]) << 8);
-    data->grav_x = -tmp16 / 100.0f;
-    tmp16 = ((int16_t)trans.read_buf[2]) | (((int16_t)trans.read_buf[3]) << 8);
-    data->grav_y = -tmp16 / 100.0f;
-    tmp16 = ((int16_t)trans.read_buf[4]) | (((int16_t)trans.read_buf[5]) << 8);
-    data->grav_z = -tmp16 / 100.0f;
-
     // Read Orientation Quaternion
     trans.write_buf[0] = BNO055_QUATERNION_DATA_W_LSB_ADDR;
     trans.write_count = 1;
@@ -494,32 +475,20 @@ bool bno055_read(bno055_data *data){
     if(!bno055_perform(&trans))
         return false;
 
-    // Parse data
-    // TODO: Determine if directions of rotation match coord system as defined by control board math
-    //       and how axes are defined for acceleration (grav) vector
-    //       If not, need to transform the quaternion to make the coord systems match.
-    tmp16 = (((uint16_t)trans.read_buf[1]) << 8) | ((uint16_t)trans.read_buf[0]);
-    data->quat_w = tmp16 / 16384.0f;
+    int16_t tmp16 = (((uint16_t)trans.read_buf[1]) << 8) | ((uint16_t)trans.read_buf[0]);
+    data->curr_quat.w = tmp16 / 16384.0f;
     tmp16 = (((uint16_t)trans.read_buf[3]) << 8) | ((uint16_t)trans.read_buf[2]);
-    data->quat_x = tmp16 / 16384.0f;
+    data->curr_quat.x = tmp16 / 16384.0f;
     tmp16 = (((uint16_t)trans.read_buf[5]) << 8) | ((uint16_t)trans.read_buf[4]);
-    data->quat_y = tmp16 / 16384.0f;
+    data->curr_quat.y = tmp16 / 16384.0f;
     tmp16 = (((uint16_t)trans.read_buf[7]) << 8) | ((uint16_t)trans.read_buf[6]);
-    data->quat_z = tmp16 / 16384.0f;
+    data->curr_quat.z = tmp16 / 16384.0f;
 
-    quaternion_t curr_quat;
-    curr_quat.w = data->quat_w;
-    curr_quat.x = data->quat_x;
-    curr_quat.y = data->quat_y;
-    curr_quat.z = data->quat_z;
 
-    // Mirror y axis of quaternion (roll is wrong sign convention)
-    // quat_flip_y(&curr_quat, &curr_quat);
-
-    bool quat_same = (curr_quat.w == prev_quat.w) && 
-            (curr_quat.x == prev_quat.x) &&
-            (curr_quat.y == prev_quat.y) &&
-            (curr_quat.z == prev_quat.z);
+    bool quat_same = (data->curr_quat.w == prev_quat.w) && 
+            (data->curr_quat.x == prev_quat.x) &&
+            (data->curr_quat.y == prev_quat.y) &&
+            (data->curr_quat.z == prev_quat.z);
 
     if(prev_quat_valid && !quat_same){
         // Accumulation math
@@ -527,14 +496,14 @@ bool bno055_read(bno055_data *data){
         // thus, don't run the math if quaternions are unchanged
         quaternion_t diff_quat;
         float dot_f;
-        quat_dot(&dot_f, &curr_quat, &prev_quat);
+        quat_dot(&dot_f, &data->curr_quat, &prev_quat);
         if(dot_f < 0){
             quat_multiply_scalar(&diff_quat, &prev_quat, -1);
         }else{
             quat_multiply_scalar(&diff_quat, &prev_quat, 1);
         }
         quat_inverse(&diff_quat, &diff_quat);
-        quat_multiply(&diff_quat, &curr_quat, &diff_quat);
+        quat_multiply(&diff_quat, &data->curr_quat, &diff_quat);
         euler_t diff_euler;
         quat_to_euler(&diff_euler, &diff_quat);
         euler_rad2deg(&diff_euler, &diff_euler);
@@ -544,7 +513,7 @@ bool bno055_read(bno055_data *data){
     }
 
     // Prev quat valid if it is not all zeros (all zeros happen when IMU fusion data not ready yet)
-    prev_quat = curr_quat;
+    prev_quat = data->curr_quat;
     prev_quat_valid = 
         (prev_quat.w != 0) || (prev_quat.x != 0) || (prev_quat.y != 0) || (prev_quat.z != 0);
 

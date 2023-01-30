@@ -20,6 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <angles.h>
 
 // Axis configurations
 // Note: Px macro needs to have value x
@@ -33,8 +34,7 @@
 #define BNO055_AXIS_P7          7
 
 typedef struct{
-    float grav_x, grav_y, grav_z;
-    float quat_w, quat_x, quat_y, quat_z;
+    quaternion_t curr_quat;
     float accum_pitch, accum_roll, accum_yaw;
 } bno055_data;
 
