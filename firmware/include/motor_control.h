@@ -126,34 +126,20 @@ void mc_sassist_tune_depth(float kp, float ki, float kd, float kf, float limit);
 /**
  * Set motor speeds in STABILITY_ASSIST mode. Abstracts a 2D plane in which the robot is controlled.
  * The other dimensions are handled by closed-loop control. 
- * Variant 1 requires speeds specified for x, y, and yaw DoFs and uses closed-loop control 
- * for depth (z), pitch, and roll. Speeds are in world-relative (GLOBAL) DoFs
+ * Requires speeds for x and y DoFs and uses closed-loop control for depth (z), pitch, and roll. 
+ * Yaw can be either a speed or handled by closed loop control.
+ * Speeds are in world-relative (GLOBAL) DoFs 
  * @param x Speed in +x DoF (-1.0 to +1.0)
  * @param y Speed in +y DoF (-1.0 to +1.0)
- * @param yaw Speed in +yaw DoF (-1.0 to +1.0)
- * @param target_euler Target orientation (ZYX euler; yaw is ignored)
+ * @param yaw Speed in +yaw DoF (-1.0 to +1.0). Not used if use_yaw_pid is true
+ * @param target_euler Target orientation (ZYX euler; yaw is ignored if use_yaw_pid is false)
  * @param curr_quat Current orientation quaternion
  * @param curr_depth Current depth in meters (negative below surface)
+ * @param use_yaw_pid If true, closed loop control is used for yaw not a speed
  */
-void mc_set_sassist1(float x, float y, float yaw, 
+void mc_set_sassist(float x, float y, float yaw, 
         euler_t target_euler, 
         float target_depth,
         quaternion_t curr_quat,
-        float curr_depth);
-
-/**
- * Set motor speeds in STABILITY_ASSIST mode. Abstracts a 2D plane in which the robot is controlled.
- * The other dimensions are handled by closed-loop control. 
- * Variant 2 requires speeds specified for x and y DoFs and uses closed-loop control 
- * for depth (z), pitch, roll, and yaw. Speeds are in world-relative (GLOBAL) DoFs
- * @param x Speed in +x DoF (-1.0 to +1.0)
- * @param y Speed in +y DoF (-1.0 to +1.0)
- * @param target_euler Target orientation (ZYX euler)
- * @param curr_quat Current orientation quaternion
- * @param curr_depth Current depth in meters (negative below surface)
- */
-void mc_set_sassist2(float x, float y, 
-        euler_t target_euler, 
-        float target_depth,
-        quaternion_t curr_quat,
-        float curr_depth);
+        float curr_depth,
+        bool use_yaw_pid);

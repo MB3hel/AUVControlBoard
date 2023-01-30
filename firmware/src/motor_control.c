@@ -343,58 +343,22 @@ void mc_sassist_tune_depth(float kp, float ki, float kd, float kf, float limit){
     depth_pid.min = -limit;
 }
 
-void mc_set_sassist1(float x, float y, float yaw, 
-        euler_t target_euler, 
+void mc_set_sassist(float x, float y, float yaw,
+        euler_t target_euler,
         float target_depth,
         quaternion_t curr_quat,
-        float curr_depth){
-
+        float curr_depth,
+        bool use_yaw_pid){
     // Convert current to euler
     euler_t curr_euler;
     quat_to_euler(&curr_euler, &curr_quat);
 
-    // Copy current euler to target euler
-    target_euler.yaw = curr_euler.yaw;
-
-    // Convert target euler to quaternion
-    quaternion_t target_quat;
-    euler_to_quat(&target_quat, &target_euler);
-
-    // Calculate min angle between current and target quaternions
-    quaternion_t diff_quat;
-    float dot_f;
-    quat_dot(&dot_f, &target_quat, &curr_quat);
-    if(dot_f < 0){
-        quat_multiply_scalar(&diff_quat, &curr_quat, -1);
-    }else{
-        quat_multiply_scalar(&diff_quat, &curr_quat, 1);
+    if(!use_yaw_pid){
+        // Copy current euler yaw to target euler yaw
+        // This ensures yaw error is always zero
+        // Thus, minimum difference between quaternions will be pitch and roll only
+        target_euler.yaw = curr_euler.yaw;
     }
-    quat_inverse(&diff_quat, &diff_quat);
-    quat_multiply(&diff_quat, &target_quat, &diff_quat);
-
-    // Convert quaternion to euler
-    euler_t diff_euler;
-    quat_to_euler(&diff_euler, &diff_quat);
-
-    // Calculate z, pitch, and roll speeds using PID
-    pitch_pid.setpoint = target_euler.pitch;
-    roll_pid.setpoint = target_euler.roll;
-    depth_pid.setpoint = target_depth;
-    float pitch = pid_calculate(&pitch_pid, diff_euler.pitch);
-    float roll = -1 * pid_calculate(&roll_pid, diff_euler.roll);
-    float z = -1 * pid_calculate(&depth_pid, curr_depth - target_depth);
-
-    mc_set_global(x, y, z, pitch, roll, yaw, curr_quat);
-}
-
-void mc_set_sassist2(float x, float y, 
-        euler_t target_euler, 
-        float target_depth,
-        quaternion_t curr_quat,
-        float curr_depth){
-    // Convert current to euler
-    euler_t curr_euler;
-    quat_to_euler(&curr_euler, &curr_quat);
 
     // Convert target euler to quaternion
     quaternion_t target_quat;
@@ -423,7 +387,9 @@ void mc_set_sassist2(float x, float y,
     depth_pid.setpoint = target_depth;
     float pitch = pid_calculate(&pitch_pid, diff_euler.pitch);
     float roll = -1 * pid_calculate(&roll_pid, diff_euler.roll);
-    float yaw = pid_calculate(&yaw_pid, diff_euler.yaw);
+    if(use_yaw_pid){
+        yaw = pid_calculate(&yaw_pid, diff_euler.yaw);
+    }
     float z = -1 * pid_calculate(&depth_pid, curr_depth - target_depth);
 
     mc_set_global(x, y, z, pitch, roll, yaw, curr_quat);

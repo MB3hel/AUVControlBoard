@@ -335,20 +335,23 @@ void cmdctrl_apply_saved_speed(void){
             float m_depth = curr_ms5837_data.depth_m;
             xSemaphoreGive(sensor_data_mutex);
             if(sassist_variant == 1){
-                mc_set_sassist1(sassist_x, 
+                mc_set_sassist(sassist_x, 
                     sassist_y, 
                     sassist_yaw, 
                     sassist_target_euler, 
                     sassist_depth_target, 
                     m_quat,
-                    m_depth);
+                    m_depth,
+                    false);
             }else if(sassist_variant == 2){
-                mc_set_sassist2(sassist_x, 
+                mc_set_sassist(sassist_x, 
                     sassist_y, 
+                    0.0f,
                     sassist_target_euler, 
                     sassist_depth_target, 
                     m_quat,
-                    m_depth);
+                    m_depth,
+                    true);
             }
         }
         break;
@@ -810,13 +813,14 @@ void cmdctrl_handle_message(void){
                 mc_wdog_feed();
 
                 // Update motor speeds
-                mc_set_sassist1(sassist_x, 
+                mc_set_sassist(sassist_x, 
                     sassist_y, 
                     sassist_yaw, 
                     sassist_target_euler, 
                     sassist_depth_target, 
                     m_quat,
-                    m_depth);
+                    m_depth,
+                    false);
 
                 // Acknowledge message w/ no error.
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
@@ -873,12 +877,14 @@ void cmdctrl_handle_message(void){
                 mc_wdog_feed();
 
                 // Update motor speeds
-                mc_set_sassist2(sassist_x, 
+                mc_set_sassist(sassist_x, 
                     sassist_y, 
+                    0.0f,
                     sassist_target_euler, 
                     sassist_depth_target, 
                     m_quat,
-                    m_depth);
+                    m_depth,
+                    true);
 
                 // Acknowledge message w/ no error.
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
