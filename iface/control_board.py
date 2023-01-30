@@ -102,7 +102,9 @@ class ControlBoard:
 
     ## Open communication with a control board
     #  @param port Serial port to communicate with control board by
-    def __init__(self, port: str, debug = False):
+    #  @param debug Debug messages for interface code
+    #  @param suppress_dbg_msg Suppress debug messages from control board itself
+    def __init__(self, port: str, debug = False, suppress_dbg_msg = False):
         self.__bno055_data = self.BNO055Data()
         self.__ms5837_data = self.MS5837Data()
         self.__last_wdog_feed = 0
@@ -110,6 +112,7 @@ class ControlBoard:
         self.__id_mutex = threading.Lock()
         self.__msg_id = 0
         self.__debug = debug
+        self.__cboard_debug = not suppress_dbg_msg
         self.__ser = serial.Serial(port, 115200)
         self.__ser.reset_input_buffer()
         self.__stop = False
@@ -203,6 +206,8 @@ class ControlBoard:
             # MS5837 data status message
             if len(msg) == 11:
                 self.__ms5837_parse(msg[7:])
+        elif msg.startswith(b'DEBUG') and self.__cboard_debug:
+            print("CBOARD_DEBUG: {}".format(msg[5:].decode('ascii')))
    
     ## Thread to repeatedly read from the control board serial port
     def __read_task(self):
