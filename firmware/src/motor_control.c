@@ -57,33 +57,6 @@ static pid_controller_t pitch_pid, roll_pid, yaw_pid, depth_pid;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/**
- * Skew symmetric matrix from a vector
- * 
- * @param outmat Matrix to store output in (skew symmetric matrix 3x3)
- * @param invec Vector (3x1) used to construct matrix
- * @return MAT_ERR_x code 
- */
-static int skew3(matrix *outmat, matrix *invec){
-    if(outmat->rows != 3 || outmat->cols != 3)
-        return MAT_ERR_SIZE;
-    float v[3];
-    if(invec->rows == 1){
-        if(invec->cols != 3)
-            return MAT_ERR_SIZE;
-        matrix_get_row(&v[0], invec, 0);
-    }else if(invec->cols == 1){
-        if(invec->rows != 3)
-            return MAT_ERR_SIZE;
-        matrix_get_col(&v[0], invec, 0);
-    }else{
-        return MAT_ERR_SIZE;
-    }
-    matrix_set_row(outmat, 0, (float[]){0, -v[2], v[1]});
-    matrix_set_row(outmat, 1, (float[]){v[2], 0, -v[0]});
-    matrix_set_row(outmat, 2, (float[]){-v[1], v[0], 0});
-    return MAT_ERR_NONE;
-}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Initialization & Setup
@@ -287,61 +260,29 @@ void mc_set_local(float x, float y, float z, float pitch, float roll, float yaw)
     mc_set_raw(speed_arr);
 }
 
-void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw, float grav_x, float grav_y, float grav_z){
+void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw, quaternion_t curr_quat){
     // Construct target motion vector
     float target_arr[6];
     matrix target;
     matrix_init_static(&target, target_arr, 6, 1);
     matrix_set_col(&target, 0, (float[]){x, y, z, pitch, roll, yaw});
 
-    // Construct gravity vector
-    float gvec_arr[3];
-    matrix gravity_vector;
-    matrix_init_static(&gravity_vector, gvec_arr, 3, 1);
-    matrix_set_col(&gravity_vector, 0, (float[]){grav_x, grav_y, grav_z});
-
-    // b is unit gravity vector
-    float b_arr[3];
-    float gravl2norm;
-    matrix b;
-    matrix_init_static(&b, b_arr, 3, 1);
-    matrix_l2vnorm(&gravl2norm, &gravity_vector);
-    if(gravl2norm < 1)
-        return; // Invalid gravity vector
-    matrix_sc_div(&b, &gravity_vector, gravl2norm);
-
-    // Expected unit gravity vector when "level"
-    float a_arr[3];
-    matrix a;
-    matrix_init_static(&a, a_arr, 3, 1);
-    matrix_set_col(&a, 0, (float[]){0, 0, -1});
-
-    float v_arr[3];
-    matrix v;
-    matrix_init_static(&v, v_arr, 3, 1);
-    matrix_vcross(&v, &a, &b);
-
-    float c;
-    matrix_vdot(&c, &a, &b);
-
-    float sk_arr[9];
-    matrix sk;
-    matrix_init_static(&sk, sk_arr, 3, 3);
-    skew3(&sk, &v);
-
-    float I_arr[9];
-    matrix I;
-    matrix_init_static(&I, I_arr, 3, 3);
-    matrix_ident(&I);
-
-    float R_arr[9];
+    // Use current orientation quaternion to construct rotation matrix
     matrix R;
+    float R_arr[9];
     matrix_init_static(&R, R_arr, 3, 3);
-    matrix_mul(&R, &sk, &sk);
-    matrix_sc_div(&R, &R, 1 + c);
-    matrix_add(&R, &R, &sk);
-    matrix_add(&R, &R, &I);
+    float qw = curr_quat.w;
+    float qx = curr_quat.x;
+    float qy = curr_quat.y;
+    float qz = curr_quat.z;
+    float n = qw*qw + qx*qx + qy*qy + qz*qz;
+    float s = (n == 0) ? (0.0f) : (2.0f / n);
+    matrix_set_row(&R, 0, (float[]){1 - s*(qy*qy + qz*qz),          s*(qx*qy - qw*qz),          s*(qx*qz + qw*qy)});
+    matrix_set_row(&R, 1, (float[]){s*(qx*qy + qw*qz),              1 - s*(qx*qx + qz*qz),      s*(qy*qz - qw*qx)});
+    matrix_set_row(&R, 2, (float[]){s*(qx*qz - qw*qy),              s*(qy*qz + qw*qx),          1 - s*(qx*qx + qy*qy)});
 
+    // Split translation and rotation targets (t = translation, r = rotation)
+    // Seperate vectors for global and localized targets(g = global l = localized)
     float tmp[6];
     float tltarget_arr[3], rltarget_arr[3], tgtarget_arr[3], rgtarget_arr[3];
     matrix tltarget, rltarget, tgtarget, rgtarget;
@@ -353,6 +294,7 @@ void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw
     matrix_set_col(&tltarget, 0, &tmp[0]);
     matrix_set_col(&rltarget, 0, &tmp[3]);
 
+    // Apply rotation matrix to rotate the translation and rotation targets
     matrix_mul(&tgtarget, &R, &tltarget);
     matrix_mul(&rgtarget, &R, &rltarget);
 
@@ -405,7 +347,6 @@ void mc_set_sassist1(float x, float y, float yaw,
         euler_t target_euler, 
         float target_depth,
         quaternion_t curr_quat,
-        float grav_x, float grav_y, float grav_z,
         float curr_depth){
 
     // Convert current to euler
@@ -443,14 +384,13 @@ void mc_set_sassist1(float x, float y, float yaw,
     float roll = -1 * pid_calculate(&roll_pid, diff_euler.roll);
     float z = -1 * pid_calculate(&depth_pid, curr_depth - target_depth);
 
-    mc_set_global(x, y, z, pitch, roll, yaw, grav_x, grav_y, grav_z);
+    mc_set_global(x, y, z, pitch, roll, yaw, curr_quat);
 }
 
 void mc_set_sassist2(float x, float y, 
         euler_t target_euler, 
         float target_depth,
         quaternion_t curr_quat,
-        float grav_x, float grav_y, float grav_z,
         float curr_depth){
     // Convert current to euler
     euler_t curr_euler;
@@ -486,7 +426,7 @@ void mc_set_sassist2(float x, float y,
     float yaw = pid_calculate(&yaw_pid, diff_euler.yaw);
     float z = -1 * pid_calculate(&depth_pid, curr_depth - target_depth);
 
-    mc_set_global(x, y, z, pitch, roll, yaw, grav_x, grav_y, grav_z);
+    mc_set_global(x, y, z, pitch, roll, yaw, curr_quat);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

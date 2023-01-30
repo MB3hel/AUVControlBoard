@@ -314,8 +314,6 @@ static bool data_startswith(const uint8_t *a, uint32_t len_a, const uint8_t *b, 
  * Apply the last saved speed for the current mode
  */
 void cmdctrl_apply_saved_speed(void){
-    float m_grav_x, m_grav_y, m_grav_z;
-
     switch (mode){
     case MODE_RAW:
         mc_set_raw(raw_target);
@@ -325,8 +323,9 @@ void cmdctrl_apply_saved_speed(void){
         break;
     case MODE_GLOBAL:
         xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+        quaternion_t m_quat = curr_bno055_data.curr_quat;
         xSemaphoreGive(sensor_data_mutex);
-        mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, m_grav_x, m_grav_y, m_grav_z);
+        mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, m_quat);
         break;
     case MODE_SASSIST:
         if(sassist_valid){
@@ -341,7 +340,6 @@ void cmdctrl_apply_saved_speed(void){
                     sassist_target_euler, 
                     sassist_depth_target, 
                     m_quat,
-                    m_grav_x, m_grav_y, m_grav_z,
                     m_depth);
             }else if(sassist_variant == 2){
                 mc_set_sassist2(sassist_x, 
@@ -349,7 +347,6 @@ void cmdctrl_apply_saved_speed(void){
                     sassist_target_euler, 
                     sassist_depth_target, 
                     m_quat,
-                    m_grav_x, m_grav_y, m_grav_z,
                     m_depth);
             }
         }
@@ -614,7 +611,7 @@ void cmdctrl_handle_message(void){
             quaternion_t m_quat = curr_bno055_data.curr_quat;
             xSemaphoreGive(sensor_data_mutex);
 
-            if(!bno055_ready || (m_grav_x == 0 && m_grav_y == 0 && m_grav_z == 0)){
+            if(!bno055_ready || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
                 // Need BNO055 IMU data to use global mode.
                 // If not ready, then this command is invalid at this time
                 cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
@@ -650,7 +647,7 @@ void cmdctrl_handle_message(void){
                 mc_wdog_feed();
 
                 // Update motor speeds
-                mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, m_grav_x, m_grav_y, m_grav_z);
+                mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, m_quat);
 
                 // Acknowledge message w/ no error.
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
@@ -776,7 +773,7 @@ void cmdctrl_handle_message(void){
             float m_depth = curr_ms5837_data.depth_m;
             xSemaphoreGive(sensor_data_mutex);
 
-            if(!bno055_ready || (m_grav_x == 0 && m_grav_y == 0 && m_grav_z == 0) || !ms5837_ready){
+            if(!bno055_ready || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready){
                 // Need BNO055 IMU data to use sassist mode.
                 // Also need MS5837 data to use sassist mode
                 // If not ready, then this command is invalid at this time
@@ -818,7 +815,6 @@ void cmdctrl_handle_message(void){
                     sassist_target_euler, 
                     sassist_depth_target, 
                     m_quat,
-                    m_grav_x, m_grav_y, m_grav_z,
                     m_depth);
 
                 // Acknowledge message w/ no error.
@@ -840,7 +836,7 @@ void cmdctrl_handle_message(void){
             float m_depth = curr_ms5837_data.depth_m;
             xSemaphoreGive(sensor_data_mutex);
 
-            if(!bno055_ready || (m_grav_x == 0 && m_grav_y == 0 && m_grav_z == 0) || !ms5837_ready){
+            if(!bno055_ready || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready){
                 // Need BNO055 IMU data to use sassist mode.
                 // Also need MS5837 data to use sassist mode
                 // If not ready, then this command is invalid at this time
@@ -881,7 +877,6 @@ void cmdctrl_handle_message(void){
                     sassist_target_euler, 
                     sassist_depth_target, 
                     m_quat,
-                    m_grav_x, m_grav_y, m_grav_z,
                     m_depth);
 
                 // Acknowledge message w/ no error.

@@ -79,11 +79,9 @@ void mc_set_local(float x, float y, float z, float pitch, float roll, float yaw)
  * @param pitch Speed in +pitch rotation DoF (-1.o to +1.0)
  * @param roll Speed in +roll rotation DoF (-1.o to +1.0)
  * @param yaw Speed in +yaw rotation DoF (-1.o to +1.0)
- * @param grav_x Gravity vector x component
- * @param grav_y Gravity vector y component
- * @param grav_z Gravity vector z component
+ * @param curr_quat Current orientation quaternion from IMU
  */
-void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw, float grav_x, float grav_y, float grav_z);
+void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw, quaternion_t curr_quat);
 
 /**
  * Tune stability assist mode pitch pid
@@ -135,15 +133,12 @@ void mc_sassist_tune_depth(float kp, float ki, float kd, float kf, float limit);
  * @param yaw Speed in +yaw DoF (-1.0 to +1.0)
  * @param target_euler Target orientation (ZYX euler; yaw is ignored)
  * @param curr_quat Current orientation quaternion
- * @param grav_x Current gravity vector x component
- * @param grav_y Current gravity vector y component
- * @param grav_z Current gravity vector z component
+ * @param curr_depth Current depth in meters (negative below surface)
  */
 void mc_set_sassist1(float x, float y, float yaw, 
         euler_t target_euler, 
         float target_depth,
         quaternion_t curr_quat,
-        float grav_x, float grav_y, float grav_z,
         float curr_depth);
 
 /**
@@ -155,13 +150,10 @@ void mc_set_sassist1(float x, float y, float yaw,
  * @param y Speed in +y DoF (-1.0 to +1.0)
  * @param target_euler Target orientation (ZYX euler)
  * @param curr_quat Current orientation quaternion
- * @param grav_x Current gravity vector x component
- * @param grav_y Current gravity vector y component
- * @param grav_z Current gravity vector z component
+ * @param curr_depth Current depth in meters (negative below surface)
  */
 void mc_set_sassist2(float x, float y, 
         euler_t target_euler, 
         float target_depth,
         quaternion_t curr_quat,
-        float grav_x, float grav_y, float grav_z,
         float curr_depth);
