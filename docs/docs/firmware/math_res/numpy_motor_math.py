@@ -137,7 +137,7 @@ for r in range(np.size(contribution_matrix, axis=0)):
 ################################################################################
 
 # Current orientation in degrees (used in global mode)
-curr_euler = Euler(90.0, 0.0, 0.0)
+curr_euler = Euler(0.0, 90.0, 0.0)
 
 
 ################################################################################
@@ -157,10 +157,10 @@ target_is_global = True
 ################################################################################
 
 if target_is_global:
-    cp = np.cos(np.deg2rad(curr_euler.pitch))
-    sp = np.sin(np.deg2rad(curr_euler.pitch))
-    cr = np.cos(np.deg2rad(curr_euler.roll))
-    sr = np.sin(np.deg2rad(curr_euler.roll))
+    cp = np.cos(np.deg2rad(-curr_euler.pitch))
+    sp = np.sin(np.deg2rad(-curr_euler.pitch))
+    cr = np.cos(np.deg2rad(-curr_euler.roll))
+    sr = np.sin(np.deg2rad(-curr_euler.roll))
     R_x = np.matrix([
         [   1,      0,      0       ],
         [   0,      cp,     -sp     ],

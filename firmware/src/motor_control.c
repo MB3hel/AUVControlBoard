@@ -274,10 +274,10 @@ void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw
     matrix_set_col(&target, 0, (float[]){x, y, z, pitch, roll, yaw});
 
     // Use current orientation quaternion to construct rotation matrix
-    float cp = cosf(curr_euler.pitch);
-    float sp = sinf(curr_euler.pitch);
-    float cr = cosf(curr_euler.roll);
-    float sr = sinf(curr_euler.roll);
+    float cp = cosf(-curr_euler.pitch);
+    float sp = sinf(-curr_euler.pitch);
+    float cr = cosf(-curr_euler.roll);
+    float sr = sinf(-curr_euler.roll);
     float R_arr[9];
     matrix R;
     matrix_init_static(&R, R_arr, 3, 3);
