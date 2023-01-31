@@ -141,7 +141,7 @@ This command is used to rest the control board itself. This will reset the micro
 ```none
 'R', 'E', 'S', 'E', 'T', 0x0D, 0x1E
 ```
-
+This message is **not** acknowledged.
 
 <hr />
 
