@@ -3,6 +3,7 @@
 
 # Output files (custom settings)
 outputs/
+bom/
 
 # Temporary files
 *.000
