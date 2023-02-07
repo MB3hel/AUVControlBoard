@@ -26,6 +26,9 @@
 #include <cmdctrl.h>
 #include <pid.h>
 #include <math.h>
+#include <debug.h>
+#include <stdio.h>
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -383,6 +386,15 @@ void mc_set_sassist(float x, float y, float yaw,
     // Convert quaternion to euler
     euler_t diff_euler;
     quat_to_euler(&diff_euler, &diff_quat);
+
+    // TODO: Remove (DEBUG ONLY)
+    char msg[32];
+    snprintf(msg, 32, "Pitch: %f", diff_euler.pitch);
+    debug_log(msg);
+    snprintf(msg, 32, "Roll: %f", diff_euler.roll);
+    debug_log(msg);
+    snprintf(msg, 32, "Yaw: %f", diff_euler.yaw);
+    debug_log(msg);
 
     // Calculate z, pitch, and roll speeds using PID
     pitch_pid.setpoint = target_euler.pitch;
