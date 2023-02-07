@@ -1,5 +1,11 @@
 # Control Math
 
+Python scripts used to test / demo the math described here
+
+- [`numpy_motor_math.py`](./math_test_code/numpy_motor_math.py)
+- [`orientation_math.py`](./math_test_code/orientation_math.py)
+- [`accumulate_angles.py`](./math_test_code/accumulate_angles.py)
+- [`util.py`](./math_test_code/util.py) (*Required for all scripts listed above; place in same directory*)
 
 ## Coordinate System Definition
 
@@ -46,7 +52,7 @@
 
 The following section covers math to calculate individual motor speeds to achieve the desired motion with a 6 degree of freedom system (6DoF = 3 translation and 3 rotation). The math remains valid for motor configurations where motion in some DoFs is not possible.
 
-*[motor_control_math.py](./math_res/numpy_motor_math.py) is an implementation of the motor control math using numpy. It is used for prototyping / testing.*
+See: `numpy_motor_math.py` linked at the top of this page.
 
 
 ### Motor Matrix
@@ -194,44 +200,31 @@ The target vector can be split into two parts: a translation vector and a rotati
 
 Both vectors are in an [x, y, z] order. Translations are along the given axes. Rotations are about the given axes
 
-The idea is to determine a rotation matrix which can be applied to each of these vectors to transform it into the robot's coordinate system.
-
-In practice, an AHRS algorithm can provide robot orientation in 3D space (with absolute pitch and roll due to the accelerometer). Thus, this rotation matrix will be constructed from the robot's pitch and roll.
-
-Using the pitch and roll values, a rotation matrix `R` can be constructed as follows
-
-$R_x=\pmatrix{
-    1 & 0 & 0 \\
-    0 & \textrm{cos(pitch)} & -\textrm{sin(pitch)} \\
-    0 & \textrm{sin(pitch)} & \textrm{cos(pitch)}  \\
-}$
-
-$R_y = \pmatrix{
-    \textrm{cos(roll)} & 0 & \textrm{sin(roll)} \\
-    0 & 1 & 0 \\
-    -\textrm{sin(roll)} & 0 & \textrm{cos(roll)}
-}$
-
-These can be combined into a single rotation matrix, `R`
-
-$R = R_y R_x$
-
-This rotation matrix will rotate a vector to match the robot's orientation, however this is the opposite of the desired rotation. Consider a vector in the world +y direction with the robot pitched down 90 degrees (-90 degrees pitch). This rotation matrix would rotate the vector down 90 degrees to point in the -z direction, whereas it is desired that it be oriented to +z (since the top of the robot is facing the world's +y axis). This occurs since the rotation matrix describes how to face the world onto the robot, not the robot onto the world (which is desired). The solution, however, is simple. Negate pitch and roll. Thus, $R_x$ and $R_y$ become
-
-$R_x=\pmatrix{
-    1 & 0 & 0 \\
-    0 & \textrm{cos(-pitch)} & -\textrm{sin(-pitch)} \\
-    0 & \textrm{sin(-pitch)} & \textrm{cos(-pitch)}  \\
-}$
-
-$R_y = \pmatrix{
-    \textrm{cos(-roll)} & 0 & \textrm{sin(-roll)} \\
-    0 & 1 & 0 \\
-    -\textrm{sin(-roll)} & 0 & \textrm{cos(-roll)}
-}$
+The idea is to determine a rotation matrix to translate the world gravity vector to the robot's measured gravity vector. This is the same rotation that should then be applied to each of the vectors described above (translation and rotation).
 
 
-Then each of the translation and rotation targets can be rotated by multiplication by the rotation matrix ($R = R_y R_x$). The translation and rotation vectors are then concatenated to create the full local target vector.
+In practice, an AHRS algorithm can provide robot orientation in 3D space (with absolute pitch and roll due to the accelerometer). This algorithm provides a quaternion representing the robot's orientation in 3d space. Note that this quaternion cannot be directly converted into a rotation matrix, as that does not ignore the yaw component (as is desired for global mode). Thus, instead, the quaternion is used to construct a vector in the direction of gravity (`g_r`) as shown below
+
+```
+g_r.x = 2.0 * (-q.x*q.z + q.w*q.y)
+g_r.y = 2.0 * (-q.w*q.x - q.y*q.z)
+g_r.z = -q.w*q.w + q.x*q.x + q.y*q.y - q.z*q.z
+```
+
+It is assumed that when the robot's coordinate frame matches the world's coordinate frame, the measured gravity vector will be [0, 0, -g] (meaning in the negative z direction). This must be configured to be the case (IMU supports axis remapping internally to allow this regardless of how the IMU is mounted). Then, given a world gravity vector (`g_w`) and a measured gravity vector `g_r` a rotation matrix (`R`) to rotate vectors from the world coordinate system into the robot's coordinate system can be calculated as shown below
+
+<center>
+![](./math_res/rotation_matrix_calc.png){: style="height:100px;"} 
+</center>
+
+Where [v_c]_x is the skew symmetric cross product matrix of v_c defined as follows
+
+<center>
+![](./math_res/skew_symmetric.png){: style="height:100px;"}
+</center>
+
+
+Then each of the translation and rotation targets can be rotated by multiplication by the rotation matrix R. The translation and rotation vectors are then concatenated to create the full local target vector.
 
 <center>
 ![](./math_res/apply_rotation.png){: style="height:100px;"}
@@ -247,7 +240,9 @@ This is built on top of global mode. Thus, stability assist mode calculates the 
 
 ### Orientation Closed-Loop Control
 
-*[orientation_math.py](./math_res/orientation_math.py) is an implementation of the orientation closed-loop math using numpy. It is used for prototyping / testing.*
+***TODO: Document current and past issues including gimbal lock problem.***
+
+See: `orientation_math.py` linked at the top of this page.
 
 Separate PID controllers are used to track the target pitch, roll, and yaw. This allows the output of each PID to be used as a "speed" for one DoF for global mode.
 
@@ -276,7 +271,9 @@ Depth closed-loop control is implemented using a PID. This PID's output is used 
 
 ## IMU Angle Accumulation
 
-*[accumulate_angles.py](./math_res/accumulate_angles.py) is an implementation of the math used to determine the difference between two quaternions (used to determine change in euler angles for accumulation).*
+***Note: The validity of this method is currently in question. More work is needed.***
+
+See: `accumulate_angles.py` linked at the top of this page.
 
 The euler and quaternion values provided by the IMU are not directly useful for tracking multiple rotations of the vehicle. Unlike simply integrating gyroscope data, euler angles (pitch, roll, yaw) and quaternions do not track the number of times the vehicle has rotated about a particular axis.
 
