@@ -4,7 +4,6 @@ import numpy as np
 
 
 
-# ZYX (deg)
 class Euler:
     def __init__(self, pitch: np.float32 = 0.0, roll: np.float32 = 0.0, yaw: np.float32 = 0.0):
         # In degrees
@@ -137,7 +136,7 @@ for r in range(np.size(contribution_matrix, axis=0)):
 ################################################################################
 
 # Current orientation in degrees (used in global mode)
-curr_euler = Euler(0.0, 90.0, 0.0)
+curr_quat = Euler(0.0, 90.0, 0.0).to_quaternion()
 
 
 ################################################################################
@@ -157,21 +156,27 @@ target_is_global = True
 ################################################################################
 
 if target_is_global:
-    cp = np.cos(np.deg2rad(-curr_euler.pitch))
-    sp = np.sin(np.deg2rad(-curr_euler.pitch))
-    cr = np.cos(np.deg2rad(-curr_euler.roll))
-    sr = np.sin(np.deg2rad(-curr_euler.roll))
-    R_x = np.matrix([
-        [   1,      0,      0       ],
-        [   0,      cp,     -sp     ],
-        [   0,      sp,     cp      ]
-    ], dtype=np.float32)
-    R_y = np.matrix([
-        [   cr,     0,      sr      ],
-        [   0 ,     1,      0       ],
-        [   -sr,    0,      cr      ]
-    ], dtype=np.float32)
-    R = np.matmul(R_y, R_x)
+    # Current quaternion to gravity vector
+    gravity_vector = np.array([0, 0, 0], dtype=np.float32)
+    gravity_vector[0] = np.float32(2.0) * (-curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y)
+    gravity_vector[1] = np.float32(2.0) * (-curr_quat.w*curr_quat.x - curr_quat.y*curr_quat.z)
+    gravity_vector[2] = -curr_quat.w*curr_quat.w + curr_quat.x*curr_quat.x + curr_quat.y*curr_quat.y - curr_quat.z*curr_quat.z
+
+    # Gravity vector to rotation matrix
+    def skew(v):
+        return np.matrix([
+            [0, -v[2], v[1]],
+            [v[2], 0, -v[0]],
+            [-v[1], v[0], 0]
+        ])
+    b = (gravity_vector / np.linalg.norm(gravity_vector)).reshape(3, 1)
+    a = np.array([0, 0, -1], dtype=np.double).reshape(3, 1)
+    v = np.cross(a.flatten(), b.flatten()).reshape(3, 1)
+    c = np.dot(a.flatten(), b.flatten())
+    sk = skew(v.flatten())
+    R = np.identity(3) + sk + np.matmul(sk, sk) / (1 + c)
+
+    # Apply rotation matrix
     target_1d = target.flatten().A1
     translation = target_1d[0:3].reshape(3, 1)
     rotation = target_1d[3:6].reshape(3, 1)
