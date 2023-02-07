@@ -415,7 +415,38 @@ void mc_set_sassist(float x, float y, float yaw,
         quaternion_t curr_quat,
         float curr_depth,
         bool use_yaw_pid){
-    // TODO: Implement
+    // ********************************************************************************** //
+    // * WARNING: THIS IS A "TEMPORARY" METHOD OF DOING THIS USING EULER ANGLES         * //
+    // * THIS WILL NOT WORK IN GIMBAL LOCK SCENARIOS!!!                                 * //
+    // * THIS IS A STOPGAP TO ALLOW NORMAL USE CASES WHERE PITCH AND ROLL ARE           * //
+    // * NEAR ZERO!!!                                                                   * //
+    // * DO NOT ATTEMPT TO ROLL NEAR +/-90 IT WILL BREAK!!!                             * //
+    // ********************************************************************************** //
+
+    // Convert current orientation into euler angles
+    euler_t curr_euler;
+    quat_to_euler(&curr_euler, &curr_quat);
+
+    // Update PID setpoints
+    // TODO: Enforce a range of values allowed
+    //       Pitch between -180 and 180
+    //       Roll between -90 and 90
+    //       Yaw between -180 and 180
+    roll_pid.setpoint = target_euler.pitch;
+    pitch_pid.setpoint = target_euler.roll;
+    yaw_pid.setpoint = target_euler.yaw;
+    depth_pid.setpoint = target_depth;
+
+    // Calculate PID outputs
+    float z = pid_calculate(&depth_pid, PID_ERR(depth_pid, curr_depth));
+    float pitch = pid_calculate(&pitch_pid, PID_ERR(pitch_pid, curr_euler.pitch));
+    float roll = pid_calculate(&roll_pid, PID_ERR(roll_pid, curr_euler.roll));
+    if(use_yaw_pid){
+        yaw = pid_calculate(&yaw_pid, PID_ERR(yaw_pid, curr_euler.yaw));
+    }
+
+    // Update speeds using GLOBAL mode math
+    mc_set_global(x, y, z, pitch, roll, yaw, curr_quat);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
