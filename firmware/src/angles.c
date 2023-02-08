@@ -35,16 +35,10 @@ void euler_rad2deg(euler_t *dest, euler_t *src){
 void euler_to_quat(quaternion_t *dest, euler_t *src){
     euler_t src_rad;
     euler_deg2rad(&src_rad, src);
-    float cr = cosf(src_rad.roll * 0.5f);
-    float sr = sinf(src_rad.roll * 0.5f);
-    float cp = cosf(src_rad.pitch * 0.5f);
-    float sp = sinf(src_rad.pitch * 0.5f);
-    float cy = cosf(src_rad.yaw * 0.5f);
-    float sy = sinf(src_rad.yaw * 0.5f);
-    dest->w = cp * cr * cy + sp * sr * sy;
-    dest->x = sp * cr * cy - cp * sr * sy;
-    dest->y = cp * sr * cy + sp * cr * sy;
-    dest->z = cp * cr * sy - sp * sr * cy;
+    dest->w = cosf(src_rad.pitch/2.0f) * cosf(src_rad.roll/2.0f) * cosf(src_rad.yaw/2.0f) + sinf(src_rad.pitch/2.0f) * sinf(src_rad.roll/2.0f) * sinf(src_rad.yaw/2.0f);
+    dest->x = sinf(src_rad.pitch/2.0f) * cosf(src_rad.roll/2.0f) * cosf(src_rad.yaw/2.0f) - cosf(src_rad.pitch/2.0f) * sinf(src_rad.roll/2.0f) * sinf(src_rad.yaw/2.0f);
+    dest->y = cosf(src_rad.pitch/2.0f) * sinf(src_rad.roll/2.0f) * cosf(src_rad.yaw/2.0f) + sinf(src_rad.pitch/2.0f) * cosf(src_rad.roll/2.0f) * sinf(src_rad.yaw/2.0f);
+    dest->z = cosf(src_rad.pitch/2.0f) * cosf(src_rad.roll/2.0f) * sinf(src_rad.yaw/2.0f) - sinf(src_rad.pitch/2.0f) * sinf(src_rad.roll/2.0f) * cosf(src_rad.yaw/2.0f);
 }
 
 
@@ -102,23 +96,16 @@ void quat_dot(float *dest, quaternion_t *a, quaternion_t *b){
 }
 
 void quat_to_euler(euler_t *dest, quaternion_t *src){
-    // Pitch (about x axis)
     float t0 = 2.0f * (src->w * src->x + src->y * src->z);
     float t1 = 1.0f - 2.0f * (src->x * src->x + src->y * src->y);
     dest->pitch = atan2f(t0, t1);
-    
-    // Roll (about y axis)
     float t2 = 2.0f * (src->w * src->y - src->z * src->x);
     t2 = (t2 > 1.0f) ? 1.0f : t2;
     t2 = (t2 < -1.0f) ? -1.0f : t2;
     dest->roll = asinf(t2);
-    
-    // Yaw (about z axis)
     float t3 = 2.0f * (src->w * src->z + src->x * src->y);
     float t4 = 1.0f - 2.0f * (src->y * src->y + src->z * src->z);
     dest->yaw = atan2f(t3, t4);
-
-    dest->is_deg = false;
 }
 
 void quat_flip_x(quaternion_t *src, quaternion_t *dest){

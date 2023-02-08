@@ -3,6 +3,9 @@
 #include <stdbool.h>
 
 
+// EULER ANGLES USE EXTRINSIC ROTATIONS!!!
+// First around world X, then around world Y, then around world Z
+// pitch (about x), roll (about y), and yaw (about z)
 typedef struct {
     float pitch;
     float roll;
@@ -38,7 +41,8 @@ void euler_deg2rad(euler_t *dest, euler_t *src);
 void euler_rad2deg(euler_t *dest, euler_t *src);
 
 /**
- * Convert euler to quaternion
+ * Convert euler to quaternion 
+ * NOTE ANGLE CONVENTION IN COMMENT ABOVE euler_t
  * @param dest Quaternion to store data in
  * @param src Euler angles to read and convert
  */
@@ -94,6 +98,7 @@ void quat_dot(float *dest, quaternion_t *a, quaternion_t *b);
 
 /**
  * Convert quaternion to euler
+ * NOTE ANGLE CONVENTION IN COMMENT ABOVE euler_t
  * @param dest Euler to store data in (will be in radians)
  * @param src Quaternion angles to read and convert
  */

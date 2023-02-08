@@ -424,6 +424,7 @@ void mc_set_sassist(float x, float y, float yaw,
     // ********************************************************************************** //
 
     // Convert current orientation into euler angles
+    // *** TODO: Re-implement these conversions in angles.c ***
     euler_t curr_euler;
     quat_to_euler(&curr_euler, &curr_quat);
 
@@ -432,6 +433,7 @@ void mc_set_sassist(float x, float y, float yaw,
     //       Pitch between -180 and 180
     //       Roll between -90 and 90
     //       Yaw between -180 and 180
+    //       May need to convert to quaternion and back???
     roll_pid.setpoint = target_euler.pitch;
     pitch_pid.setpoint = target_euler.roll;
     yaw_pid.setpoint = target_euler.yaw;
