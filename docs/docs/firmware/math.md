@@ -240,6 +240,8 @@ This is built on top of global mode. Thus, stability assist mode calculates the 
 
 ### Orientation Closed-Loop Control
 
+***Note: The validity of this method is currently in question. More work is needed.***
+
 ***TODO: Document current and past issues including gimbal lock problem.***
 
 See: `orientation_math.py` linked at the top of this page.
