@@ -37,20 +37,24 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 int matrix_init(matrix *m, size_t rows, size_t cols){
-    if(rows == 0 || cols == 0)
-        return MAT_ERR_SIZE;
-    m->data = calloc(rows * cols, sizeof(float));
     m->rows = rows;
     m->cols = cols;
+    if(rows == 0 || cols == 0){
+        m->data = NULL;
+        return MAT_ERR_SIZE;
+    }
+    m->data = calloc(rows * cols, sizeof(float));
     return MAT_ERR_NONE;
 }
 
 int matrix_init_static(matrix *m, float *backing_array, size_t rows, size_t cols){
-    if(rows == 0 || cols == 0)
-        return MAT_ERR_SIZE;
-    m->data = backing_array;
     m->rows = rows;
     m->cols = cols;
+    if(rows == 0 || cols == 0){
+        m->data = NULL;
+        return MAT_ERR_SIZE;
+    }
+    m->data = backing_array;
     return MAT_ERR_NONE;
 }
 
