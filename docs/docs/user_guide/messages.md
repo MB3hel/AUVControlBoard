@@ -101,14 +101,26 @@ Used to set motor speeds in `STABILITY_ASSIST` mode using a speed for yaw. This 
 ```none  
 'S', 'A', 'S', 'S', 'I', 'S', 'T', 'S', 'T', '1', [x], [y], [yaw], [target_pitch], [target_roll], [target_depth]
 ```  
-Each value is a 32-bit float little endian.  This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
+Each value is a 32-bit float little endian.
+
+Pitch, roll, and yaw are euler angles (in degrees). These are extrinsic euler angles. First around world X, then around world Y, then around world Z where pitch is about x, roll is about y, and yaw is about z.
+
+Depth is in meters where negative numbers are below the surface.
+
+This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
 
 **Stability Assist Speed Set (Variant 2)**  
 Used to set motor speeds in `STABILITY_ASSIST` mode using a PID to maintain a target yaw. This command has the following format  
 ```none  
 'S', 'A', 'S', 'S', 'I', 'S', 'T', 'S', 'T', '2', [x], [y], [target_pitch], [target_roll], [target_yaw], [target_depth]
 ```  
-Each value is a 32-bit float little endian.  This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
+Each value is a 32-bit float little endian. 
+
+Pitch, roll, and yaw are euler angles (in degrees). These are extrinsic euler angles. First around world X, then around world Y, then around world Z where pitch is about x, roll is about y, and yaw is about z.
+
+Depth is in meters where negative numbers are below the surface.
+
+This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
 
 
 ### Other Commands
