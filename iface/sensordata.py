@@ -65,9 +65,9 @@ def main() -> int:
         else:
             os.system("clear")
         
-        print("Pitch: {}".format(imu_data.euler_pitch))
-        print("Roll: {}".format(imu_data.euler_roll))
-        print("Yaw: {}".format(imu_data.euler_yaw))
+        print("Pitch: {}".format(imu_data.pitch))
+        print("Roll: {}".format(imu_data.roll))
+        print("Yaw: {}".format(imu_data.yaw))
         print()
         print("Accum Pitch: {}".format(imu_data.accum_pitch))
         print("Accum Roll: {}".format(imu_data.accum_roll))

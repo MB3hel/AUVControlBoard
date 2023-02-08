@@ -55,9 +55,9 @@ class ControlBoard:
             self.quat_x: float = 0.0
             self.quat_y: float = 0.0
             self.quat_z: float = 0.0
-            self.euler_pitch: float = 0.0
-            self.euler_roll: float = 0.0
-            self.euler_yaw: float = 0.0
+            self.pitch: float = 0.0
+            self.roll: float = 0.0
+            self.yaw: float = 0.0
             self.accum_pitch: float = 0.0
             self.accum_roll: float = 0.0
             self.accum_yaw: float = 0.0
@@ -450,20 +450,20 @@ class ControlBoard:
         new_data.accum_roll = struct.unpack("<f", data[20:24])[0]
         new_data.accum_yaw = struct.unpack("<f", data[24:28])[0]
 
-        # Calculate euler angles (ZYX) from quaternion
-        t0 = +2.0 * (new_data.quat_w * new_data.quat_x + new_data.quat_y * new_data.quat_z)
-        t1 = +1.0 - 2.0 * (new_data.quat_x * new_data.quat_x + new_data.quat_y * new_data.quat_y)
-        new_data.euler_pitch = math.atan2(t0, t1)
-        t2 = +2.0 * (new_data.quat_w * new_data.quat_y - new_data.quat_z * new_data.quat_x)
+        # Calculate euler angles from quaternion
+        # pitch (about x), roll (about y), and yaw (about z)
+        #  EULER ANGLES USE EXTRINSIC ROTATIONS!!!
+        #  First around world X, then around world Y, then around world Z
+        t0 = +2.0 * (self.w * self.x + self.y * self.z)
+        t1 = +1.0 - 2.0 * (self.x * self.x + self.y * self.y)
+        new_data.pitch = math.atan2(t0, t1)
+        t2 = +2.0 * (self.w * self.y - self.z * self.x)
         t2 = +1.0 if t2 > +1.0 else t2
         t2 = -1.0 if t2 < -1.0 else t2
-        new_data.euler_roll = math.asin(t2)
-        t3 = +2.0 * (new_data.quat_w * new_data.quat_z + new_data.quat_x * new_data.quat_y)
-        t4 = +1.0 - 2.0 * (new_data.quat_y * new_data.quat_y + new_data.quat_z * new_data.quat_z)
-        new_data.euler_yaw = math.atan2(t3, t4)
-        new_data.euler_pitch *= 180.0 / math.pi
-        new_data.euler_roll *= 180.0 / math.pi
-        new_data.euler_yaw *= 180.0 / math.pi
+        new_data.roll = math.asin(t2)
+        t3 = +2.0 * (self.w * self.z + self.x * self.y)
+        t4 = +1.0 - 2.0 * (self.y * self.y + self.z * self.z)
+        new_data.yaw = math.atan2(t3, t4)
 
         self.__bno055_data = new_data
 
