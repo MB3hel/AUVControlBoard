@@ -828,7 +828,7 @@ void cmdctrl_handle_message(void){
         }
     }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'A', 'S', 'S', 'I', 'S', 'T', '2'}))){
         // STABILITY ASSIST speed set variant 2
-        // S, A, S, S, I, S, T, 1, [x], [y], [target_pitch], [target_roll], [target_yaw], [target_depth]
+        // S, A, S, S, I, S, T, 2, [x], [y], [target_pitch], [target_roll], [target_yaw], [target_depth]
         // [x], [y], [yaw], [target_pitch], [target_roll], [target_depth] are 32-bit floats (little endian)
         if(len != 32){
             // Message is incorrect size
