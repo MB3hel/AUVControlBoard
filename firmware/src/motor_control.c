@@ -426,6 +426,7 @@ void mc_set_sassist(float x, float y, float yaw,
     // Convert current orientation into euler angles
     euler_t curr_euler;
     quat_to_euler(&curr_euler, &curr_quat);
+    euler_deg2rad(&curr_euler, &curr_euler);
 
     // Update PID setpoints
     // TODO: Enforce a range of values allowed
