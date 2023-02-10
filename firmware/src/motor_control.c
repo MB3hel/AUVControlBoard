@@ -314,8 +314,8 @@ void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw
     matrix b;
     matrix_init_static(&b, b_arr, 3, 1);
     matrix_l2vnorm(&gravl2norm, &gravity_vector);
-    if(1.0f - gravl2norm > 0.1f)
-        return; // Invalid gravity vector (norm should be 1)
+    if(gravl2norm < 0.1f)
+        return; // Invalid gravity vector (norm should be non-zero)
     matrix_sc_div(&b, &gravity_vector, gravl2norm);
 
     // Expected unit gravity vector when "level"
