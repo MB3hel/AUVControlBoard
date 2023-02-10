@@ -20,6 +20,7 @@ import copy
 import struct
 import time
 import math
+import socket
 from enum import IntEnum
 import threading
 from typing import List, Dict, Tuple
@@ -110,8 +111,11 @@ class ControlBoard:
         self.__msg_id = 0
         self.__debug = debug
         self.__cboard_debug = not suppress_dbg_msg
-        self.__ser = serial.Serial(port, 115200)
-        self.__ser.reset_input_buffer()
+        if port != "":
+            self.__ser = serial.Serial(port, 115200)
+            self.__ser.reset_input_buffer()
+        else:
+            self.__ser = None
         self.__stop = False
         self.__ack_conds: Dict[int, threading.Condition] = {}
         self.__ack_errrs: Dict[int, int] = {}
@@ -125,7 +129,8 @@ class ControlBoard:
         if self.__read_thread is not None:
             self.__read_thread.join()
         try:
-            self.__ser.close()
+            if self.__ser is not None:
+                self.__ser.close()
         except:
             pass
 
@@ -217,7 +222,7 @@ class ControlBoard:
 
         while not self.__stop:
             # Blocks until  a byte is available
-            b = self.__ser.read()
+            b = self._read_one()
 
             # if self.__debug:
             #     print("RB: {}".format(b))
@@ -295,10 +300,15 @@ class ControlBoard:
 
     ## Write one byte via serial
     #  @param b Single byte to write
-    def __write_one(self, b: bytes):
+    def _write_one(self, b: bytes):
         # if self.__debug:
         #     print("WB: {}".format(b))
         self.__ser.write(b)
+    
+    ## Read one byte via serial
+    #  @return Single byte read (bytes object)
+    def _read_one(self) -> bytes:
+        return self.__ser.read()
 
     ## Send a message to control board (properly encoded)
     #  @param msg Raw message (payload bytes) to send
@@ -323,25 +333,25 @@ class ControlBoard:
             print("WRITE: ({}) {}".format(msg_id, msg))
 
         # Write start byte
-        self.__write_one(START_BYTE)
+        self._write_one(START_BYTE)
 
         # Write message ID (unsigned 16-bit int big endian). Escape as needed.
         id_dat = struct.pack(">H", msg_id)
         b = id_dat[0:1]
         if b == START_BYTE or b == END_BYTE or b == ESCAPE_BYTE:
-            self.__write_one(ESCAPE_BYTE)
-        self.__write_one(b)
+            self._write_one(ESCAPE_BYTE)
+        self._write_one(b)
         b = id_dat[1:2]
         if b == START_BYTE or b == END_BYTE or b == ESCAPE_BYTE:
-            self.__write_one(ESCAPE_BYTE)
-        self.__write_one(b)
+            self._write_one(ESCAPE_BYTE)
+        self._write_one(b)
 
         # Write each byte of msg (escaping it as necessary)
         for i in range(len(msg)):
             b = msg[i:i+1]
             if b == START_BYTE or b == END_BYTE or b == ESCAPE_BYTE:
-                self.__write_one(ESCAPE_BYTE)
-            self.__write_one(b)
+                self._write_one(ESCAPE_BYTE)
+            self._write_one(b)
         
         # Calculate CRC and write it. CRC INCLUDES MESSAGE ID BYTES.
         # Each byte of CRC must also be escaped
@@ -349,14 +359,14 @@ class ControlBoard:
         high_byte = ((crc >> 8) & 0xFF).to_bytes(1, 'little')
         low_byte = (crc & 0xFF).to_bytes(1, 'little')
         if high_byte == START_BYTE or high_byte == END_BYTE or high_byte == ESCAPE_BYTE:
-            self.__write_one(ESCAPE_BYTE)
-        self.__write_one(high_byte)
+            self._write_one(ESCAPE_BYTE)
+        self._write_one(high_byte)
         if low_byte == START_BYTE or low_byte == END_BYTE or low_byte == ESCAPE_BYTE:
-            self.__write_one(ESCAPE_BYTE)
-        self.__write_one(low_byte)
+            self._write_one(ESCAPE_BYTE)
+        self._write_one(low_byte)
 
         # Write end byte
-        self.__write_one(END_BYTE)
+        self._write_one(END_BYTE)
 
         return msg_id
 
@@ -808,4 +818,54 @@ class ControlBoard:
         msg_id = self.__write_msg(b'WDGF', True)
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
+
+
+# Used to interface with simulator. Do not instantiate directly
+# Use the Simulator class instead
+class SimCboard(ControlBoard):
+    def __init__(self, s: socket.socket, debug = False, suppress_dbg_msg = False):
+        self.__socket = s
+        super().__init__("", debug, suppress_dbg_msg)
+    
+    ## Write one byte via tcp
+    #  @param b Single byte to write
+    def _write_one(self, b: bytes):
+        # if self.__debug:
+        #     print("WB: {}".format(b))
+        self.__socket.sendall(b)
+    
+    ## Read one byte via tcp
+    #  @return Single byte read (bytes object)
+    def _read_one(self) -> bytes:
+        return self.__socket.recv(1)
+
+
+# Used to interface with GodotAUVSim
+class Simulator:
+    def __init__(self, cb_debug: bool = False, cb_suppress_debug_msg = False):
+        self.__cmd_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.__cboard_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # Connect
+        self.__cmd_client.connect(("127.0.0.1", 5011))
+        self.__cboard_client.connect(("127.0.0.1", 5012))
+
+        # Instantiate control board
+        self.__cb = SimCboard(self.__cboard_client, cb_debug, cb_suppress_debug_msg)
+    
+    def __del__(self):
+        try:
+            self.__cmd_client.close()
+        except:
+            pass
+        try:
+            self.__cboard_client.close()
+        except:
+            pass
+
+    @property
+    def control_board(self) -> ControlBoard:
+        return self.__cb
+    
+    # TODO: Simulator command functions
 
