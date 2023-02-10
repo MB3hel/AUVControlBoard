@@ -358,14 +358,14 @@ void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw
     matrix_init_static(&tgtarget, tgtarget_arr, 3, 1);
     matrix_init_static(&rgtarget, rgtarget_arr, 3, 1);
     matrix_get_col(&tmp[0], &target, 0);
-    matrix_set_col(&tltarget, 0, &tmp[0]);
-    matrix_set_col(&rltarget, 0, &tmp[3]);
+    matrix_set_col(&tgtarget, 0, &tmp[0]);
+    matrix_set_col(&rgtarget, 0, &tmp[3]);
 
-    matrix_mul(&tgtarget, &R, &tltarget);
-    matrix_mul(&rgtarget, &R, &rltarget);
+    matrix_mul(&tltarget, &R, &tgtarget);
+    matrix_mul(&rltarget, &R, &rgtarget);
 
-    matrix_get_col(&tmp[0], &tgtarget, 0);
-    matrix_get_col(&tmp[3], &rgtarget, 0);
+    matrix_get_col(&tmp[0], &tltarget, 0);
+    matrix_get_col(&tmp[3], &rltarget, 0);
 
     matrix_set_col(&target, 0, &tmp[0]);
 
