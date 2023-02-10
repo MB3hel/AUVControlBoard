@@ -99,9 +99,10 @@ bool pccomm_read_and_parse(void){
                 // Handle end byte (special meaning when not escaped)
                 // End byte means the buffer now holds the entire message
 
+                parse_started = false;
+
                 if(pccomm_read_len < 4){
                     // Too short to contain message id and crc bits. Invalid message.
-                    parse_started = false;
                 }else{
                     // Calculate CRC of read data. Exclude last two bytes.
                     // Last two bytes are the CRC (big endian) appended to the original data
