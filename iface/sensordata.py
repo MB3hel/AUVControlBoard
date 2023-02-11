@@ -7,11 +7,6 @@ import os
 
 
 def run(cb: ControlBoard, s: Simulator) -> int:
-    # TODO: Remove this once sensor data is implemented in simulator
-    if s is not None:
-        print("NYI in simulator.")
-        return 1
-
     ############################################################################
     # Query sensor status
     ############################################################################
@@ -30,12 +25,14 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     ############################################################################
     # Setup
     ############################################################################
-    print("Set axis config...", end="")
-    if cb.set_bno055_axis(ControlBoard.BNO055Axis.P6) == ControlBoard.AckError.NONE:
-        print("Done.")
-    else:
-        print("Fail.")
-        return 1
+    if s is None:
+        # Only valid if not in simulation
+        print("Set axis config...", end="")
+        if cb.set_bno055_axis(ControlBoard.BNO055Axis.P6) == ControlBoard.AckError.NONE:
+            print("Done.")
+        else:
+            print("Fail.")
+            return 1
 
     print("Enable periodic sensor data...", end="")
     if cb.read_bno055_periodic(True) != ControlBoard.AckError.NONE:
