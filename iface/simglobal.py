@@ -4,7 +4,7 @@ import time
 import threading
 
 
-s = Simulator(cb_debug=True)
+s = Simulator()
 cb = s.control_board
 s.reset_sim()
 s.set_robot_rot(*s.euler_to_quat(90, 0, 0))
