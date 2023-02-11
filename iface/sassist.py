@@ -42,28 +42,28 @@ def run(cb: ControlBoard, s: Simulator) -> int:
 
     print("Tuning pitch PID...", end="")
     #                         kP   kI   kD   kF  lim
-    if cb.tune_sassist_pitch(0.0, 0.0, 0.0, 0.0, 0.3) != ControlBoard.AckError.NONE:
+    if cb.tune_sassist_pitch(0.8, 0.0, 0.0, 0.0, 0.6) != ControlBoard.AckError.NONE:
         print("Fail.")
         return 1
     print("Done.")
 
     print("Tuning roll PID...", end="")
     #                         kP   kI   kD   kF  lim
-    if cb.tune_sassist_pitch(0.0, 0.0, 0.0, 0.0, 0.3) != ControlBoard.AckError.NONE:
+    if cb.tune_sassist_roll(0.15, 0.0, 0.0, 0.0, 0.1) != ControlBoard.AckError.NONE:
         print("Fail.")
         return 1
     print("Done.")
 
     print("Tuning yaw PID...", end="")
     #                         kP   kI   kD   kF  lim
-    if cb.tune_sassist_pitch(0.0, 0.0, 0.0, 0.0, 0.3) != ControlBoard.AckError.NONE:
+    if cb.tune_sassist_yaw(0.0, 0.0, 0.0, 0.0, 0.3) != ControlBoard.AckError.NONE:
         print("Fail.")
         return 1
     print("Done.")
 
     print("Tuning depth PID...", end="")
     #                         kP   kI   kD   kF  lim
-    if cb.tune_sassist_pitch(0.5, 1e-10, 0.0, 0.0, 0.3) != ControlBoard.AckError.NONE:
+    if cb.tune_sassist_depth(1.5, 0.0, 0.0, 0.0, 1.0) != ControlBoard.AckError.NONE:
         print("Fail.")
         return 1
     print("Done.")
@@ -74,7 +74,7 @@ def run(cb: ControlBoard, s: Simulator) -> int:
 
     print("Setting sassist mode target...", end="")
     #                   x    y   yaw   p    r    d
-    if cb.set_sassist1(0.0, 0.3, 0.0, 0.0, 0.0, 0.0) == ControlBoard.AckError.NONE:
+    if cb.set_sassist1(0.0, 0.0, 0.0, 0.0, 0.0, -1.5) == ControlBoard.AckError.NONE:
         print("Done.")
     else:
         print("Fail.")
