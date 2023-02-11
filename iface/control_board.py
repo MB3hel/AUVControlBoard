@@ -868,5 +868,106 @@ class Simulator:
     def control_board(self) -> ControlBoard:
         return self.__cb
     
-    # TODO: Simulator command functions
+    def __read_until_newline(self, s: socket.socket) -> bytes:
+        b = bytearray()
+        while True:
+            n = s.recv(1)
+            if n == b'\n':
+                return bytes(b)
+            else:
+                b.extend(n)
 
+    def set_robot_pos(self, x: float, y: float, z: float) -> int:
+        self.__cmd_client.sendall("set_pos {} {} {}\n".format(x, y, z).encode("ascii"))
+        res = self.__read_until_newline(self.__cmd_client).decode("ascii")
+        return int(res)
+
+    def get_robot_pos(self) -> Tuple[int, float, float, float]:
+        self.__cmd_client.sendall("get_pos\n".encode("ascii"))
+        res = self.__read_until_newline(self.__cmd_client).decode("ascii")
+        res_parts = res.split(" ")
+        ec = int(res_parts[0])
+        if ec != 0:
+            return ec, None, None, None
+        x = float(res_parts[1])
+        y = float(res_parts[2])
+        z = float(res_parts[3])
+        return ec, x, y, z
+
+    def set_robot_rot(self, w: float, x: float, y: float, z: float) -> int:
+        self.__cmd_client.sendall("set_rot {} {} {} {}\n".format(w, x, y, z).encode("ascii"))
+        res = self.__read_until_newline(self.__cmd_client).decode("ascii")
+        return int(res)
+
+    def get_robot_rot(self) -> Tuple[int, float, float, float, float]:
+        self.__cmd_client.sendall("get_rot\n".encode("ascii"))
+        res = self.__read_until_newline(self.__cmd_client).decode("ascii")
+        res_parts = res.split(" ")
+        ec = int(res_parts[0])
+        if ec != 0:
+            return ec, None, None, None, None
+        w = float(res_parts[1])
+        x = float(res_parts[2])
+        y = float(res_parts[3])
+        z = float(res_parts[4])
+        return ec, w, x, y, z
+
+    def set_robot_max_trans(self, m: float) -> int:
+        self.__cmd_client.sendall("set_max_trans {}\n".format(m).encode("ascii"))
+        res = self.__read_until_newline(self.__cmd_client).decode("ascii")
+        return int(res)
+
+    def get_robot_max_trans(self) -> Tuple[int, float]:
+        self.__cmd_client.sendall("get_max_trans\n".encode("ascii"))
+        res = self.__read_until_newline(self.__cmd_client).decode("ascii")
+        res_parts = res.split(" ")
+        ec = int(res_parts[0])
+        if ec != 0:
+            return ec, None
+        m = float(res_parts[1])
+        return ec, m
+
+    def set_robot_max_rot(self, m: float) -> int:
+        self.__cmd_client.sendall("set_max_rot {}\n".format(m).encode("ascii"))
+        res = self.__read_until_newline(self.__cmd_client).decode("ascii")
+        return int(res)
+
+    def get_robot_max_rot(self) -> Tuple[int, float]:
+        self.__cmd_client.sendall("get_max_rot\n".encode("ascii"))
+        res = self.__read_until_newline(self.__cmd_client).decode("ascii")
+        res_parts = res.split(" ")
+        ec = int(res_parts[0])
+        if ec != 0:
+            return ec, None
+        m = float(res_parts[1])
+        return ec, m
+    
+    def reset_sim(self) -> int:
+        self.__cmd_client.sendall("reset_sim\n".encode("ascii"))
+        res = self.__read_until_newline(self.__cmd_client).decode("ascii")
+        return int(res)
+
+    # Euler same convention as cboard. IN DEGREES
+    def quat_to_euler(self, w: float, x: float, y: float, z: float) -> Tuple[float, float, float]:
+        t0 = +2.0 * (w * x + y * z)
+        t1 = +1.0 - 2.0 * (x * x + y * y)
+        pitch = math.atan2(t0, t1)
+        t2 = +2.0 * (w * y - z * x)
+        t2 = +1.0 if t2 > +1.0 else t2
+        t2 = -1.0 if t2 < -1.0 else t2
+        roll = math.asin(t2)
+        t3 = +2.0 * (w * z + x * y)
+        t4 = +1.0 - 2.0 * (y * y + z * z)
+        yaw = math.atan2(t3, t4)
+        return pitch * 180.0 / math.pi, roll * 180.0 / math.pi, yaw * 180.0 / math.pi
+
+    # Euler same convention as cboard. IN DEGREES
+    def euler_to_quat(self, p: float, r: float, y: float) -> Tuple[float, float, float, float]:
+        p = p * math.pi / 180.0
+        r = r * math.pi / 180.0
+        y = y * math.pi / 180.0
+        qx = math.sin(p/2.0) * math.cos(r/2.0) * math.cos(y/2.0) - math.cos(p/2.0) * math.sin(r/2.0) * math.sin(y/2.0)
+        qy = math.cos(p/2.0) * math.sin(r/2.0) * math.cos(y/2.0) + math.sin(p/2.0) * math.cos(r/2.0) * math.sin(y/2.0)
+        qz = math.cos(p/2.0) * math.cos(r/2.0) * math.sin(y/2.0) - math.sin(p/2.0) * math.sin(r/2.0) * math.cos(y/2.0)
+        qw = math.cos(p/2.0) * math.cos(r/2.0) * math.cos(y/2.0) + math.sin(p/2.0) * math.sin(r/2.0) * math.sin(y/2.0)
+        return qw, qx, qy, qz
