@@ -260,6 +260,7 @@ class ControlBoard:
                         # Got a complete message, but it is invalid. Ignore it.
                         if self.__debug:
                             print("Received message with invalid CRC!")
+                            print(msg)
                         parse_started = False
                 elif b == ESCAPE_BYTE:
                     # Handle escape byte (special meaning when not escaped)
