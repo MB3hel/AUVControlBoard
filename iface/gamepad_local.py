@@ -11,6 +11,7 @@ import traceback
 from typing import Dict, List
 import time
 import socket
+import atexit
 from control_board import ControlBoard, Simulator
 
 
@@ -120,7 +121,7 @@ class NetMgr:
         self.__ntb_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.__ntb_sock.bind(("0.0.0.0", 8092))
         self.__ntb_sock.listen()
-        self.__ntb_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.__log_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.__log_sock.bind(("0.0.0.0", 8093))
         self.__log_sock.listen()
         self.__crl_t = threading.Thread(target=self.__run_controller, daemon=True)
