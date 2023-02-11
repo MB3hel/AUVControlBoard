@@ -443,9 +443,9 @@ void mc_set_sassist(float x, float y, float yaw,
     // Calculate PID outputs
     // TODO: Handle these as circular variables properly???
     //       This is hard with roll because -90 to +90 then it changes others...
-    float z = pid_calculate(&depth_pid, PID_ERR(depth_pid, curr_depth));
-    float pitch = pid_calculate(&pitch_pid, PID_ERR(pitch_pid, curr_euler.pitch));
-    float roll = pid_calculate(&roll_pid, PID_ERR(roll_pid, curr_euler.roll));
+    float z = -1 * pid_calculate(&depth_pid, PID_ERR(depth_pid, curr_depth));
+    float pitch = -1 * pid_calculate(&pitch_pid, PID_ERR(pitch_pid, curr_euler.pitch));
+    float roll = -1 * pid_calculate(&roll_pid, PID_ERR(roll_pid, curr_euler.roll));
     if(use_yaw_pid){
         yaw = pid_calculate(&yaw_pid, PID_ERR(yaw_pid, curr_euler.yaw));
     }
