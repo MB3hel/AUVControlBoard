@@ -471,14 +471,14 @@ class ControlBoard:
         #  First around world X, then around world Y, then around world Z
         t0 = +2.0 * (new_data.quat_w * new_data.quat_x + new_data.quat_y * new_data.quat_z)
         t1 = +1.0 - 2.0 * (new_data.quat_x * new_data.quat_x + new_data.quat_y * new_data.quat_y)
-        new_data.pitch = math.atan2(t0, t1)
+        new_data.pitch = math.atan2(t0, t1) * 180.0 / math.pi
         t2 = +2.0 * (new_data.quat_w * new_data.quat_y - new_data.quat_z * new_data.quat_x)
         t2 = +1.0 if t2 > +1.0 else t2
         t2 = -1.0 if t2 < -1.0 else t2
-        new_data.roll = math.asin(t2)
+        new_data.roll = math.asin(t2) * 180.0 / math.pi
         t3 = +2.0 * (new_data.quat_w * new_data.quat_z + new_data.quat_x * new_data.quat_y)
         t4 = +1.0 - 2.0 * (new_data.quat_y * new_data.quat_y + new_data.quat_z * new_data.quat_z)
-        new_data.yaw = math.atan2(t3, t4)
+        new_data.yaw = math.atan2(t3, t4) * 180.0 / math.pi
 
         self.__bno055_data = new_data
 
