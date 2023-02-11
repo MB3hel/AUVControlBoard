@@ -6,13 +6,12 @@
 import math
 import struct
 import threading
+import signal
 import traceback
-import sys
 from typing import Dict, List
-from serial import SerialException
 import time
 from socketserver import TCPServer, UDPServer, BaseRequestHandler, BaseServer
-from control_board import ControlBoard
+from control_board import ControlBoard, Simulator
 
 
 class Gamepad:
@@ -125,10 +124,8 @@ class NetMgr:
     class NullHandler(BaseRequestHandler):
         def handle(self):
             # Keep connection open until client closes it
-            while True:
-                self.data = self.request.recv(1024)
-                if not self.data:
-                    break
+            while not getattr(self.server, "manual_kill"):
+                time.sleep(0.1)
 
     def __init__(self):
         # Must match all ports used by ArPiRobot-CoreLib
@@ -137,6 +134,9 @@ class NetMgr:
         self.__cmdtcp = TCPServer(("0.0.0.0", 8091), NetMgr.NullHandler)
         self.__ntbtcp = TCPServer(("0.0.0.0", 8092), NetMgr.NullHandler)
         self.__logtcp = TCPServer(("0.0.0.0", 8093), NetMgr.NullHandler)
+        setattr(self.__cmdtcp, "manual_kill", False)
+        setattr(self.__ntbtcp, "manual_kill", False)
+        setattr(self.__logtcp, "manual_kill", False)
         self.__crlthd = threading.Thread(target=self.__run_server, args=(self.__crludp,), daemon=True)
         self.__cmdthd = threading.Thread(target=self.__run_server, args=(self.__cmdtcp,), daemon=True)
         self.__ntbthd = threading.Thread(target=self.__run_server, args=(self.__ntbtcp,), daemon=True)
@@ -147,6 +147,12 @@ class NetMgr:
         self.__logthd.start()
     
     def __del__(self):
+        self.close()
+
+    def close(self):
+        setattr(self.__cmdtcp, "manual_kill", True)
+        setattr(self.__ntbtcp, "manual_kill", True)
+        setattr(self.__logtcp, "manual_kill", True)
         self.__crludp.shutdown()
         self.__cmdtcp.shutdown()
         self.__ntbtcp.shutdown()
@@ -160,41 +166,35 @@ class NetMgr:
         server.serve_forever()
 
 
-def main() -> int:
-    ############################################################################
-    # Open communication with control board
-    ############################################################################
-    port = "/dev/ttyACM0"
-    if len(sys.argv) > 1:
-        port = sys.argv[1]
-    cb = ControlBoard(port)
-
+def run(cb: ControlBoard, s: Simulator) -> int:
     ############################################################################
     # Setup
     ############################################################################
-    print("Set motor matrix...", end="")
-    mat = ControlBoard.MotorMatrix()
-    #        MotorNum    x      y      z    pitch   roll     yaw
-    mat.set_row(3,    [ -1,    -1,     0,     0,      0,     +1   ])
-    mat.set_row(4,    [ +1,    -1,     0,     0,      0,     -1   ])
-    mat.set_row(1,    [ -1,    +1,     0,     0,      0,     -1   ])
-    mat.set_row(2,    [ +1,    +1,     0,     0,      0,     +1   ])
-    mat.set_row(7,    [  0,     0,    -1,    -1,     -1,      0   ])
-    mat.set_row(8,    [  0,     0,    -1,    -1,     +1,      0   ])
-    mat.set_row(5,    [  0,     0,    -1,    +1,     -1,      0   ])
-    mat.set_row(6,    [  0,     0,    -1,    +1,     +1,      0   ])
-    if cb.set_motor_matrix(mat) == ControlBoard.AckError.NONE:
-        print("Done.")
-    else:
-        print("Fail.")
-        return 1
+    if s is None:
+        # Can only do this if not in simulation
+        print("Set motor matrix...", end="")
+        mat = ControlBoard.MotorMatrix()
+        #        MotorNum    x      y      z    pitch   roll     yaw
+        mat.set_row(3,    [ -1,    -1,     0,     0,      0,     +1   ])
+        mat.set_row(4,    [ +1,    -1,     0,     0,      0,     -1   ])
+        mat.set_row(1,    [ -1,    +1,     0,     0,      0,     -1   ])
+        mat.set_row(2,    [ +1,    +1,     0,     0,      0,     +1   ])
+        mat.set_row(7,    [  0,     0,    -1,    -1,     -1,      0   ])
+        mat.set_row(8,    [  0,     0,    -1,    -1,     +1,      0   ])
+        mat.set_row(5,    [  0,     0,    -1,    +1,     -1,      0   ])
+        mat.set_row(6,    [  0,     0,    -1,    +1,     +1,      0   ])
+        if cb.set_motor_matrix(mat) == ControlBoard.AckError.NONE:
+            print("Done.")
+        else:
+            print("Fail.")
+            return 1
 
-    print("Set thruster inversions...", end="")
-    if cb.set_tinv([True, True, False, False, True, False, False, True]) == ControlBoard.AckError.NONE:
-        print("Done.")
-    else:
-        print("Fail.")
-        return 1
+        print("Set thruster inversions...", end="")
+        if cb.set_tinv([True, True, False, False, True, False, False, True]) == ControlBoard.AckError.NONE:
+            print("Done.")
+        else:
+            print("Fail.")
+            return 1
 
     
     ############################################################################
@@ -207,51 +207,53 @@ def main() -> int:
     ############################################################################
     # Main loop
     ############################################################################
-    while True:
-        # Left stick x and y = strafe
-        # Left trigger = yaw ccw
-        # Right trigger = yaw cw
-        # Dpad up / down = surface / submerge
-        # Right stick x = roll
-        # Right stick y = pitch
-        x = gp0.get_axis(0, 0.1)
-        y = gp0.get_axis(1, 0.1)
-        roll = gp0.get_axis(2, 0.1)
-        pitch = gp0.get_axis(3, 0.1)
-        yawccw = gp0.get_axis(4, 0.1)
-        yawcw = gp0.get_axis(5, 0.1)
-        yaw = (yawccw - yawcw)
-        dpad = gp0.get_dpad(0)
-        if dpad == 8 or dpad == 1 or dpad == 2:
-            z = 1.0
-        elif dpad == 6 or dpad == 5 or dpad == 4:
-            z = -1.0
-        else:
-            z = 0.0
-
-        # Scale speeds to make the robot more controllable
-        x *= 0.5
-        y *= -0.5
-        yaw *= 0.45
-        pitch *= 0.7
-        roll *= 0.2
-        z *= 0.5
-
-        # Set the speeds
-        # Note that speed updates feed motor watchdog
-        # This happens often enough that it is unnecessary to explicitly feed watchdog
-        cb.set_global(x, y, z, pitch, roll, yaw)
-        time.sleep(0.02)
-    
-
-if __name__ == "__main__":
+    print("Enter main loop")
     try:
-        sys.exit(main())
-    except KeyboardInterrupt:
-        exit(0)
-    except SerialException:
-        print("Serial communication failure!")
-        exit(2)
-    except:
-        print("Unknown error!")
-        exit(3)
+        while True:
+            # Left stick x and y = strafe
+            # Left trigger = yaw ccw
+            # Right trigger = yaw cw
+            # Dpad up / down = surface / submerge
+            # Right stick x = roll
+            # Right stick y = pitch
+            x = gp0.get_axis(0, 0.1)
+            y = gp0.get_axis(1, 0.1)
+            roll = gp0.get_axis(2, 0.1)
+            pitch = gp0.get_axis(3, 0.1)
+            yawccw = gp0.get_axis(4, 0.1)
+            yawcw = gp0.get_axis(5, 0.1)
+            yaw = (yawccw - yawcw)
+            dpad = gp0.get_dpad(0)
+            if dpad == 8 or dpad == 1 or dpad == 2:
+                z = 1.0
+            elif dpad == 6 or dpad == 5 or dpad == 4:
+                z = -1.0
+            else:
+                z = 0.0
+
+            # Scale speeds to make the robot more controllable
+            x *= 0.5
+            y *= -0.5
+            yaw *= 0.45
+            pitch *= 0.7
+            roll *= 0.2
+            z *= 0.5
+
+            # Set the speeds
+            # Note that speed updates feed motor watchdog
+            # This happens often enough that it is unnecessary to explicitly feed watchdog
+            cb.set_global(x, y, z, pitch, roll, yaw)
+            time.sleep(0.02)
+    except (KeyboardInterrupt, Exception) as e:
+        cb.set_global(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+        old_handler = signal.getsignal(signal.SIGINT)
+        signal.signal(signal.SIGINT, dummy_handler)
+        netmgr.close()
+        signal.signal(signal.SIGINT, old_handler)
+        if not isinstance(e, KeyboardInterrupt):
+            raise e
+
+
+def dummy_handler(signum, frame):
+    # Used temporarily suppress ctrl-c
+    pass

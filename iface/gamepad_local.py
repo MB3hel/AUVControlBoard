@@ -6,13 +6,12 @@
 import math
 import struct
 import threading
+import signal
 import traceback
-import sys
 from typing import Dict, List
-from serial import SerialException
 import time
-from socketserver import TCPServer, UDPServer, BaseRequestHandler, BaseServer
-from control_board import ControlBoard
+import socket
+from control_board import ControlBoard, Simulator
 
 
 class Gamepad:
@@ -108,93 +107,87 @@ class Gamepad:
 
 
 class NetMgr:
-    class ControllerHandler(BaseRequestHandler):
-        def handle(self):
-            self.data = self.request[0]
-            cnum = self.data[0]
+    def __init__(self):
+        self.__controller_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.__cmd_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.__ntb_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.__log_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.__controller_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.__controller_sock.bind(("0.0.0.0", 8090))
+        self.__cmd_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.__cmd_sock.bind(("0.0.0.0", 8091))
+        self.__cmd_sock.listen()
+        self.__ntb_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.__ntb_sock.bind(("0.0.0.0", 8092))
+        self.__ntb_sock.listen()
+        self.__ntb_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.__log_sock.bind(("0.0.0.0", 8093))
+        self.__log_sock.listen()
+        self.__crl_t = threading.Thread(target=self.__run_controller, daemon=True)
+        self.__cmd_t = threading.Thread(target=self.__run, daemon=True, args=(self.__cmd_sock,))
+        self.__ntb_t = threading.Thread(target=self.__run, daemon=True, args=(self.__ntb_sock,))
+        self.__log_t = threading.Thread(target=self.__run, daemon=True, args=(self.__log_sock,))
+        self.__crl_t.start()
+        self.__cmd_t.start()
+        self.__ntb_t.start()
+        self.__log_t.start()
+
+    
+    def __run(self, sock: socket.socket):
+        clients = []
+        while True:
+            conn, _ = sock.accept()
+            clients.append(conn)
+    
+    def __run_controller(self):
+        while True:
+            data, _ = self.__controller_sock.recvfrom(1024)
+            cnum = data[0]
             g = Gamepad.get(cnum)
             try:
-                g.update_data(self.data)
+                g.update_data(data)
             except:
                 traceback.print_exc()
                 # Not enough data, parsing failed
                 print("PARSE FAIL")
                 pass
-
-
-    class NullHandler(BaseRequestHandler):
-        def handle(self):
-            # Keep connection open until client closes it
-            while True:
-                self.data = self.request.recv(1024)
-                if not self.data:
-                    break
-
-    def __init__(self):
-        # Must match all ports used by ArPiRobot-CoreLib
-        # So drive station can properly connect
-        self.__crludp = UDPServer(("0.0.0.0", 8090), NetMgr.ControllerHandler)
-        self.__cmdtcp = TCPServer(("0.0.0.0", 8091), NetMgr.NullHandler)
-        self.__ntbtcp = TCPServer(("0.0.0.0", 8092), NetMgr.NullHandler)
-        self.__logtcp = TCPServer(("0.0.0.0", 8093), NetMgr.NullHandler)
-        self.__crlthd = threading.Thread(target=self.__run_server, args=(self.__crludp,), daemon=True)
-        self.__cmdthd = threading.Thread(target=self.__run_server, args=(self.__cmdtcp,), daemon=True)
-        self.__ntbthd = threading.Thread(target=self.__run_server, args=(self.__ntbtcp,), daemon=True)
-        self.__logthd = threading.Thread(target=self.__run_server, args=(self.__logtcp,), daemon=True)
-        self.__crlthd.start()
-        self.__cmdthd.start()
-        self.__ntbthd.start()
-        self.__logthd.start()
     
     def __del__(self):
-        self.__crludp.shutdown()
-        self.__cmdtcp.shutdown()
-        self.__ntbtcp.shutdown()
-        self.__logtcp.shutdown()
-        self.__crlthd.join()
-        self.__cmdthd.join()
-        self.__ntbthd.join()
-        self.__logthd.join()
-
-    def __run_server(self, server: BaseServer):
-        server.serve_forever()
+        self.__cmd_sock.close()
+        self.__ntb_sock.close()
+        self.__log_sock.close()
+        self.__controller_sock.close()
 
 
-def main() -> int:
-    ############################################################################
-    # Open communication with control board
-    ############################################################################
-    port = "/dev/ttyACM0"
-    if len(sys.argv) > 1:
-        port = sys.argv[1]
-    cb = ControlBoard(port)
-
+def run(cb: ControlBoard, s: Simulator) -> int:
     ############################################################################
     # Setup
     ############################################################################
-    print("Set motor matrix...", end="")
-    mat = ControlBoard.MotorMatrix()
-    #        MotorNum    x      y      z    pitch   roll     yaw
-    mat.set_row(3,    [ -1,    -1,     0,     0,      0,     +1   ])
-    mat.set_row(4,    [ +1,    -1,     0,     0,      0,     -1   ])
-    mat.set_row(1,    [ -1,    +1,     0,     0,      0,     -1   ])
-    mat.set_row(2,    [ +1,    +1,     0,     0,      0,     +1   ])
-    mat.set_row(7,    [  0,     0,    -1,    -1,     -1,      0   ])
-    mat.set_row(8,    [  0,     0,    -1,    -1,     +1,      0   ])
-    mat.set_row(5,    [  0,     0,    -1,    +1,     -1,      0   ])
-    mat.set_row(6,    [  0,     0,    -1,    +1,     +1,      0   ])
-    if cb.set_motor_matrix(mat) == ControlBoard.AckError.NONE:
-        print("Done.")
-    else:
-        print("Fail.")
-        return 1
+    if s is None:
+        # Can only do this if not in simulation
+        print("Set motor matrix...", end="")
+        mat = ControlBoard.MotorMatrix()
+        #        MotorNum    x      y      z    pitch   roll     yaw
+        mat.set_row(3,    [ -1,    -1,     0,     0,      0,     +1   ])
+        mat.set_row(4,    [ +1,    -1,     0,     0,      0,     -1   ])
+        mat.set_row(1,    [ -1,    +1,     0,     0,      0,     -1   ])
+        mat.set_row(2,    [ +1,    +1,     0,     0,      0,     +1   ])
+        mat.set_row(7,    [  0,     0,    -1,    -1,     -1,      0   ])
+        mat.set_row(8,    [  0,     0,    -1,    -1,     +1,      0   ])
+        mat.set_row(5,    [  0,     0,    -1,    +1,     -1,      0   ])
+        mat.set_row(6,    [  0,     0,    -1,    +1,     +1,      0   ])
+        if cb.set_motor_matrix(mat) == ControlBoard.AckError.NONE:
+            print("Done.")
+        else:
+            print("Fail.")
+            return 1
 
-    print("Set thruster inversions...", end="")
-    if cb.set_tinv([True, True, False, False, True, False, False, True]) == ControlBoard.AckError.NONE:
-        print("Done.")
-    else:
-        print("Fail.")
-        return 1
+        print("Set thruster inversions...", end="")
+        if cb.set_tinv([True, True, False, False, True, False, False, True]) == ControlBoard.AckError.NONE:
+            print("Done.")
+        else:
+            print("Fail.")
+            return 1
 
     
     ############################################################################
@@ -207,51 +200,53 @@ def main() -> int:
     ############################################################################
     # Main loop
     ############################################################################
-    while True:
-        # Left stick x and y = strafe
-        # Left trigger = yaw ccw
-        # Right trigger = yaw cw
-        # Dpad up / down = surface / submerge
-        # Right stick x = roll
-        # Right stick y = pitch
-        x = gp0.get_axis(0, 0.1)
-        y = gp0.get_axis(1, 0.1)
-        roll = gp0.get_axis(2, 0.1)
-        pitch = gp0.get_axis(3, 0.1)
-        yawccw = gp0.get_axis(4, 0.1)
-        yawcw = gp0.get_axis(5, 0.1)
-        yaw = (yawccw - yawcw)
-        dpad = gp0.get_dpad(0)
-        if dpad == 8 or dpad == 1 or dpad == 2:
-            z = 1.0
-        elif dpad == 6 or dpad == 5 or dpad == 4:
-            z = -1.0
-        else:
-            z = 0.0
-
-        # Scale speeds to make the robot more controllable
-        x *= 0.5
-        y *= -0.5
-        yaw *= 0.45
-        pitch *= 0.7
-        roll *= 0.2
-        z *= 0.5
-
-        # Set the speeds
-        # Note that speed updates feed motor watchdog
-        # This happens often enough that it is unnecessary to explicitly feed watchdog
-        cb.set_local(x, y, z, pitch, roll, yaw)
-        time.sleep(0.02)
-    
-
-if __name__ == "__main__":
+    print("Enter main loop")
     try:
-        sys.exit(main())
-    except KeyboardInterrupt:
-        exit(0)
-    except SerialException:
-        print("Serial communication failure!")
-        exit(2)
-    except:
-        print("Unknown error!")
-        exit(3)
+        while True:
+            # Left stick x and y = strafe
+            # Left trigger = yaw ccw
+            # Right trigger = yaw cw
+            # Dpad up / down = surface / submerge
+            # Right stick x = roll
+            # Right stick y = pitch
+            x = gp0.get_axis(0, 0.1)
+            y = gp0.get_axis(1, 0.1)
+            roll = gp0.get_axis(2, 0.1)
+            pitch = gp0.get_axis(3, 0.1)
+            yawccw = gp0.get_axis(4, 0.1)
+            yawcw = gp0.get_axis(5, 0.1)
+            yaw = (yawccw - yawcw)
+            dpad = gp0.get_dpad(0)
+            if dpad == 8 or dpad == 1 or dpad == 2:
+                z = 1.0
+            elif dpad == 6 or dpad == 5 or dpad == 4:
+                z = -1.0
+            else:
+                z = 0.0
+
+            # Scale speeds to make the robot more controllable
+            x *= 0.5
+            y *= -0.5
+            yaw *= 0.45
+            pitch *= 0.7
+            roll *= 0.2
+            z *= 0.5
+
+            # Set the speeds
+            # Note that speed updates feed motor watchdog
+            # This happens often enough that it is unnecessary to explicitly feed watchdog
+            cb.set_local(x, y, z, pitch, roll, yaw)
+            time.sleep(0.02)
+    except (KeyboardInterrupt, Exception) as e:
+        cb.set_local(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+        old_handler = signal.getsignal(signal.SIGINT)
+        signal.signal(signal.SIGINT, dummy_handler)
+        del netmgr
+        signal.signal(signal.SIGINT, old_handler)
+        if not isinstance(e, KeyboardInterrupt):
+            raise e
+
+
+def dummy_handler(signum, frame):
+    # Used temporarily suppress ctrl-c
+    pass
