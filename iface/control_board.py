@@ -21,6 +21,7 @@ import struct
 import time
 import math
 import socket
+import traceback
 from enum import IntEnum
 import threading
 from typing import List, Dict, Tuple
@@ -213,65 +214,68 @@ class ControlBoard:
    
     ## Thread to repeatedly read from the control board serial port
     def __read_task(self):
-        # Holds message being received
-        msg = bytearray()
+        try:
+            # Holds message being received
+            msg = bytearray()
 
-        # Track parse state
-        parse_escaped = False
-        parse_started = True
+            # Track parse state
+            parse_escaped = False
+            parse_started = True
 
-        while not self.__stop:
-            # Blocks until  a byte is available
-            b = self._read_one()
+            while not self.__stop:
+                # Blocks until  a byte is available
+                b = self._read_one()
 
-            # if self.__debug:
-            #     print("RB: {}".format(b))
+                # if self.__debug:
+                #     print("RB: {}".format(b))
 
-            # Parse the meaning of this byte
-            if parse_escaped:
-                # Currently escaped (previous byte was ESCAPE_BYTE)
-                # Handle **valid** escape sequences (only special bytes can be escaped)
-                # Ignore invalid sequences
-                if b == START_BYTE or b == END_BYTE or b == ESCAPE_BYTE:
-                    msg.extend(b)
-                
-                # Handled byte after escape byte. No longer escaped.
-                parse_escaped = False
-            elif parse_started:
-                if b == START_BYTE:
-                    # Handle start byte (special meaning when not escaped)
-                    # Discard old data when start byte received
-                    msg = bytearray()
-                elif b == END_BYTE:
-                    # Handle end byte (special meaning when not escaped)
-                    # End byte means the buffer now holds the entire message
+                # Parse the meaning of this byte
+                if parse_escaped:
+                    # Currently escaped (previous byte was ESCAPE_BYTE)
+                    # Handle **valid** escape sequences (only special bytes can be escaped)
+                    # Ignore invalid sequences
+                    if b == START_BYTE or b == END_BYTE or b == ESCAPE_BYTE:
+                        msg.extend(b)
                     
-                    # Calculate CRC of read data. Exclude last two bytes.
-                    # Last two bytes are the CRC (big endian) appended to the original data
-                    # First two bytes are message ID. These are INCLUDED in CRC calc.
-                    calc_crc = self.__crc16_ccitt_false(bytes(msg[0:len(msg)-2]))
-                    read_crc = struct.unpack(">H", msg[len(msg)-2:])[0]
+                    # Handled byte after escape byte. No longer escaped.
+                    parse_escaped = False
+                elif parse_started:
+                    if b == START_BYTE:
+                        # Handle start byte (special meaning when not escaped)
+                        # Discard old data when start byte received
+                        msg = bytearray()
+                    elif b == END_BYTE:
+                        # Handle end byte (special meaning when not escaped)
+                        # End byte means the buffer now holds the entire message
+                        
+                        # Calculate CRC of read data. Exclude last two bytes.
+                        # Last two bytes are the CRC (big endian) appended to the original data
+                        # First two bytes are message ID. These are INCLUDED in CRC calc.
+                        calc_crc = self.__crc16_ccitt_false(bytes(msg[0:len(msg)-2]))
+                        read_crc = struct.unpack(">H", msg[len(msg)-2:])[0]
 
-                    if calc_crc == read_crc:
-                        # This is a complete, valid message.
-                        read_id = struct.unpack(">H", msg[0:2])[0]
-                        self.__handle_read_message(read_id, bytes(msg[2:len(msg)-2]))
+                        if calc_crc == read_crc:
+                            # This is a complete, valid message.
+                            read_id = struct.unpack(">H", msg[0:2])[0]
+                            self.__handle_read_message(read_id, bytes(msg[2:len(msg)-2]))
+                        else:
+                            # Got a complete message, but it is invalid. Ignore it.
+                            if self.__debug:
+                                print("Received message with invalid CRC!")
+                                print(msg)
+                            parse_started = False
+                    elif b == ESCAPE_BYTE:
+                        # Handle escape byte (special meaning when not escaped)
+                        parse_escaped = True
                     else:
-                        # Got a complete message, but it is invalid. Ignore it.
-                        if self.__debug:
-                            print("Received message with invalid CRC!")
-                            print(msg)
-                        parse_started = False
-                elif b == ESCAPE_BYTE:
-                    # Handle escape byte (special meaning when not escaped)
-                    parse_escaped = True
-                else:
-                    # handle normal bytes (these are just data)
-                    msg.extend(b)
-            elif b == START_BYTE:
-                # Received a start byte. Start parsing. Discard old data.
-                parse_started = True
-                msg = bytearray()
+                        # handle normal bytes (these are just data)
+                        msg.extend(b)
+                elif b == START_BYTE:
+                    # Received a start byte. Start parsing. Discard old data.
+                    parse_started = True
+                    msg = bytearray()
+        except:
+            traceback.print_exc()
 
     ## Prepare to send a message that will be acknowledged
     #  Must call before writing the message
@@ -465,15 +469,15 @@ class ControlBoard:
         # pitch (about x), roll (about y), and yaw (about z)
         #  EULER ANGLES USE EXTRINSIC ROTATIONS!!!
         #  First around world X, then around world Y, then around world Z
-        t0 = +2.0 * (self.w * self.x + self.y * self.z)
-        t1 = +1.0 - 2.0 * (self.x * self.x + self.y * self.y)
+        t0 = +2.0 * (new_data.quat_w * new_data.quat_x + new_data.quat_y * new_data.quat_z)
+        t1 = +1.0 - 2.0 * (new_data.quat_x * new_data.quat_x + new_data.quat_y * new_data.quat_y)
         new_data.pitch = math.atan2(t0, t1)
-        t2 = +2.0 * (self.w * self.y - self.z * self.x)
+        t2 = +2.0 * (new_data.quat_w * new_data.quat_y - new_data.quat_z * new_data.quat_x)
         t2 = +1.0 if t2 > +1.0 else t2
         t2 = -1.0 if t2 < -1.0 else t2
         new_data.roll = math.asin(t2)
-        t3 = +2.0 * (self.w * self.z + self.x * self.y)
-        t4 = +1.0 - 2.0 * (self.y * self.y + self.z * self.z)
+        t3 = +2.0 * (new_data.quat_w * new_data.quat_z + new_data.quat_x * new_data.quat_y)
+        t4 = +1.0 - 2.0 * (new_data.quat_y * new_data.quat_y + new_data.quat_z * new_data.quat_z)
         new_data.yaw = math.atan2(t3, t4)
 
         self.__bno055_data = new_data

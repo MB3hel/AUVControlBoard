@@ -1,22 +1,16 @@
 #!/usr/bin/env python3
 
-from control_board import ControlBoard
-import sys
+from control_board import ControlBoard, Simulator
 import time
-from serial import SerialException
-from typing import Callable
 import platform
 import os
 
 
-def main() -> int:
-    ############################################################################
-    # Open communication with control board
-    ############################################################################
-    port = "/dev/ttyACM0"
-    if len(sys.argv) > 1:
-        port = sys.argv[1]
-    cb = ControlBoard(port)
+def run(cb: ControlBoard, s: Simulator) -> int:
+    # TODO: Remove this once sensor data is implemented in simulator
+    if s is not None:
+        print("NYI in simulator.")
+        return 1
 
     ############################################################################
     # Query sensor status
@@ -76,13 +70,3 @@ def main() -> int:
         print("Depth: {}".format(depth_data.depth))
 
         time.sleep(0.1)
-
-
-if __name__ == "__main__":
-    try:
-        sys.exit(main())
-    except KeyboardInterrupt:
-        exit(0)
-    except SerialException:
-        print("Serial communication failure!")
-        exit(2)

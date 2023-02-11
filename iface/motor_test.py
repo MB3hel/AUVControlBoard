@@ -1,20 +1,13 @@
 #!/usr/bin/env python3
 
-from control_board import ControlBoard
-import sys
+from control_board import ControlBoard, Simulator
 import time
-from serial import SerialException
-from typing import Callable
 
 
-def main() -> int:
-    ############################################################################
-    # Open communication with control board
-    ############################################################################
-    port = "/dev/ttyACM0"
-    if len(sys.argv) > 1:
-        port = sys.argv[1]
-    cb = ControlBoard(port)
+def run(cb: ControlBoard, s: Simulator) -> int:
+    if s is not None:
+        print("motor_test does not work in simulation.")
+        return 1
 
     ############################################################################
     # Setup
@@ -108,15 +101,4 @@ def main() -> int:
 
         except:
             print("Invalid thruster number!")
-
-
     return 0
-
-if __name__ == "__main__":
-    try:
-        sys.exit(main())
-    except KeyboardInterrupt:
-        exit(0)
-    except SerialException:
-        print("Serial communication failure!")
-        exit(2)

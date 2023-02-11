@@ -1,23 +1,12 @@
 #!/usr/bin/env python3
 
-from control_board import ControlBoard
-import sys
-from serial import SerialException
+from control_board import ControlBoard, Simulator
 
 
-def main() -> int:
-    port = "/dev/ttyACM0"
-    if len(sys.argv) > 1:
-        port = sys.argv[1]
-    cb = ControlBoard(port)
+def run(cb: ControlBoard, s: Simulator) -> int:
+    if s is not None:
+        print("Reset not supported in simulation.")
+        return 1
     cb.reset()
     return 0
 
-if __name__ == "__main__":
-    try:
-        sys.exit(main())
-    except KeyboardInterrupt:
-        exit(0)
-    except SerialException:
-        print("Serial communication failure!")
-        exit(2)
