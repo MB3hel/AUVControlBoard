@@ -1,4 +1,7 @@
 
+# NOTE: THIS IS OLD (NOT QUITE FUNCTIONAL) METHOD!!!
+
+
 import numpy as np
 from typing import Tuple
 from util import Quaternion

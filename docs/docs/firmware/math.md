@@ -15,8 +15,8 @@ Python scripts used to test / demo the math described here
 - Yaw is defined as rotation about the z-axis
 - Positive pitch, roll, and yaw are defined by the right hand rule
     - Point your right thumb in the positive direction of the axis being rotated about. The fingers of the hand curve in the direction of positive rotation. [Reference](https://en.wikipedia.org/wiki/Right-hand_rule)
-    - Positive pitch is defined as counter-clockwise rotation in the yz plane when view from the +x side
-    - Positive roll is defined as counter-clockwise rotation in the xz plan when view from the +y side
+    - Positive pitch is defined as counter-clockwise rotation in the yz plane when viewed from the +x side
+    - Positive roll is defined as counter-clockwise rotation in the xz plan when viewed from the +y side
     - Positive yaw is defined as counter-clockwise rotation in the xy plane when viewed from the +z side
 
 <center>
@@ -188,7 +188,8 @@ Instead of providing desired motion relative to the robot's orientation, it is o
 This effectively turns the target vector previously provided into a pseudo world-relative motion target (DoFs are world coordinate system not robot coordinate system). *However, y still means forward relative to robot heading **not** relative to the world coordinate system (same idea for x too).*
 
 This method is used instead of a true global target for two reasons
-- The method described above does not require knowing the robot's heading in 3D space. As such, the required information can be obtained without use of a magnetometer. This is beneficial as magnetometers become unreliable in close proximity to motors.
+
+- The method described above does not require knowing the robot's heading in 3D space. As such, the required information can be obtained without use of a magnetometer. This is beneficial as magnetometers become unreliable in close proximity to motors. Note that the gyro alone is sufficient for heading information, but without a magnetometer it will drift significantly over time, making this less effective.
 - Mission level code's knowledge of the robot's position relative to objects of interest often has no knowledge of a world coordinate system. As such, keeping x and y translations robot-relative simplifies mission code and reduces errors for closed loop control in mission code.
 
 The target vector can be split into two parts: a translation vector and a rotation vector.
@@ -240,30 +241,9 @@ This is built on top of global mode. Thus, stability assist mode calculates the 
 
 ### Orientation Closed-Loop Control
 
-***Note: The validity of this method is currently in question. More work is needed.***
-
-***TODO: Document current and past issues including gimbal lock problem.***
-
 See: `orientation_math.py` linked at the top of this page.
 
-Separate PID controllers are used to track the target pitch, roll, and yaw. This allows the output of each PID to be used as a "speed" for one DoF for global mode.
-
-The target (desired) orientation is specified using Euler angles (3-2-1, ZYX), however it will be converted to a Quaternion before use. The use of euler angles allows easily "ignoring" yaw in the event that only pitch and roll are to be managed by closed-loop controllers.
-
-The current angle is read from the IMU (as a quaternion due to bugs in some versions of the BNO055 firmware with its euler angles). It is converted to euler angles (ZYX) additionally. The target orientation is specified using euler angles (ZYX) from the PC. If yaw is not managed by closed-loop control, the current yaw from the IMU reading is copied into the target euler angles (replacing the target yaw). This ensures that the yaw difference between the target and current angle will be zero.
-
-Next, the target is converted to a quaternion. The angle between the current and target quaternion is then calculated. This is done using the following
-
-$q_\textrm{diff} = (q_\textrm{target}) (q_\textrm{current})^{-1}$
-
-However, this is not guaranteed to be the minimal angle between the current and target quaternions. If the dot product of the two quaternions is negative, the following equation is instead used to get the minimum angle.
-
-$q_\textrm{diff} = (q_\textrm{target}) (-q_\textrm{current})^{-1}$
-
-
-This minimum angle quaternion ($q_\textrm{diff}$) is then converted to euler angles. The pitch, roll, and yaw of the euler angles are used as the current error for the pitch, roll, and yaw closed-loop PID controllers.
-
-![](./math_res/construct_orientation_errors.png)
+*TODO: Document current and past issues including gimbal lock problem. Document current (partial) solution.*
 
 
 ### Depth Closed-Loop Control
@@ -273,19 +253,17 @@ Depth closed-loop control is implemented using a PID. This PID's output is used 
 
 ## IMU Angle Accumulation
 
-***Note: The validity of this method is currently in question. More work is needed.***
-
 See: `accumulate_angles.py` linked at the top of this page.
 
 The euler and quaternion values provided by the IMU are not directly useful for tracking multiple rotations of the vehicle. Unlike simply integrating gyroscope data, euler angles (pitch, roll, yaw) and quaternions do not track the number of times the vehicle has rotated about a particular axis.
 
-While integrating raw gyro data would provide this, such a solution would not be rotations about the robot's axes, not the world's axes (gyro z of 500 does not necessarily mean the robot has yawed 500 degrees; the robot could have been oriented at a pitch of 90).
+While integrating raw gyro data would provide this, such a solution would be rotations about the robot's axes, not the world's axes (gyro z of 500 does not necessarily mean the robot has yawed 500 degrees; the robot could have been oriented at a pitch of 90). Additionally, the drift for accumulated pitch and roll would be significantly worse due to the loss of accelerometer data.
 
 To address this, it is necessary to track changes between subsequent quaternions from the IMU. Quaternions are used for three reasons
 
 1. Firmware bugs in some BNO055 firmware versions lead to unstable euler angles
-2. It is mathematically easier to determine the "shortest rotation" between two quaternions
-3. Quaternions still allow accumulation to work in "gimbal lock" situations
+2. It is mathematically easier to determine the shortest rotation between two quaternions
+3. Quaternions still allow accumulation to work in gimbal lock situations
 
 The idea is to compare each quaternion read from the IMU with the previous quaternion received from the IMU (note that quaternions of all zeros are ignored to avoid issues with invalid IMU data after exiting config mode). For each read quaternion:
 
