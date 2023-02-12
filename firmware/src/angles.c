@@ -8,9 +8,9 @@
 
 void euler_deg2rad(euler_t *dest, euler_t *src){
     if(src->is_deg){
-        dest->pitch = src->pitch * M_PI / 180.0f;
-        dest->roll = src->roll * M_PI / 180.0f;
-        dest->yaw = src->yaw * M_PI / 180.0f;
+        dest->pitch = src->pitch * ((float)M_PI) / 180.0f;
+        dest->roll = src->roll * ((float)M_PI) / 180.0f;
+        dest->yaw = src->yaw * ((float)M_PI) / 180.0f;
     }else{
         dest->pitch = src->pitch;
         dest->roll = src->roll;
@@ -21,9 +21,9 @@ void euler_deg2rad(euler_t *dest, euler_t *src){
 
 void euler_rad2deg(euler_t *dest, euler_t *src){
     if(!src->is_deg){
-        dest->pitch = src->pitch / M_PI * 180.0f;
-        dest->roll = src->roll / M_PI * 180.0f;
-        dest->yaw = src->yaw / M_PI * 180.0f;
+        dest->pitch = src->pitch / ((float)M_PI) * 180.0f;
+        dest->roll = src->roll / ((float)M_PI) * 180.0f;
+        dest->yaw = src->yaw / ((float)M_PI) * 180.0f;
     }else{
         dest->pitch = src->pitch;
         dest->roll = src->roll;
@@ -96,16 +96,27 @@ void quat_dot(float *dest, quaternion_t *a, quaternion_t *b){
 }
 
 void quat_to_euler(euler_t *dest, quaternion_t *src){
-    float t0 = 2.0f * (src->w * src->x + src->y * src->z);
-    float t1 = 1.0f - 2.0f * (src->x * src->x + src->y * src->y);
-    dest->pitch = atan2f(t0, t1);
     float t2 = 2.0f * (src->w * src->y - src->z * src->x);
     t2 = (t2 > 1.0f) ? 1.0f : t2;
     t2 = (t2 < -1.0f) ? -1.0f : t2;
     dest->roll = asinf(t2);
-    float t3 = 2.0f * (src->w * src->z + src->x * src->y);
-    float t4 = 1.0f - 2.0f * (src->y * src->y + src->z * src->z);
-    dest->yaw = atan2f(t3, t4);
+    
+    if(fabsf(90.0f - fabsf(180.0f * dest->roll / ((float)M_PI))) < 0.1f){
+        // Roll is +/- 90 degrees
+        // Pitch and yaw mean the same thing (gimbal lock)
+        // pitch + yaw = 2 * atan(q.x, q.w)
+        // Can split any way between pitch and yaw
+        // Choose to put it all in pitch
+        dest->pitch = 2.0f * atan2f(src->x, src->w);
+        dest->yaw = 0.0f;
+    }else{
+        float t0 = 2.0f * (src->w * src->x + src->y * src->z);
+        float t1 = 1.0f - 2.0f * (src->x * src->x + src->y * src->y);
+        dest->pitch = atan2f(t0, t1);
+        float t3 = 2.0f * (src->w * src->z + src->x * src->y);
+        float t4 = 1.0f - 2.0f * (src->y * src->y + src->z * src->z);
+        dest->yaw = atan2f(t3, t4);
+    }
 }
 
 void quat_flip_x(quaternion_t *src, quaternion_t *dest){
