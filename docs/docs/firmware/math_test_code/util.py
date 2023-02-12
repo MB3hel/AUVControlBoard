@@ -17,16 +17,27 @@ class Quaternion:
     #  EULER ANGLES USE EXTRINSIC ROTATIONS!!!
     #  First around world X, then around world Y, then around world Z
     def to_pry(self) -> Tuple[np.float32, np.float32, np.float32]:
-        t0 = +2.0 * (self.w * self.x + self.y * self.z)
-        t1 = +1.0 - 2.0 * (self.x * self.x + self.y * self.y)
-        pitch = np.arctan2(t0, t1)
         t2 = +2.0 * (self.w * self.y - self.z * self.x)
         t2 = +1.0 if t2 > +1.0 else t2
         t2 = -1.0 if t2 < -1.0 else t2
         roll = np.arcsin(t2)
-        t3 = +2.0 * (self.w * self.z + self.x * self.y)
-        t4 = +1.0 - 2.0 * (self.y * self.y + self.z * self.z)
-        yaw = np.arctan2(t3, t4)
+        pitch = np.float32(0.0)
+        yaw = np.float32(0.0)
+        if np.abs(90.0 - np.abs(180.0 * roll / np.pi)) < 0.1:
+            # Roll is +/- 90 degrees
+            # Pitch and yaw mean the same thing (gimbal lock)
+            # pitch + yaw = 2 * atan(self.x, self.w)
+            # Can split any way between pitch and yaw
+            # Choose to put it all in pitch
+            pitch = 2.0 * np.arctan2(self.x, self.w)
+            yaw = 0.0
+        else:
+            t0 = +2.0 * (self.w * self.x + self.y * self.z)
+            t1 = +1.0 - 2.0 * (self.x * self.x + self.y * self.y)
+            pitch = np.arctan2(t0, t1)
+            t3 = +2.0 * (self.w * self.z + self.x * self.y)
+            t4 = +1.0 - 2.0 * (self.y * self.y + self.z * self.z)
+            yaw = np.arctan2(t3, t4)
         return [pitch * 180.0 / np.pi, roll * 180.0 / np.pi, yaw * 180.0 / np.pi]
 
     ## Construct quaternion from pitch (about x), roll (about y), and yaw (about z)
