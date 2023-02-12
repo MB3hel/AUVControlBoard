@@ -469,16 +469,26 @@ class ControlBoard:
         # pitch (about x), roll (about y), and yaw (about z)
         #  EULER ANGLES USE EXTRINSIC ROTATIONS!!!
         #  First around world X, then around world Y, then around world Z
-        t0 = +2.0 * (new_data.quat_w * new_data.quat_x + new_data.quat_y * new_data.quat_z)
-        t1 = +1.0 - 2.0 * (new_data.quat_x * new_data.quat_x + new_data.quat_y * new_data.quat_y)
-        new_data.pitch = math.atan2(t0, t1) * 180.0 / math.pi
+
         t2 = +2.0 * (new_data.quat_w * new_data.quat_y - new_data.quat_z * new_data.quat_x)
         t2 = +1.0 if t2 > +1.0 else t2
         t2 = -1.0 if t2 < -1.0 else t2
         new_data.roll = math.asin(t2) * 180.0 / math.pi
-        t3 = +2.0 * (new_data.quat_w * new_data.quat_z + new_data.quat_x * new_data.quat_y)
-        t4 = +1.0 - 2.0 * (new_data.quat_y * new_data.quat_y + new_data.quat_z * new_data.quat_z)
-        new_data.yaw = math.atan2(t3, t4) * 180.0 / math.pi
+        if abs(90.0 - abs(180.0 * new_data.roll / math.pi)) < 0.1:
+            # Roll is +/- 90 degrees
+            # Pitch and yaw mean the same thing (gimbal lock)
+            # pitch + yaw = 2 * atan(q.x, q.w)
+            # Can split any way between pitch and yaw
+            # Choose to put it all in pitch
+            new_data.pitch = 2.0 * math.atan2(new_data.quat_x, new_data.quat_w)
+            new_data.yaw = 0.0
+        else:
+            t0 = +2.0 * (new_data.quat_w * new_data.quat_x + new_data.quat_y * new_data.quat_z)
+            t1 = +1.0 - 2.0 * (new_data.quat_x * new_data.quat_x + new_data.quat_y * new_data.quat_y)
+            new_data.pitch = math.atan2(t0, t1) * 180.0 / math.pi
+            t3 = +2.0 * (new_data.quat_w * new_data.quat_z + new_data.quat_x * new_data.quat_y)
+            t4 = +1.0 - 2.0 * (new_data.quat_y * new_data.quat_y + new_data.quat_z * new_data.quat_z)
+            new_data.yaw = math.atan2(t3, t4) * 180.0 / math.pi
 
         self.__bno055_data = new_data
 
