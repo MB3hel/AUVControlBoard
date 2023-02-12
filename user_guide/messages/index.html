@@ -13,7 +13,7 @@
       <script>
         // Current page data
         var mkdocs_page_name = "Messages";
-        var mkdocs_page_input_path = "user_guide\\messages.md";
+        var mkdocs_page_input_path = "user_guide/messages.md";
         var mkdocs_page_url = null;
       </script>
     
@@ -111,15 +111,14 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../.." class="icon icon-home" alt="Docs"></a> &raquo;</li>
-          <li>User Guide &raquo;</li><li>Messages</li>
+          <li>User Guide &raquo;</li>
+      <li>Messages</li>
     <li class="wy-breadcrumbs-aside">
-        <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/user_guide/messages.md"
-          class="icon icon-github"> Edit on GitHub</a>
+          <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/user_guide/messages.md" class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
 </div>
-
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
@@ -199,12 +198,18 @@ This message will be acknowledged. The acknowledge message will contain no resul
 Used to set motor speeds in <code>STABILITY_ASSIST</code> mode using a speed for yaw. This command has the following format  </p>
 <pre><code class="language-none">'S', 'A', 'S', 'S', 'I', 'S', 'T', 'S', 'T', '1', [x], [y], [yaw], [target_pitch], [target_roll], [target_depth]
 </code></pre>
-<p>Each value is a 32-bit float little endian.  This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. <em>This can occur if the axis config of the IMU is changed immediately before issuing this command.</em></p>
+<p>Each value is a 32-bit float little endian.</p>
+<p>Pitch, roll, and yaw are euler angles (in degrees). These are extrinsic euler angles. First around world X, then around world Y, then around world Z where pitch is about x, roll is about y, and yaw is about z.</p>
+<p>Depth is in meters where negative numbers are below the surface.</p>
+<p>This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. <em>This can occur if the axis config of the IMU is changed immediately before issuing this command.</em></p>
 <p><strong>Stability Assist Speed Set (Variant 2)</strong><br />
 Used to set motor speeds in <code>STABILITY_ASSIST</code> mode using a PID to maintain a target yaw. This command has the following format  </p>
 <pre><code class="language-none">'S', 'A', 'S', 'S', 'I', 'S', 'T', 'S', 'T', '2', [x], [y], [target_pitch], [target_roll], [target_yaw], [target_depth]
 </code></pre>
-<p>Each value is a 32-bit float little endian.  This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. <em>This can occur if the axis config of the IMU is changed immediately before issuing this command.</em></p>
+<p>Each value is a 32-bit float little endian. </p>
+<p>Pitch, roll, and yaw are euler angles (in degrees). These are extrinsic euler angles. First around world X, then around world Y, then around world Z where pitch is about x, roll is about y, and yaw is about z.</p>
+<p>Depth is in meters where negative numbers are below the surface.</p>
+<p>This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. <em>This can occur if the axis config of the IMU is changed immediately before issuing this command.</em></p>
 <h3 id="other-commands">Other Commands</h3>
 <p><strong>Feed Motor Watchdog</strong><br />
 Used to feed the motor watchdog so it does not kill the motors. This command has the following format  </p>
@@ -223,6 +228,11 @@ Used to enable / disable periodic reading of MS5837 data. This will only impact 
 </code></pre>
 <p><code>[enable]</code> is an 8-bit integer with a value of either 1 or 0. If 1, reading data periodically is enabled. If 0, reading data periodically is disabled.<br />
 This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<p><strong>Reset Command</strong><br />
+This command is used to rest the control board itself. This will reset the microcontroller on the control board, thus the USB device will disconnect and reconnect (note that if your program still holds the port when this happens, the USB device will likely be assigned a different port number).</p>
+<pre><code class="language-none">'R', 'E', 'S', 'E', 'T', 0x0D, 0x1E
+</code></pre>
+<p>This message is <strong>not</strong> acknowledged.</p>
 <hr />
 
 <h2 id="queries">Queries</h2>
@@ -239,9 +249,9 @@ Reads BNO055 IMU data once.  </p>
 <pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'R'
 </code></pre>
 <p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format. Note that this is the same format as the data contained within the BNO055 data status message.  </p>
-<pre><code class="language-none">[gyro_x], [gyro_y], [gyro_z], [quat_w], [quat_x], [quat_y], [quat_z]
+<pre><code class="language-none">[quat_w], [quat_x], [quat_y], [quat_z], [accum_pitch], [accum_roll], [accum_yaw]
 </code></pre>
-<p>Each value is a 32-bit float, little endian. <code>grav_</code> values are components of the gravity vector. <code>quat_</code> values are components of the orientation quaternion.</p>
+<p>Each value is a 32-bit float, little endian. <code>quat_</code> values are components of the orientation quaternion. <code>accum_</code> values are accumulated euler angles.</p>
 <p><strong>MS5837 Read</strong><br />
 Reads MS5837 data once.  </p>
 <pre><code class="language-none">'M', 'S', '5', '8', '3', '7', 'R'
@@ -276,15 +286,19 @@ Motor watch status message is used by the control board to notify the PC about c
 <p><code>[status]</code> is a single byte. A value of 1 indicates the motors are enabled. A value of zero indicates the motors are currently killed by the watchdog.</p>
 <p><strong>BNO055 Data Status</strong><br />
 Used by the control board to periodically send IMU data to the PC. Only sent when BNO055 periodic reads are enabled via the BNO055 periodic read command. The message has the following format  </p>
-<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'D', [gyro_x], [gyro_y], [gyro_z], [quat_w], [quat_x], [quat_y], [quat_z]
+<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'D', [quat_w], [quat_x], [quat_y], [quat_z], [accum_pitch], [accum_roll], [accum_yaw]
 </code></pre>
-<p>Each value is a 32-bit float, little endian. <code>grav_</code> values are components of the gravity vector. <code>quat_</code> values are components of the orientation quaternion.</p>
+<p>Each value is a 32-bit float, little endian. <code>quat_</code> values are components of the orientation quaternion. <code>accum_</code> values are accumulated euler angles.</p>
 <p><strong>MS5837 Data Status</strong><br />
 Used by the control board to periodically send IMU data to the PC. Only sent when BNO055 periodic reads are enabled via the BNO055 periodic read command. The message has the following format  </p>
 <pre><code class="language-none">'M', 'S', '5', '8', '3', '7', 'D', [depth_m]
 </code></pre>
 <p><code>depth_m</code> is a 32-bit float, little endian.</p>
-<!--TODO: Future status messages (sensors)-->
+<p><strong>Debug Status Messages</strong><br />
+Used only during development. These will not occur on release builds of the firmware. These are arbitrary messages sent by the control board to the PC for the firmware developer's use during development.  They have the following format</p>
+<pre><code class="language-none">'D', 'E', 'B', 'U', 'G', [msg]
+</code></pre>
+<p><code>msg</code> is arbitrary data (usually ascii string).</p>
               
             </div>
           </div><footer>
