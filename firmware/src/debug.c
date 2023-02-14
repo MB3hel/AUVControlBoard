@@ -51,3 +51,21 @@ void debug_log(const char *msg){
     pccomm_write(buf, len + 5);
 #endif
 }
+
+void debug_log_data(uint8_t *msg, unsigned int len){
+#ifndef NDEBUG
+    // Only enable logging for debug builds
+    uint8_t buf[PCCOMM_MAX_MSG_LEN];
+    buf[0] = 'D';
+    buf[1] = 'B';
+    buf[2] = 'G';
+    buf[3] = 'D';
+    buf[4] = 'A';
+    buf[5] = 'T';
+    if(len > (PCCOMM_MAX_MSG_LEN - 6))
+        len = PCCOMM_MAX_MSG_LEN - 6;
+    for(unsigned int i = 0; i < len; ++i)
+        buf[6+i] = msg[i];
+    pccomm_write(buf, len + 6);
+#endif
+}

@@ -395,6 +395,10 @@ void cmdctrl_handle_message(void){
     // msg_id is first two bytes (unsigned 16-bit int big endian)
     uint16_t msg_id = conversions_data_to_int16(pccomm_read_buf, false);
     
+    if(!MSG_EQUALS(((uint8_t[]){'W', 'D', 'G', 'F'}))){
+        debug_log_data(msg, len);
+    }
+
     if(MSG_STARTS_WITH(((uint8_t[]){'R', 'A', 'W'}))){
         // RAW speed set command
         // R, A, W, [speed_0], [speed_1], [speed_2], [speed_3], [speed_4], [speed_5], [speed_6], [speed_7]

@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 
 // Error codes
 #define HALT_EC_ASSERT          -1
@@ -39,3 +41,8 @@ void debug_halt(int error_code);
  * @param msg String message to log
  */
 void debug_log(const char *msg);
+
+/*
+ * Log a debug message to the PC (raw bytes)
+ */
+void debug_log_data(uint8_t *msg, unsigned int len);
