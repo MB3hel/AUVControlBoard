@@ -212,11 +212,7 @@ class ControlBoard:
         elif msg.startswith(b'DEBUG') and self.__cboard_debug:
             print("CBOARD_DEBUG: {}".format(msg[5:].decode('ascii')))
         elif msg.startswith(b'DBGDAT') and self.__cboard_debug:
-            s = "["
-            for b in msg[6:]:
-                s += "{}, ".format(b)
-            s = s[:-2] + "]"
-            print("CBOARD_DEBUG_DAT: {}".format(s))
+            print("CBOARD_DEBUG_DAT: {}".format(msg[6:]))
    
     ## Thread to repeatedly read from the control board serial port
     def __read_task(self):
