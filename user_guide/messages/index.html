@@ -295,10 +295,15 @@ Used by the control board to periodically send IMU data to the PC. Only sent whe
 </code></pre>
 <p><code>depth_m</code> is a 32-bit float, little endian.</p>
 <p><strong>Debug Status Messages</strong><br />
-Used only during development. These will not occur on release builds of the firmware. These are arbitrary messages sent by the control board to the PC for the firmware developer's use during development.  They have the following format</p>
+Used only during development. These will not occur on release builds of the firmware. These are arbitrary messages sent by the control board to the PC for the firmware developer's use during development. They have the following format</p>
 <pre><code class="language-none">'D', 'E', 'B', 'U', 'G', [msg]
 </code></pre>
-<p><code>msg</code> is arbitrary data (usually ascii string).</p>
+<p><code>msg</code> is an ascii string.</p>
+<p><strong>Debug Data Status Messages</strong><br />
+Used only during development. These will not occur on release builds of the firmware. These are arbitrary messages sent by the control board to the PC for the firmware developer's use during development. They have the following format</p>
+<pre><code class="language-none">'D', 'B', 'G', 'D', 'A', 'T', [msg]
+</code></pre>
+<p><code>msg</code> is arbitrary data.</p>
               
             </div>
           </div><footer>
