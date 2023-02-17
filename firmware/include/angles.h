@@ -3,9 +3,8 @@
 #include <stdbool.h>
 
 
-// EULER ANGLES USE EXTRINSIC ROTATIONS!!!
-// First around world X, then around world Y, then around world Z
-// pitch (about x), roll (about y), and yaw (about z)
+// EULER ANGLES USING z-x'-y'' CONVENTION
+// YAW FIRST, THEN PITCH, THEN YAW (INTRINSIC)
 typedef struct {
     float pitch;
     float roll;

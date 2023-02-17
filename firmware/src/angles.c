@@ -35,10 +35,16 @@ void euler_rad2deg(euler_t *dest, euler_t *src){
 void euler_to_quat(quaternion_t *dest, euler_t *src){
     euler_t src_rad;
     euler_deg2rad(&src_rad, src);
-    dest->w = cosf(src_rad.pitch/2.0f) * cosf(src_rad.roll/2.0f) * cosf(src_rad.yaw/2.0f) + sinf(src_rad.pitch/2.0f) * sinf(src_rad.roll/2.0f) * sinf(src_rad.yaw/2.0f);
-    dest->x = sinf(src_rad.pitch/2.0f) * cosf(src_rad.roll/2.0f) * cosf(src_rad.yaw/2.0f) - cosf(src_rad.pitch/2.0f) * sinf(src_rad.roll/2.0f) * sinf(src_rad.yaw/2.0f);
-    dest->y = cosf(src_rad.pitch/2.0f) * sinf(src_rad.roll/2.0f) * cosf(src_rad.yaw/2.0f) + sinf(src_rad.pitch/2.0f) * cosf(src_rad.roll/2.0f) * sinf(src_rad.yaw/2.0f);
-    dest->z = cosf(src_rad.pitch/2.0f) * cosf(src_rad.roll/2.0f) * sinf(src_rad.yaw/2.0f) - sinf(src_rad.pitch/2.0f) * sinf(src_rad.roll/2.0f) * cosf(src_rad.yaw/2.0f);
+    float cr = cosf(src->roll / 2.0f);
+    float sr = sinf(src->roll / 2.0f);
+    float cp = cosf(src->pitch / 2.0f);
+    float sp = sinf(src->pitch / 2.0f);
+    float cy = cosf(src->yaw / 2.0f);
+    float sy = sinf(src->yaw / 2.0f);
+    dest->w = cy * cp * cr - sy * sp * sr;
+    dest->x = cy * cr * sp - sy * cp * sr;
+    dest->y = cy * cp * sr + sy * cr * sp;
+    dest->z = cy * sp * sr + sy * cp * cr;
 }
 
 
@@ -96,26 +102,26 @@ void quat_dot(float *dest, quaternion_t *a, quaternion_t *b){
 }
 
 void quat_to_euler(euler_t *dest, quaternion_t *src){
-    float t2 = 2.0f * (src->w * src->y - src->z * src->x);
-    t2 = (t2 > 1.0f) ? 1.0f : t2;
-    t2 = (t2 < -1.0f) ? -1.0f : t2;
-    dest->roll = asinf(t2);
-    
-    if(fabsf(90.0f - fabsf(180.0f * dest->roll / ((float)M_PI))) < 0.1f){
-        // Roll is +/- 90 degrees
-        // Pitch and yaw mean the same thing (gimbal lock)
-        // pitch + yaw = 2 * atan(q.x, q.w)
-        // Can split any way between pitch and yaw
-        // Choose to put it all in pitch
-        dest->pitch = 2.0f * atan2f(src->x, src->w);
-        dest->yaw = 0.0f;
+    dest->is_deg = false;
+    dest->pitch = asinf(2.0f * (src->y*src->z + src->w*src->x));
+
+    float pitchdeg = 180.0f * dest->pitch / ((float)M_PI);
+    if(fabsf(90.0f - fabsf(pitchdeg)) < 0.1f){
+        // Pitch is +/- 90 degrees
+        // This is gimbal lock scenario
+        // Roll and yaw mean the same thing
+        // roll + yaw = 2 * atan2(q.y, q.w)
+        // Can split any way (not unique)
+        dest->yaw = 2.0f * atan2f(src->y, src->w);
+        dest->roll = 0.0f;
     }else{
-        float t0 = 2.0f * (src->w * src->x + src->y * src->z);
-        float t1 = 1.0f - 2.0f * (src->x * src->x + src->y * src->y);
-        dest->pitch = atan2f(t0, t1);
-        float t3 = 2.0f * (src->w * src->z + src->x * src->y);
-        float t4 = 1.0f - 2.0f * (src->y * src->y + src->z * src->z);
-        dest->yaw = atan2f(t3, t4);
+        float roll_numer = 2.0f * (src->w*src->y - src->x*src->z);
+        float roll_denom = 1.0f - 2.0f * (src->x*src->x + src->y*src->y);
+        dest->roll = atan2f(roll_numer, roll_denom);
+
+        float yaw_numer = 2.0f * (src->x*src->y - src->w*src->z);
+        float yaw_denom = 1.0f - 2.0f * (src->x*src->x + src->z*src->z);
+        dest->yaw = atan2f(yaw_numer, yaw_denom);
     }
 }
 
