@@ -468,29 +468,21 @@ class ControlBoard:
         new_data.accum_yaw = struct.unpack("<f", data[24:28])[0]
 
         # Calculate euler angles from quaternion
-        # pitch (about x), roll (about y), and yaw (about z)
-        #  EULER ANGLES USE EXTRINSIC ROTATIONS!!!
-        #  First around world X, then around world Y, then around world Z
+        # z-x'-y'' convention
 
-        t2 = +2.0 * (new_data.quat_w * new_data.quat_y - new_data.quat_z * new_data.quat_x)
-        t2 = +1.0 if t2 > +1.0 else t2
-        t2 = -1.0 if t2 < -1.0 else t2
-        new_data.roll = math.asin(t2) * 180.0 / math.pi
-        if abs(90.0 - abs(180.0 * new_data.roll / math.pi)) < 0.1:
-            # Roll is +/- 90 degrees
-            # Pitch and yaw mean the same thing (gimbal lock)
-            # pitch + yaw = 2 * atan(q.x, q.w)
-            # Can split any way between pitch and yaw
-            # Choose to put it all in pitch
-            new_data.pitch = 2.0 * math.atan2(new_data.quat_x, new_data.quat_w)
-            new_data.yaw = 0.0
+        new_data.pitch = math.asin(2.0 * (new_data.quat_y*new_data.quat_z + new_data.quat_w*new_data.quat_x)) * 180.0 / math.pi
+        if abs(90 - abs(new_data.pitch)) < 0.1:
+            # Gimbal lock. Different conversion.
+            new_data.yaw = 2.0 * math.atan2(new_data.quat_y, new_data.quat_w) * 180.0 / math.pi
+            new_data.roll = 0.0
         else:
-            t0 = +2.0 * (new_data.quat_w * new_data.quat_x + new_data.quat_y * new_data.quat_z)
-            t1 = +1.0 - 2.0 * (new_data.quat_x * new_data.quat_x + new_data.quat_y * new_data.quat_y)
-            new_data.pitch = math.atan2(t0, t1) * 180.0 / math.pi
-            t3 = +2.0 * (new_data.quat_w * new_data.quat_z + new_data.quat_x * new_data.quat_y)
-            t4 = +1.0 - 2.0 * (new_data.quat_y * new_data.quat_y + new_data.quat_z * new_data.quat_z)
-            new_data.yaw = math.atan2(t3, t4) * 180.0 / math.pi
+            roll_numer = 2.0 * (new_data.quat_w*new_data.quat_y - new_data.quat_x*new_data.quat_z)
+            roll_denom = 1.0 - 2.0 * (new_data.quat_x*new_data.quat_x + new_data.quat_y*new_data.quat_y)
+            new_data.roll = math.atan2(roll_numer, roll_denom) * 180.0 / math.pi
+
+            yaw_numer = 2.0 * (new_data.quat_x*new_data.quat_y - new_data.quat_w*new_data.quat_z)
+            yaw_denom = 1.0 - 2.0 * (new_data.quat_x*new_data.quat_x + new_data.quat_z*new_data.quat_z)
+            new_data.yaw = 2.0 * math.atan2(yaw_numer, yaw_denom) * 180.0 / math.pi
 
         self.__bno055_data = new_data
 
@@ -965,25 +957,42 @@ class Simulator:
 
     # Euler same convention as cboard. IN DEGREES
     def quat_to_euler(self, w: float, x: float, y: float, z: float) -> Tuple[float, float, float]:
-        t0 = +2.0 * (w * x + y * z)
-        t1 = +1.0 - 2.0 * (x * x + y * y)
-        pitch = math.atan2(t0, t1)
-        t2 = +2.0 * (w * y - z * x)
-        t2 = +1.0 if t2 > +1.0 else t2
-        t2 = -1.0 if t2 < -1.0 else t2
-        roll = math.asin(t2)
-        t3 = +2.0 * (w * z + x * y)
-        t4 = +1.0 - 2.0 * (y * y + z * z)
-        yaw = math.atan2(t3, t4)
+        pitch = math.asin(2.0 * (y*z + w*x))
+        roll = 0.0
+        yaw = 0.0
+        
+        pitchdeg = 180.0 * pitch / math.pi
+        if abs(90 - abs(pitchdeg)) < 0.1:
+            # Pitch is +/- 90 degrees
+            # This is gimbal lock scenario
+            # Roll and yaw mean the same thing
+            # roll + yaw = 2 * atan2(q.y, q.w)
+            # Can split among roll and yaw any way (not unique)
+            yaw = 2.0 * math.atan2(y, w)
+            roll = 0.0
+        else:
+            roll_numer = 2.0 * (w*y - x*z)
+            roll_denom = 1.0 - 2.0 * (x*x + y*y)
+            roll = math.atan2(roll_numer, roll_denom)
+            
+            yaw_numer = 2.0 * (x*y - w*z)
+            yaw_denom = 1.0 - 2.0 * (x*x + z*z)
+            yaw = math.atan2(yaw_numer, yaw_denom)
         return pitch * 180.0 / math.pi, roll * 180.0 / math.pi, yaw * 180.0 / math.pi
 
     # Euler same convention as cboard. IN DEGREES
     def euler_to_quat(self, p: float, r: float, y: float) -> Tuple[float, float, float, float]:
-        p = p * math.pi / 180.0
-        r = r * math.pi / 180.0
-        y = y * math.pi / 180.0
-        qx = math.sin(p/2.0) * math.cos(r/2.0) * math.cos(y/2.0) - math.cos(p/2.0) * math.sin(r/2.0) * math.sin(y/2.0)
-        qy = math.cos(p/2.0) * math.sin(r/2.0) * math.cos(y/2.0) + math.sin(p/2.0) * math.cos(r/2.0) * math.sin(y/2.0)
-        qz = math.cos(p/2.0) * math.cos(r/2.0) * math.sin(y/2.0) - math.sin(p/2.0) * math.sin(r/2.0) * math.cos(y/2.0)
-        qw = math.cos(p/2.0) * math.cos(r/2.0) * math.cos(y/2.0) + math.sin(p/2.0) * math.sin(r/2.0) * math.sin(y/2.0)
+        pitch = p / 180.0 * math.pi
+        roll = r / 180.0 * math.pi
+        yaw = y / 180.0 * math.pi
+        cr = math.cos(roll / 2.0)
+        sr = math.sin(roll / 2.0)
+        cp = math.cos(pitch / 2.0)
+        sp = math.sin(pitch / 2.0)
+        cy = math.cos(yaw / 2.0)
+        sy = math.sin(yaw / 2.0)
+        qw = cy * cp * cr - sy * sp * sr
+        qx = cy * cr * sp - sy * cp * sr
+        qy = cy * cp * sr + sy * cr * sp
+        qz = cy * sp * sr + sy * cp * cr
         return qw, qx, qy, qz
