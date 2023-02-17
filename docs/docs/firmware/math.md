@@ -1,12 +1,5 @@
 # Control Math
 
-Python scripts used to test / demo the math described here
-
-- [`numpy_motor_math.py`](./math_test_code/numpy_motor_math.py)
-- [`orientation_math.py`](./math_test_code/orientation_math.py)
-- [`accumulate_angles.py`](./math_test_code/accumulate_angles.py)
-- [`util.py`](./math_test_code/util.py) (*Required for all scripts listed above; place in same directory*)
-
 ## Coordinate System Definition
 
 - The coordinate system is defined by the images below
@@ -241,8 +234,6 @@ This is built on top of global mode. Thus, stability assist mode calculates the 
 
 ### Orientation Closed-Loop Control
 
-See: `orientation_math.py` linked at the top of this page.
-
 *TODO: Document current and past issues including gimbal lock problem. Document current (partial) solution.*
 
 
@@ -252,8 +243,6 @@ Depth closed-loop control is implemented using a PID. This PID's output is used 
 
 
 ## IMU Angle Accumulation
-
-See: `accumulate_angles.py` linked at the top of this page.
 
 The euler and quaternion values provided by the IMU are not directly useful for tracking multiple rotations of the vehicle. Unlike simply integrating gyroscope data, euler angles (pitch, roll, yaw) and quaternions do not track the number of times the vehicle has rotated about a particular axis.
 
