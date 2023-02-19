@@ -19,6 +19,10 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
+
+
+extern bool usb_initialized;
 
 
 /**

@@ -18,6 +18,9 @@
 
 #include <framework.h>
 #include <thruster.h>
+#include <debug.h>
+#include <string.h>
+#include <stdlib.h>
 
 void thruster_init(void){
     float *zero_speeds = (float[]){0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};

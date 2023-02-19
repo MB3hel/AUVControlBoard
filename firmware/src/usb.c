@@ -34,6 +34,9 @@ extern RTC_HandleTypeDef hrtc;
 #endif
 
 
+bool usb_initialized = false;
+
+
 void usb_init(void){
 #if defined(CONTROL_BOARD_V1)
     // Set interrupt to highest allowed priority
@@ -58,6 +61,7 @@ void usb_init(void){
     USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSBSEN;
     USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSASEN;
 #endif
+    usb_initialized = true;
 }
 
 void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){

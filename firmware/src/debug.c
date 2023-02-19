@@ -22,6 +22,7 @@
 #include <FreeRTOS.h>
 #include <task.h>
 #include <led.h>
+#include <usb.h>
 
 
 void debug_halt(int error_code){
@@ -36,6 +37,11 @@ void debug_halt(int error_code){
 
 void debug_log(const char *msg){
 #ifndef NDEBUG
+    if(!usb_initialized)
+        return;
+    if(xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED)
+        return;
+    
     // Only enable logging for debug builds
     uint8_t buf[PCCOMM_MAX_MSG_LEN];
     buf[0] = 'D';
@@ -54,6 +60,11 @@ void debug_log(const char *msg){
 
 void debug_log_data(uint8_t *msg, unsigned int len){
 #ifndef NDEBUG
+    if(!usb_initialized)
+        return;
+    if(xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED)
+        return;
+    
     // Only enable logging for debug builds
     uint8_t buf[PCCOMM_MAX_MSG_LEN];
     buf[0] = 'D';
