@@ -143,3 +143,18 @@ void mc_set_sassist(float x, float y, float yaw,
         quaternion_t curr_quat,
         float curr_depth,
         bool use_yaw_pid);
+
+
+/**
+ * Set motor speeds in DEPTH_HOLD mode. Basically just GLOBAL mode, but instead of a speed
+ * for the z axis, the SASSIST PID is used instead.
+ * @param x Speed in +x translation DoF (-1.0 to +1.0)
+ * @param y Speed in +y translation DoF (-1.0 to +1.0)
+ * @param pitch Speed in +pitch rotation DoF (-1.o to +1.0)
+ * @param roll Speed in +roll rotation DoF (-1.o to +1.0)
+ * @param yaw Speed in +yaw rotation DoF (-1.o to +1.0)
+ * @param target_depth Desired depth in meters (negative for below surface)
+ * @param curr_quat Current orientation quaternion from IMU
+ * @param curr_depth Current depth in meters
+ */
+void mc_set_dhold(float x, float y, float pitch, float roll, float yaw, float target_depth, quaternion_t curr_quat, float curr_depth);

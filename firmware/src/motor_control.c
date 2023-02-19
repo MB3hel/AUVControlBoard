@@ -440,5 +440,10 @@ void mc_set_sassist(float x, float y, float yaw,
     mc_set_global(x, y, z, pitch, roll, yaw, curr_quat);
 }
 
+void mc_set_dhold(float x, float y, float pitch, float roll, float yaw, float target_depth, quaternion_t curr_quat, float curr_depth){
+    float z = pid_calculate(&depth_pid, target_depth - curr_depth);
+    mc_set_global(x, y, z, pitch, roll, yaw, curr_quat);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
