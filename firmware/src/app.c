@@ -48,6 +48,8 @@ TimerHandle_t wdt_feed_timer;
 
 
 void wdt_feed_timer_handler(TimerHandle_t handle){
+    (void)handle;
+
     xTaskNotify(cmdctrl_task, NOTIF_FEED_WDT, eSetBits);
 }
 
@@ -63,6 +65,8 @@ void wdt_feed_timer_handler(TimerHandle_t handle){
  * should ever call such functions
  */
 void cmdctrl_task_func(void *arg){
+    (void)arg;
+
     uint32_t notification;
 
     xTimerStart(wdt_feed_timer, portMAX_DELAY);
@@ -97,6 +101,8 @@ void cmdctrl_task_func(void *arg){
  * Thread to handle TinyUSB device mode events
  */
 void usb_device_task_func(void *argument){
+    (void)argument;
+    
     tud_init(BOARD_TUD_RHPORT);
     while(1){
         // This call will block thread until there is / are event(s)
@@ -115,6 +121,8 @@ void usb_device_task_func(void *argument){
  * until it has I2C
  */
 void imu_task_func(void *argument){
+    (void)argument;
+
     // Tracks if IMU configured currently
     bool configured = false;
     unsigned int read_failures = 0;
@@ -156,6 +164,8 @@ void imu_task_func(void *argument){
  * until it has I2C
  */
 void depth_task_func(void *argument){
+    (void)argument;
+
     // Tracks if IMU configured currently
     bool configured = false;
     unsigned int read_failures = 0;

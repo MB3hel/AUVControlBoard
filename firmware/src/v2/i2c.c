@@ -30,6 +30,8 @@ static volatile bool i2c_success = false;
 
 
 void HAL_I2C_MasterTxCpltCallback (I2C_HandleTypeDef * hi2c){
+    (void)hi2c;
+    
     // Signal that transaction is now finished
     // This is ALWAYS run from IRQ handler (by inspection of generated hal)
     static BaseType_t xHigherPriorityTaskWoken;
@@ -39,6 +41,8 @@ void HAL_I2C_MasterTxCpltCallback (I2C_HandleTypeDef * hi2c){
 }
 
 void HAL_I2C_MasterRxCpltCallback (I2C_HandleTypeDef * hi2c){
+    (void)hi2c;
+
     // Signal that transaction is now finished
     // This is ALWAYS run from IRQ handler (by inspection of generated hal)
     static BaseType_t xHigherPriorityTaskWoken;
@@ -48,6 +52,8 @@ void HAL_I2C_MasterRxCpltCallback (I2C_HandleTypeDef * hi2c){
 }
 
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c){
+    (void)hi2c;
+
     // Signal that transaction is now finished
     // This is ALWAYS run from IRQ handler (by inspection of generated hal)
     static BaseType_t xHigherPriorityTaskWoken;
@@ -57,6 +63,7 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c){
 }
 
 void HAL_I2C_AbortCpltCallback(I2C_HandleTypeDef *hi2c){
+    (void)hi2c;
     asm("nop");
 }
 

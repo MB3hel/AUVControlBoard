@@ -98,6 +98,8 @@ uint8_t const desc_fs_configuration[] = {
 };
 
 uint8_t const * tud_descriptor_configuration_cb(uint8_t index){
+    (void)index;
+    
     // Invoked on GET DEVICE DESCRIPTOR request
     return desc_fs_configuration;
 }
@@ -118,6 +120,8 @@ char const* string_desc_arr [] = {
 static uint16_t _desc_str[64];
 
 uint16_t const* tud_descriptor_string_cb(uint8_t index, uint16_t langid){
+    (void)langid;
+
     // Invoked on GET STRING DESCRIPTOR request
     
     uint8_t chr_count;

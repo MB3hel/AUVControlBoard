@@ -141,6 +141,8 @@ static TimerHandle_t periodic_speed_timer;
 
 
 static void send_sensor_data(TimerHandle_t timer){
+    (void)timer;
+    
     // Send the data for sensors as needed
     if(periodic_bno055 && bno055_ready){
         // Store current readings
@@ -198,6 +200,8 @@ static void send_sensor_data(TimerHandle_t timer){
 }
 
 static void periodic_reapply_speed(TimerHandle_t timer){
+    (void)timer;
+
     // Modes using sensor data (which may change) need to be periodically reapplied
     if(mode == MODE_GLOBAL || mode == MODE_SASSIST){
         cmdctrl_apply_saved_speed();
@@ -620,7 +624,7 @@ void cmdctrl_handle_message(void){
         }else{
             // Message is correct size. Handle it.
 
-            if(msg[7] > 7 || msg[7] < 0){
+            if(msg[7] > 7){
                 // Invalid mode
                 cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
             }else{

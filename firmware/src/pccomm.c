@@ -43,7 +43,7 @@ static uint16_t curr_msg_id = 0;
  */
 uint16_t crc16_ccitt_false_partial(uint8_t *data, unsigned int len, uint16_t initial){
     uint16_t crc = initial;
-    int pos = 0;
+    unsigned int pos = 0;
     while(pos < len){
         uint8_t b = data[pos];
         for(int i = 0; i < 8; ++i){

@@ -45,6 +45,8 @@ set(CFLAGS
     -fdata-sections
     -mlong-calls
     -Wall
+    -Wextra
+    -Wno-unused-parameter
 )
 
 # General linker flags (all targets)

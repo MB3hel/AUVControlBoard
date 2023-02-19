@@ -172,6 +172,8 @@ void mc_recalc(void){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 static void mc_wdog_timeout(TimerHandle_t timer){
+    (void)timer;
+    
     xSemaphoreTake(motor_mutex, portMAX_DELAY);
     motors_killed = true;
     thruster_set((float[]){0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});

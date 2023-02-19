@@ -26,6 +26,8 @@
 
 
 void debug_halt(int error_code){
+    (void)error_code;
+
     taskDISABLE_INTERRUPTS();
     led_set(255, 0, 0);
     // TODO: Store error code in memory where it can be retrieved on next boot
@@ -55,6 +57,8 @@ void debug_log(const char *msg){
     for(unsigned int i = 0; i < len; ++i)
         buf[5+i] = msg[i];
     pccomm_write(buf, len + 5);
+#else
+    (void)msg;
 #endif
 }
 
@@ -78,5 +82,8 @@ void debug_log_data(uint8_t *msg, unsigned int len){
     for(unsigned int i = 0; i < len; ++i)
         buf[6+i] = msg[i];
     pccomm_write(buf, len + 6);
+#else
+    (void)msg;
+    (void)len;
 #endif
 }

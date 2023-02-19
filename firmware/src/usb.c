@@ -65,6 +65,8 @@ void usb_init(void){
 }
 
 void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
+    (void)rts;
+
     // Run when line state changes
     // DTR = Data Terminal Ready
     // RTS = Ready to Send

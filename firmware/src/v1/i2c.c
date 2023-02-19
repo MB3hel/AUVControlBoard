@@ -29,6 +29,8 @@ static SemaphoreHandle_t i2c_done_signal;
 
 
 static void i2c_done_callback(uintptr_t contextHandle){
+    (void)contextHandle;
+
     // Signal that transaction is now finished
     // This is ALWAYS run from IRQ handler (by inspection of generated plib)
     static BaseType_t xHigherPriorityTaskWoken;

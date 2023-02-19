@@ -28,6 +28,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void vAssertCalled(const char *file, unsigned int line){
+    (void)file;
+    (void)line;
+
     debug_halt(HALT_EC_ASSERT);
 }
 
@@ -36,6 +39,9 @@ void vApplicationMallocFailedHook(void){
 }
 
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName){
+    (void)xTask;
+    (void)pcTaskName;
+    
     debug_halt(HALT_EC_SOVERFLOW);
 }
 

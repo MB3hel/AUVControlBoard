@@ -46,10 +46,10 @@
 // TODO: Make this configurable via pc command
 // freshwater = 997.0f
 // saltwater = 1029.0f
-const static float fluid_density = 997.0f;
+static const float fluid_density = 997.0f;
 
 // TODO: Make this configurable via pc command
-const static float atm_pressure = 101325.0f;
+static const float atm_pressure = 101325.0f;
 
 static i2c_trans trans;
 static uint8_t write_buf[WRITE_BUF_SIZE];
