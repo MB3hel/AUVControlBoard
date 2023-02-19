@@ -817,6 +817,43 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
+    ## Set thruster speeds in DHILD mode
+    #  All speeds are relative to world (pitch and roll adjusted; NOT yaw adjusted)
+    #  @param x Speed in +x translation DoF (-1.0 to +1.0)
+    #  @param y Speed in +y translation DoF (-1.0 to +1.0)
+    #  @param pitch Speed in +pitch translation DoF (-1.0 to +1.0)
+    #  @param roll Speed in +roll translation DoF (-1.0 to +1.0)
+    #  @param yaw Speed in +yaw translation DoF (-1.0 to +1.0)
+    #  @param target_depth Desired depth in meters (negative below surface)
+    def set_dhold(self, x: float, y: float, pitch: float, roll: float, yaw: float, target_depth: float, timeout: float = 0.1) -> AckError:
+        # Ensure provided data in valid range
+        def limit(v: float):
+            if v > 1.0:
+                return 1.0
+            if v < -1.0:
+                return -1.0
+            return v
+        x = limit(x)
+        y = limit(y)
+        pitch = limit(pitch)
+        roll = limit(roll)
+        yaw = limit(yaw)
+
+        # Construct message to send
+        data = bytearray()
+        data.extend(b'DHOLD')
+        data.extend(struct.pack("<f", x))
+        data.extend(struct.pack("<f", y))
+        data.extend(struct.pack("<f", pitch))
+        data.extend(struct.pack("<f", roll))
+        data.extend(struct.pack("<f", yaw))
+        data.extend(struct.pack("<f", target_depth))
+
+        # Send the message and wait for acknowledgement
+        msg_id = self.__write_msg(bytes(data), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+
     ## Keep motors alive even when speed should not change
     #  If no speed set commands and no watchdog speed for long enough
     #  (1500ms at time of writing) then control board will kill motors
