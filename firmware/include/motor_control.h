@@ -89,8 +89,9 @@ void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw
  * @param ki Integral gain
  * @param kd Derivative gain
  * @param limit Magnitude of max PID output (max = limit, min = -limit). Must be positive
+ * @param invert True to negate PID output
  */
-void mc_sassist_tune_pitch(float kp, float ki, float kd, float limit);
+void mc_sassist_tune_pitch(float kp, float ki, float kd, float limit, bool invert);
 
 /**
  * Tune stability assist mode roll pid
@@ -98,8 +99,9 @@ void mc_sassist_tune_pitch(float kp, float ki, float kd, float limit);
  * @param ki Integral gain
  * @param kd Derivative gain
  * @param limit Magnitude of max PID output (max = limit, min = -limit). Must be positive
+ * @param invert True to negate PID output
  */
-void mc_sassist_tune_roll(float kp, float ki, float kd, float limit);
+void mc_sassist_tune_roll(float kp, float ki, float kd, float limit, bool invert);
 
 /**
  * Tune stability assist mode yaw pid
@@ -107,8 +109,9 @@ void mc_sassist_tune_roll(float kp, float ki, float kd, float limit);
  * @param ki Integral gain
  * @param kd Derivative gain
  * @param limit Magnitude of max PID output (max = limit, min = -limit). Must be positive
+ * @param invert True to negate PID output
  */
-void mc_sassist_tune_yaw(float kp, float ki, float kd, float limit);
+void mc_sassist_tune_yaw(float kp, float ki, float kd, float limit, bool invert);
 
 /**
  * Tune stability assist mode depth pid
@@ -116,8 +119,9 @@ void mc_sassist_tune_yaw(float kp, float ki, float kd, float limit);
  * @param ki Integral gain
  * @param kd Derivative gain
  * @param limit Magnitude of max PID output (max = limit, min = -limit). Must be positive
+ * @param invert True to negate PID output
  */
-void mc_sassist_tune_depth(float kp, float ki, float kd, float limit);
+void mc_sassist_tune_depth(float kp, float ki, float kd, float limit, bool invert);
 
 /**
  * Set motor speeds in STABILITY_ASSIST mode. Abstracts a 2D plane in which the robot is controlled.

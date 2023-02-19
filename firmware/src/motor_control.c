@@ -371,36 +371,40 @@ void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw
     mc_set_local(target_arr[0], target_arr[1], target_arr[2], target_arr[3], target_arr[4], target_arr[5]);
 }
 
-void mc_sassist_tune_pitch(float kp, float ki, float kd, float limit){
+void mc_sassist_tune_pitch(float kp, float ki, float kd, float limit, bool invert){
     pitch_pid.kP = kp;
     pitch_pid.kI = ki;
     pitch_pid.kD = kd;
     pitch_pid.max = limit;
     pitch_pid.min = -limit;
+    pitch_pid.invert = invert;
 }
 
-void mc_sassist_tune_roll(float kp, float ki, float kd, float limit){
+void mc_sassist_tune_roll(float kp, float ki, float kd, float limit, bool invert){
     roll_pid.kP = kp;
     roll_pid.kI = ki;
     roll_pid.kD = kd;
     roll_pid.max = limit;
     roll_pid.min = -limit;
+    roll_pid.invert = invert;
 }
 
-void mc_sassist_tune_yaw(float kp, float ki, float kd, float limit){
+void mc_sassist_tune_yaw(float kp, float ki, float kd, float limit, bool invert){
     yaw_pid.kP = kp;
     yaw_pid.kI = ki;
     yaw_pid.kD = kd;
     yaw_pid.max = limit;
     yaw_pid.min = -limit;
+    yaw_pid.invert = invert;
 }
 
-void mc_sassist_tune_depth(float kp, float ki, float kd, float limit){
+void mc_sassist_tune_depth(float kp, float ki, float kd, float limit, bool invert){
     depth_pid.kP = kp;
     depth_pid.kI = ki;
     depth_pid.kD = kd;
     depth_pid.max = limit;
     depth_pid.min = -limit;
+    depth_pid.invert = invert;
 }
 
 void mc_set_sassist(float x, float y, float yaw,

@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 
 typedef struct{
     // Gains
@@ -28,6 +30,9 @@ typedef struct{
     // Output limits
     float min;
     float max;
+
+    // True to negate output
+    bool invert;
 
     // State info (zero to reset)
     float integral;

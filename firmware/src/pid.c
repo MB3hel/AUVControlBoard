@@ -35,5 +35,6 @@ float pid_calculate(pid_controller_t *pid, float curr_err){
     pid->last_error = curr_err;
 
     // Limit output range
-    return MAX(pid->min, MIN(output, pid->max));
+    output = MAX(pid->min, MIN(output, pid->max));
+    return (pid->invert) ? -output : output;
 }
