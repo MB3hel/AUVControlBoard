@@ -61,7 +61,7 @@ Used to configure the BNO055 IMU's axis orientation. *Note: This will also reset
 This message will be acknowledged. The acknowledge message will contain no result data.
 
 **Stability Assist Mode PID Tune Command**  
-Used to tune stability assist mode PID controllers. It has the following format  
+Used to tune stability assist mode PID controllers (note that the depth PID is also used for depth hold mode). It has the following format  
 ```none  
 'S', 'A', 'S', 'S', 'I', 'S', 'T', 'T', 'N', [which], [kp], [ki], [kd], [limit], [invert]
 ```  
@@ -122,6 +122,14 @@ Pitch, roll, and yaw are euler angles (in degrees). These are extrinsic euler an
 Depth is in meters where negative numbers are below the surface.
 
 This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
+
+
+**Depth Hold Speed Set**  
+Used to set motor speeds in `DEPTH_HOLD` mode. This command has the following format  
+```none
+'D', 'H', 'O', 'L', 'D', [x], [y], [pitch], [roll], [yaw], [target_depth]
+```  
+Each value is a 32-bit float. Everything except `[target_depth]` is a speed (same as GLOBAL mode speeds). Target depth is in meters (negative for below surface).
 
 
 ### Other Commands
