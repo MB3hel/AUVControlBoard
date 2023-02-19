@@ -734,7 +734,7 @@ void cmdctrl_handle_message(void){
         }
     }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'A', 'S', 'S', 'I', 'S', 'T', 'T', 'N'}))){
         // Tune SASSIST PID
-        // S, A, S, S, I, S, T, T, N, [which], [kp], [ki], [kd], [kf], [limit]
+        // S, A, S, S, I, S, T, T, N, [which], [kp], [ki], [kd], [limit]
         // Each value is a 32-bit little endian float
         // which = what PID to tune P (pitch), R (roll), Y (yaw), D (depth)
         // kp, ki, kd, and kf are gains. limit is max output of PID (magnitude, must be positive)
@@ -744,20 +744,19 @@ void cmdctrl_handle_message(void){
             float kp = conversions_data_to_float(&msg[10], true);
             float ki = conversions_data_to_float(&msg[14], true);
             float kd = conversions_data_to_float(&msg[18], true);
-            float kf = conversions_data_to_float(&msg[22], true);
             float limit = conversions_data_to_float(&msg[26], true);
             switch(msg[9]){
             case 'P':
-                mc_sassist_tune_pitch(kp, ki, kd, kf, limit);
+                mc_sassist_tune_pitch(kp, ki, kd, limit);
                 break;
             case 'R':
-                mc_sassist_tune_roll(kp, ki, kd, kf, limit);
+                mc_sassist_tune_roll(kp, ki, kd, limit);
                 break;
             case 'Y':
-                mc_sassist_tune_yaw(kp, ki, kd, kf, limit);
+                mc_sassist_tune_yaw(kp, ki, kd, limit);
                 break;
             case 'D':
-                mc_sassist_tune_depth(kp, ki, kd, kf, limit);
+                mc_sassist_tune_depth(kp, ki, kd, limit);
                 break;
             }
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);

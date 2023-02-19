@@ -80,28 +80,24 @@ void mc_init(void){
     pitch_pid.kP = 0.0f;
     pitch_pid.kI = 0.0f;
     pitch_pid.kD = 0.0f;
-    pitch_pid.kF = 0.0f;
     pitch_pid.min = -1.0f;
     pitch_pid.max = 1.0f;
     PID_RESET(pitch_pid);
     roll_pid.kP = 0.0f;
     roll_pid.kI = 0.0f;
     roll_pid.kD = 0.0f;
-    roll_pid.kF = 0.0f;
     roll_pid.min = -1.0f;
     roll_pid.max = 1.0f;
     PID_RESET(roll_pid);
     yaw_pid.kP = 0.0f;
     yaw_pid.kI = 0.0f;
     yaw_pid.kD = 0.0f;
-    yaw_pid.kF = 0.0f;
     yaw_pid.min = -1.0f;
     yaw_pid.max = 1.0f;
     PID_RESET(yaw_pid);
     depth_pid.kP = 0.0f;
     depth_pid.kI = 0.0f;
     depth_pid.kD = 0.0f;
-    depth_pid.kF = 0.0f;
     depth_pid.min = -1.0f;
     depth_pid.max = 1.0f;
     PID_RESET(depth_pid);
@@ -375,38 +371,34 @@ void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw
     mc_set_local(target_arr[0], target_arr[1], target_arr[2], target_arr[3], target_arr[4], target_arr[5]);
 }
 
-void mc_sassist_tune_pitch(float kp, float ki, float kd, float kf, float limit){
+void mc_sassist_tune_pitch(float kp, float ki, float kd, float limit){
     pitch_pid.kP = kp;
     pitch_pid.kI = ki;
     pitch_pid.kD = kd;
-    pitch_pid.kF = kf;
     pitch_pid.max = limit;
     pitch_pid.min = -limit;
 }
 
-void mc_sassist_tune_roll(float kp, float ki, float kd, float kf, float limit){
+void mc_sassist_tune_roll(float kp, float ki, float kd, float limit){
     roll_pid.kP = kp;
     roll_pid.kI = ki;
     roll_pid.kD = kd;
-    roll_pid.kF = kf;
     roll_pid.max = limit;
     roll_pid.min = -limit;
 }
 
-void mc_sassist_tune_yaw(float kp, float ki, float kd, float kf, float limit){
+void mc_sassist_tune_yaw(float kp, float ki, float kd, float limit){
     yaw_pid.kP = kp;
     yaw_pid.kI = ki;
     yaw_pid.kD = kd;
-    yaw_pid.kF = kf;
     yaw_pid.max = limit;
     yaw_pid.min = -limit;
 }
 
-void mc_sassist_tune_depth(float kp, float ki, float kd, float kf, float limit){
+void mc_sassist_tune_depth(float kp, float ki, float kd, float limit){
     depth_pid.kP = kp;
     depth_pid.kI = ki;
     depth_pid.kD = kd;
-    depth_pid.kF = kf;
     depth_pid.max = limit;
     depth_pid.min = -limit;
 }
@@ -430,26 +422,14 @@ void mc_set_sassist(float x, float y, float yaw,
     quat_to_euler(&curr_euler, &curr_quat);
     euler_rad2deg(&curr_euler, &curr_euler);
 
-    // Update PID setpoints
-    // TODO: Enforce a range of values allowed
-    //       Pitch between -180 and 180
-    //       Roll between -90 and 90
-    //       Yaw between -180 and 180
-    //       May need to convert to quaternion and back???
-    //       Could also possibly use a manual method (issue is dealing with gimbal lock)
-    roll_pid.setpoint = target_euler.pitch;
-    pitch_pid.setpoint = target_euler.roll;
-    yaw_pid.setpoint = target_euler.yaw;
-    depth_pid.setpoint = target_depth;
-
     // Calculate PID outputs
     // TODO: Handle these as circular variables properly???
     //       This is hard with roll because -90 to +90 then it changes others...
-    float z = -1 * pid_calculate(&depth_pid, PID_ERR(depth_pid, curr_depth));
-    float pitch = -1 * pid_calculate(&pitch_pid, PID_ERR(pitch_pid, curr_euler.pitch));
-    float roll = -1 * pid_calculate(&roll_pid, PID_ERR(roll_pid, curr_euler.roll));
+    float z = pid_calculate(&depth_pid, target_depth - curr_depth);
+    float pitch = pid_calculate(&pitch_pid, target_euler.pitch - curr_euler.pitch);
+    float roll = pid_calculate(&roll_pid, target_euler.roll - curr_euler.roll);
     if(use_yaw_pid){
-        yaw = pid_calculate(&yaw_pid, PID_ERR(yaw_pid, curr_euler.yaw));
+        yaw = pid_calculate(&yaw_pid, target_euler.yaw - curr_euler.yaw);
     }
 
     // Update speeds using GLOBAL mode math

@@ -88,40 +88,36 @@ void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw
  * @param kp Proportional gain
  * @param ki Integral gain
  * @param kd Derivative gain
- * @param kf Feed-forward gain
  * @param limit Magnitude of max PID output (max = limit, min = -limit). Must be positive
  */
-void mc_sassist_tune_pitch(float kp, float ki, float kd, float kf, float limit);
+void mc_sassist_tune_pitch(float kp, float ki, float kd, float limit);
 
 /**
  * Tune stability assist mode roll pid
  * @param kp Proportional gain
  * @param ki Integral gain
  * @param kd Derivative gain
- * @param kf Feed-forward gain
  * @param limit Magnitude of max PID output (max = limit, min = -limit). Must be positive
  */
-void mc_sassist_tune_roll(float kp, float ki, float kd, float kf, float limit);
+void mc_sassist_tune_roll(float kp, float ki, float kd, float limit);
 
 /**
  * Tune stability assist mode yaw pid
  * @param kp Proportional gain
  * @param ki Integral gain
  * @param kd Derivative gain
- * @param kf Feed-forward gain
  * @param limit Magnitude of max PID output (max = limit, min = -limit). Must be positive
  */
-void mc_sassist_tune_yaw(float kp, float ki, float kd, float kf, float limit);
+void mc_sassist_tune_yaw(float kp, float ki, float kd, float limit);
 
 /**
  * Tune stability assist mode depth pid
  * @param kp Proportional gain
  * @param ki Integral gain
  * @param kd Derivative gain
- * @param kf Feed-forward gain
  * @param limit Magnitude of max PID output (max = limit, min = -limit). Must be positive
  */
-void mc_sassist_tune_depth(float kp, float ki, float kd, float kf, float limit);
+void mc_sassist_tune_depth(float kp, float ki, float kd, float limit);
 
 /**
  * Set motor speeds in STABILITY_ASSIST mode. Abstracts a 2D plane in which the robot is controlled.

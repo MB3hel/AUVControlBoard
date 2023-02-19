@@ -23,11 +23,8 @@ float pid_calculate(pid_controller_t *pid, float curr_err){
     #define MIN(a, b)       ((a < b) ? a : b)
     #define MAX(a, b)       ((a > b) ? a : b)
 
-    // Start with feedforward gain
-    float output = pid->kF * pid->setpoint;
-
     // Proportional gain
-    output += pid->kP * curr_err;
+    float output = pid->kP * curr_err;
 
     // Integral gain
     pid->integral += curr_err;

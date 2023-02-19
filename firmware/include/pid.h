@@ -24,12 +24,8 @@ typedef struct{
     float kP;
     float kI;
     float kD;
-    float kF;
 
-    // Current setpoint
-    float setpoint;
-
-    // Ouptput limits
+    // Output limits
     float min;
     float max;
 
@@ -42,10 +38,6 @@ typedef struct{
 
 // Reset a PID controller
 #define PID_RESET(pid)          (pid).integral = 0; (pid).last_error = 0
-
-
-// Calculate current error for a linear PV
-#define PID_ERR(pid, curr_pv)   ((curr_pv) - (pid).setpoint)
 
 
 /**
