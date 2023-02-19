@@ -38,6 +38,7 @@
 #define MODE_LOCAL      1
 #define MODE_GLOBAL     2
 #define MODE_SASSIST    3
+#define MODE_DHOLD      4
 
 // LED colors for different modes
 // Different colors on different versions b/c LEDs are different
@@ -47,11 +48,13 @@
 #define COLOR_LOCAL         10, 0, 100
 #define COLOR_GLOBAL        150, 50, 0
 #define COLOR_SASSIST       0, 100, 100
+#define COLOR_DHOLD         10, 50, 0
 #elif defined(CONTROL_BOARD_V2)
 #define COLOR_RAW           170, 40, 0
 #define COLOR_LOCAL         30, 0, 100
 #define COLOR_GLOBAL        255, 15, 0
 #define COLOR_SASSIST       0, 100, 100
+#define COLOR_DHOLD         10, 40, 0
 #endif
 
 // Acknowledge message error codes
@@ -103,6 +106,13 @@ static float sassist_yaw;
 static euler_t sassist_target_euler;
 static float sassist_depth_target;
 
+// Last used depth hold target
+static float dhold_x;
+static float dhold_y;
+static float dhold_pitch;
+static float dhold_roll;
+static float dhold_yaw;
+static float dhold_depth;
 
 // Current sensor data
 // Need mutex b/c don't want to read one value (eg x) then have others (y, z) changed before reading them
@@ -232,6 +242,14 @@ void cmdctrl_init(void){
     sassist_target_euler.yaw = 0.0f;
     sassist_depth_target = 0.0f;
 
+    // Zero depth hold target
+    dhold_x = 0.0;
+    dhold_y = 0.0;
+    dhold_pitch = 0.0;
+    dhold_roll = 0.0;
+    dhold_yaw = 0.0;
+    dhold_depth = 0.0;
+
     // Initial sensor status
     bno055_ready = false;
     ms5837_ready = false;
@@ -315,6 +333,9 @@ static bool data_startswith(const uint8_t *a, uint32_t len_a, const uint8_t *b, 
  * Apply the last saved speed for the current mode
  */
 void cmdctrl_apply_saved_speed(void){
+    quaternion_t m_quat;
+    float m_depth;
+
     switch (mode){
     case MODE_RAW:
         mc_set_raw(raw_target);
@@ -324,15 +345,15 @@ void cmdctrl_apply_saved_speed(void){
         break;
     case MODE_GLOBAL:
         xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-        quaternion_t m_quat = curr_bno055_data.curr_quat;
+        m_quat = curr_bno055_data.curr_quat;
         xSemaphoreGive(sensor_data_mutex);
         mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, m_quat);
         break;
     case MODE_SASSIST:
         if(sassist_valid){
             xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            quaternion_t m_quat = curr_bno055_data.curr_quat;
-            float m_depth = curr_ms5837_data.depth_m;
+            m_quat = curr_bno055_data.curr_quat;
+            m_depth = curr_ms5837_data.depth_m;
             xSemaphoreGive(sensor_data_mutex);
             if(sassist_variant == 1){
                 mc_set_sassist(sassist_x, 
@@ -354,6 +375,13 @@ void cmdctrl_apply_saved_speed(void){
                     true);
             }
         }
+        break;
+    case MODE_DHOLD:
+        xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+        m_quat = curr_bno055_data.curr_quat;
+        m_depth = curr_ms5837_data.depth_m;
+        xSemaphoreGive(sensor_data_mutex);
+        mc_set_dhold(dhold_x, dhold_y, dhold_pitch, dhold_roll, dhold_yaw, dhold_depth, m_quat, m_depth);
         break;
     }
 }
@@ -893,6 +921,64 @@ void cmdctrl_handle_message(void){
         }
     }else if(MSG_EQUALS(((uint8_t[]){'R', 'E', 'S', 'E', 'T', 0x0D, 0x1E}))){
         wdt_reset_now();
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'D', 'H', 'O', 'L', 'D'}))){
+        // DEPTH_HOLD speed set
+        // D, H, O, L, D, [x], [y], [pitch], [roll], [yaw], [target_depth]
+        // [x], [y], [pitch], [roll], [yaw], [target_depth] are 32-bit floats (little endian)
+        if(len != 29){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Message is correct size. Handle it.
+
+            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+            quaternion_t m_quat = curr_bno055_data.curr_quat;
+            float m_depth = curr_ms5837_data.depth_m;
+            xSemaphoreGive(sensor_data_mutex);
+
+            if(!bno055_ready || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready){
+                // Need BNO055 IMU data to use depth hold mode.
+                // Also need MS5837 data to use depth hold mode
+                // If not ready, then this command is invalid at this time
+                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+            }else{
+                // Get speeds from message
+                dhold_x = conversions_data_to_float(&msg[5], true);
+                dhold_y = conversions_data_to_float(&msg[9], true);
+                dhold_pitch = conversions_data_to_float(&msg[13], true);
+                dhold_roll = conversions_data_to_float(&msg[17], true);
+                dhold_yaw = conversions_data_to_float(&msg[21], true);
+                dhold_depth = conversions_data_to_float(&msg[25], true);
+
+                // Ensure speeds are in valid range
+                #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
+                LIMIT(dhold_x);
+                LIMIT(dhold_y);
+                LIMIT(dhold_pitch);
+                LIMIT(dhold_roll);
+                LIMIT(dhold_yaw);
+                LIMIT(dhold_depth);
+
+                // Reset time until periodic speed set
+                xTimerReset(periodic_speed_timer, portMAX_DELAY);
+
+                // Update mode variable and LED color (if needed)
+                if(mode != MODE_DHOLD){
+                    mode = MODE_DHOLD;
+                    led_set(COLOR_DHOLD);
+                }
+
+                // Feed watchdog when speeds are set
+                // Important to call before speed set function in case currently killed
+                mc_wdog_feed();
+
+                // Update motor speeds
+                mc_set_dhold(dhold_x, dhold_y, dhold_pitch, dhold_roll, dhold_yaw, dhold_depth, m_quat, m_depth);
+
+                // Acknowledge message w/ no error.
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+            }
+        }
     }else{
         // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG, NULL, 0);
