@@ -63,11 +63,12 @@ This message will be acknowledged. The acknowledge message will contain no resul
 **Stability Assist Mode PID Tune Command**  
 Used to tune stability assist mode PID controllers. It has the following format  
 ```none  
-'S', 'A', 'S', 'S', 'I', 'S', 'T', 'T', 'N', [which], [kp], [ki], [kd], [kf], [limit]
+'S', 'A', 'S', 'S', 'I', 'S', 'T', 'T', 'N', [which], [kp], [ki], [kd], [limit], [invert]
 ```  
 `[which]` indicates which PID to tune ('P' = pitch hold, 'R' = roll hold, 'Y' = yaw hold, 'D' = depth hold).  
-`[kp]`, `[ki]`, `[kd]`, and `[kf]` are proportional, integral, derivative, and feed-forward gains (32-bit float little endian).  
-`[limit]` Is the PID controller's max output (limits max speed in the controlled DoF). Must be between 0.0 and 1.0. 32-bit float little endian.
+`[kp]`, `[ki]`, `[kd]` are proportional, integral, derivative, and feed-forward gains (32-bit float little endian).  
+`[limit]` Is the PID controller's max output (limits max speed in the controlled DoF). Must be between 0.0 and 1.0. 32-bit float little endian.  
+`[invert]` Set to one to invert PID output. Zero otherwise.
 
 
 ### Motor Control Commands
