@@ -558,8 +558,9 @@ class ControlBoard:
     #  @param kd Derivative gain
     #  @param kf Feed-forward gain
     #  @param limit Max output of PID (controls max speed in sassist mode)
+    #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_pitch(self, kp: float, ki: float, kd: float, limit: float, timeout: float = 0.1) -> AckError:
+    def tune_sassist_pitch(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = 0.1) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -569,6 +570,7 @@ class ControlBoard:
         msg.extend(struct.pack("<f", ki))
         msg.extend(struct.pack("<f", kd))
         msg.extend(struct.pack("<f", limit))
+        msg.append(1 if invert else 0)
         msg_id = self.__write_msg(bytes(msg), True)
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
@@ -579,8 +581,9 @@ class ControlBoard:
     #  @param kd Derivative gain
     #  @param kf Feed-forward gain
     #  @param limit Max output of PID (controls max speed in sassist mode)
+    #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_roll(self, kp: float, ki: float, kd: float, limit: float, timeout: float = 0.1) -> AckError:
+    def tune_sassist_roll(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = 0.1) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -590,6 +593,7 @@ class ControlBoard:
         msg.extend(struct.pack("<f", ki))
         msg.extend(struct.pack("<f", kd))
         msg.extend(struct.pack("<f", limit))
+        msg.append(1 if invert else 0)
         msg_id = self.__write_msg(bytes(msg), True)
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
@@ -600,8 +604,9 @@ class ControlBoard:
     #  @param kd Derivative gain
     #  @param kf Feed-forward gain
     #  @param limit Max output of PID (controls max speed in sassist mode)
+    #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_yaw(self, kp: float, ki: float, kd: float, limit: float, timeout: float = 0.1) -> AckError:
+    def tune_sassist_yaw(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = 0.1) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -611,6 +616,7 @@ class ControlBoard:
         msg.extend(struct.pack("<f", ki))
         msg.extend(struct.pack("<f", kd))
         msg.extend(struct.pack("<f", limit))
+        msg.append(1 if invert else 0)
         msg_id = self.__write_msg(bytes(msg), True)
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
@@ -621,8 +627,9 @@ class ControlBoard:
     #  @param kd Derivative gain
     #  @param kf Feed-forward gain
     #  @param limit Max output of PID (controls max speed in sassist mode)
+    #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_depth(self, kp: float, ki: float, kd: float, limit: float, timeout: float = 0.1) -> AckError:
+    def tune_sassist_depth(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = 0.1) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -632,6 +639,7 @@ class ControlBoard:
         msg.extend(struct.pack("<f", ki))
         msg.extend(struct.pack("<f", kd))
         msg.extend(struct.pack("<f", limit))
+        msg.append(1 if invert else 0)
         msg_id = self.__write_msg(bytes(msg), True)
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
