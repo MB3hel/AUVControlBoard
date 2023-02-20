@@ -203,7 +203,7 @@ static void periodic_reapply_speed(TimerHandle_t timer){
     (void)timer;
 
     // Modes using sensor data (which may change) need to be periodically reapplied
-    if(mode == MODE_GLOBAL || mode == MODE_SASSIST){
+    if(mode == MODE_GLOBAL || mode == MODE_SASSIST || mode == MODE_DHOLD){
         cmdctrl_apply_saved_speed();
     }
 
