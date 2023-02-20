@@ -42,34 +42,20 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     ############################################################################
     # Settings
     ############################################################################
-    print()
-    print("Input settings: ")
-    speed = input("Speed (-1.0 to 1.0; default = 0.3): ")
-    duration = input("Duration (sec; default = 1.0):")
-    try:
-        speed = float(speed)
-        if speed > 1.0:
-            speed = 1.0
-        if speed < -1.0:
-            speed = -1.0
-    except:
-        speed = 0.3
-    try:
-        duration = float(duration)
-    except:
-        duration = 1.0
-    print()
+    speed = 0.5
+    duration = 0.5
 
     ############################################################################
     # Motor test
     ############################################################################
     for idx in range(8):
+        print("Running {}".format(idx+1))
         # Set desired speed
         speeds = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         speeds[idx] = speed
         attempt = 0
 
-        cb._set_tinv_no_ack([True, True, False, False, True, False, False, True])
+        # cb._set_tinv_no_ack([True, True, False, False, True, False, False, True])
         if cb.set_raw(speeds) != ControlBoard.AckError.NONE:
             print("Set raw failed!")
         
