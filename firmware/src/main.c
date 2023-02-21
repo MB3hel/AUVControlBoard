@@ -45,7 +45,7 @@ int main(void){
     conversions_init();
 
 #ifdef NDEBUG
-    // Enable watchdog only on debug builds
+    // Enable watchdog if not debug build
     wdt_init();
 #endif
 

@@ -427,6 +427,17 @@ class ControlBoard:
         msg_id = self.__write_msg(bytes(data), True)
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
+    
+    def _set_tinv_no_ack(self, inversions: List[bool]):
+        data = bytearray()
+        data.extend(b'TINV')
+        inv_byte = 0
+        for i in range(8):
+            inv_byte <<= 1
+            if inversions[7 - i]:
+                inv_byte |= 1
+        data.append(inv_byte)
+        self.__write_msg(bytes(data), False)
 
     ## Set axis configuration for BNO055 IMU
     #  @param axis Axis configuration (see BNO055 datasheet) P0-P7 (BNO055Axis enum)
@@ -858,10 +869,10 @@ class ControlBoard:
     #  If no speed set commands and no watchdog speed for long enough
     #  (1500ms at time of writing) then control board will kill motors
     #  Note: To avoid giving control board too much to process, feed commands
-    #  are limited to every 350ms at most frequent
+    #  are limited to every 100ms at most frequent
     def feed_motor_watchdog(self, timeout: float = 0.1) -> AckError:
         # Limit watchdog feed rate
-        if time.time() - self.__last_wdog_feed < 0.35:
+        if time.time() - self.__last_wdog_feed < 0.1:
             return self.AckError.NONE
         
         # Send command to feed watchdog and wait for ack
