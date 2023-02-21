@@ -169,12 +169,13 @@ Used to configure the BNO055 IMU's axis orientation. <em>Note: This will also re
 <p><code>[config]</code>: A single byte. The value of this byte is between 0 and 7 (inclusive) representing on of the BNO055 axis configs (P0 to P7) as described in the BNO055 datasheet. <em>Note: Changing the axis config changes IMU mode. Thus, there will be a brief time afterwards where the IMU may report zeros for all data.</em><br />
 This message will be acknowledged. The acknowledge message will contain no result data.</p>
 <p><strong>Stability Assist Mode PID Tune Command</strong><br />
-Used to tune stability assist mode PID controllers. It has the following format  </p>
-<pre><code class="language-none">'S', 'A', 'S', 'S', 'I', 'S', 'T', 'T', 'N', [which], [kp], [ki], [kd], [kf], [limit]
+Used to tune stability assist mode PID controllers (note that the depth PID is also used for depth hold mode). It has the following format  </p>
+<pre><code class="language-none">'S', 'A', 'S', 'S', 'I', 'S', 'T', 'T', 'N', [which], [kp], [ki], [kd], [limit], [invert]
 </code></pre>
 <p><code>[which]</code> indicates which PID to tune ('P' = pitch hold, 'R' = roll hold, 'Y' = yaw hold, 'D' = depth hold).<br />
-<code>[kp]</code>, <code>[ki]</code>, <code>[kd]</code>, and <code>[kf]</code> are proportional, integral, derivative, and feed-forward gains (32-bit float little endian).<br />
-<code>[limit]</code> Is the PID controller's max output (limits max speed in the controlled DoF). Must be between 0.0 and 1.0. 32-bit float little endian.</p>
+<code>[kp]</code>, <code>[ki]</code>, <code>[kd]</code> are proportional, integral, derivative, and feed-forward gains (32-bit float little endian).<br />
+<code>[limit]</code> Is the PID controller's max output (limits max speed in the controlled DoF). Must be between 0.0 and 1.0. 32-bit float little endian.<br />
+<code>[invert]</code> Set to one to invert PID output. Zero otherwise.</p>
 <h3 id="motor-control-commands">Motor Control Commands</h3>
 <p><strong>Raw Speed Set</strong><br />
 Used to set motor speeds in <code>RAW</code> mode. This command has the following format.  </p>
@@ -210,6 +211,11 @@ Used to set motor speeds in <code>STABILITY_ASSIST</code> mode using a PID to ma
 <p>Pitch, roll, and yaw are euler angles (in degrees). These are extrinsic euler angles. First around world X, then around world Y, then around world Z where pitch is about x, roll is about y, and yaw is about z.</p>
 <p>Depth is in meters where negative numbers are below the surface.</p>
 <p>This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. <em>This can occur if the axis config of the IMU is changed immediately before issuing this command.</em></p>
+<p><strong>Depth Hold Speed Set</strong><br />
+Used to set motor speeds in <code>DEPTH_HOLD</code> mode. This command has the following format  </p>
+<pre><code class="language-none">'D', 'H', 'O', 'L', 'D', [x], [y], [pitch], [roll], [yaw], [target_depth]
+</code></pre>
+<p>Each value is a 32-bit float. Everything except <code>[target_depth]</code> is a speed (same as GLOBAL mode speeds). Target depth is in meters (negative for below surface).</p>
 <h3 id="other-commands">Other Commands</h3>
 <p><strong>Feed Motor Watchdog</strong><br />
 Used to feed the motor watchdog so it does not kill the motors. This command has the following format  </p>
