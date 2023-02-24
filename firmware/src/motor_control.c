@@ -202,34 +202,6 @@ bool mc_wdog_feed(void){
 /// Motor control
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/**
- * Skew symmetric matrix from a vector
- * 
- * @param outmat Matrix to store output in (skew symmetric matrix 3x3)
- * @param invec Vector (3x1) used to construct matrix
- * @return MAT_ERR_x code 
- */
-static int skew3(matrix *outmat, matrix *invec){
-    if(outmat->rows != 3 || outmat->cols != 3)
-        return MAT_ERR_SIZE;
-    float v[3];
-    if(invec->rows == 1){
-        if(invec->cols != 3)
-            return MAT_ERR_SIZE;
-        matrix_get_row(&v[0], invec, 0);
-    }else if(invec->cols == 1){
-        if(invec->rows != 3)
-            return MAT_ERR_SIZE;
-        matrix_get_col(&v[0], invec, 0);
-    }else{
-        return MAT_ERR_SIZE;
-    }
-    matrix_set_row(outmat, 0, (float[]){0, -v[2], v[1]});
-    matrix_set_row(outmat, 1, (float[]){v[2], 0, -v[0]});
-    matrix_set_row(outmat, 2, (float[]){-v[1], v[0], 0});
-    return MAT_ERR_NONE;
-}
-
 // Rotate a vector (x, y, z) buy a quaternion q
 static inline void rotate_vector(float *dx, float *dy, float *dz, float sx, float sy, float sz, quaternion_t *q){
     quaternion_t qv;
@@ -336,83 +308,19 @@ void mc_set_local(float x, float y, float z, float pitch, float roll, float yaw)
 }
 
 void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw, quaternion_t curr_quat){
-    // Construct target motion vector
-    float target_arr[6];
-    matrix target;
-    matrix_init_static(&target, target_arr, 6, 1);
-    matrix_set_col(&target, 0, (float[]){x, y, z, pitch, roll, yaw});
-
-    // Construct current gravity vector from quaternion
-    float gvec_arr[3];
-    matrix gravity_vector;
-    matrix_init_static(&gravity_vector, gvec_arr, 3, 1);
-    matrix_set_item(&gravity_vector, 0, 0, 2.0f * (-curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y));
-    matrix_set_item(&gravity_vector, 1, 0, 2.0f * (-curr_quat.w*curr_quat.x - curr_quat.y*curr_quat.z));
-    matrix_set_item(&gravity_vector, 2, 0, -curr_quat.w*curr_quat.w + curr_quat.x*curr_quat.x + curr_quat.y*curr_quat.y - curr_quat.z*curr_quat.z);
-
-    // b is unit gravity vector
-    float b_arr[3];
-    float gravl2norm;
-    matrix b;
-    matrix_init_static(&b, b_arr, 3, 1);
-    matrix_l2vnorm(&gravl2norm, &gravity_vector);
-    if(gravl2norm < 0.1f)
-        return; // Invalid gravity vector (norm should be non-zero)
-    matrix_sc_div(&b, &gravity_vector, gravl2norm);
-
-    // Expected unit gravity vector when "level"
-    float a_arr[3];
-    matrix a;
-    matrix_init_static(&a, a_arr, 3, 1);
-    matrix_set_col(&a, 0, (float[]){0, 0, -1});
-
-    float v_arr[3];
-    matrix v;
-    matrix_init_static(&v, v_arr, 3, 1);
-    matrix_vcross(&v, &a, &b);
-
-    float c;
-    matrix_vdot(&c, &a, &b);
-
-    float sk_arr[9];
-    matrix sk;
-    matrix_init_static(&sk, sk_arr, 3, 3);
-    skew3(&sk, &v);
-
-    float I_arr[9];
-    matrix I;
-    matrix_init_static(&I, I_arr, 3, 3);
-    matrix_ident(&I);
-
-    float R_arr[9];
-    matrix R;
-    matrix_init_static(&R, R_arr, 3, 3);
-    matrix_mul(&R, &sk, &sk);
-    matrix_sc_div(&R, &R, 1 + c);
-    matrix_add(&R, &R, &sk);
-    matrix_add(&R, &R, &I);
-
-    float tmp[6];
-    float tltarget_arr[3], rltarget_arr[3], tgtarget_arr[3], rgtarget_arr[3];
-    matrix tltarget, rltarget, tgtarget, rgtarget;
-    matrix_init_static(&tltarget, tltarget_arr, 3, 1);
-    matrix_init_static(&rltarget, rltarget_arr, 3, 1);
-    matrix_init_static(&tgtarget, tgtarget_arr, 3, 1);
-    matrix_init_static(&rgtarget, rgtarget_arr, 3, 1);
-    matrix_get_col(&tmp[0], &target, 0);
-    matrix_set_col(&tgtarget, 0, &tmp[0]);
-    matrix_set_col(&rgtarget, 0, &tmp[3]);
-
-    matrix_mul(&tltarget, &R, &tgtarget);
-    matrix_mul(&rltarget, &R, &rgtarget);
-
-    matrix_get_col(&tmp[0], &tltarget, 0);
-    matrix_get_col(&tmp[3], &rltarget, 0);
-
-    matrix_set_col(&target, 0, &tmp[0]);
-
-    // Target is now a local target (stored in order in target_arr)
-    mc_set_local(target_arr[0], target_arr[1], target_arr[2], target_arr[3], target_arr[4], target_arr[5]);
+    float grav_x = 2.0f * (curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);
+    float grav_y = 2.0f * (-curr_quat.w*curr_quat.x - curr_quat.y*curr_quat.z);
+    float grav_z = -curr_quat.w*curr_quat.w + curr_quat.x*curr_quat.x + curr_quat.y*curr_quat.y - curr_quat.z*curr_quat.z;
+    float grav_mag = sqrtf(grav_x*grav_x + grav_y*grav_y + grav_z*grav_z);
+    grav_x /= grav_mag;
+    grav_y /= grav_mag;
+    grav_z /= grav_mag;
+    quaternion_t qrot;
+    quat_between(&qrot, grav_x, grav_y, grav_z, 0.0f, 0.0f, -1.0f);
+    quat_inverse(&qrot, &qrot);
+    rotate_vector(&x, &y, &z, x, y, z, &qrot);
+    rotate_vector(&pitch, &roll, &yaw, pitch, roll, yaw, &qrot);
+    mc_set_local(x, y, z, pitch, roll, yaw);
 }
 
 void mc_sassist_tune_pitch(float kp, float ki, float kd, float limit, bool invert){
