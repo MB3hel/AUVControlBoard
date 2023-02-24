@@ -230,6 +230,48 @@ static int skew3(matrix *outmat, matrix *invec){
     return MAT_ERR_NONE;
 }
 
+// Rotate a vector (x, y, z) buy a quaternion q
+static inline void rotate_vector(float *dx, float *dy, float *dz, float sx, float sy, float sz, quaternion_t *q){
+    quaternion_t qv;
+    qv.x = sx;
+    qv.y = sy;
+    qv.z = sz;    
+    quaternion_t qr;
+    quaternion_t qconj;
+    quat_multiply(&qr, q, &qv);
+    quat_conjugate(&qconj, q);
+    quat_multiply(&qr, &qr, &qconj);
+    *dx = qr.x;
+    *dy = qr.y;
+    *dz = qr.z;
+}
+
+// Quaternion rotation from vector a to vector b
+static inline void quat_between(quaternion_t *dest, float ax, float ay, float az, float bx, float by, float bz){
+    float dot = ax*bx + ay*by + az*bz;
+    float a_len2 = ax*ax + ay*ay + az*az;
+    float b_len2 = bx*bx + by*by + bz*bz;
+    float summag = sqrtf(a_len2 + b_len2);
+    float cross_x = ay*bz - az*by;
+    float cross_y = az*bx - ax*bz;
+    float cross_z = ax*by - ay*bx;
+    if(dot / summag == -1){
+        // 180 degree rotation
+        dest->w = 0.0f;
+        dest->x = cross_x;
+        dest->y = cross_y;
+        dest->z = cross_z;
+    }else{
+        dest->w = dot + summag;
+        dest->x = cross_x;
+        dest->y = cross_y;
+        dest->z = cross_z;
+    }
+    float qmag;
+    quat_magnitude(&qmag, dest);
+    quat_divide_scalar(dest, dest, qmag);
+}
+
 
 void mc_set_raw(float *speeds){
     xSemaphoreTake(motor_mutex, portMAX_DELAY);   
@@ -410,6 +452,81 @@ void mc_sassist_tune_depth(float kp, float ki, float kd, float limit, bool inver
 }
 
 void mc_set_sassist(float x, float y, float yaw,
+        euler_t target_euler,
+        float target_depth,
+        quaternion_t curr_quat,
+        float curr_depth,
+        bool use_yaw_pid){
+
+    // Ensure zero yaw error if ignoring yaw
+    // This is necessary because the shortest rotation path is calculated
+    // Thus, yaw must be aligned to prevent shortest path from including a yaw component
+    if(!use_yaw_pid){
+        euler_t curr_euler;
+        quat_to_euler(&curr_euler, &curr_quat);
+        target_euler.yaw = curr_euler.yaw;
+    }
+
+    // Convert target to quaternion
+    quaternion_t target_quat;
+    euler_to_quat(&target_quat, &target_euler);
+
+    // Construct difference quaternion
+    quaternion_t diff_quat;
+    quat_inverse(&target_quat, &target_quat);
+    float dot;
+    quat_dot(&dot, &curr_quat, &target_quat);
+    if(dot < 0.0){
+        quat_multiply_scalar(&target_quat, &target_quat, -1);
+    }
+    quat_multiply(&diff_quat, &curr_quat, &target_quat);
+
+    // Convert diff quat to axis angle (used to get angular velocities)
+    float mag = sqrtf(diff_quat.x*diff_quat.x + diff_quat.y*diff_quat.y + diff_quat.z*diff_quat.z);
+    float axis_x = diff_quat.x / mag;
+    float axis_y = diff_quat.y / mag;
+    float axis_z = diff_quat.z / mag;
+    float angle = 2.0f * atan2f(mag, diff_quat.w);
+    float err_x = angle * axis_x;
+    float err_y = angle * axis_y;
+    float err_z = angle * axis_z;
+
+    // Use PID controllers to calculate current outputs
+    float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
+    float pitch = pid_calculate(&pitch_pid, -err_x);
+    float roll = pid_calculate(&roll_pid, -err_y);
+    if(use_yaw_pid){
+        yaw = pid_calculate(&yaw_pid, -err_z);
+    }
+
+    // Error "vector" (err_x, err_y, err_z) is in global DoFs. Need to rotate onto local axes
+    // This cannot be done by GLOBAL mode math as this is not yaw compensated
+    // whereas this must be yaw compensated
+    // Note that yaw drift is not a big deal as yaw drift redefines "zero yaw"
+	// Since zero yaw aligns with world axes, this redefines the world axes in
+	// this context too (by the same amount)
+    quaternion_t curr_quat_inv;
+    quat_inverse(&curr_quat_inv, &curr_quat);
+    rotate_vector(&pitch, &roll, &yaw, pitch, roll, yaw, &curr_quat_inv);
+
+    // Apply same rotation as in GLOBAL mode to translation target
+    float grav_x = 2.0f * (curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);
+    float grav_y = 2.0f * (-curr_quat.w*curr_quat.x - curr_quat.y*curr_quat.z);
+    float grav_z = -curr_quat.w*curr_quat.w + curr_quat.x*curr_quat.x + curr_quat.y*curr_quat.y - curr_quat.z*curr_quat.z;
+    float grav_mag = sqrtf(grav_x*grav_x + grav_y*grav_y + grav_z*grav_z);
+    grav_x /= grav_mag;
+    grav_y /= grav_mag;
+    grav_z /= grav_mag;
+    quaternion_t qrot;
+    quat_between(&qrot, grav_x, grav_y, grav_z, 0.0f, 0.0f, -1.0f);
+    quat_inverse(&qrot, &qrot);
+    rotate_vector(&x, &y, &z, x, y, z, &qrot);
+
+    // Target motion now relative to the robot's axes
+    mc_set_local(x, y, z, pitch, roll, yaw);
+}
+
+void mc_set_sassist_old(float x, float y, float yaw,
         euler_t target_euler,
         float target_depth,
         quaternion_t curr_quat,
