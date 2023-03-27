@@ -112,6 +112,9 @@ void quat_to_euler(euler_t *dest, quaternion_t *src){
         // Roll and yaw mean the same thing
         // roll + yaw = 2 * atan2(q.y, q.w)
         // Can split any way (not unique)
+        // However, note that putting this all into yaw
+        // is important for how stability assist math works
+        // (see mc_set_sassist in motor_control.c)
         dest->yaw = 2.0f * atan2f(src->y, src->w);
         dest->roll = 0.0f;
     }else{
