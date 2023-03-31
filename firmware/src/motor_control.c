@@ -359,7 +359,7 @@ void mc_sassist_tune_depth(float kp, float ki, float kd, float limit, bool inver
     depth_pid.invert = invert;
 }
 
-void mc_set_sassist(float x, float y, float yaw,
+void mc_set_sassist_new(float x, float y, float yaw,
         euler_t target_euler,
         float target_depth,
         quaternion_t curr_quat,
@@ -434,7 +434,7 @@ void mc_set_sassist(float x, float y, float yaw,
     mc_set_local(x, y, z, pitch, roll, yaw);
 }
 
-void mc_set_sassist_old(float x, float y, float yaw,
+void mc_set_sassist(float x, float y, float yaw,
         euler_t target_euler,
         float target_depth,
         quaternion_t curr_quat,
