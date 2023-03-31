@@ -177,6 +177,10 @@ def update_controlboard_v2():
         if file.endswith(".c"):
             replace_in_file(os.path.join(dest, "Core", "Src", file), "#include \"main.h\"", "#include \"stm32cubemx_main.h\"")
 
+    # Disable watchdog startup on system boot (should be handled in v2/wdt.c)
+    replace_in_file(os.path.join(dest, "Core", "Src", "stm32cubemx_main.c"), "MX_IWDG_Init();", "// MX_IWDG_Init();")
+    replace_in_file(os.path.join(dest, "Core", "Src", "stm32cubemx_main.c"), "static void MX_IWDG_Init(void)", "void MX_IWDG_Init(void)")
+
     # Change name of main function
     replace_in_file(os.path.join(dest, "Core", "Src", "stm32cubemx_main.c"), "int main(void)", "void stm32cubemx_main(void)")
 

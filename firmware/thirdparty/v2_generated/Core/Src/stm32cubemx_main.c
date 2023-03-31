@@ -63,7 +63,7 @@ static void MX_TIM1_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_I2C1_Init(void);
-static void MX_IWDG_Init(void);
+void MX_IWDG_Init(void);
 static void MX_RTC_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -108,7 +108,7 @@ void stm32cubemx_main(void)
   MX_TIM3_Init();
   MX_TIM5_Init();
   MX_I2C1_Init();
-  MX_IWDG_Init();
+  // MX_IWDG_Init();
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
 
@@ -205,7 +205,7 @@ static void MX_I2C1_Init(void)
   * @param None
   * @retval None
   */
-static void MX_IWDG_Init(void)
+void MX_IWDG_Init(void)
 {
 
   /* USER CODE BEGIN IWDG_Init 0 */

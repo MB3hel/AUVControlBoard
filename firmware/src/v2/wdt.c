@@ -21,11 +21,14 @@
 
 extern IWDG_HandleTypeDef hiwdg;
 
+extern void MX_IWDG_Init(void);
+
 void wdt_init(void){
     // Init handled in CubeMX generated code
     // LSI = 32kHz on this board
     // Prescaler = 32  ->  1024 counts / second
     // Reload configured to 2048 ~= 2 second timeout
+    MX_IWDG_Init();
     
     // Freeze watchdog when core halted
     __HAL_DBGMCU_FREEZE_IWDG();
