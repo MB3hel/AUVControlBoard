@@ -32,9 +32,6 @@ void debug_halt(int error_code){
     taskDISABLE_INTERRUPTS();
     led_set(255, 0, 0);
     // TODO: Store error code in memory where it can be retrieved on next boot
-    char *msg = "HALT:      ";
-    itoa(error_code, &msg[6], 10);
-    pccomm_write((uint8_t*)msg, 11);
     while(1){
         // Note: nop is here for debugger
         asm("nop");

@@ -351,7 +351,15 @@ void cmdctrl_apply_saved_speed(void){
         xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
         m_quat = curr_bno055_data.curr_quat;
         xSemaphoreGive(sensor_data_mutex);
-        mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, m_quat);
+
+        // Make sure sensors still working before applying in global mode
+        if(!bno055_ready || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
+            // Cannot apply real speed b/c sensor data not available or invalid
+            // Thus, stop the thrusters
+            mc_set_local(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+        }else{
+            mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, m_quat);
+        }
         break;
     case MODE_SASSIST:
         if(sassist_valid){
@@ -359,7 +367,12 @@ void cmdctrl_apply_saved_speed(void){
             m_quat = curr_bno055_data.curr_quat;
             m_depth = curr_ms5837_data.depth_m;
             xSemaphoreGive(sensor_data_mutex);
-            if(sassist_variant == 1){
+
+            if(!bno055_ready || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready){
+                // Cannot apply real speed b/c sensor data not available or invalid
+                // Thus, stop the thrusters
+                mc_set_local(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+            }else if(sassist_variant == 1){
                 mc_set_sassist(sassist_x, 
                     sassist_y, 
                     sassist_yaw, 
@@ -385,7 +398,13 @@ void cmdctrl_apply_saved_speed(void){
         m_quat = curr_bno055_data.curr_quat;
         m_depth = curr_ms5837_data.depth_m;
         xSemaphoreGive(sensor_data_mutex);
-        mc_set_dhold(dhold_x, dhold_y, dhold_pitch, dhold_roll, dhold_yaw, dhold_depth, m_quat, m_depth);
+        if(!bno055_ready || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready){
+            // Cannot apply real speed b/c sensor data not available or invalid
+            // Thus, stop the thrusters
+            mc_set_local(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+        }else{
+            mc_set_dhold(dhold_x, dhold_y, dhold_pitch, dhold_roll, dhold_yaw, dhold_depth, m_quat, m_depth);
+        }
         break;
     }
 }
