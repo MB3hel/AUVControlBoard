@@ -30,6 +30,9 @@ void wdt_feed(void){
 }
 
 void wdt_reset_now(void){
-    while(WDT_REGS->WDT_SYNCBUSY != 0U){}
-    WDT_REGS->WDT_CLEAR = 0x00;     // Write anything but 0xA5 resets now
+    // Doesn't actually use WDT anymore on this chip, but function name kept for compatibility
+    NVIC_SystemReset();
+    while(1);
+    // while(WDT_REGS->WDT_SYNCBUSY != 0U){}
+    // WDT_REGS->WDT_CLEAR = 0x00;     // Write anything but 0xA5 resets now
 }

@@ -102,6 +102,7 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
             HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0x3851FDEB);
             HAL_PWR_DisableBkUpAccess();
             NVIC_SystemReset();
+            while(1);
 #endif
         }
     }
