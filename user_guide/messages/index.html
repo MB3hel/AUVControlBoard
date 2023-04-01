@@ -266,8 +266,14 @@ Reads MS5837 data once.  </p>
 <pre><code class="language-none">[depth_m]
 </code></pre>
 <p><code>depth_m</code> is a 32-bit float, little endian.</p>
-<!--TODO: Future sensor queries-->
-
+<p><strong>Last Reset Cause Query</strong><br />
+Get error code for last system reset cause of the control board. Generally not useful for end users, except for reporting errors. Mainly a debug / development tool. See error codes in firmware source <code>debug.h</code>.</p>
+<pre><code class="language-none">'R', 'S', 'T', 'W', 'H', 'Y'
+</code></pre>
+<p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format.</p>
+<pre><code class="language-none">[error_code]
+</code></pre>
+<p><code>error_code</code> is a 32-bit integer (signed), little endian.</p>
 <hr />
 
 <h2 id="acknowledgements">Acknowledgements</h2>

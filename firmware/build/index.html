@@ -178,6 +178,7 @@ cmake --build --preset=[preset]-[config]
 <p><em><strong>v2:</strong> Hold the BOOT button. While holding it, press and release the NRST button. Then release the boot button.</em></p>
 </li>
 </ul>
+<p><em>Note: Sometimes reboot to bootloader mode "fails". On v1, this usually means it fails to attach USB (LED remains red not green.) On v2 this usually means it doesn't show up as a USB device. In either case, just try to enter again using the same button combination above.</em></p>
 <p>To flash, run the <code>flash.py</code> script. It is a wrapper that will call one of the above tools</p>
 <pre><code class="language-sh">python3 flash.py [version] [config] -u [tool]
 </code></pre>
@@ -217,6 +218,7 @@ scp -r firmware/build user@remote_ip:cboard-flash/
 ./reboot_bootloader.py [port]
 ./flash.py [version] [config] -p [port]
 </code></pre>
+<p><em>Note: Sometimes reboot to bootloader mode "fails". On v1, this usually means it fails to attach USB (LED remains red not green.) On v2 this usually means it doesn't show up as a USB device. In either case, you will loose USB communication to the board. In this case, a power cycle is required to "fix" the board before trying to enter the bootloader again. While inconvenient, it is still usually easier to power cycle the vehicle than to unseal it.</em></p>
               
             </div>
           </div><footer>
