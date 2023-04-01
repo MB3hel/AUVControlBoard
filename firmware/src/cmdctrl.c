@@ -576,9 +576,6 @@ void cmdctrl_handle_message(void){
         // L, O, C, A, L, [x], [y], [z], [pitch], [roll], [yaw]
         // [x], [y], [z], [pitch], [roll], [yaw]  are 32-bit floats (little endian)
 
-        // TODO: Get rid of this
-        debug_halt(HALT_EC_DEBUG);
-
         if(len != 29){
             // Message is incorrect size
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
