@@ -68,6 +68,7 @@ static inline __attribute__((always_inline)) void init_frameworks(void){
 #include <stm32f4xx.h>
 #include <stm32f4xx_hal.h>
 #include <stm32cubemx_main.h>
+#include <stm32f4xx_hal_rcc.h>
 
 #define BKUP_REG_BOOTLOADER         RTC_BKP_DR0             // Used to indicate should reboot to bootloader
 #define BKUP_REG_RESETCAUSE         RTC_BKP_DR1             // Indicates last reboot cause
@@ -121,6 +122,15 @@ static inline __attribute__((always_inline)) void init_frameworks(void){
     HAL_PWR_EnableBkUpAccess();
     HAL_RTCEx_BKUPWrite(&hrtc, BKUP_REG_RESETCAUSE, 0x00000000);
     HAL_PWR_DisableBkUpAccess();
+
+    // If reset cause is zero, check to see if it was watchdog triggered
+    // This would indicate watchdog reset due to user code
+    // Note that this omits watchdog reset from infinite loop in debug_halt
+    // as this will write a different error code instead.
+    if((reset_cause == 0) && __HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST)){
+        reset_cause = HALT_EC_WDOG;
+    }
+    __HAL_RCC_CLEAR_RESET_FLAGS();
 }
 
 #endif
