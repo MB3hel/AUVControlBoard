@@ -28,6 +28,7 @@
 #define HALT_EC_SOVERFLOW       -3
 #define HALT_EC_FAULTIRQ        -4
 #define HALT_EC_SCHEDRET        -5
+#define HALT_EC_WDOG            -6
 #define HALT_EC_DEBUG           -1000
 
 

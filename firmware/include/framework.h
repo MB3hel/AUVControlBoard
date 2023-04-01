@@ -47,6 +47,14 @@ static inline __attribute__((always_inline)) void init_frameworks(void){
         // A soft reset occurred. Retrieve reason why.
         reset_cause = reset_cause_persist;
         reset_cause_persist = 0x00000000;
+
+        // If reset cause is zero, check to see if it was watchdog triggered
+        // This would indicate watchdog reset due to user code
+        // Note that this omits watchdog reset from infinite loop in debug_halt
+        // as this will write a different error code instead.
+        if((reset_cause == 0) && (RSTC_REGS->RSTC_RCAUSE & RSTC_RCAUSE_WDT_Msk)){
+            reset_cause = HALT_EC_WDOG;
+        }
     }else{
         // First boot (hard reset)
         first_run = NOT_FIRST_RUN;
