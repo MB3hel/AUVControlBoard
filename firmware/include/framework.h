@@ -62,14 +62,28 @@ static inline __attribute__((always_inline)) void init_frameworks(void){
         HAL_PWR_DisableBkUpAccess();
 
         // Jump to bootloader
-        HAL_SuspendTick();
-        HAL_RCC_DeInit();
-        HAL_DeInit();
-        HAL_FLASH_Unlock();
-        HAL_FLASH_OB_Unlock();
-        __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();
-        __set_MSP(*((uint32_t*) 0x00000000));
-        ((void (*)(void)) *((uint32_t*) 0x00000004))();
+        // Adapted from
+        // - https://michaeltien8901.github.io/2020/05/30/Jump-to-Internal-Bootloader-STM32F4.html
+        // Note: 0x1FFF0000 from STM32 Application Note AN2606
+        void (*SysMemBootJump)(void);
+        volatile uint32_t addr = 0x1FFF0000;
+        HAL_SuspendTick();                                  // Disable HAL SysTick
+        for (int i = 0; i < 8; i++){
+            NVIC->ICER[i]=0xFFFFFFFF;                       // Clear interrupt enable
+            NVIC->ICPR[i]=0xFFFFFFFF;                       // Clear interrupt pending
+        }
+        HAL_RCC_DeInit();                                   // Cleanup RCC
+        HAL_DeInit();                                       // Cleanup HAL
+        SysTick->CTRL = 0;                                  // Disable SysTick
+        SysTick->LOAD = 0;                                  // Default Reload value
+        SysTick->VAL = 0;                                   // Default value
+        HAL_FLASH_Unlock();                                 // Allow FLASH control register access
+        HAL_FLASH_OB_Unlock();                              // Allow flash option register access
+        __HAL_SYSCFG_REMAPMEMORY_SYSTEMFLASH();             // Memory remap
+        SysMemBootJump = (void (*)(void)) (*((uint32_t *)(addr + 4)));
+        __set_MSP(*(uint32_t *)addr);                       // Set main stack pointer to 1 word before bootloader
+        SysMemBootJump();                                   // Execute (jump to) bootloader
+        while(1);                                           // Trap here if failure. WDT will "fix" if needed.
     }
 }
 
