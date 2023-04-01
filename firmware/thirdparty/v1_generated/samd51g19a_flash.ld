@@ -36,7 +36,8 @@ SEARCH_DIR(.)
 MEMORY
 {
   rom      (rx)  : ORIGIN = 0x00004000, LENGTH = 0x0007C000
-  ram      (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00030000
+  ram      (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00030000 - 0x100
+  noinit   (rwx) : ORIGIN = 0x20000000 + 0x00030000 - 0x100, LENGTH = 0x100
   bkupram  (rwx) : ORIGIN = 0x47000000, LENGTH = 0x00002000
   qspi     (rwx) : ORIGIN = 0x04000000, LENGTH = 0x01000000
 }
@@ -149,6 +150,11 @@ SECTIONS
         _ezero = .;
         __bss_end__ = .;
     } > ram
+
+    .noinit (NOLOAD):
+    {
+        KEEP(*(*.noinit*))
+    } > noinit
 
     /* stack section */
     .stack (NOLOAD):

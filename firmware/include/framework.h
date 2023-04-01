@@ -29,12 +29,27 @@ extern uint32_t SystemCoreClock;
 #include <definitions.h>
 #include <device.h>
 
+// Defined in main.c
+extern volatile uint32_t first_run;
+extern volatile uint32_t reset_cause_persist;
+
+#define NOT_FIRST_RUN       0x1FEA7496
+
 static inline __attribute__((always_inline)) void init_frameworks(void){
     // Enable FPU
     SCB->CPACR |= (3UL << 10*2) | (3UL << 11*2);
 
     // Initialize MCC generated code
     SYS_Initialize(NULL);
+
+    if(first_run == NOT_FIRST_RUN){
+        // TODO
+    }else{
+        // First boot (hard reset)
+        first_run = NOT_FIRST_RUN;
+        reset_cause = 0x00000000;
+        reset_cause_persist = 0x00000000;
+    }
 }
 
 #elif defined(CONTROL_BOARD_V2)

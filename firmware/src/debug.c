@@ -29,7 +29,6 @@
 
 int reset_cause;
 
-
 void debug_halt(int error_code){
     (void)error_code;
 
@@ -37,7 +36,7 @@ void debug_halt(int error_code){
     led_set(255, 0, 0);
     // Write to persistent memory for after WDT reset
 #if defined(CONTROL_BOARD_V1)
-
+    reset_cause_persist = error_code;
 #elif defined(CONTROL_BOARD_V2)
     // Note: after full power cycle (backup domain reset) value will be 0x00000000
     //       indicating no error (normal boot / reset cause for reset)
