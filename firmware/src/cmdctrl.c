@@ -576,6 +576,9 @@ void cmdctrl_handle_message(void){
         // L, O, C, A, L, [x], [y], [z], [pitch], [roll], [yaw]
         // [x], [y], [z], [pitch], [roll], [yaw]  are 32-bit floats (little endian)
 
+        // TODO: Get rid of this
+        debug_halt(HALT_EC_DEBUG);
+
         if(len != 29){
             // Message is incorrect size
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
@@ -1002,6 +1005,13 @@ void cmdctrl_handle_message(void){
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
             }
         }
+    }else if(MSG_EQUALS(((uint8_t[]){'R', 'S', 'T', 'W', 'H', 'Y'}))){
+        // R, S, T, W, H, Y
+        // ACK contains a 32-bit integer (signed, little endian)
+        // indicating one of the HALT_EC codes in debug.h
+        uint8_t response[4];
+        conversions_int32_to_data(reset_cause, response, true);
+        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response, 4);
     }else{
         // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG, NULL, 0);

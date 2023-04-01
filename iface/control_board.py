@@ -138,6 +138,15 @@ class ControlBoard:
     ## Reset control board
     def reset(self):
         self.__write_msg(b'RESET\x0D\x1E', False)
+    
+    ## Query why control board last reset
+    def why_reset(self, timeout: float = 0.1) -> Tuple[AckError, int]:
+        msg_id = self.__write_msg(b'RSTWHY', True)
+        ack, res = self.__wait_for_ack(msg_id, timeout)
+        if(ack != self.AckError.NONE):
+            return ack, -9999
+        ec = struct.unpack_from("<i", res, 0)[0]
+        return ack, ec
 
     ## Calculate the 16-bit CCITT-FALSE CRC of the given data
     #  @param msg The data to calculate CRC of

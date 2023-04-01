@@ -24,6 +24,10 @@
 #include <led.h>
 #include <usb.h>
 #include <stdlib.h>
+#include <framework.h>
+
+
+int reset_cause;
 
 
 void debug_halt(int error_code){
@@ -31,9 +35,21 @@ void debug_halt(int error_code){
 
     taskDISABLE_INTERRUPTS();
     led_set(255, 0, 0);
-    // TODO: Store error code in memory where it can be retrieved on next boot
+    // Write to persistent memory for after WDT reset
+#if defined(CONTROL_BOARD_V1)
+
+#elif defined(CONTROL_BOARD_V2)
+    // Note: after full power cycle (backup domain reset) value will be 0x00000000
+    //       indicating no error (normal boot / reset cause for reset)
+    HAL_PWR_EnableBkUpAccess();
+    HAL_RTCEx_BKUPWrite(&hrtc, BKUP_REG_RESETCAUSE, error_code);
+    HAL_PWR_DisableBkUpAccess();
+#endif
     while(1){
         // Note: nop is here for debugger
+        // If Debug build, WDT is disabled and can pause execution here using debugger
+        // Else, WDT will trigger a system reset. Error code can be read from last_error
+        // on next power on. See RSTWHY command.
         asm("nop");
     }
 }

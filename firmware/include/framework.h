@@ -19,6 +19,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <debug.h>
 
 #if defined(CONTROL_BOARD_V1)
 
@@ -42,6 +43,9 @@ static inline __attribute__((always_inline)) void init_frameworks(void){
 #include <stm32f4xx_hal.h>
 #include <stm32cubemx_main.h>
 
+#define BKUP_REG_BOOTLOADER         RTC_BKP_DR0             // Used to indicate should reboot to bootloader
+#define BKUP_REG_RESETCAUSE         RTC_BKP_DR1             // Indicates last reboot cause
+
 extern RTC_HandleTypeDef hrtc;
 
 extern void stm32cubemx_main(void);
@@ -55,10 +59,10 @@ static inline __attribute__((always_inline)) void init_frameworks(void){
 
     // Reboot to bootloader is implemented by writing backup register then resetting
     // See usb.c for details
-    if(HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0) == 0x3851FDEB){
+    if(HAL_RTCEx_BKUPRead(&hrtc, BKUP_REG_BOOTLOADER) == 0x3851FDEB){
         // Clear so next boot is normal
         HAL_PWR_EnableBkUpAccess();
-        HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR0, 0x00000000);
+        HAL_RTCEx_BKUPWrite(&hrtc, BKUP_REG_BOOTLOADER, 0x00000000);
         HAL_PWR_DisableBkUpAccess();
 
         // Jump to bootloader
@@ -85,6 +89,12 @@ static inline __attribute__((always_inline)) void init_frameworks(void){
         SysMemBootJump();                                   // Execute (jump to) bootloader
         while(1);                                           // Trap here if failure. WDT will "fix" if needed.
     }
+
+    // Read last reboot error code & clear it
+    reset_cause = HAL_RTCEx_BKUPRead(&hrtc, BKUP_REG_RESETCAUSE);
+    HAL_PWR_EnableBkUpAccess();
+    HAL_RTCEx_BKUPWrite(&hrtc, BKUP_REG_RESETCAUSE, 0x00000000);
+    HAL_PWR_DisableBkUpAccess();
 }
 
 #endif

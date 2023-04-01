@@ -22,13 +22,17 @@
 
 
 // Error codes
+#define HALT_EC_NONE             0
 #define HALT_EC_ASSERT          -1
 #define HALT_EC_MALLOC_FAIL     -2
 #define HALT_EC_SOVERFLOW       -3
 #define HALT_EC_FAULTIRQ        -4
 #define HALT_EC_SCHEDRET        -5
+#define HALT_EC_DEBUG           -1000
 
 
+// Uses one of the error codes above (halt error codes)
+extern int reset_cause;
 
 /**
  * Halt program due to some error
