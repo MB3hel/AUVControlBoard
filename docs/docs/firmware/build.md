@@ -42,6 +42,7 @@ Before flashing, the chip needs to enter its bootloader (unless using a debug pr
 
 - ***v2:** Hold the BOOT button. While holding it, press and release the NRST button. Then release the boot button.*
 
+*Note: Sometimes reboot to bootloader mode "fails". On v1, this usually means it fails to attach USB (LED remains red not green.) On v2 this usually means it doesn't show up as a USB device. In either case, just try to enter again using the same button combination above.*
 
 To flash, run the `flash.py` script. It is a wrapper that will call one of the above tools
 
@@ -98,3 +99,5 @@ Finally, reboot the control board to bootloader and flash
 ./reboot_bootloader.py [port]
 ./flash.py [version] [config] -p [port]
 ```
+
+*Note: Sometimes reboot to bootloader mode "fails". On v1, this usually means it fails to attach USB (LED remains red not green.) On v2 this usually means it doesn't show up as a USB device. In either case, you will loose USB communication to the board. In this case, a power cycle is required to "fix" the board before trying to enter the bootloader again. While inconvenient, it is still usually easier to power cycle the vehicle than to unseal it.*
