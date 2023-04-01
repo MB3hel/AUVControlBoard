@@ -205,7 +205,16 @@ This message will be acknowledged. If acknowledged with no error, the response w
 ```  
 `depth_m` is a 32-bit float, little endian.
 
-<!--TODO: Future sensor queries-->
+**Last Reset Cause Query**  
+Get error code for last system reset cause of the control board. Generally not useful for end users, except for reporting errors. Mainly a debug / development tool. See error codes in firmware source `debug.h`.
+```none
+'R', 'S', 'T', 'W', 'H', 'Y'
+```  
+This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format.
+```none
+[error_code]
+```  
+`error_code` is a 32-bit integer (signed), little endian.
 
 <hr />
 
