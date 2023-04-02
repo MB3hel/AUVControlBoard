@@ -980,36 +980,6 @@ class Simulator:
         y = float(res_parts[3])
         z = float(res_parts[4])
         return ec, w, x, y, z
-
-    def set_robot_max_trans(self, m: float) -> int:
-        self.__cmd_client.sendall("set_max_trans {}\n".format(m).encode("ascii"))
-        res = self.__read_until_newline(self.__cmd_client).decode("ascii")
-        return int(res)
-
-    def get_robot_max_trans(self) -> Tuple[int, float]:
-        self.__cmd_client.sendall("get_max_trans\n".encode("ascii"))
-        res = self.__read_until_newline(self.__cmd_client).decode("ascii")
-        res_parts = res.split(" ")
-        ec = int(res_parts[0])
-        if ec != 0:
-            return ec, None
-        m = float(res_parts[1])
-        return ec, m
-
-    def set_robot_max_rot(self, m: float) -> int:
-        self.__cmd_client.sendall("set_max_rot {}\n".format(m).encode("ascii"))
-        res = self.__read_until_newline(self.__cmd_client).decode("ascii")
-        return int(res)
-
-    def get_robot_max_rot(self) -> Tuple[int, float]:
-        self.__cmd_client.sendall("get_max_rot\n".encode("ascii"))
-        res = self.__read_until_newline(self.__cmd_client).decode("ascii")
-        res_parts = res.split(" ")
-        ec = int(res_parts[0])
-        if ec != 0:
-            return ec, None
-        m = float(res_parts[1])
-        return ec, m
     
     def reset_sim(self) -> int:
         self.__cmd_client.sendall("reset_sim\n".encode("ascii"))
