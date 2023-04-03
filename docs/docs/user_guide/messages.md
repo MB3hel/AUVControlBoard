@@ -104,9 +104,11 @@ Used to set motor speeds in `STABILITY_ASSIST` mode using a speed for yaw. This 
 ```  
 Each value is a 32-bit float little endian.
 
-Pitch, roll, and yaw are euler angles (in degrees). These are extrinsic euler angles. First around world X, then around world Y, then around world Z where pitch is about x, roll is about y, and yaw is about z.
+Pitch and roll are euler angles (in degrees). These are intrinsic euler angles (z-x'-y'' convention per the control board's coordinate system).
 
 Depth is in meters where negative numbers are below the surface.
+
+x, y, and yaw are speeds in the x, y, and yaw DoFs the same as in `GLOBAL` mode.
 
 This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
 
@@ -117,9 +119,11 @@ Used to set motor speeds in `STABILITY_ASSIST` mode using a PID to maintain a ta
 ```  
 Each value is a 32-bit float little endian. 
 
-Pitch, roll, and yaw are euler angles (in degrees). These are extrinsic euler angles. First around world X, then around world Y, then around world Z where pitch is about x, roll is about y, and yaw is about z.
+Pitch, roll, and yaw are euler angles (in degrees). These are intrinsic euler angles (z-x'-y'' convention per the control board's coordinate system).
 
 Depth is in meters where negative numbers are below the surface.
+
+x and y are speeds in the x and y DoFs the same as in `GLOBAL` mode.
 
 This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
 
