@@ -372,6 +372,7 @@ void mc_set_sassist(float x, float y, float yaw,
     if(!use_yaw_pid){
         euler_t curr_euler;
         quat_to_euler(&curr_euler, &curr_quat);
+        euler_rad2deg(&curr_euler, &curr_euler);
         target_euler.yaw = curr_euler.yaw;
     }
 

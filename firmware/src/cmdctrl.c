@@ -244,6 +244,7 @@ void cmdctrl_init(void){
     sassist_target_euler.pitch = 0.0f;
     sassist_target_euler.roll = 0.0f;
     sassist_target_euler.yaw = 0.0f;
+    sassist_target_euler.is_deg = true;
     sassist_depth_target = 0.0f;
 
     // Zero depth hold target
