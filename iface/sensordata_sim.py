@@ -9,7 +9,7 @@ import os
 def run(cb: ControlBoard, s: Simulator) -> int:
 
     if s is not None:
-        s.set_robot_rot(*s.euler_to_quat(0, 45, 0))
+        s.set_robot_rot(*s.euler_to_quat(2.6361095411338895, 2.3100118717539235, 49.73981961117051))
 
     ############################################################################
     # Query sensor status

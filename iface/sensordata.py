@@ -28,7 +28,7 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     if s is None:
         # Only valid if not in simulation
         print("Set axis config...", end="")
-        if cb.set_bno055_axis(ControlBoard.BNO055Axis.P1) == ControlBoard.AckError.NONE:
+        if cb.set_bno055_axis(ControlBoard.BNO055Axis.P6) == ControlBoard.AckError.NONE:
             print("Done.")
         else:
             print("Fail.")
