@@ -122,7 +122,7 @@ void quat_to_euler(euler_t *dest, quaternion_t *src){
         float roll_denom = 1.0f - 2.0f * (src->x*src->x + src->y*src->y);
         dest->roll = atan2f(roll_numer, roll_denom);
 
-        float yaw_numer = 2.0f * (src->x*src->y - src->w*src->z);
+        float yaw_numer = -2.0f * (src->x*src->y - src->w*src->z);
         float yaw_denom = 1.0f - 2.0f * (src->x*src->x + src->z*src->z);
         dest->yaw = atan2f(yaw_numer, yaw_denom);
     }
