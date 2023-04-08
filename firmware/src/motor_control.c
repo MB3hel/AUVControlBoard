@@ -308,7 +308,7 @@ void mc_set_local(float x, float y, float z, float pitch, float roll, float yaw)
 }
 
 void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw, quaternion_t curr_quat){
-    float grav_x = 2.0f * (curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);
+    float grav_x = 2.0f * (-curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);
     float grav_y = 2.0f * (-curr_quat.w*curr_quat.x - curr_quat.y*curr_quat.z);
     float grav_z = -curr_quat.w*curr_quat.w + curr_quat.x*curr_quat.x + curr_quat.y*curr_quat.y - curr_quat.z*curr_quat.z;
     float grav_mag = sqrtf(grav_x*grav_x + grav_y*grav_y + grav_z*grav_z);
@@ -419,7 +419,7 @@ void mc_set_sassist(float x, float y, float yaw,
     rotate_vector(&pitch, &roll, &yaw, pitch, roll, yaw, &curr_quat_inv);
 
     // Apply same rotation as in GLOBAL mode to translation target
-    float grav_x = 2.0f * (curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);
+    float grav_x = 2.0f * (-curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);
     float grav_y = 2.0f * (-curr_quat.w*curr_quat.x - curr_quat.y*curr_quat.z);
     float grav_z = -curr_quat.w*curr_quat.w + curr_quat.x*curr_quat.x + curr_quat.y*curr_quat.y - curr_quat.z*curr_quat.z;
     float grav_mag = sqrtf(grav_x*grav_x + grav_y*grav_y + grav_z*grav_z);
