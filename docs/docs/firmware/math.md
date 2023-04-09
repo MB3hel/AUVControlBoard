@@ -68,7 +68,7 @@ $D =
 
 ### LOCAL Mode Motion
 
-In LOCAL mode, motion is specified as a set of speeds in vehicle relative DoFs. The user provides the control board with a target motion vector ($t_l$) where each element corresponds to a DoF.
+In LOCAL mode, motion is specified as a set of speeds in vehicle relative DoFs. The user provides the control board with a *target motion vector* ($t_l$) where each element corresponds to a DoF.
 
 $t_l = \begin{pmatrix} x & y & z & p & r & h \end{pmatrix}^T$
 
@@ -79,7 +79,7 @@ $p$ is normalized velocity in +pitch direction
 $r$ is normalized velocity in +roll direction  
 $h$ is normalized velocity in +yaw direction
 
-By multiplying this target motion by the DoF matrix, $D$, a speed vector $s$ is obtained where each element of $s$ corresponds to a specific thruster (by index).
+By multiplying this target motion by the DoF matrix, $D$, a *speed vector* $s$ is obtained where each element of $s$ corresponds to a specific thruster (by index).
 
 $s = D t_l$
 
@@ -117,7 +117,7 @@ $s = D t_l =
 =
 \begin{pmatrix}0 \\ -2 \\ 0 \\ +2 \\ 0 \\ 0 \\ 0 \\ 0\end{pmatrix}$
 
-Notice that the resultant speed vector has motors moving in excess of 100% speed (elements with magnitude greater than 1.0). This is not possible. While a simple solution may seem to be dividing all elements of the vector by the one with the largest magnitude, 
+Notice that the resultant speed vector has motors moving in excess of 100% speed (elements with magnitude greater than 1.0). This is not possible. While a simple solution may seem to be dividing all elements of the vector by the one with the largest magnitude. This results in a scaled speed vector $\hat{s}$
 
 $\hat{s} = s \div \text{absmax}(s)$
 
@@ -142,10 +142,77 @@ and
 
 $\hat{s} = s \div \text{absmax}(s) = s \div 3 = \begin{pmatrix}0 \\ -0.67 \\ 0 \\ +0.67 \\ -1 \\ -0.33 \\ -0.33 \\ +0.33\end{pmatrix}$
 
-While this has resulted in an possible set of thruster speeds, these are not optimal. Look at the robot diagram. Notice that thrusters 1-4 and 5-8 control different motion. In the previous example, thrusters 1-4 were slowed down more than necessary, simply because thruster 5 was too large of a value. This is not ideal as the vehicle's maximum speed becomes artificially limited. Instead, the following $\hat{s}$ is ideal. This is scaling down the thrusters within each group (1-4 and 5-8) separately.
+While this has resulted in an possible set of thruster speeds, these are not optimal. Look at the robot diagram. Notice that thrusters 1-4 and 5-8 control different motions. In the previous example, thrusters 1-4 were slowed down more than necessary, because thruster 5 was too large of a value. This is not ideal as the vehicle's maximum speed becomes artificially limited. Instead, the following $\hat{s}$ is ideal. This is scaling down the thrusters within each group (1-4 and 5-8) separately.
 
 $\hat{s} = \begin{pmatrix}0 \\ -1 \\ 0 \\ +1 \\ -1 \\ -0.33 \\ -0.33 \\ +0.33\end{pmatrix}$
 
 Groupings of thrusters on the example vehicle are easy to observe, however this is not always true. Thus, achieving optimal scaling for any system (any DoF matrix) requires a more sophisticated method to determine groupings and scale speeds.
 
-TODO: Contribution matrix, overlap vectors, and algorithm. Note that this method is "lookup table like" to allow faster runtime.
+Thruster groupings are determined by "overlap" between thrusters. Two thrusters, $i$ and $j$ are said to overlap if they have a non-zero entry in the same column of the DoF matrix ($D$) for at least one column. This is easier to calculate using a *contribution matrix*, $C$, defined as $D \neq 0$. This results in a binary form of the DoF matrix. For the above example
+
+$C = 
+\left[\begin{pmatrix}
+-1 & -1 & 0 & 0 & 0 & +1 \\
++1 & -1 & 0 & 0 & 0 & -1 \\
+-1 & +1 & 0 & 0 & 0 & -1 \\
++1 & +1 & 0 & 0 & 0 & +1 \\
+0 & 0 & -1 & -1 & -1 & 0 \\
+0 & 0 & -1 & -1 & +1 & 0 \\
+0 & 0 & -1 & +1 & -1 & 0 \\
+0 & 0 & -1 & +1 & +1 & 0 \\
+\end{pmatrix}
+\neq 0 \right] = 
+\begin{pmatrix}
+1 & 1 & 0 & 0 & 0 & 1 \\
+1 & 1 & 0 & 0 & 0 & 1 \\
+1 & 1 & 0 & 0 & 0 & 1 \\
+1 & 1 & 0 & 0 & 0 & 1 \\
+0 & 0 & 1 & 1 & 1 & 0 \\
+0 & 0 & 1 & 1 & 1 & 0 \\
+0 & 0 & 1 & 1 & 1 & 0 \\
+0 & 0 & 1 & 1 & 1 & 0 \\
+\end{pmatrix}$
+
+Then for each thruster $i$ an overlap vector $o_i$ can be constructed as follows
+
+$o_i = C (c^i)^T$
+
+where $c^i$ is the $i$th row of $C$. Thus, $o_i$ is an 8 element vector where each element corresponds to a thruster (by index). Element $j$ of $o_i$ can either be $1$ or a $0$. $1$ indicates that thrusters $i$ and $j$ overlap.
+
+For example, 
+
+$o_0 = C (C^0)^T = \begin{pmatrix} 1 & 1 & 1 & 1 & 0 & 0 & 0 & 0 \end{pmatrix}^T$
+
+This shows that thruster index 0 (T1) overlaps with indices 0, 1, 2, and 3 (T1, T2, T3, T4).
+
+By calculating and storing these overlap vectors for each thruster ($\left\{o_i\right\}_{i=0}^7$), this effectively forms a lookup table to determine thruster overlap. While this is not the most memory efficient option, it reduces computation time, which is important since this will run very frequently on a microcontroller.
+
+Using overlap vectors, the following algorithm can be used to scale motor speeds:
+
+- Find the thruster with the largest magnitude speed
+- Iterate over that thruster's overlap vector
+- For any thruster it overlaps with, divide speed by the largest speed
+- Repeat until the largest magnitude does not exceed 1.0
+
+```
+while true
+    // m is value, i is index
+    m, i = max(abs(speed_vector))
+    if m <= 1.0
+        // Done scaling
+        break
+    endif
+
+    // Iterate over all thrusters (0-7 inclusive)
+    for j=0...7
+        if overlap_vector[i][j] == 1
+            // i and j overlap. Divide j's speed by m.
+            speed_vector[j] /= m
+        endif
+    endfor
+endwhile
+```
+
+This algorithm results in optimal speed scaling by only reducing the speed of thrusters that share DoF contributions.
+
+
