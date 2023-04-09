@@ -8,23 +8,27 @@ theme:
   highlightjs: true
 markdown_extensions:
   - attr_list
-  - mdx_math:
-      enable_dollar_delimiter: True
-extra_javascript: ['https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML']
+  - pymdownx.arithmatex:
+      generic: true
+extra_javascript:
+  - js/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 nav:
   - Home: index.md
-  - Hardware:
-    - Version 1: hardware/v1.md
-    - Version 2: hardware/v2.md
-    - Off-Board Sensors: hardware/sensors.md
   - User Guide:
     - Preparing a Control Board: user_guide/preparing_board.md
     - Using Control board: user_guide/general_use.md
     - Using the Simulator: user_guide/simulator.md
     - Communication Protocol: user_guide/comm_protocol.md
     - Messages: user_guide/messages.md
+  - Hardware:
+    - Version 1: hardware/v1.md
+    - Version 2: hardware/v2.md
+    - Off-Board Sensors: hardware/sensors.md
   - Developers:
     - Overview: firmware/overview.md
     - Build and Flash: firmware/build.md
     - Math: firmware/math.md
+    - Math (Old): firmware/math_old.md
     - Firmware Development: firmware/developing.md
