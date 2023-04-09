@@ -49,7 +49,11 @@ The arrows indicate the direction the thruster moves water when powered in the p
 
 ### DoF Matrix
 
-TODO: Explanation / derivation
+The *DoF Matrix*, $D$, is constructed based on the vehicle's thruster configuration. Rows of the matrix correspond to thrusters (by index). And columns of the matrix correspond to vehicle relative DoFs. Thus, this is an 8x6 matrix. Columns correspond to DoFs in the following order (0-5): x, y, z, pitch, roll, yaw. Note that pitch, roll, and yaw are written using the single variable notation p, r, h (h = heading = yaw).
+
+$D = \left(\begin{array}{c|c|c|c|c|c} d_0 & d_1 & d_2  & d_3 & d_4 & d_5 \end{array}\right) = \left(\begin{array}{c|c|c|c|c|c} d_x & d_y & d_z  & d_p & d_r & d_h \end{array}\right)$
+
+Each column of the DoF matrix, $d_i$ is a set of thruster speeds that result in motion *exclusively* in the column's DoF. Additionally, the resultant motion should be the maximum possible speed, and in the positive direction. Each $d_i$ is an 8 element column vector, with elements corresponding to thrusters (by index). All speeds should be normalized (between -1.0 and 1.0)
 
 For the example vehicle shown above, the following is the DoF matrix
 
@@ -64,6 +68,12 @@ $D =
 0 & 0 & -1 & +1 & -1 & 0 \\
 0 & 0 & -1 & +1 & +1 & 0 \\
 \end{pmatrix}$
+
+Consider the first column: $d_0 = d_x$. This column's thruster speeds should result in the vehicle moving as fast as possible in the +x direction (only). This is achieved by setting T2, T4 (index 1, 3) to the positive direction and T1, T3 (index 0, 2) to the negative direction at full speed (recall that the arrows are opposite the direction the thruster excerpts force on the vehicle). Thus
+
+$d_x = \begin{pmatrix}-1 & +1 & -1 & +1 & 0 & 0 & 0 & 0\end{pmatrix}^T$
+
+Note that when constructing the DoF matrix for your vehicle, you should assume an ideal system and environment.
 
 
 ### LOCAL Mode Motion
@@ -142,7 +152,7 @@ and
 
 $\hat{s} = s \div \text{absmax}(s) = s \div 3 = \begin{pmatrix}0 \\ -0.67 \\ 0 \\ +0.67 \\ -1 \\ -0.33 \\ -0.33 \\ +0.33\end{pmatrix}$
 
-While this has resulted in an possible set of thruster speeds, these are not optimal. Look at the robot diagram. Notice that thrusters 1-4 and 5-8 control different motions. In the previous example, thrusters 1-4 were slowed down more than necessary, because thruster 5 was too large of a value. This is not ideal as the vehicle's maximum speed becomes artificially limited. Instead, the following $\hat{s}$ is ideal. This is scaling down the thrusters within each group (1-4 and 5-8) separately.
+While this has resulted in an possible set of thruster speeds, these are not optimal. Look at the example vehicle diagram. Notice that thrusters 1-4 and 5-8 control different motions. In the previous example, thrusters 1-4 were slowed down more than necessary, because thruster 5 was too large of a value. This is not ideal as the vehicle's maximum speed becomes artificially limited. Instead, the following $\hat{s}$ is ideal. This is scaling down the thrusters within each group (1-4 and 5-8) separately.
 
 $\hat{s} = \begin{pmatrix}0 \\ -1 \\ 0 \\ +1 \\ -1 \\ -0.33 \\ -0.33 \\ +0.33\end{pmatrix}$
 
