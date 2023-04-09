@@ -3,7 +3,7 @@
 # Exit if any command errors
 set -e
 trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
-trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
+trap 'echo "\"${last_command}\" command filed with exit code $?."' ERR
 
 read -p "Version: " VERSION
 
@@ -18,6 +18,9 @@ mkdir package/build/
 mkdir package/build/v1/
 mkdir package/build/v2/
 mkdir package/python/
+
+# Write version file
+echo "$VERSION" > package/version.txt
 
 # Build firmware
 cd firmware
@@ -36,6 +39,15 @@ cp firmware/reboot_bootloader.py package/
 
 # Copy Python interface code
 cp iface/control_board.py package/python/
+
+# Create docs site
+cd docs
+rm -r site
+SITE_URL="" DIR_URLS=false mkdocs build
+cd ..
+
+# Copy docs site
+cp -r docs/site package/docs/
 
 # Create zip packge
 cd package
