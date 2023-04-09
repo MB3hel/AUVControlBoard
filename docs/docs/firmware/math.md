@@ -45,9 +45,6 @@
 
 The following section covers math to calculate individual motor speeds to achieve the desired motion with a 6 degree of freedom system (6DoF = 3 translation and 3 rotation). The math remains valid for motor configurations where motion in some DoFs is not possible.
 
-See: `numpy_motor_math.py` linked at the top of this page.
-
-
 ### Motor Matrix
 
 The motor matrix is generated based on physical frame and thruster configuration. The motor matrix associates motor numbers with their contributions to motion in different degrees of freedom.
@@ -108,7 +105,7 @@ Notice that the resultant motor speed vector has motor speeds that exceed 100% s
 
 The above example illustrates the need to scale down motor speeds. However, doing so is less trivial than it may initially appear.
 
-The most intuitive option would be to divide all motor speeds by the largest magnitude (`m = max(abs(speed_vector))`) if `m` is larger than 1.0 (no need to divide if no value is larger than 1 because the motion is already possible). This solution works in the above example resulting in the following scaled speed vector
+The most intuitive option would be to divide all motor speeds by the largest magnitude ($m = max(abs(\textrm{speed_vector}))$) if $m$ is larger than $1.0$. This solution works in the above example resulting in the following scaled speed vector
 
 <center>
 ![](./math_res/scaled_speed_vec_all.png){: style="height:250px;"}
@@ -120,46 +117,62 @@ While this is the correct result for the above example, consider the following m
 ![](./math_res/many_dof_speed_calc.png){: style="height:250px;"}
 </center>
 
-If the previously described algorithm is applied `m = 3` which results in the following scaled speed vector
+If the previously described algorithm is applied $m = 3$ which results in the following scaled speed vector
 
 <center>
 ![](./math_res/scaled_all_many_dof.png){: style="height:225px;"}
 </center>
 
-However, this speed vector is scaled non-optimally. Notice that the maximum speed occurred at motor 5. However, motors 1, 2, 3, and 4 do not affect any of the same directions as motor 5. As such, it is not necessary to divide motor 1, 2, 3, 4 speeds by 3. Instead they should only be divided by 2 otherwise some DoF motions are slowed more than required (artificially reducing max speed).
+However, this speed vector is scaled non-optimally. Notice that the maximum speed occurred at motor 5. However, motors 1, 2, 3, and 4 do not affect any of the same directions as motor 5. As such, it is not necessary to divide motor 1, 2, 3, 4 speeds by 3. Instead they should only be divided by 2 (the largest speed in that group) otherwise some DoF motions are slowed more than required (artificially reducing max speed).
 
-In reality, it is only necessary to divide the speeds of some motors depending on where the max speed is located. If the max speed occurs at motor *i*, it is only necessary to divide the speed of any motors that "overlap" with motor *i*. Overlap is defined as sharing a contribution in any DoF. In terms of the DoF matrix, two motors *i* and *j* overlap if the row for motor *i* and the row for motor *j* have a non-zero entry in the same column for at least one column. Mathematically, this is easier to calculate if a contribution matrix is defined as "the dof matrix is not equal to zero". The contribution matrix is a "binary version" of the dof matrix, where any non-zero entry in the dof matrix becomes a 1 in the contribution matrix (and any zero remains a zero). 
+In reality, it is only necessary to divide the speeds of some motors depending on where the max speed is located. If the max speed occurs at motor $i$, it is only necessary to divide the speed of any motors that "overlap" with motor $i$. Overlap is defined as sharing a contribution in any DoF. 
+
+In terms of the DoF matrix, two motors $i$ and $j$ overlap if the row for motor $i$ and the row for motor $j$ have a non-zero entry in the same column for at least one column. Mathematically, this is easier to calculate if a contribution matrix is defined as "the dof matrix is not equal to zero". The contribution matrix is a "binary version" of the dof matrix, where any non-zero entry in the dof matrix becomes a 1 in the contribution matrix (and any zero remains a zero). 
 
 <center>
 ![](./math_res/contribution_matrix_calc.png){: style="height:300px;"}
 </center>
 
 
-Then, in terms of the contribution matrix, two motors *i* and *j* overlap if the row for motor *i* and motor *j* have a one entry in the same column for at least one column. Mathematically, the number of shared non-zero entries is the dot product of the two rows.
+Then, in terms of the contribution matrix, two motors $i$ and $j$ overlap if the row for motor $i$ and motor $j$ both have a 1 entry in the same column for at least one column. Mathematically, the number of shared non-zero entries is the dot product of the two rows.
 
-To simplify later calculations an overlap vector will be generated for each motor in the dof matrix. The overlap vector is a vector of 1's and 0's indicating whether overlap occurs with the corresponding index motor in the speed vector. For motor i the overlap vector (`overlap_vec[i]`) is defined as "the product of the contribution matrix and the transpose of row `i` of the contribution matrix is not equal to zero". For example `overlap_vec[0]` is defined as follows
+To simplify later calculations an overlap vector will be generated for each motor in the dof matrix. The overlap vector is a vector of 1's and 0's indicating whether overlap occurs with the corresponding index motor in the speed vector. Note that this is not the most memory efficient way of determining overlap, however allows a fast "lookup table" style solution. This is important because this overlap check will be performed very frequently on a microcontroller.
+
+For motor $i$ the overlap vector (`overlap_vec[i]`) is defined as "the product of the contribution matrix and the transpose of row `i` of the contribution matrix is not equal to zero". For example `overlap_vec[0]` is defined as follows
 
 <center>
 ![](./math_res/overlap_vec_calc.png){: style="height:425px;"}
 </center>
 
-One overlap vector must be calculated for *each* motor. These are calculated ahead of time to reduce the number of operations that must be performed to calculate motor speeds (important when this is implemented on a microcontroller).
+An overlap vector is an 8 element array / vector, where each index / element represents a thruster. A one indicates that there is overlap. A zero indicates no overlap.
 
-Finally, the following algorithm (described in pseudocode) is used to properly scale each motor. The scaling is done when no speed in the vector has a magnitude greater than 1.
+One overlap vector must be calculated for *each* thruster. These are calculated once and saved (to reduce the time spend scaling speeds).
+
+Finally, the following algorithm is used to properly scale each motor's speed:
+
+1. Let $i$ be the thruster with the largest magnitude speed, $m$
+2. If $m$ is smaller than 1, then all speeds are possible, so take no further action (done scaling; exit condition).
+3. For each thruster $j = 1, 2, \dots, 7$ check if thruster $i$ and thruster $j$ overlap. That is check if thruster $i$'s overlap vector has a $1$ at element $j$. if so, thruster $j$ must be scaled. If not, skip to step 5.
+4. Divide thruster $j$'s speed by $m$. Note that by iterating over all thrusters there will be a time where $j=i$, thus thruster $i$'s speed will be scaled down to a magnitude of 1.
+5. Go to step 1.
+
+Pseudocode implementing this algorithm is shown below.
 
 ```
 while true
-    // index is index in speed_vector at which m occurs
-    m, index = max(abs(speed_vector))
+    // i is index in speed_vector at which m occurs
+    m, i = max(abs(speed_vector))
     if m <= 1
         // No speeds exceed max magnitude, so done scaling
         break
     endif
 
-    // Scale speed_vector as needed
-    for i = 0; i < length(overlap_vector[index]); ++i
-        if overlap_vector[index][i] == 1
-            speed_vector[i] /= m;
+    // Iterate over all thrusters
+    for j = 0; j < 8; ++j
+        // If i's overlap vector contains a 1 at index j
+        if overlap_vector[i][j] == 1
+            // Reduce j's speed by factor m
+            speed_vector[j] /= m;
         endif
     endfor
 endwhile
@@ -172,6 +185,8 @@ Using this algorithm the earlier example results in the following scaled speed v
 
 *Motor 1, 2, 3, 4 speeds divided by 2 and motor 5, 6, 7, 8 speeds divided by 3. This results in the fastest motor within each group being at 100% speed, thus this is optimal scaling.*
 </center>
+
+
 
 
 ### Global Targets
@@ -242,11 +257,12 @@ This is built on top of global mode. Thus, stability assist mode calculates the 
 Depth closed-loop control is implemented using a PID. This PID's output is used as the target speed in the z DoF. The error is the difference between the current depth sensor reading and the specified target depth (in meters; negative for below the surface).
 
 
-## IMU Angle Accumulation
+## Euler Angle Accumulation
+
 
 The euler and quaternion values provided by the IMU are not directly useful for tracking multiple rotations of the vehicle. Unlike simply integrating gyroscope data, euler angles (pitch, roll, yaw) and quaternions do not track the number of times the vehicle has rotated about a particular axis.
 
-While integrating raw gyro data would provide this, such a solution would be rotations about the robot's axes, not the world's axes (gyro z of 500 does not necessarily mean the robot has yawed 500 degrees; the robot could have been oriented at a pitch of 90). Additionally, the drift for accumulated pitch and roll would be significantly worse due to the loss of accelerometer data.
+While integrating raw gyro data would provide this, such a solution would be rotations about the robot's axes, not the world's axes (gyro z of 500 does not necessarily mean the robot has yawed 500 degrees; the robot could have been oriented with a roll of of 90 before it yawed). Additionally, the drift for accumulated pitch and roll would be significantly worse due to the loss of accelerometer data.
 
 To address this, it is necessary to track changes between subsequent quaternions from the IMU. Quaternions are used for three reasons
 

@@ -17,15 +17,14 @@ nav:
     - Version 1: hardware/v1.md
     - Version 2: hardware/v2.md
     - Off-Board Sensors: hardware/sensors.md
-  - Firmware:
-    - Overview: firmware/overview.md
-    - Build and Flash: firmware/build.md
-    - Math: firmware/math.md
-    - Firmware Development: firmware/developing.md
-    - Simulation Support: firmware/simhijack.md
   - User Guide:
     - Preparing a Control Board: user_guide/preparing_board.md
     - Using Control board: user_guide/general_use.md
     - Using the Simulator: user_guide/simulator.md
     - Communication Protocol: user_guide/comm_protocol.md
     - Messages: user_guide/messages.md
+  - Developers:
+    - Overview: firmware/overview.md
+    - Build and Flash: firmware/build.md
+    - Math: firmware/math.md
+    - Firmware Development: firmware/developing.md
