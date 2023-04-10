@@ -31,6 +31,7 @@
 #include <i2c.h>
 #include <wdt.h>
 #include <debug.h>
+#include <pccomm.h>
 
 
 #if defined(CONTROL_BOARD_V1)
@@ -58,6 +59,7 @@ int main(void){
     delay_init();
     led_init();
     usb_init();
+    pccomm_init();
     thruster_init();
     mc_init();
     cmdctrl_init();

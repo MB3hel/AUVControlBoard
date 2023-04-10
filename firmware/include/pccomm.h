@@ -34,6 +34,11 @@ extern unsigned int pccomm_read_len;
 extern uint16_t pccomm_read_crc;
 
 /**
+ * Initialize data structures used to communicate with PC
+ */
+void pccomm_init(void);
+
+/**
  * Read data from the PC and parse the message.
  * @return true if a complete, valid message has been received
  */

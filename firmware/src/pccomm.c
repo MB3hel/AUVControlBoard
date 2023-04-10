@@ -19,6 +19,8 @@
 #include <pccomm.h>
 #include <tusb.h>
 #include <conversions.h>
+#include <FreeRTOS.h>
+#include <semphr.h>
 
 // Comm protocol special bytes
 #define START_BYTE          253
@@ -31,8 +33,15 @@ uint16_t pccomm_read_crc = 0;
 
 static uint16_t curr_msg_id = 0;
 
+// Used in pccomm_write to ensure pccomm_write call is thread safe
+static SemaphoreHandle_t msg_write_mutex;
+
 
 #define crc16_ccitt_false(data, len)      crc16_ccitt_false_partial((data), (len), 0xFFFF)  
+
+void pccomm_init(void){
+    msg_write_mutex = xSemaphoreCreateMutex();
+}
 
 /**
  * Calculate 16-bit CRC (CCITT-FALSE) of the given data
@@ -147,7 +156,11 @@ static inline void pccomm_write_one(uint8_t b){
 }
 
 void pccomm_write(uint8_t *msg, unsigned int len){
-    taskENTER_CRITICAL();
+
+    // This function could be called from multiple threads
+    // Thus, it is necessary to prevent message interleaving
+    // This is done using a mutex for priority inheritance
+    xSemaphoreTake(msg_write_mutex, portMAX_DELAY);
 
     // Write start byte
     pccomm_write_one(START_BYTE);
@@ -190,5 +203,5 @@ void pccomm_write(uint8_t *msg, unsigned int len){
     // Write the message now
     tud_cdc_write_flush();
 
-    taskEXIT_CRITICAL();
+    xSemaphoreGive(msg_write_mutex);
 }
