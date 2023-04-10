@@ -78,7 +78,7 @@ Note that when constructing the DoF matrix for your vehicle, you should assume a
 
 ### LOCAL Mode Motion
 
-In LOCAL mode, motion is specified as a set of speeds in vehicle relative DoFs. The user provides the control board with a *target motion vector* ($t_l$) where each element corresponds to a DoF.
+In LOCAL mode, motion is specified as a set of speeds in vehicle relative DoFs. The user provides the control board with a *local target motion vector* ($t_l$) where each element corresponds to a DoF.
 
 $t_l = \begin{pmatrix} x & y & z & p & r & h \end{pmatrix}^T$
 
@@ -226,3 +226,12 @@ endwhile
 This algorithm results in optimal speed scaling by only reducing the speed of thrusters that share DoF contributions.
 
 
+### GLOBAL Mode Motion
+
+GLOBAL mode is very similar to LOCAL mode, however, motion is described *partially* relative to the world instead of the robot. Specifically, motion of the vehicle is compensated for vehicle pitch and roll. This results in a coordinate system defined by the axes `gx`, `gy`, and `gz`. Note that the world coordinate system is defined as `wx`, `wy`, `wz`.
+
+![](./math_res/global_coord1.png)
+
+![](./math_res/global_coord2.png)
+
+In GLOBAL mode, the user provides the control board with a *global target motion vector*, $t_g$ where each element cooresponds to a DoF relative to the global axis system (`gx`, `gy`, `gz`).
