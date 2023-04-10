@@ -28,6 +28,7 @@
 #include <bno055.h>
 #include <wdt.h>
 #include <debug.h>
+#include <simulator.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -1010,6 +1011,15 @@ void cmdctrl_handle_message(void){
         uint8_t response[4];
         conversions_int32_to_data(reset_cause, response, true);
         cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response, 4);
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'I', 'M', 'H', 'I', 'J', 'A', 'C', 'K'}))){
+        // S, I, M, H, I, J, A, C, K, [hijack]
+        // [hijack] is an 8-bit int (unsigned) 0 = release, 1 = hijack
+        if(len != 10){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }
+        sim_hijacked = msg[9];
+        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
     }else{
         // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG, NULL, 0);
