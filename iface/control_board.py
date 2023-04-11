@@ -955,12 +955,12 @@ class Simulator:
             else:
                 b.extend(n)
 
-    def set_robot_pos(self, x: float, y: float, z: float) -> int:
+    def set_pos(self, x: float, y: float, z: float) -> int:
         self.__cmd_client.sendall("set_pos {} {} {}\n".format(x, y, z).encode("ascii"))
         res = self.__read_until_newline(self.__cmd_client).decode("ascii")
         return int(res)
 
-    def get_robot_pos(self) -> Tuple[int, float, float, float]:
+    def get_pos(self) -> Tuple[int, float, float, float]:
         self.__cmd_client.sendall("get_pos\n".encode("ascii"))
         res = self.__read_until_newline(self.__cmd_client).decode("ascii")
         res_parts = res.split(" ")
@@ -972,12 +972,12 @@ class Simulator:
         z = float(res_parts[3])
         return ec, x, y, z
 
-    def set_robot_rot(self, w: float, x: float, y: float, z: float) -> int:
+    def set_rot(self, w: float, x: float, y: float, z: float) -> int:
         self.__cmd_client.sendall("set_rot {} {} {} {}\n".format(w, x, y, z).encode("ascii"))
         res = self.__read_until_newline(self.__cmd_client).decode("ascii")
         return int(res)
 
-    def get_robot_rot(self) -> Tuple[int, float, float, float, float]:
+    def get_rot(self) -> Tuple[int, float, float, float, float]:
         self.__cmd_client.sendall("get_rot\n".encode("ascii"))
         res = self.__read_until_newline(self.__cmd_client).decode("ascii")
         res_parts = res.split(" ")
@@ -990,8 +990,8 @@ class Simulator:
         z = float(res_parts[4])
         return ec, w, x, y, z
     
-    def reset_sim(self) -> int:
-        self.__cmd_client.sendall("reset_sim\n".encode("ascii"))
+    def reset_vehicle(self) -> int:
+        self.__cmd_client.sendall("reset_vehicle\n".encode("ascii"))
         res = self.__read_until_newline(self.__cmd_client).decode("ascii")
         return int(res)
 
