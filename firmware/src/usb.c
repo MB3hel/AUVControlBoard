@@ -22,6 +22,7 @@
 #include <limits.h>
 #include <string.h>
 #include <FreeRTOS.h>
+#include <simulator.h>
 
 
 // Special bytes for protocol
@@ -70,7 +71,7 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
     // Run when line state changes
     // DTR = Data Terminal Ready
     // RTS = Ready to Send
-    // DRT usually set when terminal connected
+    // DTR usually set when terminal connected
 
     // sam-ba upload protocol uses a 1200bps "touch" to trigger a reset
     // Handle this as expected
@@ -79,6 +80,9 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
     // Nothing is implemented here with timing. It just boots to bootloader when
     // a 1200bps connection is closed
     if (!dtr && itf == 0) {
+        // When terminal closed, revert to normal operation
+        sim_hijacked = false;
+
         cdc_line_coding_t coding;
         tud_cdc_get_line_coding(&coding);
         if (coding.bit_rate == 1200){
