@@ -20,6 +20,30 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <angles.h>
 
+
+// Controls whether simulation mode operation
+// When in simulation mode (sim_hijacked = true)
+//   - IMU and depth sensor continue to be read, but the data is unused
+//   - cmdctrl treats all sensors as connected
+//   - cmdctrl uses sim_quat and sim_depth instead of real sensor data
+//   - Motor control calculations (motor_control.c) are all performed (including RAW mode)
+//   - Motor control local mode results are cached in the variables below
+//   - Thruster speed sets are disabled (PWM signals will maintain zero speed signal)
 extern bool sim_hijacked;
 
+// Data provided by the simulator (SIMDAT command to control board)
+extern quaternion_t sim_quat;
+extern float sim_depth;
+
+
+// Data provided to the simulator (SIMSTAT command from control board)
+extern float sim_local_x;
+extern float sim_local_y;
+extern float sim_local_z;
+extern float sim_local_pitch;
+extern float sim_local_roll;
+extern float sim_local_yaw;
+// mode is provided too, but tracked in cmdctrl
+// wdog_killed is provided too, but tracked in cmdctrl

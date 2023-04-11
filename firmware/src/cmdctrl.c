@@ -77,6 +77,8 @@
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+static bool motors_enabled;
+
 static unsigned int mode;
 
 // Last used raw mode target
@@ -1026,8 +1028,9 @@ void cmdctrl_handle_message(void){
     }
 }
 
-void cmdctrl_mwdog_change(bool motors_enabled){
-    pccomm_write((uint8_t[]){'W', 'D', 'G', 'S', motors_enabled}, 5);
+void cmdctrl_mwdog_change(bool me){
+    motors_enabled = me;
+    pccomm_write((uint8_t[]){'W', 'D', 'G', 'S', me}, 5);
 }
 
 void cmdctrl_bno055_status(bool status){
