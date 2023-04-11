@@ -168,6 +168,14 @@ This command is used to rest the control board itself. This will reset the micro
 ```
 This message is **not** acknowledged.
 
+**Simulator Hijack Command**  
+This command is used by the simulator to hijack a real control board. This allows the simulator to pass certain information to and receive certain information from the control board. This enables testing of the actual firmware and reproducing bugs under simulation. The command as the following format.  
+```none
+'S', 'I', 'M', 'H', 'I', 'J', 'A', 'C', 'K', [hijack]
+```  
+`[hijack]` is an 8-bit integer (unsigned) with a value of 1 or 0. If 1, the control board is put into simulator hijack mode. If 0, it is removed from simulator hijack mode.  
+This message will be acknowledged. The acknowledge message will contain no result data.
+
 <hr />
 
 
