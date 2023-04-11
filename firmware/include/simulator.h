@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <angles.h>
+#include <bno055.h>
+#include <ms5837.h>
 
 
 // Controls whether simulation mode operation
@@ -34,9 +36,8 @@
 extern bool sim_hijacked;
 
 // Data provided by the simulator (SIMDAT command to control board)
-extern quaternion_t sim_quat;
-extern float sim_depth;
-
+extern bno055_data sim_bno055;
+extern ms5837_data sim_ms5837;
 
 // Data provided to the simulator (SIMSTAT command from control board)
 extern float sim_local_x;
