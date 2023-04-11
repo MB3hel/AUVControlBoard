@@ -1033,9 +1033,9 @@ void cmdctrl_handle_message(void){
         }
         sim_hijacked = msg[9];
         if(sim_hijacked){
-            sim_bno055.accum_pitch = 0.0f;              // Not implemented by simulator
-            sim_bno055.accum_roll = 0.0f;               // Not implemented by simulator
-            sim_bno055.accum_yaw = 0.0f;                // Not implemented by simulator
+            sim_bno055.accum_pitch = 0.0f;
+            sim_bno055.accum_roll = 0.0f;
+            sim_bno055.accum_yaw = 0.0f;
             sim_bno055.curr_quat.w = 1.0f;
             sim_bno055.curr_quat.x = 0.0f;
             sim_bno055.curr_quat.y = 0.0f;
