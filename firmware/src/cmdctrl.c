@@ -1030,27 +1030,48 @@ void cmdctrl_handle_message(void){
         if(len != 10){
             // Message is incorrect size
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            sim_hijacked = msg[9];
+            if(sim_hijacked){
+                sim_bno055.accum_pitch = 0.0f;
+                sim_bno055.accum_roll = 0.0f;
+                sim_bno055.accum_yaw = 0.0f;
+                sim_bno055.curr_quat.w = 1.0f;
+                sim_bno055.curr_quat.x = 0.0f;
+                sim_bno055.curr_quat.y = 0.0f;
+                sim_bno055.curr_quat.z = 0.0f;
+                sim_ms5837.depth_m = 0.0f;
+                sim_ms5837.pressure_mbar = -9e99;           // Not implemented by simulator
+                sim_ms5837.temperature_c = -9e99;           // Not implemented by simulator
+                sim_local_x = 0.0f;
+                sim_local_y = 0.0f;
+                sim_local_z = 0.0f;
+                sim_local_pitch = 0.0f;
+                sim_local_roll = 0.0f;
+                sim_local_yaw = 0.0f;
+            }
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
-        sim_hijacked = msg[9];
-        if(sim_hijacked){
-            sim_bno055.accum_pitch = 0.0f;
-            sim_bno055.accum_roll = 0.0f;
-            sim_bno055.accum_yaw = 0.0f;
-            sim_bno055.curr_quat.w = 1.0f;
-            sim_bno055.curr_quat.x = 0.0f;
-            sim_bno055.curr_quat.y = 0.0f;
-            sim_bno055.curr_quat.z = 0.0f;
-            sim_ms5837.depth_m = 0.0f;
-            sim_ms5837.pressure_mbar = -9e99;           // Not implemented by simulator
-            sim_ms5837.temperature_c = -9e99;           // Not implemented by simulator
-            sim_local_x = 0.0f;
-            sim_local_y = 0.0f;
-            sim_local_z = 0.0f;
-            sim_local_pitch = 0.0f;
-            sim_local_roll = 0.0f;
-            sim_local_yaw = 0.0f;
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'I', 'M', 'D', 'A', 'T'}))){
+        // S, I, M, D, A, T, [w], [x], [y], [z], [acp], [acr], [acy], [depth]
+        // All values are little endian floats (32-bit)
+        // x, y, z, w are current quaternion (BNO055 data)
+        // acp, acr, acy are accumulated euler angles (BNO055 data)
+        // depth is current depth (MS5837 data)
+        if(len != 38){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            sim_bno055.curr_quat.w = conversions_data_to_float(&msg[6], true);
+            sim_bno055.curr_quat.x = conversions_data_to_float(&msg[10], true);
+            sim_bno055.curr_quat.y = conversions_data_to_float(&msg[14], true);
+            sim_bno055.curr_quat.z = conversions_data_to_float(&msg[18], true);
+            sim_bno055.accum_pitch = conversions_data_to_float(&msg[22], true);
+            sim_bno055.accum_roll = conversions_data_to_float(&msg[26], true);
+            sim_bno055.accum_yaw = conversions_data_to_float(&msg[30], true);
+            sim_ms5837.depth_m = conversions_data_to_float(&msg[34], true);
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
-        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
     }else{
         // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG, NULL, 0);
