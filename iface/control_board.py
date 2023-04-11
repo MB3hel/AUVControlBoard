@@ -337,7 +337,12 @@ class ControlBoard:
         with self.__id_mutex:
             msg_id = self.__msg_id
             self.__msg_id += 1
-            if self.__msg_id > 65535:
+
+            # Note: cap at 59999 not 65535 so that 60000-65535 can be used by
+            # simulator. There are times where simulator and interface code
+            # are concurrently sending messages to control board
+            # And need to ensure that ids are unique even in this scenario.
+            if self.__msg_id >= 59999:
                 self.__msg_id = 0
 
         # Prepare ack structures if message will need ack
