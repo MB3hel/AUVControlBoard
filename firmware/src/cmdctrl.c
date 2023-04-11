@@ -1032,6 +1032,24 @@ void cmdctrl_handle_message(void){
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
         }
         sim_hijacked = msg[9];
+        if(sim_hijacked){
+            sim_bno055.accum_pitch = 0.0f;              // Not implemented by simulator
+            sim_bno055.accum_roll = 0.0f;               // Not implemented by simulator
+            sim_bno055.accum_yaw = 0.0f;                // Not implemented by simulator
+            sim_bno055.curr_quat.w = 1.0f;
+            sim_bno055.curr_quat.x = 0.0f;
+            sim_bno055.curr_quat.y = 0.0f;
+            sim_bno055.curr_quat.z = 0.0f;
+            sim_ms5837.depth_m = 0.0f;
+            sim_ms5837.pressure_mbar = -9e99;           // Not implemented by simulator
+            sim_ms5837.temperature_c = -9e99;           // Not implemented by simulator
+            sim_local_x = 0.0f;
+            sim_local_y = 0.0f;
+            sim_local_z = 0.0f;
+            sim_local_pitch = 0.0f;
+            sim_local_roll = 0.0f;
+            sim_local_yaw = 0.0f;
+        }
         cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
     }else{
         // This is an unrecognized message
