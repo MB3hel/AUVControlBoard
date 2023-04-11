@@ -24,6 +24,7 @@
 #include <bno055.h>
 #include <ms5837.h>
 #include <wdt.h>
+#include <simulator.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,6 +39,7 @@ TaskHandle_t depth_task;
 
 // Timers
 TimerHandle_t wdt_feed_timer;
+TimerHandle_t sim_timer;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -51,6 +53,13 @@ void wdt_feed_timer_handler(TimerHandle_t handle){
     (void)handle;
 
     xTaskNotify(cmdctrl_task, NOTIF_FEED_WDT, eSetBits);
+}
+
+void sim_timer_handler(TimerHandle_t handle){
+    (void)handle;
+
+    if(sim_hijacked)
+        xTaskNotify(cmdctrl_task, NOTIF_SIM_STAT, eSetBits);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,6 +79,8 @@ void cmdctrl_task_func(void *arg){
     uint32_t notification;
 
     xTimerStart(wdt_feed_timer, portMAX_DELAY);
+    xTimerStart(sim_timer, portMAX_DELAY);
+
 
     while(1){
         // Wait until a notification is received (blocks this thread)
@@ -90,6 +101,9 @@ void cmdctrl_task_func(void *arg){
             // Which means that usb_device_task will not notify again, but there is unhandled data
             if(tud_cdc_available())
                 xTaskNotify(cmdctrl_task, NOTIF_CMDCTRL_PCDATA, eSetBits);
+        }
+        if(notification & NOTIF_SIM_STAT){
+            cmdctrl_send_simstat();
         }
         if(notification & NOTIF_FEED_WDT){
             wdt_feed();
@@ -211,6 +225,8 @@ void depth_task_func(void *argument){
 void app_init(void){
     // Create RTOS objects
     wdt_feed_timer = xTimerCreate("wdt_feed_timer", pdMS_TO_TICKS(350), pdTRUE, NULL, wdt_feed_timer_handler);
+    sim_timer = xTimerCreate("sim_timer", pdMS_TO_TICKS(20), pdTRUE, NULL, sim_timer_handler);
+
 
     // Create RTOS threads
     xTaskCreate(

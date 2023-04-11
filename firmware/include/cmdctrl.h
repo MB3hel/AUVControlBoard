@@ -67,3 +67,8 @@ void cmdctrl_ms5837_status(bool status);
  * @param data New sensor data
  */
 void cmdctrl_ms5837_data(ms5837_data data);
+
+/**
+ * Send SIMSTAT message
+ */
+void cmdctrl_send_simstat(void);

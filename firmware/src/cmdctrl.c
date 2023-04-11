@@ -1103,5 +1103,25 @@ void cmdctrl_ms5837_data(ms5837_data data){
     xSemaphoreGive(sensor_data_mutex);
 }
 
+void cmdctrl_send_simstat(void){
+    uint8_t simstat[33];
+    simstat[0] = 'S';
+    simstat[1] = 'I';
+    simstat[2] = 'M';
+    simstat[3] = 'S';
+    simstat[4] = 'T';
+    simstat[5] = 'A';
+    simstat[6] = 'T';
+    conversions_float_to_data(sim_local_x, &simstat[7], true);
+    conversions_float_to_data(sim_local_y, &simstat[11], true);
+    conversions_float_to_data(sim_local_z, &simstat[15], true);
+    conversions_float_to_data(sim_local_pitch, &simstat[19], true);
+    conversions_float_to_data(sim_local_roll, &simstat[23], true);
+    conversions_float_to_data(sim_local_yaw, &simstat[27], true);
+    simstat[31] = mode & 0xFF;
+    simstat[32] = motors_enabled ? 0 : 1;
+    pccomm_write(simstat, 33);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

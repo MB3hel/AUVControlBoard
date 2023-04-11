@@ -30,6 +30,7 @@
 // CMDCTRL Task
 #define NOTIF_CMDCTRL_PCDATA                0x1     // Notify CMDCTRL that there is data from PC
 #define NOTIF_FEED_WDT                      0x2     // Notify CMDCTRL thread to feed WDT
+#define NOTIF_SIM_STAT                      0x4     // Notify CMDCTRL thread to send SIMSTAT message (if sim hijacked)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -65,6 +66,8 @@ extern TaskHandle_t depth_task;
 
 // Timers
 extern TimerHandle_t wdt_feed_timer;
+extern TimerHandle_t sim_timer;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
