@@ -142,19 +142,21 @@ static TimerHandle_t periodic_speed_timer;
 /// CMDCTRL functions / implementation
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static bool bno055_ready(void){
+static inline __attribute__((always_inline)) bool bno055_ready(void){
     return sim_hijacked ? true : bno055_ready_internal;
 }
 
-static bool ms5837_ready(void){
+static inline __attribute__((always_inline)) bool ms5837_ready(void){
     return sim_hijacked ? true : ms5837_ready_internal;
 }
 
-static bno055_data curr_bno055_data(void){
+static inline __attribute__((always_inline)) bno055_data curr_bno055_data(void){
+    // Note: lock mutex before calling this
     return sim_hijacked ? sim_bno055 : curr_bno055_data_internal;
 }
 
-static ms5837_data curr_ms5837_data(void){
+static inline __attribute__((always_inline)) ms5837_data curr_ms5837_data(void){
+    // Note: lock mutex before calling this
     return sim_hijacked ? sim_ms5837 : curr_ms5837_data_internal;
 }
 
