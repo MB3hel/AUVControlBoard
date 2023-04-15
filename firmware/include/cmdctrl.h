@@ -72,3 +72,9 @@ void cmdctrl_ms5837_data(ms5837_data data);
  * Send SIMSTAT message
  */
 void cmdctrl_send_simstat(void);
+
+/**
+ * Configure simulator hijack state
+ * Generally, this is only called internally (but USB disconnect may trigger)
+ */
+void cmdctrl_simhijack(bool hijack);

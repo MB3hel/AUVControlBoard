@@ -1013,48 +1013,7 @@ void cmdctrl_handle_message(void){
             // Message is incorrect size
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
         }else{
-            if(msg[9]){
-                // Reset data received from simulator
-                sim_quat.w = 0.0f;
-                sim_quat.x = 0.0f;
-                sim_quat.y = 0.0f;
-                sim_quat.z = 0.0f;
-                sim_depth = 0.0f;
-
-                // Reset data output to simulator
-                sim_local_x = 0.0f;
-                sim_local_y = 0.0f;
-                sim_local_z = 0.0f;
-                sim_local_pitch = 0.0f;
-                sim_local_roll = 0.0f;
-                sim_local_yaw = 0.0f;
-
-                // Revert to a stoped state
-                mode = MODE_LOCAL;
-                led_set(COLOR_LOCAL);
-                local_x = 0.0f;
-                local_y = 0.0f;
-                local_z = 0.0f;
-                local_pitch = 0.0f;
-                local_roll = 0.0f;
-                local_yaw = 0.0f;
-                mc_set_local(local_x, local_y, local_z, local_pitch, local_roll, local_yaw);
-
-                sim_hijacked = true;    // Do this last so set_local (above) uses real thrusters
-            }else{
-                sim_hijacked = false;   // Do this first so set_local (below) uses real thrusters
-
-                // Revert to a stoped state
-                mode = MODE_LOCAL;
-                led_set(COLOR_LOCAL);
-                local_x = 0.0f;
-                local_y = 0.0f;
-                local_z = 0.0f;
-                local_pitch = 0.0f;
-                local_roll = 0.0f;
-                local_yaw = 0.0f;
-                mc_set_local(local_x, local_y, local_z, local_pitch, local_roll, local_yaw);
-            }
+            cmdctrl_simhijack(msg[9]);
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
     }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'I', 'M', 'D', 'A', 'T'}))){
@@ -1125,6 +1084,51 @@ void cmdctrl_send_simstat(void){
     simstat[31] = mode & 0xFF;
     simstat[32] = motors_enabled ? 0 : 1;
     pccomm_write(simstat, 33);
+}
+
+void cmdctrl_simhijack(bool hijack){
+    if(hijack){
+        // Reset data received from simulator
+        sim_quat.w = 0.0f;
+        sim_quat.x = 0.0f;
+        sim_quat.y = 0.0f;
+        sim_quat.z = 0.0f;
+        sim_depth = 0.0f;
+
+        // Reset data output to simulator
+        sim_local_x = 0.0f;
+        sim_local_y = 0.0f;
+        sim_local_z = 0.0f;
+        sim_local_pitch = 0.0f;
+        sim_local_roll = 0.0f;
+        sim_local_yaw = 0.0f;
+
+        // Revert to a stoped state
+        mode = MODE_LOCAL;
+        led_set(COLOR_LOCAL);
+        local_x = 0.0f;
+        local_y = 0.0f;
+        local_z = 0.0f;
+        local_pitch = 0.0f;
+        local_roll = 0.0f;
+        local_yaw = 0.0f;
+        mc_set_local(local_x, local_y, local_z, local_pitch, local_roll, local_yaw);
+
+        sim_hijacked = true;    // Do this last so set_local (above) uses real thrusters
+    }else{
+        sim_hijacked = false;   // Do this first so set_local (below) uses real thrusters
+
+        // Revert to a stoped state
+        mode = MODE_LOCAL;
+        led_set(COLOR_LOCAL);
+        local_x = 0.0f;
+        local_y = 0.0f;
+        local_z = 0.0f;
+        local_pitch = 0.0f;
+        local_roll = 0.0f;
+        local_yaw = 0.0f;
+        mc_set_local(local_x, local_y, local_z, local_pitch, local_roll, local_yaw);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

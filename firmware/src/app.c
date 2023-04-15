@@ -108,6 +108,9 @@ void cmdctrl_task_func(void *arg){
         if(notification & NOTIF_FEED_WDT){
             wdt_feed();
         }
+        if(notification & NOTIF_NO_HIJACK){
+            cmdctrl_simhijack(false);
+        }
     }
 }
 
@@ -261,6 +264,12 @@ void app_init(void){
         TASK_DEPTH_PRIORITY,
         &depth_task
     );
+}
+
+void app_handle_usb_disconnect(void){
+    // When USB disconnects, revert to normal operation
+    if(sim_hijacked)
+        xTaskNotify(cmdctrl_task, NOTIF_NO_HIJACK, eSetBits);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
