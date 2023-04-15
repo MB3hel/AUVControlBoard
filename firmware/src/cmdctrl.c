@@ -1015,7 +1015,14 @@ void cmdctrl_handle_message(void){
         }else{
             sim_hijacked = msg[9];
             if(sim_hijacked){
-                // TODO: Reset simulator data
+                // Reset data received from simulator
+                sim_quat.w = 0.0f;
+                sim_quat.x = 0.0f;
+                sim_quat.y = 0.0f;
+                sim_quat.z = 0.0f;
+                sim_depth = 0.0f;
+
+                // Reset data output to simulator
                 sim_local_x = 0.0f;
                 sim_local_y = 0.0f;
                 sim_local_z = 0.0f;
@@ -1031,11 +1038,18 @@ void cmdctrl_handle_message(void){
         // x, y, z, w are current quaternion (BNO055 data)
         // acp, acr, acy are accumulated euler angles (BNO055 data)
         // depth is current depth (MS5837 data)
-        if(len != 38){
+        if(len != 26){
             // Message is incorrect size
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
         }else{
-            // TODO: Parse data
+            // Parse received data
+            sim_quat.w = conversions_data_to_float(&msg[6], true);
+            sim_quat.x = conversions_data_to_float(&msg[10], true);
+            sim_quat.y = conversions_data_to_float(&msg[14], true);
+            sim_quat.z = conversions_data_to_float(&msg[18], true);
+            sim_depth = conversions_data_to_float(&msg[22], true);
+
+            // Message handled successfully
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
     }else{
