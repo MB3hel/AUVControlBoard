@@ -20,8 +20,8 @@
 
 bool sim_hijacked = false;
 
-bno055_data sim_bno055;
-ms5837_data sim_ms5837;
+quaternion_t sim_quat;
+float sim_depth;
 
 float sim_local_x;
 float sim_local_y;

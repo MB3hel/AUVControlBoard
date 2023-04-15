@@ -36,8 +36,8 @@
 extern bool sim_hijacked;
 
 // Data provided by the simulator (SIMDAT command to control board)
-extern bno055_data sim_bno055;
-extern ms5837_data sim_ms5837;
+extern quaternion_t sim_quat;
+extern float sim_depth;
 
 // Data provided to the simulator (SIMSTAT command from control board)
 extern float sim_local_x;
