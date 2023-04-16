@@ -177,14 +177,12 @@ static void mc_wdog_timeout(TimerHandle_t timer){
     
     xSemaphoreTake(motor_mutex, portMAX_DELAY);
     motors_killed = true;
-    thruster_set((float[]){0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
     if(sim_hijacked){
-        sim_local_x = 0.0f;
-        sim_local_y = 0.0f;
-        sim_local_z = 0.0f;
-        sim_local_pitch = 0.0f;
-        sim_local_roll = 0.0f;
-        sim_local_yaw = 0.0f;
+        for(unsigned int i = 0; i < 8; ++i){
+            sim_speeds[i] = 0.0f;
+        }
+    }else{
+        thruster_set((float[]){0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
     }
     cmdctrl_mwdog_change(false);
     xSemaphoreGive(motor_mutex);
@@ -270,24 +268,19 @@ void mc_set_raw(float *speeds){
         }
 
         // Actually set thruster speeds
-        thruster_set(speeds);
+        if(sim_hijacked){
+            for(unsigned int i = 0; i < 8; ++i){
+                sim_speeds[i] = speeds[i];
+            }
+        }else{
+            thruster_set(speeds);
+        }
     }
 
     xSemaphoreGive(motor_mutex);
 }
 
 void mc_set_local(float x, float y, float z, float pitch, float roll, float yaw){
-    // In sim hijack send local motions to simulator. No need to do math with them.
-    if(sim_hijacked){
-        sim_local_x = x;
-        sim_local_y = y;
-        sim_local_z = z;
-        sim_local_pitch = pitch;
-        sim_local_roll = roll;
-        sim_local_yaw = yaw;
-        return;
-    }
-
     float target_arr[6];
     matrix target;
     matrix_init_static(&target, target_arr, 6, 1);

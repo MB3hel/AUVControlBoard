@@ -40,11 +40,6 @@ extern quaternion_t sim_quat;
 extern float sim_depth;
 
 // Data provided to the simulator (SIMSTAT command from control board)
-extern float sim_local_x;
-extern float sim_local_y;
-extern float sim_local_z;
-extern float sim_local_pitch;
-extern float sim_local_roll;
-extern float sim_local_yaw;
+extern float sim_speeds[8];
 // mode is provided too, but tracked in cmdctrl
 // wdog_killed is provided too, but tracked in cmdctrl

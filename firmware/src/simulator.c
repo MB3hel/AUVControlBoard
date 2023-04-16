@@ -23,9 +23,4 @@ bool sim_hijacked = false;
 quaternion_t sim_quat;
 float sim_depth;
 
-float sim_local_x;
-float sim_local_y;
-float sim_local_z;
-float sim_local_pitch;
-float sim_local_roll;
-float sim_local_yaw;
+float sim_speeds[8];
