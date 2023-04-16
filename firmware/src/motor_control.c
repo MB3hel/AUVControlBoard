@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <simulator.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -246,6 +247,10 @@ static inline void quat_between(quaternion_t *dest, float ax, float ay, float az
 
 
 void mc_set_raw(float *speeds){
+    // RAW mode does nothing in simulator hijack
+    if(sim_hijacked)
+        return;
+
     xSemaphoreTake(motor_mutex, portMAX_DELAY);   
 
     // Don't allow speed set while motors are killed
@@ -264,6 +269,17 @@ void mc_set_raw(float *speeds){
 }
 
 void mc_set_local(float x, float y, float z, float pitch, float roll, float yaw){
+    // In sim hijack send local motions to simulator. No need to do math with them.
+    if(sim_hijacked){
+        sim_local_x = x;
+        sim_local_y = y;
+        sim_local_z = z;
+        sim_local_pitch = pitch;
+        sim_local_roll = roll;
+        sim_local_yaw = yaw;
+        return;
+    }
+
     float target_arr[6];
     matrix target;
     matrix_init_static(&target, target_arr, 6, 1);
