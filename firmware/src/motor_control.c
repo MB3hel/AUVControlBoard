@@ -178,6 +178,14 @@ static void mc_wdog_timeout(TimerHandle_t timer){
     xSemaphoreTake(motor_mutex, portMAX_DELAY);
     motors_killed = true;
     thruster_set((float[]){0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
+    if(sim_hijacked){
+        sim_local_x = 0.0f;
+        sim_local_y = 0.0f;
+        sim_local_z = 0.0f;
+        sim_local_pitch = 0.0f;
+        sim_local_roll = 0.0f;
+        sim_local_yaw = 0.0f;
+    }
     cmdctrl_mwdog_change(false);
     xSemaphoreGive(motor_mutex);
 }
