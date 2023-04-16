@@ -20,6 +20,7 @@
 #include <ms5837.h>
 #include <i2c.h>
 #include <stdint.h>
+#include <simulator.h>
 
 #define MS5837_ADDR                     0x76
 #define MS5837_30BA_VER                 0x1A   // Sensor version ID for 30BA
@@ -205,9 +206,16 @@ bool ms5837_read(ms5837_data *data){
     // P in mbar * 10
     // TEMP in celsius * 100
     // 1mbar = 100Pa -> P * 10 = Pa
-    data->pressure_mbar = P / 10.0f;
-    data->temperature_c = TEMP / 100.0f;
-    data->depth_m = (atm_pressure - (P * 10.0f)) / (fluid_density * 9.80665);   // Negative for below surface of water
+    if(sim_hijacked){
+        // Use data from simulator not depth sensor
+        data->pressure_mbar = -999;
+        data->pressure_mbar = -999;
+        data->depth_m = sim_depth;
+    }else{
+        data->pressure_mbar = P / 10.0f;
+        data->temperature_c = TEMP / 100.0f;
+        data->depth_m = (atm_pressure - (P * 10.0f)) / (fluid_density * 9.80665);   // Negative for below surface of water
+    }
 
     ////////////////////////////////////////////////////////////////////////////
 

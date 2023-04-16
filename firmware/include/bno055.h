@@ -63,6 +63,13 @@ bool bno055_configure(void);
 bool bno055_set_axis(uint8_t mode);
 
 /**
+ * Reset accumulated euler angles
+ * Typically, only internal use
+ * But is used when hijacked by simulator
+ */
+void bno055_reset_accum_euler(void);
+
+/**
  * Read data from IMU. Must be configured before running
  * 
  * @param data Pointer to struct to store data in (only valid if returns true)

@@ -21,6 +21,7 @@
 #include <i2c.h>
 #include <FreeRTOS.h>
 #include <task.h>
+#include <simulator.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// BNO055 Info Macros
@@ -424,10 +425,7 @@ bool bno055_set_axis(uint8_t mode){
     }
 
     // Reset accumulated angles when axis config changes
-    accum_pitch = 0.0f;
-    accum_roll = 0.0f;
-    accum_yaw = 0.0f;
-    prev_quat_valid = false;
+    bno055_reset_accum_euler();
 
     // Put in CONFIG mode
     trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
@@ -467,6 +465,13 @@ bool bno055_set_axis(uint8_t mode){
     return true;
 }
 
+void bno055_reset_accum_euler(void){
+    accum_pitch = 0.0f;
+    accum_roll = 0.0f;
+    accum_yaw = 0.0f;
+    prev_quat_valid = false;
+}
+
 bool bno055_read(bno055_data *data){
     // Read Orientation Quaternion
     trans.write_buf[0] = BNO055_QUATERNION_DATA_W_LSB_ADDR;
@@ -475,14 +480,22 @@ bool bno055_read(bno055_data *data){
     if(!bno055_perform(&trans))
         return false;
 
-    int16_t tmp16 = (((uint16_t)trans.read_buf[1]) << 8) | ((uint16_t)trans.read_buf[0]);
-    data->curr_quat.w = tmp16 / 16384.0f;
-    tmp16 = (((uint16_t)trans.read_buf[3]) << 8) | ((uint16_t)trans.read_buf[2]);
-    data->curr_quat.x = tmp16 / 16384.0f;
-    tmp16 = (((uint16_t)trans.read_buf[5]) << 8) | ((uint16_t)trans.read_buf[4]);
-    data->curr_quat.y = tmp16 / 16384.0f;
-    tmp16 = (((uint16_t)trans.read_buf[7]) << 8) | ((uint16_t)trans.read_buf[6]);
-    data->curr_quat.z = tmp16 / 16384.0f;
+    if(sim_hijacked){
+        // When under simulation, use the data provided by simulator not the IMU
+        data->curr_quat.w = sim_quat.w;
+        data->curr_quat.x = sim_quat.x;
+        data->curr_quat.y = sim_quat.y;
+        data->curr_quat.z = sim_quat.z;
+    }else{
+        int16_t tmp16 = (((uint16_t)trans.read_buf[1]) << 8) | ((uint16_t)trans.read_buf[0]);
+        data->curr_quat.w = tmp16 / 16384.0f;
+        tmp16 = (((uint16_t)trans.read_buf[3]) << 8) | ((uint16_t)trans.read_buf[2]);
+        data->curr_quat.x = tmp16 / 16384.0f;
+        tmp16 = (((uint16_t)trans.read_buf[5]) << 8) | ((uint16_t)trans.read_buf[4]);
+        data->curr_quat.y = tmp16 / 16384.0f;
+        tmp16 = (((uint16_t)trans.read_buf[7]) << 8) | ((uint16_t)trans.read_buf[6]);
+        data->curr_quat.z = tmp16 / 16384.0f;
+    }
 
 
     bool quat_same = (data->curr_quat.w == prev_quat.w) && 

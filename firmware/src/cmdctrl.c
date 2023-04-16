@@ -1115,8 +1115,15 @@ void cmdctrl_simhijack(bool hijack){
         mc_set_local(local_x, local_y, local_z, local_pitch, local_roll, local_yaw);
 
         sim_hijacked = true;    // Do this last so set_local (above) uses real thrusters
+
+        // Reset accumulated angles (after sim_hijacked change!)
+        bno055_reset_accum_euler();
+
     }else{
         sim_hijacked = false;   // Do this first so set_local (below) uses real thrusters
+
+        // Reset accumulated angles (after sim_hijacked change!)
+        bno055_reset_accum_euler();
 
         // Revert to a stoped state
         mode = MODE_LOCAL;
