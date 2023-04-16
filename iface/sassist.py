@@ -6,11 +6,6 @@ import threading
 
 
 def run(cb: ControlBoard, s: Simulator) -> int:
-    # TODO: Remove this once sassist is implemented in simulator
-    if s is not None:
-        print("NYI in simulator.")
-        return 1
-
     ############################################################################
     # Setup
     ############################################################################

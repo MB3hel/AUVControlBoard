@@ -4,9 +4,6 @@ from control_board import ControlBoard, Simulator
 
 
 def run(cb: ControlBoard, s: Simulator) -> int:
-    if s is not None:
-        print("Reset not supported in simulation.")
-        return 1
     cb.reset()
     return 0
 
