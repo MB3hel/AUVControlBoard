@@ -253,10 +253,6 @@ static inline void quat_between(quaternion_t *dest, float ax, float ay, float az
 
 
 void mc_set_raw(float *speeds){
-    // RAW mode does nothing in simulator hijack
-    if(sim_hijacked)
-        return;
-
     xSemaphoreTake(motor_mutex, portMAX_DELAY);   
 
     // Don't allow speed set while motors are killed

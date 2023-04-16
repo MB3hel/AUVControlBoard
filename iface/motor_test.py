@@ -5,10 +5,6 @@ import time
 
 
 def run(cb: ControlBoard, s: Simulator) -> int:
-    if s is not None:
-        print("motor_test does not work in simulation.")
-        return 1
-
     ############################################################################
     # Setup
     ############################################################################
@@ -23,10 +19,12 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     mat.set_row(8,    [  0,     0,    -1,    -1,     +1,      0   ])
     mat.set_row(5,    [  0,     0,    -1,    +1,     -1,      0   ])
     mat.set_row(6,    [  0,     0,    -1,    +1,     +1,      0   ])
-    if cb.set_motor_matrix(mat) == ControlBoard.AckError.NONE:
+    err = cb.set_motor_matrix(mat)
+    if err == ControlBoard.AckError.NONE:
         print("Done.")
     else:
         print("Fail.")
+        print(err)
         return 1
 
     print("Set thruster inversions...", end="")
