@@ -124,8 +124,8 @@ static bno055_data curr_bno055_data;
 static ms5837_data curr_ms5837_data;
 
 // Sensor status flags
-static bool bno055_ready;
-static bool ms5837_ready;
+static bool _bno055_ready;
+static bool _ms5837_ready;
 
 // Periodic reading of sensor data timer
 static bool periodic_bno055;
@@ -142,11 +142,19 @@ static TimerHandle_t periodic_speed_timer;
 /// CMDCTRL functions / implementation
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+static inline bool __attribute__((always_inline)) bno055_ready(void){
+    return sim_hijacked ? true : _bno055_ready;
+}
+
+static inline bool __attribute__((always_inline)) ms5837_ready(void){
+    return sim_hijacked ? true : _ms5837_ready;
+}
+
 static void send_sensor_data(TimerHandle_t timer){
     (void)timer;
     
     // Send the data for sensors as needed
-    if(periodic_bno055 && bno055_ready){
+    if(periodic_bno055 && bno055_ready()){
         // Store current readings
         xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
         bno055_data dat = curr_bno055_data;
@@ -172,7 +180,7 @@ static void send_sensor_data(TimerHandle_t timer){
         // Send message (status message from CB to PC)
         pccomm_write(bno055_data, 35);
     }
-    if(periodic_ms5837 & ms5837_ready){
+    if(periodic_ms5837 & ms5837_ready()){
         // Store current readings
         xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
         float m_depth_m = curr_ms5837_data.depth_m;
@@ -255,8 +263,8 @@ void cmdctrl_init(void){
     dhold_depth = 0.0;
 
     // Initial sensor status
-    bno055_ready = false;
-    ms5837_ready = false;
+    _bno055_ready = false;
+    _ms5837_ready = false;
 
     // Initial sensor data
     curr_bno055_data.curr_quat.w = 0;
@@ -353,7 +361,7 @@ void cmdctrl_apply_saved_speed(void){
         xSemaphoreGive(sensor_data_mutex);
 
         // Make sure sensors still working before applying in global mode
-        if(!bno055_ready || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
+        if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
             // Cannot apply real speed b/c sensor data not available or invalid
             // Thus, stop the thrusters
             mc_set_local(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
@@ -368,7 +376,7 @@ void cmdctrl_apply_saved_speed(void){
             m_depth = curr_ms5837_data.depth_m;
             xSemaphoreGive(sensor_data_mutex);
 
-            if(!bno055_ready || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready){
+            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready()){
                 // Cannot apply real speed b/c sensor data not available or invalid
                 // Thus, stop the thrusters
                 mc_set_local(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
@@ -398,7 +406,7 @@ void cmdctrl_apply_saved_speed(void){
         m_quat = curr_bno055_data.curr_quat;
         m_depth = curr_ms5837_data.depth_m;
         xSemaphoreGive(sensor_data_mutex);
-        if(!bno055_ready || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready){
+        if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready()){
             // Cannot apply real speed b/c sensor data not available or invalid
             // Thus, stop the thrusters
             mc_set_local(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
@@ -628,8 +636,8 @@ void cmdctrl_handle_message(void){
 
         uint8_t response[1];
         response[0] = 0x00;
-        response[0] |= bno055_ready;
-        response[0] |= (ms5837_ready << 1);
+        response[0] |= bno055_ready();
+        response[0] |= (ms5837_ready() << 1);
 
         cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response, 1);
     }else if(MSG_STARTS_WITH(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'A'}))){
@@ -666,7 +674,7 @@ void cmdctrl_handle_message(void){
             quaternion_t m_quat = curr_bno055_data.curr_quat;
             xSemaphoreGive(sensor_data_mutex);
 
-            if(!bno055_ready || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
+            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
                 // Need BNO055 IMU data to use global mode.
                 // If not ready, then this command is invalid at this time
                 cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
@@ -714,7 +722,7 @@ void cmdctrl_handle_message(void){
         // Response contains [grav_x], [grav_y], [grav_z], [euler_pitch], [euler_roll], [euler_yaw]
         // where each value is a 32-bit float little endian
 
-        if(!bno055_ready){
+        if(!bno055_ready()){
             // Sensor not ready. This command is not valid right now.
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
         }else{
@@ -753,7 +761,7 @@ void cmdctrl_handle_message(void){
         // Response contains [depth_m]
         // where each value is a 32-bit float little endian
 
-        if(!ms5837_ready){
+        if(!ms5837_ready()){
             // Sensor not ready. This command is not valid right now.
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
         }else{
@@ -826,7 +834,7 @@ void cmdctrl_handle_message(void){
             float m_depth = curr_ms5837_data.depth_m;
             xSemaphoreGive(sensor_data_mutex);
 
-            if(!bno055_ready || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready){
+            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready()){
                 // Need BNO055 IMU data to use sassist mode.
                 // Also need MS5837 data to use sassist mode
                 // If not ready, then this command is invalid at this time
@@ -890,7 +898,7 @@ void cmdctrl_handle_message(void){
             float m_depth = curr_ms5837_data.depth_m;
             xSemaphoreGive(sensor_data_mutex);
 
-            if(!bno055_ready || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready){
+            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready()){
                 // Need BNO055 IMU data to use sassist mode.
                 // Also need MS5837 data to use sassist mode
                 // If not ready, then this command is invalid at this time
@@ -956,7 +964,7 @@ void cmdctrl_handle_message(void){
             float m_depth = curr_ms5837_data.depth_m;
             xSemaphoreGive(sensor_data_mutex);
 
-            if(!bno055_ready || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready){
+            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready()){
                 // Need BNO055 IMU data to use depth hold mode.
                 // Also need MS5837 data to use depth hold mode
                 // If not ready, then this command is invalid at this time
@@ -1047,7 +1055,7 @@ void cmdctrl_mwdog_change(bool me){
 }
 
 void cmdctrl_bno055_status(bool status){
-    bno055_ready = status;
+    _bno055_ready = status;
 }
 
 void cmdctrl_bno055_data(bno055_data data){
@@ -1057,7 +1065,7 @@ void cmdctrl_bno055_data(bno055_data data){
 }
 
 void cmdctrl_ms5837_status(bool status){
-    ms5837_ready = status;
+    _ms5837_ready = status;
 }
 
 void cmdctrl_ms5837_data(ms5837_data data){
