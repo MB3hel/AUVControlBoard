@@ -14,31 +14,29 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     ############################################################################
     # Setup
     ############################################################################
-    if s is None:
-        # Can only do this if not in simulation
-        print("Set motor matrix...", end="")
-        mat = ControlBoard.MotorMatrix()
-        #        MotorNum    x      y      z    pitch   roll     yaw
-        mat.set_row(3,    [ -1,    -1,     0,     0,      0,     +1   ])
-        mat.set_row(4,    [ +1,    -1,     0,     0,      0,     -1   ])
-        mat.set_row(1,    [ -1,    +1,     0,     0,      0,     -1   ])
-        mat.set_row(2,    [ +1,    +1,     0,     0,      0,     +1   ])
-        mat.set_row(7,    [  0,     0,    -1,    -1,     -1,      0   ])
-        mat.set_row(8,    [  0,     0,    -1,    -1,     +1,      0   ])
-        mat.set_row(5,    [  0,     0,    -1,    +1,     -1,      0   ])
-        mat.set_row(6,    [  0,     0,    -1,    +1,     +1,      0   ])
-        if cb.set_motor_matrix(mat) == ControlBoard.AckError.NONE:
-            print("Done.")
-        else:
-            print("Fail.")
-            return 1
+    print("Set motor matrix...", end="")
+    mat = ControlBoard.MotorMatrix()
+    #        MotorNum    x      y      z    pitch   roll     yaw
+    mat.set_row(3,    [ -1,    -1,     0,     0,      0,     +1   ])
+    mat.set_row(4,    [ +1,    -1,     0,     0,      0,     -1   ])
+    mat.set_row(1,    [ -1,    +1,     0,     0,      0,     -1   ])
+    mat.set_row(2,    [ +1,    +1,     0,     0,      0,     +1   ])
+    mat.set_row(7,    [  0,     0,    -1,    -1,     -1,      0   ])
+    mat.set_row(8,    [  0,     0,    -1,    -1,     +1,      0   ])
+    mat.set_row(5,    [  0,     0,    -1,    +1,     -1,      0   ])
+    mat.set_row(6,    [  0,     0,    -1,    +1,     +1,      0   ])
+    if cb.set_motor_matrix(mat) == ControlBoard.AckError.NONE:
+        print("Done.")
+    else:
+        print("Fail.")
+        return 1
 
-        print("Set thruster inversions...", end="")
-        if cb.set_tinv([True, True, False, False, True, False, False, True]) == ControlBoard.AckError.NONE:
-            print("Done.")
-        else:
-            print("Fail.")
-            return 1
+    print("Set thruster inversions...", end="")
+    if cb.set_tinv([True, True, False, False, True, False, False, True]) == ControlBoard.AckError.NONE:
+        print("Done.")
+    else:
+        print("Fail.")
+        return 1
 
     print("Tuning pitch PID...", end="")
     #                         kP   kI   kD  lim  invert
