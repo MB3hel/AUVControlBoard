@@ -209,6 +209,21 @@ bool mc_wdog_feed(void){
 /// Motor control
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Difference between two quaternions
+static inline void quat_diff(quaternion_t *dest, quaternion_t *a, quaternion_t *b){
+    float dot;
+    quaternion_t b_inv;
+    
+    quat_dot(&dot, a, b);
+    quat_inverse(&b_inv, b);
+
+    if(dot < 0.0f){
+        quat_multiply_scalar(&b_inv, &b_inv, -1.0f);
+    }
+
+    quat_multiply(dest, a, &b_inv);
+}
+
 // Rotate a vector (x, y, z) buy a quaternion q
 static inline void rotate_vector(float *dx, float *dy, float *dz, float sx, float sy, float sz, quaternion_t *q){
     quaternion_t qv;
@@ -217,8 +232,9 @@ static inline void rotate_vector(float *dx, float *dy, float *dz, float sx, floa
     qv.z = sz;    
     quaternion_t qr;
     quaternion_t qconj;
-    quat_multiply(&qr, q, &qv);
     quat_conjugate(&qconj, q);
+
+    quat_multiply(&qr, q, &qv);
     quat_multiply(&qr, &qr, &qconj);
     *dx = qr.x;
     *dy = qr.y;
@@ -395,19 +411,18 @@ void mc_set_sassist(float x, float y, float yaw,
 
     // Construct difference quaternion
     quaternion_t diff_quat;
-    quat_inverse(&target_quat, &target_quat);
-    float dot;
-    quat_dot(&dot, &curr_quat, &target_quat);
-    if(dot < 0.0){
-        quat_multiply_scalar(&target_quat, &target_quat, -1);
-    }
-    quat_multiply(&diff_quat, &curr_quat, &target_quat);
+    quat_diff(&diff_quat, &curr_quat, &target_quat);
 
-    // Convert diff quat to axis angle (used to get angular velocities)
+    // Convert diff quat to angular velocity
     float mag = sqrtf(diff_quat.x*diff_quat.x + diff_quat.y*diff_quat.y + diff_quat.z*diff_quat.z);
-    float axis_x = diff_quat.x / mag;
-    float axis_y = diff_quat.y / mag;
-    float axis_z = diff_quat.z / mag;
+    float axis_x = diff_quat.x;
+    float axis_y = diff_quat.y;
+    float axis_z = diff_quat.z;
+    if(mag > 0.001f){
+        axis_x /= mag;
+        axis_y /= mag;
+        axis_z /= mag;
+    }
     float angle = 2.0f * atan2f(mag, diff_quat.w);
     float err_x = angle * axis_x;
     float err_y = angle * axis_y;
@@ -427,9 +442,9 @@ void mc_set_sassist(float x, float y, float yaw,
     // Note that yaw drift is not a big deal as yaw drift redefines "zero yaw"
 	// Since zero yaw aligns with world axes, this redefines the world axes in
 	// this context too (by the same amount)
-    quaternion_t curr_quat_inv;
-    quat_inverse(&curr_quat_inv, &curr_quat);
-    rotate_vector(&pitch, &roll, &yaw, pitch, roll, yaw, &curr_quat_inv);
+    // quaternion_t curr_quat_inv;
+    // quat_inverse(&curr_quat_inv, &curr_quat);
+    // rotate_vector(&pitch, &roll, &yaw, pitch, roll, yaw, &curr_quat_inv);
 
     // Apply same rotation as in GLOBAL mode to translation target
     float grav_x = 2.0f * (-curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);

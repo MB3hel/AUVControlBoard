@@ -1040,6 +1040,20 @@ void cmdctrl_handle_message(void){
             sim_quat.z = conversions_data_to_float(&msg[18], true);
             sim_depth = conversions_data_to_float(&msg[22], true);
 
+            // Handle the case where sensors aren't connected. We still want sim data to work
+            // When sensors are connected, the sim_quat and sim_depth values are used
+            // by the bno055 and ms5837 read functions directly
+            if(!_ms5837_ready){
+                curr_ms5837_data.depth_m = sim_depth;
+            }
+            if(!_bno055_ready){
+                curr_bno055_data.curr_quat.w = sim_quat.w;
+                curr_bno055_data.curr_quat.w = sim_quat.x;
+                curr_bno055_data.curr_quat.w = sim_quat.y;
+                curr_bno055_data.curr_quat.w = sim_quat.z;
+                // Note: Accumulated euler angles don't work in this scenario
+            }
+
             // Message handled successfully
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
