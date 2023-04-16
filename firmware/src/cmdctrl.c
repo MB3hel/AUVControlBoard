@@ -1104,15 +1104,17 @@ void cmdctrl_simhijack(bool hijack){
         sim_local_yaw = 0.0f;
 
         // Revert to a stoped state
-        mode = MODE_LOCAL;
-        led_set(COLOR_LOCAL);
-        local_x = 0.0f;
-        local_y = 0.0f;
-        local_z = 0.0f;
-        local_pitch = 0.0f;
-        local_roll = 0.0f;
-        local_yaw = 0.0f;
-        mc_set_local(local_x, local_y, local_z, local_pitch, local_roll, local_yaw);
+        mode = MODE_RAW;
+        led_set(COLOR_RAW);
+        raw_target[0] = 0.0f;
+        raw_target[1] = 0.0f;
+        raw_target[2] = 0.0f;
+        raw_target[3] = 0.0f;
+        raw_target[4] = 0.0f;
+        raw_target[5] = 0.0f;
+        raw_target[6] = 0.0f;
+        raw_target[7] = 0.0f;
+        mc_set_raw(raw_target);
 
         sim_hijacked = true;    // Do this last so set_local (above) uses real thrusters
 
@@ -1126,15 +1128,17 @@ void cmdctrl_simhijack(bool hijack){
         bno055_reset_accum_euler();
 
         // Revert to a stoped state
-        mode = MODE_LOCAL;
-        led_set(COLOR_LOCAL);
-        local_x = 0.0f;
-        local_y = 0.0f;
-        local_z = 0.0f;
-        local_pitch = 0.0f;
-        local_roll = 0.0f;
-        local_yaw = 0.0f;
-        mc_set_local(local_x, local_y, local_z, local_pitch, local_roll, local_yaw);
+        mode = MODE_RAW;
+        led_set(COLOR_RAW);
+        raw_target[0] = 0.0f;
+        raw_target[1] = 0.0f;
+        raw_target[2] = 0.0f;
+        raw_target[3] = 0.0f;
+        raw_target[4] = 0.0f;
+        raw_target[5] = 0.0f;
+        raw_target[6] = 0.0f;
+        raw_target[7] = 0.0f;
+        mc_set_raw(raw_target);
     }
 }
 
