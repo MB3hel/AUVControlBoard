@@ -1085,7 +1085,7 @@ void cmdctrl_send_simstat(void){
     conversions_float_to_data(sim_speeds[7], &simstat[35], true);
     simstat[31] = mode & 0xFF;
     simstat[32] = motors_enabled ? 0 : 1;
-    pccomm_write(simstat, 33);
+    pccomm_write(simstat, 39);
 }
 
 void cmdctrl_simhijack(bool hijack){
