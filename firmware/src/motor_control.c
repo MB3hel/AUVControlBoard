@@ -225,6 +225,18 @@ static inline void rotate_vector(float *dx, float *dy, float *dz, float sx, floa
     *dz = qr.z;
 }
 
+// Minimum rotation from a to b (as quaternion)
+static inline void quat_diff(quaternion_t *dest, quaternion_t *a, quaternion_t *b){
+    float dot;
+    quat_dot(&dot, a, b);
+    quaternion_t b_inv;
+    quat_inverse(&b_inv, b);
+    if(dot < 0.0){
+        quat_multiply_scalar(&b_inv, &b_inv, -1.0f);
+    }
+    quat_multiply(dest, a, &b_inv);
+}
+
 // Quaternion rotation from vector a to vector b
 static inline void quat_between(quaternion_t *dest, float ax, float ay, float az, float bx, float by, float bz){
     float dot = ax*bx + ay*by + az*bz;
@@ -395,13 +407,7 @@ void mc_set_sassist(float x, float y, float yaw,
 
     // Construct difference quaternion
     quaternion_t diff_quat;
-    quat_inverse(&target_quat, &target_quat);
-    float dot;
-    quat_dot(&dot, &curr_quat, &target_quat);
-    if(dot < 0.0){
-        quat_multiply_scalar(&target_quat, &target_quat, -1);
-    }
-    quat_multiply(&diff_quat, &curr_quat, &target_quat);
+    quat_diff(&diff_quat, &curr_quat, &target_quat);
 
     // Convert diff quat to angular velocities
     float mag = sqrtf(diff_quat.x*diff_quat.x + diff_quat.y*diff_quat.y + diff_quat.z*diff_quat.z);
