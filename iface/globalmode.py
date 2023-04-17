@@ -39,7 +39,7 @@ def run(cb: ControlBoard, s: Simulator) -> int:
 
     print("Setting local mode vector...", end="")
     #                x    y    z    p    r    y
-    if cb.set_global(0.0, 0.0, -0.5, 0.0, 0.0, 0.0) == ControlBoard.AckError.NONE:
+    if cb.set_global(0.0, 0.3, 0.0, 0.0, 0.0, 0.0) == ControlBoard.AckError.NONE:
         print("Done.")
     else:
         print("Fail.")

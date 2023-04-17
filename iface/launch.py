@@ -39,7 +39,7 @@ def main():
     if args.sim:
         try:
             s = Simulator(args.debug, args.quiet)
-            # s.reset_vehicle()
+            s.reset_vehicle()
             cb = s.control_board
             res = mod.run(cb, s)
             if isinstance(res, int):
