@@ -403,11 +403,16 @@ void mc_set_sassist(float x, float y, float yaw,
     }
     quat_multiply(&diff_quat, &curr_quat, &target_quat);
 
-    // Convert diff quat to axis angle (used to get angular velocities)
+    // Convert diff quat to angular velocities
     float mag = sqrtf(diff_quat.x*diff_quat.x + diff_quat.y*diff_quat.y + diff_quat.z*diff_quat.z);
-    float axis_x = diff_quat.x / mag;
-    float axis_y = diff_quat.y / mag;
-    float axis_z = diff_quat.z / mag;
+    float axis_x = diff_quat.x;
+    float axis_y = diff_quat.y;
+    float axis_z = diff_quat.z;
+    if(mag > 0.001){
+        axis_x /= mag;
+        axis_y /= mag;
+        axis_z /= mag;
+    }
     float angle = 2.0f * atan2f(mag, diff_quat.w);
     float err_x = angle * axis_x;
     float err_y = angle * axis_y;
