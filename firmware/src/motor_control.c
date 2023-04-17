@@ -405,42 +405,53 @@ void mc_set_sassist(float x, float y, float yaw,
     quaternion_t target_quat;
     euler_to_quat(&target_quat, &target_euler);
 
-    // Construct difference quaternion
-    quaternion_t diff_quat;
-    quat_diff(&diff_quat, &target_quat, &curr_quat);
 
-    // Convert diff quat to angular velocities
-    float mag = sqrtf(diff_quat.x*diff_quat.x + diff_quat.y*diff_quat.y + diff_quat.z*diff_quat.z);
-    float axis_x = diff_quat.x;
-    float axis_y = diff_quat.y;
-    float axis_z = diff_quat.z;
-    if(mag > 0.001){
-        axis_x /= mag;
-        axis_y /= mag;
-        axis_z /= mag;
+    // TODO: Test this. Dev math.
+    quaternion_t q_c_conj;
+    quat_conjugate(&q_c_conj, &curr_quat);
+
+    quaternion_t q_d;
+    quat_multiply(&q_d, &q_c_conj, &target_quat);
+
+    float mag = sqrtf(q_d.x*q_d.x + q_d.y*q_d.y + q_d.z*q_d.z);
+    float theta = 2.0f * atan2f(mag, q_d.w);
+    float ax = q_d.x;
+    float ay = q_d.y;
+    float az = q_d.z;
+    if(theta != 0.0f){
+        // TODO: Simplify this by using mag?
+        float stheta = sinf(theta);
+        ax /= stheta;
+        ay /= stheta;
+        az /= stheta;
     }
-    float angle = 2.0f * atan2f(mag, diff_quat.w);
-    float err_x = angle * axis_x;
-    float err_y = angle * axis_y;
-    float err_z = angle * axis_z;
+
+    float ww_x = ax * theta;
+    float ww_y = ay * theta;
+    float ww_z = az * theta;
+
+    quaternion_t q_ww;
+    q_ww.w = 0.0f;
+    q_ww.x = ww_x;
+    q_ww.y = ww_y;
+    q_ww.z = ww_z;
+
+    quaternion_t q_wv;
+    quat_multiply(&q_wv, &curr_quat, &q_ww);
+
+    float wv_x = q_wv.x;
+    float wv_y = q_wv.y;
+    float wv_z = q_wv.z;
+    
 
     // Use PID controllers to calculate current outputs
     float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
-    float pitch = pid_calculate(&pitch_pid, err_x);
-    float roll = pid_calculate(&roll_pid, err_y);
+    float pitch = pid_calculate(&pitch_pid, wv_x);
+    float roll = pid_calculate(&roll_pid, wv_y);
     if(use_yaw_pid){
-        yaw = pid_calculate(&yaw_pid, err_z);
+        yaw = pid_calculate(&yaw_pid, wv_z);
     }
 
-    // Error "vector" (err_x, err_y, err_z) is in global DoFs. Need to rotate onto local axes
-    // This cannot be done by GLOBAL mode math as this is not yaw compensated
-    // whereas this must be yaw compensated
-    // Note that yaw drift is not a big deal as yaw drift redefines "zero yaw"
-	// Since zero yaw aligns with world axes, this redefines the world axes in
-	// this context too (by the same amount)
-    quaternion_t curr_quat_inv;
-    quat_inverse(&curr_quat_inv, &curr_quat);
-    rotate_vector(&pitch, &roll, &yaw, pitch, roll, yaw, &curr_quat_inv);
 
     // Apply same rotation as in GLOBAL mode to translation target
     float grav_x = 2.0f * (-curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);
