@@ -1040,6 +1040,22 @@ void cmdctrl_handle_message(void){
             sim_quat.z = conversions_data_to_float(&msg[18], true);
             sim_depth = conversions_data_to_float(&msg[22], true);
 
+            // TODO: maybe better way to do this overall?
+            //       Make BNO055 and MS5837 process_data function
+            //       This function is either called by sensor driver or here if needed
+            if(!_bno055_ready){
+                // BNO055 not working / connected. Still make sure simulated data is valid
+                curr_bno055_data.curr_quat.w = sim_quat.w;
+                curr_bno055_data.curr_quat.x = sim_quat.x;
+                curr_bno055_data.curr_quat.y = sim_quat.y;
+                curr_bno055_data.curr_quat.z = sim_quat.z;
+                // TODO: Make accumulated euler angles work in this case
+            }
+            if(!_ms5837_ready){
+                // MS5837 not working / connected. Still make sure simulated data is valid.
+                curr_ms5837_data.depth_m = sim_depth;
+            }
+
             // Message handled successfully
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
