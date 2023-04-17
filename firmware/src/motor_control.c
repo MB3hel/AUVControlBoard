@@ -407,7 +407,7 @@ void mc_set_sassist(float x, float y, float yaw,
 
     // Construct difference quaternion
     quaternion_t diff_quat;
-    quat_diff(&diff_quat, &curr_quat, &target_quat);
+    quat_diff(&diff_quat, &target_quat, &curr_quat);
 
     // Convert diff quat to angular velocities
     float mag = sqrtf(diff_quat.x*diff_quat.x + diff_quat.y*diff_quat.y + diff_quat.z*diff_quat.z);
@@ -426,10 +426,10 @@ void mc_set_sassist(float x, float y, float yaw,
 
     // Use PID controllers to calculate current outputs
     float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
-    float pitch = pid_calculate(&pitch_pid, -err_x);
-    float roll = pid_calculate(&roll_pid, -err_y);
+    float pitch = pid_calculate(&pitch_pid, err_x);
+    float roll = pid_calculate(&roll_pid, err_y);
     if(use_yaw_pid){
-        yaw = pid_calculate(&yaw_pid, -err_z);
+        yaw = pid_calculate(&yaw_pid, err_z);
     }
 
     // Error "vector" (err_x, err_y, err_z) is in global DoFs. Need to rotate onto local axes
