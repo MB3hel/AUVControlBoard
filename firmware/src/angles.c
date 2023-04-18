@@ -35,12 +35,12 @@ void euler_rad2deg(euler_t *dest, euler_t *src){
 void euler_to_quat(quaternion_t *dest, euler_t *src){
     euler_t src_rad;
     euler_deg2rad(&src_rad, src);
-    float cr = cosf(src->roll / 2.0f);
-    float sr = sinf(src->roll / 2.0f);
-    float cp = cosf(src->pitch / 2.0f);
-    float sp = sinf(src->pitch / 2.0f);
-    float cy = cosf(src->yaw / 2.0f);
-    float sy = sinf(src->yaw / 2.0f);
+    float cr = cosf(src_rad.roll / 2.0f);
+    float sr = sinf(src_rad.roll / 2.0f);
+    float cp = cosf(src_rad.pitch / 2.0f);
+    float sp = sinf(src_rad.pitch / 2.0f);
+    float cy = cosf(src_rad.yaw / 2.0f);
+    float sy = sinf(src_rad.yaw / 2.0f);
     dest->w = cy * cp * cr - sy * sp * sr;
     dest->x = cy * cr * sp - sy * cp * sr;
     dest->y = cy * cp * sr + sy * cr * sp;
