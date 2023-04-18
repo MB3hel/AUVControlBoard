@@ -407,8 +407,21 @@ void mc_set_sassist(float x, float y, float yaw,
 
 
     // TODO: Test this. Dev math.
+    float dot;
+    quat_dot(&dot, &curr_quat, &target_quat);
+
     quaternion_t q_c_conj;
-    quat_conjugate(&q_c_conj, &curr_quat);
+    if(dot < 0.0f){
+        quaternion_t temp;
+        temp.w = curr_quat.w;
+        temp.x = curr_quat.x;
+        temp.y = curr_quat.y;
+        temp.z = curr_quat.z;
+        quat_multiply_scalar(&temp, &temp, -1.0f);
+        quat_conjugate(&q_c_conj, &temp);
+    }else{
+        quat_conjugate(&q_c_conj, &curr_quat);
+    }
 
     quaternion_t q_d;
     quat_multiply(&q_d, &q_c_conj, &target_quat);
@@ -434,14 +447,14 @@ void mc_set_sassist(float x, float y, float yaw,
     // |theta| > 180.0 deg means we're trying to rotate the long way around
     // This is not ideal.
     // So fix it.
-    if(theta > (float)M_PI){
-        theta -= M_PI;
-        theta -= M_PI;
-    }
-    if(theta < -((float)M_PI)){
-        theta += M_PI;
-        theta += M_PI;
-    }
+    // if(theta > (float)M_PI){
+    //     theta -= M_PI;
+    //     theta -= M_PI;
+    // }
+    // if(theta < -((float)M_PI)){
+    //     theta += M_PI;
+    //     theta += M_PI;
+    // }
 
     float ww_x = ax * theta;
     float ww_y = ay * theta;
