@@ -418,12 +418,15 @@ void mc_set_sassist(float x, float y, float yaw,
     float ax = q_d.x;
     float ay = q_d.y;
     float az = q_d.z;
-    if(theta != 0.0f){
-        // TODO: Simplify this by using mag?
-        float stheta = sinf(theta);
-        ax /= stheta;
-        ay /= stheta;
-        az /= stheta;
+    if(mag > 0.001f){
+        ax /= mag;
+        ay /= mag;
+        az /= mag;
+    }else{
+        // TODO: Maybe? Probably better to not?
+        // ax = 0.0f;
+        // ay = 0.0f;
+        // az = 0.0f;
     }
 
     float ww_x = ax * theta;
