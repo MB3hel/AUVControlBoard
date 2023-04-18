@@ -439,12 +439,16 @@ void mc_set_sassist(float x, float y, float yaw,
     q_ww.y = ww_y;
     q_ww.z = ww_z;
 
-    quaternion_t q_wv;
-    quat_multiply(&q_wv, &curr_quat, &q_ww);
+    // quaternion_t q_wv;
+    // quat_multiply(&q_wv, &curr_quat, &q_ww);
 
-    float wv_x = q_wv.x;
-    float wv_y = q_wv.y;
-    float wv_z = q_wv.z;
+    // float wv_x = q_wv.x;
+    // float wv_y = q_wv.y;
+    // float wv_z = q_wv.z;
+
+    float wv_x = ww_x;
+    float wv_y = ww_y;
+    float wv_z = ww_z;
     
 
     // Use PID controllers to calculate current outputs
