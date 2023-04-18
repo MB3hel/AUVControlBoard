@@ -429,6 +429,20 @@ void mc_set_sassist(float x, float y, float yaw,
         // az = 0.0f;
     }
 
+    // TODO: This feels like it won't quite work in 3D
+    // maybe it does, but need to work out the math fully
+    // |theta| > 180.0 deg means we're trying to rotate the long way around
+    // This is not ideal.
+    // So fix it.
+    if(theta > (float)M_PI){
+        theta -= M_PI;
+        theta -= M_PI;
+    }
+    if(theta < -((float)M_PI)){
+        theta += M_PI;
+        theta += M_PI;
+    }
+
     float ww_x = ax * theta;
     float ww_y = ay * theta;
     float ww_z = az * theta;
