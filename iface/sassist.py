@@ -49,14 +49,14 @@ def run(cb: ControlBoard, s: Simulator) -> int:
 
     print("Tuning yaw PID...", end="")
     #                       kP   kI   kD  lim  invert
-    if cb.tune_sassist_yaw(0.0, 0.0, 0.0, 0.3, False) != ControlBoard.AckError.NONE:
+    if cb.tune_sassist_yaw(0.5, 0.0, 0.0, 0.5, False) != ControlBoard.AckError.NONE:
         print("Fail.")
         return 1
     print("Done.")
 
     print("Tuning depth PID...", end="")
     #                         kP   kI   kD  lim  invert
-    if cb.tune_sassist_depth(1.5, 0.0, 0.0, 1.0, False) != ControlBoard.AckError.NONE:
+    if cb.tune_sassist_depth(0.0, 0.0, 0.0, 1.0, False) != ControlBoard.AckError.NONE:
         print("Fail.")
         return 1
     print("Done.")
@@ -66,8 +66,16 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     ############################################################################
 
     print("Setting sassist mode target...", end="")
+
     #                   x    y   yaw   p    r    d
-    if cb.set_sassist1(0.0, 0.0, 0.0, 0.0, 0.0, -1.5) == ControlBoard.AckError.NONE:
+    # if cb.set_sassist1(0.0, 0.0, 0.0, -15.0, 7.0, 0.0) == ControlBoard.AckError.NONE:
+    #     print("Done.")
+    # else:
+    #     print("Fail.")
+    #     return 1
+
+    #                   x    y    p    r     h      d
+    if cb.set_sassist2(0.0, 0.0, 115.0, 45.0, 180.0, -1.5) == ControlBoard.AckError.NONE:
         print("Done.")
     else:
         print("Fail.")
