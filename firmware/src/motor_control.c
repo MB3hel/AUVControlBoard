@@ -264,6 +264,39 @@ static inline void quat_between(quaternion_t *dest, float ax, float ay, float az
     quat_normalize(dest, dest);
 }
 
+// Twist part of swing-twist decomposition
+// calculates twist of q around axis described by vector d = <d_x, d_y, d_z>
+// Note that d must be normalized!!!
+static inline void quat_twist(quaternion_t *twist, quaternion_t *q, float d_x, float d_y, float d_z){
+    // r = axis of rotation = <q.x, q.y, q.z>
+    float r_x = q->x;
+    float r_y = q->y;
+    float r_z = q->z;
+
+    // dot = <r, d> (dot product)
+    float dot = r_x*d_x + r_y*d_y + r_z*d_z;
+
+    // p = projection or r on d = ((<r, d>) / (|d|^2))d
+    // p = <r,d>d if d is unit vector (as it is assumed to be here)
+    float p_x = dot * d_x;
+    float p_y = dot * d_y;
+    float p_z = dot * d_z;
+
+    // twist = (w=q.w, x=p.x, y=p.y, z=p.z).normalized()
+    twist->w = q->w;
+    twist->x = p_x;
+    twist->y = p_y;
+    twist->z = p_z;
+    quat_normalize(twist, twist);
+
+    // However, if <r, d> is negative, the twist will be opposite the axis of rotation
+    // Thus, negate the quaternion so twist's axis points in same direction as d
+    // and it's angle will be the expected sign
+    if(dot < 0.0f){
+        quat_multiply_scalar(twist, twist, -1.0f);
+    }
+}
+
 
 void mc_set_raw(float *speeds){
     xSemaphoreTake(motor_mutex, portMAX_DELAY);   
@@ -395,12 +428,19 @@ void mc_set_sassist(float x, float y, float yaw,
     // Ensure zero yaw error if ignoring yaw
     // This is necessary because the shortest rotation path is calculated
     // Thus, yaw must be aligned to prevent shortest path from including a yaw component
-    // if(!use_yaw_pid){
-    //     euler_t curr_euler;
-    //     quat_to_euler(&curr_euler, &curr_quat);
-    //     euler_rad2deg(&curr_euler, &curr_euler);
-    //     target_euler.yaw = curr_euler.yaw;
-    // }
+    if(!use_yaw_pid){
+        // euler_t curr_euler;
+        // quat_to_euler(&curr_euler, &curr_quat);
+        // euler_rad2deg(&curr_euler, &curr_euler);
+        // target_euler.yaw = curr_euler.yaw;
+
+        quaternion_t curr_twist;
+        quat_twist(&curr_twist, &curr_quat, 0, 0, 1);
+        float curr_yaw = atan2f(-2.0f * (curr_twist.x*curr_twist.y - curr_twist.w*curr_twist.z), 1.0f - 2.0f * (curr_twist.x*curr_twist.x + curr_twist.z*curr_twist.z));
+        curr_yaw *= 180.0f / M_PI;
+
+        target_euler.yaw = curr_yaw;
+    }
 
     // Convert target to quaternion
     quaternion_t target_quat;
@@ -426,39 +466,6 @@ void mc_set_sassist(float x, float y, float yaw,
 
     quaternion_t q_d;
     quat_multiply(&q_d, &q_c_conj, &target_quat);
-
-    if(false /*!use_yaw_pid*/){        
-        // dot product of d = +z axis <0, 0, 1> and r = <q_d.x, q_d.y, q_d.z>
-        float dot = q_d.z;
-
-        // Calculate projection of r on d
-        // p = proj_d(r) = ((r dot d) / ||d||^2)d
-        // Assume d normalized: ||d|| = 1
-        // p = (r dot d)d
-        // p = r.z * <0, 0, 1> = <0, 0, r.z> = <0, 0, q_d.z>
-        float p_x = 0.0f;
-        float p_y = 0.0f;
-        float p_z = q_d.z;
-
-        // Twist = {w=q_d.w, x=p.x, y = p.y, z = p.z}
-        quaternion_t twist;
-        twist.w = q_d.w;
-        twist.x = p_x;
-        twist.y = p_y;
-        twist.z = p_z;
-
-        // Normalize twist (so it is a proper unit quaternion for rotations)
-        quat_normalize(&twist, &twist);
-
-        // Adjust q_d to remove twist
-        // q_d = q_s * q_t   (swing-twist decomposition)
-        // q_d' (without yaw) = q_d * conj(q_t) = q_s * q_t * conj(q_t)
-        // Since q_t is unit quaternion, conj(q_t) = inverse(q_t)
-        // therefore q_d' = q_s
-        // quat_multiply(&q_d, &q_d, &twist);
-
-        quat_multiply(&q_d, &twist, &q_d);
-    }
 
     float mag = sqrtf(q_d.x*q_d.x + q_d.y*q_d.y + q_d.z*q_d.z);
     float theta = 2.0f * atan2f(mag, q_d.w);
@@ -510,15 +517,12 @@ void mc_set_sassist(float x, float y, float yaw,
     float wv_x = ww_x;
     float wv_y = ww_y;
     float wv_z = ww_z;
-    
 
     // Use PID controllers to calculate current outputs
     float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
     float pitch = pid_calculate(&pitch_pid, wv_x);
     float roll = pid_calculate(&roll_pid, wv_y);
-    if(use_yaw_pid){
-        yaw = pid_calculate(&yaw_pid, wv_z);
-    }
+    yaw = pid_calculate(&yaw_pid, wv_z);
 
 
     // Apply same rotation as in GLOBAL mode to translation target
