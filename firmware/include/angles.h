@@ -90,6 +90,12 @@ void quat_conjugate(quaternion_t *dest, quaternion_t *src);
 void quat_magnitude(float *dest, quaternion_t *src);
 
 /**
+ * Normalize a quaternion
+ * dest = src / |src|
+ */
+void quat_normalize(quaternion_t *dest, quaternion_t *src);
+
+/**
  * Calculate dot product of two quaternions
  * dest = a • b
  */

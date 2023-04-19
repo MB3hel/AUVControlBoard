@@ -212,14 +212,17 @@ bool mc_wdog_feed(void){
 // Rotate a vector (x, y, z) buy a quaternion q
 static inline void rotate_vector(float *dx, float *dy, float *dz, float sx, float sy, float sz, quaternion_t *q){
     quaternion_t qv;
+    qv.w = 0.0f;
     qv.x = sx;
     qv.y = sy;
     qv.z = sz;    
-    quaternion_t qr;
+    
     quaternion_t qconj;
-    quat_multiply(&qr, q, &qv);
     quat_conjugate(&qconj, q);
-    quat_multiply(&qr, &qr, &qconj);
+
+    quaternion_t qr;
+    quat_multiply(&qr, &qv, &qconj);
+    quat_multiply(&qr, q, &qr);
     *dx = qr.x;
     *dy = qr.y;
     *dz = qr.z;
@@ -242,25 +245,23 @@ static inline void quat_between(quaternion_t *dest, float ax, float ay, float az
     float dot = ax*bx + ay*by + az*bz;
     float a_len2 = ax*ax + ay*ay + az*az;
     float b_len2 = bx*bx + by*by + bz*bz;
-    float summag = sqrtf(a_len2 + b_len2);
+    float p = sqrtf(a_len2 * b_len2);
     float cross_x = ay*bz - az*by;
     float cross_y = az*bx - ax*bz;
     float cross_z = ax*by - ay*bx;
-    if(dot / summag == -1){
+    if(dot / p == -1){
         // 180 degree rotation
         dest->w = 0.0f;
         dest->x = cross_x;
         dest->y = cross_y;
         dest->z = cross_z;
     }else{
-        dest->w = dot + summag;
+        dest->w = dot + p;
         dest->x = cross_x;
         dest->y = cross_y;
         dest->z = cross_z;
     }
-    float qmag;
-    quat_magnitude(&qmag, dest);
-    quat_divide_scalar(dest, dest, qmag);
+    quat_normalize(dest, dest);
 }
 
 
@@ -394,12 +395,12 @@ void mc_set_sassist(float x, float y, float yaw,
     // Ensure zero yaw error if ignoring yaw
     // This is necessary because the shortest rotation path is calculated
     // Thus, yaw must be aligned to prevent shortest path from including a yaw component
-    if(!use_yaw_pid){
-        euler_t curr_euler;
-        quat_to_euler(&curr_euler, &curr_quat);
-        euler_rad2deg(&curr_euler, &curr_euler);
-        target_euler.yaw = curr_euler.yaw;
-    }
+    // if(!use_yaw_pid){
+    //     euler_t curr_euler;
+    //     quat_to_euler(&curr_euler, &curr_quat);
+    //     euler_rad2deg(&curr_euler, &curr_euler);
+    //     target_euler.yaw = curr_euler.yaw;
+    // }
 
     // Convert target to quaternion
     quaternion_t target_quat;
@@ -425,6 +426,39 @@ void mc_set_sassist(float x, float y, float yaw,
 
     quaternion_t q_d;
     quat_multiply(&q_d, &q_c_conj, &target_quat);
+
+    if(false /*!use_yaw_pid*/){        
+        // dot product of d = +z axis <0, 0, 1> and r = <q_d.x, q_d.y, q_d.z>
+        float dot = q_d.z;
+
+        // Calculate projection of r on d
+        // p = proj_d(r) = ((r dot d) / ||d||^2)d
+        // Assume d normalized: ||d|| = 1
+        // p = (r dot d)d
+        // p = r.z * <0, 0, 1> = <0, 0, r.z> = <0, 0, q_d.z>
+        float p_x = 0.0f;
+        float p_y = 0.0f;
+        float p_z = q_d.z;
+
+        // Twist = {w=q_d.w, x=p.x, y = p.y, z = p.z}
+        quaternion_t twist;
+        twist.w = q_d.w;
+        twist.x = p_x;
+        twist.y = p_y;
+        twist.z = p_z;
+
+        // Normalize twist (so it is a proper unit quaternion for rotations)
+        quat_normalize(&twist, &twist);
+
+        // Adjust q_d to remove twist
+        // q_d = q_s * q_t   (swing-twist decomposition)
+        // q_d' (without yaw) = q_d * conj(q_t) = q_s * q_t * conj(q_t)
+        // Since q_t is unit quaternion, conj(q_t) = inverse(q_t)
+        // therefore q_d' = q_s
+        // quat_multiply(&q_d, &q_d, &twist);
+
+        quat_multiply(&q_d, &twist, &q_d);
+    }
 
     float mag = sqrtf(q_d.x*q_d.x + q_d.y*q_d.y + q_d.z*q_d.z);
     float theta = 2.0f * atan2f(mag, q_d.w);

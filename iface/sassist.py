@@ -68,14 +68,14 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     print("Setting sassist mode target...", end="")
 
     #                   x    y   yaw   p    r    d
-    # if cb.set_sassist1(0.0, 0.0, 0.0, -15.0, 7.0, 0.0) == ControlBoard.AckError.NONE:
+    # if cb.set_sassist1(0.0, 0.0, 0.0, 115.0, 0.0, 0.0) == ControlBoard.AckError.NONE:
     #     print("Done.")
     # else:
     #     print("Fail.")
     #     return 1
 
     #                   x    y    p    r     h      d
-    if cb.set_sassist2(0.0, 0.0, 115.0, 45.0, 180.0, -1.5) == ControlBoard.AckError.NONE:
+    if cb.set_sassist2(0.0, 0.3, 45.0, 0.0, 0.0, -1.5) == ControlBoard.AckError.NONE:
         print("Done.")
     else:
         print("Fail.")

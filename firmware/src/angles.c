@@ -97,6 +97,20 @@ void quat_magnitude(float *dest, quaternion_t *src){
     *dest = sqrtf(src->w*src->w + src->x*src->x + src->y*src->y + src->z*src->z);
 }
 
+void quat_normalize(quaternion_t *dest, quaternion_t *src){
+    float mag = sqrtf(src->w*src->w + src->x*src->x + src->y*src->y + src->z*src->z);
+    dest->w = src->w;
+    dest->x = src->x;
+    dest->y = src->y;
+    dest->z = src->z;
+    if(mag == 0.0f)
+        return;
+    dest->w /= mag;
+    dest->x /= mag;
+    dest->y /= mag;
+    dest->z /= mag;
+}
+
 void quat_dot(float *dest, quaternion_t *a, quaternion_t *b){
     *dest = a->w*b->w + a->x*b->x + a->y*b->y + a->z*b->z;
 }
