@@ -571,7 +571,6 @@ void mc_set_sassist(float x, float y, float yaw_spd,
         pitch /= maxmag;
         roll /= maxmag;
         yaw /= maxmag;
-        asm("nop");
     }
 
     // Apply same rotation as in GLOBAL mode to translation target
