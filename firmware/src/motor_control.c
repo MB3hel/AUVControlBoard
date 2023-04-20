@@ -297,7 +297,6 @@ static inline void quat_twist(quaternion_t *twist, quaternion_t *q, float d_x, f
     }
 }
 
-
 void mc_set_raw(float *speeds){
     xSemaphoreTake(motor_mutex, portMAX_DELAY);   
 
@@ -418,17 +417,18 @@ void mc_sassist_tune_depth(float kp, float ki, float kd, float limit, bool inver
     depth_pid.invert = invert;
 }
 
-void mc_set_sassist(float x, float y, float yaw,
+void mc_set_sassist(float x, float y, float yaw_spd,
         euler_t target_euler,
         float target_depth,
         quaternion_t curr_quat,
         float curr_depth,
-        bool use_yaw_pid){
+        bool yaw_target){
 
-    // Ensure zero yaw error if ignoring yaw
-    // This is necessary because the shortest rotation path is calculated
-    // Thus, yaw must be aligned to prevent shortest path from including a yaw component
-    if(!use_yaw_pid){
+    float base_xrot = 0.0f;
+    float base_yrot = 0.0f;
+    float base_zrot = 0.0f;
+
+    if(!yaw_target){
         // euler_t curr_euler;
         // quat_to_euler(&curr_euler, &curr_quat);
         // euler_rad2deg(&curr_euler, &curr_euler);
@@ -440,6 +440,25 @@ void mc_set_sassist(float x, float y, float yaw,
         curr_yaw *= 180.0f / M_PI;
 
         target_euler.yaw = curr_yaw;
+
+
+        quaternion_t curr_swing;
+        quaternion_t curr_twist_conj;
+        quat_conjugate(&curr_twist_conj, &curr_twist);
+        quat_multiply(&curr_swing, &curr_quat, &curr_twist_conj);
+
+        // Same transform as global mode translation
+        float grav_x = 2.0f * (-curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);
+        float grav_y = 2.0f * (-curr_quat.w*curr_quat.x - curr_quat.y*curr_quat.z);
+        float grav_z = -curr_quat.w*curr_quat.w + curr_quat.x*curr_quat.x + curr_quat.y*curr_quat.y - curr_quat.z*curr_quat.z;
+        float grav_mag = sqrtf(grav_x*grav_x + grav_y*grav_y + grav_z*grav_z);
+        grav_x /= grav_mag;
+        grav_y /= grav_mag;
+        grav_z /= grav_mag;
+        quaternion_t qrot;
+        quat_between(&qrot, grav_x, grav_y, grav_z, 0.0f, 0.0f, -1.0f);
+        quat_inverse(&qrot, &qrot);
+        rotate_vector(&base_xrot, &base_yrot, &base_zrot, 0.0f, 0.0f, yaw_spd, &qrot);
     }
 
     // Convert target to quaternion
@@ -522,8 +541,38 @@ void mc_set_sassist(float x, float y, float yaw,
     float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
     float pitch = pid_calculate(&pitch_pid, wv_x);
     float roll = pid_calculate(&roll_pid, wv_y);
-    yaw = pid_calculate(&yaw_pid, wv_z);
+    float yaw = pid_calculate(&yaw_pid, wv_z);
 
+    // float pitch = 0.0f;
+    // float roll = 0.0f;
+    // float yaw = 0.0f;
+
+    if(!yaw_target){
+        // Need to add PID outputs to base speeds of vehicle
+        // Base speeds came from rotation of yaw speed onto vehicle basis
+        pitch += base_xrot;
+        roll += base_yrot;
+        yaw += base_zrot;
+
+        // Proportionally scale speeds so all have magnitude less than 1.0
+        float maxmag = 1.0f;
+        float abspitch = fabsf(pitch);
+        if(abspitch > maxmag){
+            maxmag = abspitch;
+        }
+        float absroll = fabsf(roll);
+        if(absroll > maxmag){
+            maxmag = absroll;
+        }
+        float absyaw = fabsf(yaw);
+        if(absyaw > maxmag){
+            maxmag = absyaw;
+        }
+        pitch /= maxmag;
+        roll /= maxmag;
+        yaw /= maxmag;
+        asm("nop");
+    }
 
     // Apply same rotation as in GLOBAL mode to translation target
     float grav_x = 2.0f * (-curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);
