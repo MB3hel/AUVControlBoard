@@ -321,11 +321,11 @@ void mc_set_raw(float *speeds){
     xSemaphoreGive(motor_mutex);
 }
 
-void mc_set_local(float x, float y, float z, float pitch, float roll, float yaw){
+void mc_set_local(float x, float y, float z, float xrot, float yrot, float zrot){
     float target_arr[6];
     matrix target;
     matrix_init_static(&target, target_arr, 6, 1);
-    matrix_set_col(&target, 0, (float[]){x, y, z, pitch, roll, yaw});
+    matrix_set_col(&target, 0, (float[]){x, y, z, xrot, yrot, zrot});
 
     // Limit input speeds to correct range
     for(size_t i = 0; i < 6; ++i){
@@ -365,7 +365,7 @@ void mc_set_local(float x, float y, float z, float pitch, float roll, float yaw)
     mc_set_raw(speed_arr);
 }
 
-void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw, quaternion_t curr_quat){
+void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, float yaw_spd, quaternion_t curr_quat){
     float grav_x = 2.0f * (-curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);
     float grav_y = 2.0f * (-curr_quat.w*curr_quat.x - curr_quat.y*curr_quat.z);
     float grav_z = -curr_quat.w*curr_quat.w + curr_quat.x*curr_quat.x + curr_quat.y*curr_quat.y - curr_quat.z*curr_quat.z;
@@ -377,8 +377,10 @@ void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw
     quat_between(&qrot, grav_x, grav_y, grav_z, 0.0f, 0.0f, -1.0f);
     quat_inverse(&qrot, &qrot);
     rotate_vector(&x, &y, &z, x, y, z, &qrot);
-    rotate_vector(&pitch, &roll, &yaw, pitch, roll, yaw, &qrot);
-    mc_set_local(x, y, z, pitch, roll, yaw);
+
+    float xrot, yrot, zrot;
+    rotate_vector(&xrot, &yrot, &zrot, pitch_spd, roll_spd, yaw_spd, &qrot);
+    mc_set_local(x, y, z, xrot, yrot, zrot);
 }
 
 void mc_sassist_tune_pitch(float kp, float ki, float kd, float limit, bool invert){
@@ -539,38 +541,34 @@ void mc_set_sassist(float x, float y, float yaw_spd,
 
     // Use PID controllers to calculate current outputs
     float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
-    float pitch = pid_calculate(&pitch_pid, wv_x);
-    float roll = pid_calculate(&roll_pid, wv_y);
-    float yaw = pid_calculate(&yaw_pid, wv_z);
-
-    // float pitch = 0.0f;
-    // float roll = 0.0f;
-    // float yaw = 0.0f;
+    float xrot = pid_calculate(&pitch_pid, wv_x);
+    float yrot = pid_calculate(&roll_pid, wv_y);
+    float zrot = pid_calculate(&yaw_pid, wv_z);
 
     if(!yaw_target){
         // Need to add PID outputs to base speeds of vehicle
         // Base speeds came from rotation of yaw speed onto vehicle basis
-        pitch += base_xrot;
-        roll += base_yrot;
-        yaw += base_zrot;
+        xrot += base_xrot;
+        yrot += base_yrot;
+        zrot += base_zrot;
 
         // Proportionally scale speeds so all have magnitude less than 1.0
         float maxmag = 1.0f;
-        float abspitch = fabsf(pitch);
+        float abspitch = fabsf(xrot);
         if(abspitch > maxmag){
             maxmag = abspitch;
         }
-        float absroll = fabsf(roll);
+        float absroll = fabsf(yrot);
         if(absroll > maxmag){
             maxmag = absroll;
         }
-        float absyaw = fabsf(yaw);
+        float absyaw = fabsf(zrot);
         if(absyaw > maxmag){
             maxmag = absyaw;
         }
-        pitch /= maxmag;
-        roll /= maxmag;
-        yaw /= maxmag;
+        xrot /= maxmag;
+        yrot /= maxmag;
+        zrot /= maxmag;
     }
 
     // Apply same rotation as in GLOBAL mode to translation target
@@ -587,45 +585,12 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     rotate_vector(&x, &y, &z, x, y, z, &qrot);
 
     // Target motion now relative to the robot's axes
-    mc_set_local(x, y, z, pitch, roll, yaw);
+    mc_set_local(x, y, z, xrot, yrot, zrot);
 }
 
-void mc_set_sassist_old(float x, float y, float yaw,
-        euler_t target_euler,
-        float target_depth,
-        quaternion_t curr_quat,
-        float curr_depth,
-        bool use_yaw_pid){
-    // ********************************************************************************** //
-    // * WARNING: THIS IS A "TEMPORARY" METHOD OF DOING THIS USING EULER ANGLES         * //
-    // * THIS WILL NOT WORK IN GIMBAL LOCK SCENARIOS!!!                                 * //
-    // * THIS IS A STOPGAP TO ALLOW NORMAL USE CASES WHERE PITCH AND ROLL ARE           * //
-    // * NEAR ZERO!!!                                                                   * //
-    // * DO NOT ATTEMPT TO ROLL NEAR +/-90 IT WILL BREAK!!!                             * //
-    // ********************************************************************************** //
-
-    // Convert current orientation into euler angles
-    euler_t curr_euler;
-    quat_to_euler(&curr_euler, &curr_quat);
-    euler_rad2deg(&curr_euler, &curr_euler);
-
-    // Calculate PID outputs
-    // TODO: Handle these as circular variables properly???
-    //       This is hard with roll because -90 to +90 then it changes others...
+void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth){
     float z = pid_calculate(&depth_pid, target_depth - curr_depth);
-    float pitch = pid_calculate(&pitch_pid, target_euler.pitch - curr_euler.pitch);
-    float roll = pid_calculate(&roll_pid, target_euler.roll - curr_euler.roll);
-    if(use_yaw_pid){
-        yaw = pid_calculate(&yaw_pid, target_euler.yaw - curr_euler.yaw);
-    }
-
-    // Update speeds using GLOBAL mode math
-    mc_set_global(x, y, z, pitch, roll, yaw, curr_quat);
-}
-
-void mc_set_dhold(float x, float y, float pitch, float roll, float yaw, float target_depth, quaternion_t curr_quat, float curr_depth){
-    float z = pid_calculate(&depth_pid, target_depth - curr_depth);
-    mc_set_global(x, y, z, pitch, roll, yaw, curr_quat);
+    mc_set_global(x, y, z, pitch_spd, roll_spd, yaw_spd, curr_quat);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
