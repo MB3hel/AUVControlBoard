@@ -60,28 +60,28 @@ bool mc_wdog_feed(void);
 void mc_set_raw(float *speeds);
 
 /**
- * Set motor speeds in LOCAL mode. Target speeds are in DoF frame relative to robot, not world
+ * Set motor speeds in LOCAL mode. Target speeds are in DoFs relative to robot, not world
  * @param x Speed in +x translation DoF (-1.0 to +1.0)
  * @param y Speed in +y translation DoF (-1.0 to +1.0)
  * @param z Speed in +z translation DoF (-1.0 to +1.0)
- * @param pitch Speed in +pitch rotation DoF (-1.o to +1.0)
- * @param roll Speed in +roll rotation DoF (-1.o to +1.0)
- * @param yaw Speed in +yaw rotation DoF (-1.o to +1.0)
+ * @param xrot Angular speed about x (-1.o to +1.0)
+ * @param yrot Angular speed about y (-1.o to +1.0)
+ * @param zrot Angular speed about z (-1.o to +1.0)
  */
-void mc_set_local(float x, float y, float z, float pitch, float roll, float yaw);
+void mc_set_local(float x, float y, float z, float xrot, float yrot, float zrot);
 
 /**
- * Set motor speeds in GLOBAL mode. Target speeds are in DoF frame relative to world, not the robot.
- * Note that this "world frame" does not compensate for yaw (just pitch and roll)
+ * Set motor speeds in GLOBAL mode.
+ * x, y, and z DoFs are pitch and roll compensated
  * @param x Speed in +x translation DoF (-1.0 to +1.0)
  * @param y Speed in +y translation DoF (-1.0 to +1.0)
  * @param z Speed in +z translation DoF (-1.0 to +1.0)
- * @param pitch Speed in +pitch rotation DoF (-1.o to +1.0)
- * @param roll Speed in +roll rotation DoF (-1.o to +1.0)
- * @param yaw Speed in +yaw rotation DoF (-1.o to +1.0)
+ * @param pitch_spd Rate of change of vehicle pitch (-1.o to +1.0)
+ * @param roll_spd Rate of change of vehicle roll (-1.o to +1.0)
+ * @param yaw_spd Rate of change of vehicle yaw (-1.o to +1.0)
  * @param curr_quat Current orientation quaternion from IMU
  */
-void mc_set_global(float x, float y, float z, float pitch, float roll, float yaw, quaternion_t curr_quat);
+void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, float yaw_spd, quaternion_t curr_quat);
 
 /**
  * Tune stability assist mode pitch pid
@@ -127,17 +127,17 @@ void mc_sassist_tune_depth(float kp, float ki, float kd, float limit, bool inver
  * Set motor speeds in STABILITY_ASSIST mode. Abstracts a 2D plane in which the robot is controlled.
  * The other dimensions are handled by closed-loop control. 
  * Requires speeds for x and y DoFs and uses closed-loop control for depth (z), pitch, and roll. 
- * Yaw can be either a speed or handled by closed loop control.
- * Speeds are in world-relative (GLOBAL) DoFs 
+ * Yaw can be adjusted by speed or by using closed-loop control
+ * x & y speeds are pitch and roll compensated
  * @param x Speed in +x DoF (-1.0 to +1.0)
  * @param y Speed in +y DoF (-1.0 to +1.0)
- * @param yaw Speed in +yaw DoF (-1.0 to +1.0). Not used if use_yaw_pid is true
+ * @param yaw_spd Rate of change of vehicle yaw (-1.0 to 1.0)
  * @param target_euler Target orientation (ZYX euler; yaw is ignored if use_yaw_pid is false)
  * @param curr_quat Current orientation quaternion
  * @param curr_depth Current depth in meters (negative below surface)
  * @param use_yaw_pid If true, closed loop control is used for yaw not a speed
  */
-void mc_set_sassist(float x, float y, float yaw, 
+void mc_set_sassist(float x, float y, float yaw_spd, 
         euler_t target_euler, 
         float target_depth,
         quaternion_t curr_quat,
@@ -148,13 +148,14 @@ void mc_set_sassist(float x, float y, float yaw,
 /**
  * Set motor speeds in DEPTH_HOLD mode. Basically just GLOBAL mode, but instead of a speed
  * for the z axis, the SASSIST PID is used instead.
+ * x and y DoFs are pitch and roll compensated
  * @param x Speed in +x translation DoF (-1.0 to +1.0)
  * @param y Speed in +y translation DoF (-1.0 to +1.0)
- * @param pitch Speed in +pitch rotation DoF (-1.o to +1.0)
- * @param roll Speed in +roll rotation DoF (-1.o to +1.0)
- * @param yaw Speed in +yaw rotation DoF (-1.o to +1.0)
+ * @param pitch_spd Rate of change of vehicle pitch (-1.o to +1.0)
+ * @param roll_spd Rate of change of vehicle roll (-1.o to +1.0)
+ * @param yaw_spd Rate of change of vehicle yaw (-1.o to +1.0)
  * @param target_depth Desired depth in meters (negative for below surface)
  * @param curr_quat Current orientation quaternion from IMU
  * @param curr_depth Current depth in meters
  */
-void mc_set_dhold(float x, float y, float pitch, float roll, float yaw, float target_depth, quaternion_t curr_quat, float curr_depth);
+void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth);
