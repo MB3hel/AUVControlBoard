@@ -65,7 +65,7 @@ Used to tune stability assist mode PID controllers (note that the depth PID is a
 ```none  
 'S', 'A', 'S', 'S', 'I', 'S', 'T', 'T', 'N', [which], [kp], [ki], [kd], [limit], [invert]
 ```  
-`[which]` indicates which PID to tune ('P' = pitch hold, 'R' = roll hold, 'Y' = yaw hold, 'D' = depth hold).  
+`[which]` indicates which PID to tune ('X' = xrot, 'Y' = yrot, 'Z' = zrot, 'D' = depth hold).  
 `[kp]`, `[ki]`, `[kd]` are proportional, integral, derivative, and feed-forward gains (32-bit float little endian).  
 `[limit]` Is the PID controller's max output (limits max speed in the controlled DoF). Must be between 0.0 and 1.0. 32-bit float little endian.  
 `[invert]` Set to one to invert PID output. Zero otherwise.
@@ -84,23 +84,24 @@ This message will be acknowledged. The acknowledge message will contain no resul
 **Local Speed Set**  
 Used to set motor speeds in `LOCAL` mode. This command has the following format  
 ```none
-'L', 'O', 'C', 'A', 'L', [x], [y], [z], [pitch], [roll], [yaw]
+'L', 'O', 'C', 'A', 'L', [x], [y], [z], [xrot], [yrot], [zrot]
 ```  
-`[x]`, `[y]`, `[z]`, `[pitch]`, `[roll]`, `[yaw]`: Speed for each DoF relative to the robot -1.0 to 1.0. A 32-bit float (little endian).  
+`[x]`, `[y]`, `[z]`, `[xrot]`, `[yrot]`, `[zrot]`: Speed for each DoF relative to the robot -1.0 to 1.0. A 32-bit float (little endian).  
 This message will be acknowledged. The acknowledge message will contain no result data.
 
 **Global Speed Set**  
 Used to set motor speeds in `GLOBAL` mode. This command has the following format  
 ```none
-'G', 'L', 'O', 'B', 'A', 'L', [x], [y], [z], [pitch], [roll], [yaw]
+'G', 'L', 'O', 'B', 'A', 'L', [x], [y], [z], [pitch_spd], [roll_spd], [yaw_spd]
 ```  
-`[x]`, `[y]`, `[z]`, `[pitch]`, `[roll]`, `[yaw]`: Speed for each DoF relative to the world (pitch and roll compensated; not yaw compensated) -1.0 to 1.0. A 32-bit float (little endian).  
+`[x]`, `[y]`, `[z]`: Speed for each "world-relative" (pitch and roll compensated) DoF -1.0 to 1.0. 32-bit float (little endian).  
+`[pitch_spd]`, `[roll_spd]`, `[yaw_spd]`: Rate of change of vehicle pitch, roll, and yaw -1.0 to 1.0.  
 This message will be acknowledged. The acknowledge message will contain no result data. Note that if the IMU is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
 
 **Stability Assist Speed Set (Variant 1)**  
 Used to set motor speeds in `STABILITY_ASSIST` mode using a speed for yaw. This command has the following format  
 ```none  
-'S', 'A', 'S', 'S', 'I', 'S', 'T', 'S', 'T', '1', [x], [y], [yaw], [target_pitch], [target_roll], [target_depth]
+'S', 'A', 'S', 'S', 'I', 'S', 'T', 'S', 'T', '1', [x], [y], [yaw_spd], [target_pitch], [target_roll], [target_depth]
 ```  
 Each value is a 32-bit float little endian.
 
@@ -108,7 +109,7 @@ Pitch and roll are euler angles (in degrees). These are intrinsic euler angles (
 
 Depth is in meters where negative numbers are below the surface.
 
-x, y, and yaw are speeds in the x, y, and yaw DoFs the same as in `GLOBAL` mode.
+x, y, and yaw_spd are x, y, and yaw_spd just as in global mode.
 
 This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
 
@@ -119,7 +120,7 @@ Used to set motor speeds in `STABILITY_ASSIST` mode using a PID to maintain a ta
 ```  
 Each value is a 32-bit float little endian. 
 
-Pitch, roll, and yaw are euler angles (in degrees). These are intrinsic euler angles (z-x'-y'' convention per the control board's coordinate system).
+Target Pitch, roll, and yaw are euler angles (in degrees). These are intrinsic euler angles (z-x'-y'' convention per the control board's coordinate system).
 
 Depth is in meters where negative numbers are below the surface.
 
@@ -131,7 +132,7 @@ This message will be acknowledged with no data. Note that if the IMU or depth se
 **Depth Hold Speed Set**  
 Used to set motor speeds in `DEPTH_HOLD` mode. This command has the following format  
 ```none
-'D', 'H', 'O', 'L', 'D', [x], [y], [pitch], [roll], [yaw], [target_depth]
+'D', 'H', 'O', 'L', 'D', [x], [y], [pitch_spd], [roll_spd], [yaw_spd], [target_depth]
 ```  
 Each value is a 32-bit float. Everything except `[target_depth]` is a speed (same as GLOBAL mode speeds). Target depth is in meters (negative for below surface).
 
