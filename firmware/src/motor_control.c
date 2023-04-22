@@ -60,7 +60,7 @@ static TimerHandle_t motor_wdog_timer;                  // Timer to implement mo
 static SemaphoreHandle_t motor_mutex;                   // Ensures motor & watchdog access is thread safe
 
 // PID controllers for SASSIST mode
-static pid_controller_t pitch_pid, roll_pid, yaw_pid, depth_pid;
+static pid_controller_t xrot_pid, yrot_pid, zrot_pid, depth_pid;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -78,24 +78,24 @@ void mc_init(void){
         matrix_init_static(&overlap_vectors[i], overlap_arrs[i], 8, 1);
 
     // Initialize pid controllers
-    pitch_pid.kP = 0.0f;
-    pitch_pid.kI = 0.0f;
-    pitch_pid.kD = 0.0f;
-    pitch_pid.min = -1.0f;
-    pitch_pid.max = 1.0f;
-    PID_RESET(pitch_pid);
-    roll_pid.kP = 0.0f;
-    roll_pid.kI = 0.0f;
-    roll_pid.kD = 0.0f;
-    roll_pid.min = -1.0f;
-    roll_pid.max = 1.0f;
-    PID_RESET(roll_pid);
-    yaw_pid.kP = 0.0f;
-    yaw_pid.kI = 0.0f;
-    yaw_pid.kD = 0.0f;
-    yaw_pid.min = -1.0f;
-    yaw_pid.max = 1.0f;
-    PID_RESET(yaw_pid);
+    xrot_pid.kP = 0.0f;
+    xrot_pid.kI = 0.0f;
+    xrot_pid.kD = 0.0f;
+    xrot_pid.min = -1.0f;
+    xrot_pid.max = 1.0f;
+    PID_RESET(xrot_pid);
+    yrot_pid.kP = 0.0f;
+    yrot_pid.kI = 0.0f;
+    yrot_pid.kD = 0.0f;
+    yrot_pid.min = -1.0f;
+    yrot_pid.max = 1.0f;
+    PID_RESET(yrot_pid);
+    zrot_pid.kP = 0.0f;
+    zrot_pid.kI = 0.0f;
+    zrot_pid.kD = 0.0f;
+    zrot_pid.min = -1.0f;
+    zrot_pid.max = 1.0f;
+    PID_RESET(zrot_pid);
     depth_pid.kP = 0.0f;
     depth_pid.kI = 0.0f;
     depth_pid.kD = 0.0f;
@@ -383,31 +383,31 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     mc_set_local(x, y, z, xrot, yrot, zrot);
 }
 
-void mc_sassist_tune_pitch(float kp, float ki, float kd, float limit, bool invert){
-    pitch_pid.kP = kp;
-    pitch_pid.kI = ki;
-    pitch_pid.kD = kd;
-    pitch_pid.max = limit;
-    pitch_pid.min = -limit;
-    pitch_pid.invert = invert;
+void mc_sassist_tune_xrot(float kp, float ki, float kd, float limit, bool invert){
+    xrot_pid.kP = kp;
+    xrot_pid.kI = ki;
+    xrot_pid.kD = kd;
+    xrot_pid.max = limit;
+    xrot_pid.min = -limit;
+    xrot_pid.invert = invert;
 }
 
-void mc_sassist_tune_roll(float kp, float ki, float kd, float limit, bool invert){
-    roll_pid.kP = kp;
-    roll_pid.kI = ki;
-    roll_pid.kD = kd;
-    roll_pid.max = limit;
-    roll_pid.min = -limit;
-    roll_pid.invert = invert;
+void mc_sassist_tune_yrot(float kp, float ki, float kd, float limit, bool invert){
+    yrot_pid.kP = kp;
+    yrot_pid.kI = ki;
+    yrot_pid.kD = kd;
+    yrot_pid.max = limit;
+    yrot_pid.min = -limit;
+    yrot_pid.invert = invert;
 }
 
-void mc_sassist_tune_yaw(float kp, float ki, float kd, float limit, bool invert){
-    yaw_pid.kP = kp;
-    yaw_pid.kI = ki;
-    yaw_pid.kD = kd;
-    yaw_pid.max = limit;
-    yaw_pid.min = -limit;
-    yaw_pid.invert = invert;
+void mc_sassist_tune_zrot(float kp, float ki, float kd, float limit, bool invert){
+    zrot_pid.kP = kp;
+    zrot_pid.kI = ki;
+    zrot_pid.kD = kd;
+    zrot_pid.max = limit;
+    zrot_pid.min = -limit;
+    zrot_pid.invert = invert;
 }
 
 void mc_sassist_tune_depth(float kp, float ki, float kd, float limit, bool invert){
@@ -541,9 +541,9 @@ void mc_set_sassist(float x, float y, float yaw_spd,
 
     // Use PID controllers to calculate current outputs
     float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
-    float xrot = pid_calculate(&pitch_pid, wv_x);
-    float yrot = pid_calculate(&roll_pid, wv_y);
-    float zrot = pid_calculate(&yaw_pid, wv_z);
+    float xrot = pid_calculate(&xrot_pid, wv_x);
+    float yrot = pid_calculate(&yrot_pid, wv_y);
+    float zrot = pid_calculate(&zrot_pid, wv_z);
 
     if(!yaw_target){
         // Need to add PID outputs to base speeds of vehicle

@@ -792,7 +792,7 @@ void cmdctrl_handle_message(void){
         // Tune SASSIST PID
         // S, A, S, S, I, S, T, T, N, [which], [kp], [ki], [kd], [limit], [invert]
         // Each value is a 32-bit little endian float
-        // which = what PID to tune P (pitch), R (roll), Y (yaw), D (depth)
+        // which = what PID to tune X (xrot), Y (yrot), Z (zrot), D (depth)
         // kp, ki, kd are gains. limit is max output of PID (magnitude, must be positive)
         // invert == 1 negates the default PID output
         if(len != 27){
@@ -804,14 +804,14 @@ void cmdctrl_handle_message(void){
             float limit = conversions_data_to_float(&msg[22], true);
             bool invert = msg[26];
             switch(msg[9]){
-            case 'P':
-                mc_sassist_tune_pitch(kp, ki, kd, limit, invert);
-                break;
-            case 'R':
-                mc_sassist_tune_roll(kp, ki, kd, limit, invert);
+            case 'X':
+                mc_sassist_tune_xrot(kp, ki, kd, limit, invert);
                 break;
             case 'Y':
-                mc_sassist_tune_yaw(kp, ki, kd, limit, invert);
+                mc_sassist_tune_yrot(kp, ki, kd, limit, invert);
+                break;
+            case 'Z':
+                mc_sassist_tune_zrot(kp, ki, kd, limit, invert);
                 break;
             case 'D':
                 mc_sassist_tune_depth(kp, ki, kd, limit, invert);

@@ -84,34 +84,34 @@ void mc_set_local(float x, float y, float z, float xrot, float yrot, float zrot)
 void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, float yaw_spd, quaternion_t curr_quat);
 
 /**
- * Tune stability assist mode pitch pid
+ * Tune stability assist mode x rotation pid
  * @param kp Proportional gain
  * @param ki Integral gain
  * @param kd Derivative gain
  * @param limit Magnitude of max PID output (max = limit, min = -limit). Must be positive
  * @param invert True to negate PID output
  */
-void mc_sassist_tune_pitch(float kp, float ki, float kd, float limit, bool invert);
+void mc_sassist_tune_xrot(float kp, float ki, float kd, float limit, bool invert);
 
 /**
- * Tune stability assist mode roll pid
+ * Tune stability assist mode y rotation pid
  * @param kp Proportional gain
  * @param ki Integral gain
  * @param kd Derivative gain
  * @param limit Magnitude of max PID output (max = limit, min = -limit). Must be positive
  * @param invert True to negate PID output
  */
-void mc_sassist_tune_roll(float kp, float ki, float kd, float limit, bool invert);
+void mc_sassist_tune_yrot(float kp, float ki, float kd, float limit, bool invert);
 
 /**
- * Tune stability assist mode yaw pid
+ * Tune stability assist mode z rotation pid
  * @param kp Proportional gain
  * @param ki Integral gain
  * @param kd Derivative gain
  * @param limit Magnitude of max PID output (max = limit, min = -limit). Must be positive
  * @param invert True to negate PID output
  */
-void mc_sassist_tune_yaw(float kp, float ki, float kd, float limit, bool invert);
+void mc_sassist_tune_zrot(float kp, float ki, float kd, float limit, bool invert);
 
 /**
  * Tune stability assist mode depth pid
