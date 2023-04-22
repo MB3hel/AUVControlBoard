@@ -378,8 +378,51 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     quat_inverse(&qrot, &qrot);
     rotate_vector(&x, &y, &z, x, y, z, &qrot);
 
-    float xrot, yrot, zrot;
-    rotate_vector(&xrot, &yrot, &zrot, pitch_spd, roll_spd, yaw_spd, &qrot);
+    // Calculate q_pitch and q_roll
+    quaternion_t q_pitch, q_rollyaw, q_roll;
+    quat_twist(&q_pitch, &curr_quat, 1, 0, 0);
+    quat_conjugate(&q_rollyaw, &q_pitch);
+    quat_multiply(&q_rollyaw, &curr_quat, &q_rollyaw);
+    quat_twist(&q_roll, &q_rollyaw, 0, 1, 0);
+    
+    // w_roll = s_roll = <0, roll_spd, 0>
+    float w_roll_y = roll_spd;
+
+    // s_pitch = <pitch_spd, 0, 0>
+    // w_pitch = q_roll * s_pitch * conj(q_roll)
+    float w_pitch_x, w_pitch_y, w_pitch_z;
+    rotate_vector(&w_pitch_x, &w_pitch_y, &w_pitch_z, pitch_spd, 0, 0, &q_roll);
+
+    // s_yaw = <0, 0, yaw_spd>
+    // w_yaw = q_roll * q_pitch * s_yaw * conj(q_pitch) * conj(q_roll)
+    float w_yaw_x, w_yaw_y, w_yaw_z;
+    rotate_vector(&w_yaw_x, &w_yaw_y, &w_yaw_z, 0.0f, 0.0f, yaw_spd, &q_pitch);
+    rotate_vector(&w_yaw_x, &w_yaw_y, &w_yaw_z, w_yaw_x, w_yaw_y, w_yaw_z, &q_roll);
+
+    // Calculate total rotations in local DoFs
+    // These sums may exceed 1.0
+    float xrot = w_pitch_x + 0.0f + w_yaw_x;
+    float yrot = w_pitch_y + w_roll_y + w_yaw_y;
+    float zrot = w_pitch_z + 0.0f + w_yaw_z;
+
+    // Proportionally scale rotation speeds so all have magnitude less than 1.0
+    float maxmag = 1.0f;
+    float abspitch = fabsf(xrot);
+    if(abspitch > maxmag){
+        maxmag = abspitch;
+    }
+    float absroll = fabsf(yrot);
+    if(absroll > maxmag){
+        maxmag = absroll;
+    }
+    float absyaw = fabsf(zrot);
+    if(absyaw > maxmag){
+        maxmag = absyaw;
+    }
+    xrot /= maxmag;
+    yrot /= maxmag;
+    zrot /= maxmag;
+
     mc_set_local(x, y, z, xrot, yrot, zrot);
 }
 
