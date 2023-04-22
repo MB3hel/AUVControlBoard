@@ -581,7 +581,7 @@ class ControlBoard:
 
 
 
-    ## Tune STABILITY_ASSIST pitch hold PID
+    ## Tune STABILITY_ASSIST xrot PID
     #  @param kp Proportional gain
     #  @param ki Integral gain
     #  @param kd Derivative gain
@@ -589,12 +589,12 @@ class ControlBoard:
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_pitch(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = 0.1) -> AckError:
+    def tune_sassist_xrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = 0.1) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
             limit = 1.0
-        msg.extend(b'SASSISTTNP')
+        msg.extend(b'SASSISTTNX')
         msg.extend(struct.pack("<f", kp))
         msg.extend(struct.pack("<f", ki))
         msg.extend(struct.pack("<f", kd))
@@ -604,7 +604,7 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
-    ## Tune STABILITY_ASSIST roll hold PID
+    ## Tune STABILITY_ASSIST yrot PID
     #  @param kp Proportional gain
     #  @param ki Integral gain
     #  @param kd Derivative gain
@@ -612,30 +612,7 @@ class ControlBoard:
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_roll(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = 0.1) -> AckError:
-        msg = bytearray()
-        limit = abs(limit)
-        if limit > 1.0:
-            limit = 1.0
-        msg.extend(b'SASSISTTNR')
-        msg.extend(struct.pack("<f", kp))
-        msg.extend(struct.pack("<f", ki))
-        msg.extend(struct.pack("<f", kd))
-        msg.extend(struct.pack("<f", limit))
-        msg.append(1 if invert else 0)
-        msg_id = self.__write_msg(bytes(msg), True)
-        ack, _ = self.__wait_for_ack(msg_id, timeout)
-        return ack
-
-    ## Tune STABILITY_ASSIST yaw hold PID
-    #  @param kp Proportional gain
-    #  @param ki Integral gain
-    #  @param kd Derivative gain
-    #  @param kf Feed-forward gain
-    #  @param limit Max output of PID (controls max speed in sassist mode)
-    #  @param invert True to reverse direction of PID output
-    #  @return AckError
-    def tune_sassist_yaw(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = 0.1) -> AckError:
+    def tune_sassist_yrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = 0.1) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -650,7 +627,30 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
-    ## Tune STABILITY_ASSIST depth hold PID
+    ## Tune STABILITY_ASSIST zrot PID
+    #  @param kp Proportional gain
+    #  @param ki Integral gain
+    #  @param kd Derivative gain
+    #  @param kf Feed-forward gain
+    #  @param limit Max output of PID (controls max speed in sassist mode)
+    #  @param invert True to reverse direction of PID output
+    #  @return AckError
+    def tune_sassist_zrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = 0.1) -> AckError:
+        msg = bytearray()
+        limit = abs(limit)
+        if limit > 1.0:
+            limit = 1.0
+        msg.extend(b'SASSISTTNZ')
+        msg.extend(struct.pack("<f", kp))
+        msg.extend(struct.pack("<f", ki))
+        msg.extend(struct.pack("<f", kd))
+        msg.extend(struct.pack("<f", limit))
+        msg.append(1 if invert else 0)
+        msg_id = self.__write_msg(bytes(msg), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+
+    ## Tune STABILITY_ASSIST depth PID
     #  @param kp Proportional gain
     #  @param ki Integral gain
     #  @param kd Derivative gain
@@ -710,10 +710,10 @@ class ControlBoard:
     #  @param x Speed in +x translation DoF (-1.0 to +1.0)
     #  @param y Speed in +y translation DoF (-1.0 to +1.0)
     #  @param z Speed in +z translation DoF (-1.0 to +1.0)
-    #  @param pitch Speed in +pitch translation DoF (-1.0 to +1.0)
-    #  @param roll Speed in +roll translation DoF (-1.0 to +1.0)
-    #  @param yaw Speed in +yaw translation DoF (-1.0 to +1.0)
-    def set_local(self, x: float, y: float, z: float, pitch: float, roll: float, yaw: float, timeout: float = 0.1) -> AckError:
+    #  @param xrot Angular speed about x axis (-1.0 to +1.0)
+    #  @param yrot Angular speed about y axis (-1.0 to +1.0)
+    #  @param zrot Angular speed about z axis (-1.0 to +1.0)
+    def set_local(self, x: float, y: float, z: float, xrot: float, yrot: float, zrot: float, timeout: float = 0.1) -> AckError:
         # Ensure provided data in valid range
         def limit(v: float):
             if v > 1.0:
@@ -724,9 +724,9 @@ class ControlBoard:
         x = limit(x)
         y = limit(y)
         z = limit(z)
-        pitch = limit(pitch)
-        roll = limit(roll)
-        yaw = limit(yaw)
+        xrot = limit(xrot)
+        yrot = limit(yrot)
+        zrot = limit(zrot)
 
         # Construct message to send
         data = bytearray()
@@ -734,9 +734,9 @@ class ControlBoard:
         data.extend(struct.pack("<f", x))
         data.extend(struct.pack("<f", y))
         data.extend(struct.pack("<f", z))
-        data.extend(struct.pack("<f", pitch))
-        data.extend(struct.pack("<f", roll))
-        data.extend(struct.pack("<f", yaw))
+        data.extend(struct.pack("<f", xrot))
+        data.extend(struct.pack("<f", yrot))
+        data.extend(struct.pack("<f", zrot))
 
         # Send the message and wait for acknowledgement
         msg_id = self.__write_msg(bytes(data), True)
@@ -744,14 +744,14 @@ class ControlBoard:
         return ack
 
     ## Set thruster speeds in GLOBAL mode
-    #  All speeds are relative to world (pitch and roll adjusted; NOT yaw adjusted)
+    #  x, y, and z DoFs are pitch and roll compensated
     #  @param x Speed in +x translation DoF (-1.0 to +1.0)
     #  @param y Speed in +y translation DoF (-1.0 to +1.0)
     #  @param z Speed in +z translation DoF (-1.0 to +1.0)
-    #  @param pitch Speed in +pitch translation DoF (-1.0 to +1.0)
-    #  @param roll Speed in +roll translation DoF (-1.0 to +1.0)
-    #  @param yaw Speed in +yaw translation DoF (-1.0 to +1.0)
-    def set_global(self, x: float, y: float, z: float, pitch: float, roll: float, yaw: float, timeout: float = 0.1) -> AckError:
+    #  @param pitch_spd Rate of change of pitch (-1.0 to +1.0)
+    #  @param roll_spd Rate of change of pitch (-1.0 to +1.0)
+    #  @param yaw_spd Rate of change of pitch (-1.0 to +1.0)
+    def set_global(self, x: float, y: float, z: float, pitch_spd: float, roll_spd: float, yaw_spd: float, timeout: float = 0.1) -> AckError:
         # Ensure provided data in valid range
         def limit(v: float):
             if v > 1.0:
@@ -762,9 +762,9 @@ class ControlBoard:
         x = limit(x)
         y = limit(y)
         z = limit(z)
-        pitch = limit(pitch)
-        roll = limit(roll)
-        yaw = limit(yaw)
+        pitch_spd = limit(pitch_spd)
+        roll_spd = limit(roll_spd)
+        yaw_spd = limit(yaw_spd)
 
         # Construct message to send
         data = bytearray()
@@ -772,9 +772,9 @@ class ControlBoard:
         data.extend(struct.pack("<f", x))
         data.extend(struct.pack("<f", y))
         data.extend(struct.pack("<f", z))
-        data.extend(struct.pack("<f", pitch))
-        data.extend(struct.pack("<f", roll))
-        data.extend(struct.pack("<f", yaw))
+        data.extend(struct.pack("<f", pitch_spd))
+        data.extend(struct.pack("<f", roll_spd))
+        data.extend(struct.pack("<f", yaw_spd))
 
         # Send the message and wait for acknowledgement
         msg_id = self.__write_msg(bytes(data), True)
@@ -782,13 +782,14 @@ class ControlBoard:
         return ack
 
     ## Set thruster speeds in STABILITY_ASSIST mode (variant 1)
-    #  @param x Speed in +x translation DoF (world relative; same as global mode)
-    #  @param y Speed in +y translation DoF (world relative; same as global mode)
-    #  @param yaw Speed in +yaw translation DoF (world relative; same as global mode)
+    #  x and y DoFs are pitch and roll compensated
+    #  @param x Speed in +x translation DoF
+    #  @param y Speed in +y translation DoF
+    #  @param yaw_spd Rate of change of yaw
     #  @param target_pitch Target pitch in degrees
     #  @param target_roll Target roll in degrees
     #  @param target_depth Target depth in meters (negative for below surface)
-    def set_sassist1(self, x: float, y: float, yaw: float, target_pitch: float, target_roll: float, target_depth: float, timeout: float = 0.1) -> AckError:
+    def set_sassist1(self, x: float, y: float, yaw_spd: float, target_pitch: float, target_roll: float, target_depth: float, timeout: float = 0.1) -> AckError:
         def limit(v: float):
             if v > 1.0:
                 return 1.0
@@ -797,14 +798,14 @@ class ControlBoard:
             return v
         x = limit(x)
         y = limit(y)
-        yaw = limit(yaw)
+        yaw_spd = limit(yaw_spd)
         
         # Construct message to send
         data = bytearray()
         data.extend(b'SASSIST1')
         data.extend(struct.pack("<f", x))
         data.extend(struct.pack("<f", y))
-        data.extend(struct.pack("<f", yaw))
+        data.extend(struct.pack("<f", yaw_spd))
         data.extend(struct.pack("<f", target_pitch))
         data.extend(struct.pack("<f", target_roll))
         data.extend(struct.pack("<f", target_depth))
@@ -815,8 +816,9 @@ class ControlBoard:
         return ack
     
     ## Set thruster speeds in STABILITY_ASSIST mode (variant 2)
-    #  @param x Speed in +x translation DoF (world relative; same as global mode)
-    #  @param y Speed in +y translation DoF (world relative; same as global mode)
+    #  x and y DoFs are pitch and roll compensated
+    #  @param x Speed in +x translation DoF
+    #  @param y Speed in +y translation DoF
     #  @param target_pitch Target pitch in degrees
     #  @param target_roll Target roll in degrees
     #  @param target_yaw Target yaw in degrees
@@ -846,15 +848,15 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
-    ## Set thruster speeds in DHILD mode
-    #  All speeds are relative to world (pitch and roll adjusted; NOT yaw adjusted)
+    ## Set thruster speeds in DHOLD mode
+    #  x and y DoFs are pitch and roll compensated
     #  @param x Speed in +x translation DoF (-1.0 to +1.0)
     #  @param y Speed in +y translation DoF (-1.0 to +1.0)
-    #  @param pitch Speed in +pitch translation DoF (-1.0 to +1.0)
-    #  @param roll Speed in +roll translation DoF (-1.0 to +1.0)
-    #  @param yaw Speed in +yaw translation DoF (-1.0 to +1.0)
+    #  @param pitch_spd Rate of change of pitch (-1.0 to +1.0)
+    #  @param roll_spd Rate of change of pitch (-1.0 to +1.0)
+    #  @param yaw_spd Rate of change of pitch (-1.0 to +1.0)
     #  @param target_depth Desired depth in meters (negative below surface)
-    def set_dhold(self, x: float, y: float, pitch: float, roll: float, yaw: float, target_depth: float, timeout: float = 0.1) -> AckError:
+    def set_dhold(self, x: float, y: float, pitch_spd: float, roll_spd: float, yaw_spd: float, target_depth: float, timeout: float = 0.1) -> AckError:
         # Ensure provided data in valid range
         def limit(v: float):
             if v > 1.0:
@@ -864,18 +866,18 @@ class ControlBoard:
             return v
         x = limit(x)
         y = limit(y)
-        pitch = limit(pitch)
-        roll = limit(roll)
-        yaw = limit(yaw)
+        pitch_spd = limit(pitch_spd)
+        roll_spd = limit(roll_spd)
+        yaw_spd = limit(yaw_spd)
 
         # Construct message to send
         data = bytearray()
         data.extend(b'DHOLD')
         data.extend(struct.pack("<f", x))
         data.extend(struct.pack("<f", y))
-        data.extend(struct.pack("<f", pitch))
-        data.extend(struct.pack("<f", roll))
-        data.extend(struct.pack("<f", yaw))
+        data.extend(struct.pack("<f", pitch_spd))
+        data.extend(struct.pack("<f", roll_spd))
+        data.extend(struct.pack("<f", yaw_spd))
         data.extend(struct.pack("<f", target_depth))
 
         # Send the message and wait for acknowledgement
