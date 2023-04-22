@@ -88,33 +88,33 @@ static float raw_target[8];
 static float local_x;
 static float local_y;
 static float local_z;
-static float local_pitch;
-static float local_roll;
-static float local_yaw;
+static float local_xrot;
+static float local_yrot;
+static float local_zrot;
 
 // Last used global mode target
 static float global_x;
 static float global_y;
 static float global_z;
-static float global_pitch;
-static float global_roll;
-static float global_yaw;
+static float global_pitch_spd;
+static float global_roll_spd;
+static float global_yaw_spd;
 
 // Last used sassist mode target
 static bool sassist_valid;
 static unsigned int sassist_variant;
 static float sassist_x;
 static float sassist_y;
-static float sassist_yaw;
+static float sassist_yaw_spd;
 static euler_t sassist_target_euler;
 static float sassist_depth_target;
 
 // Last used depth hold target
 static float dhold_x;
 static float dhold_y;
-static float dhold_pitch;
-static float dhold_roll;
-static float dhold_yaw;
+static float dhold_pitch_spd;
+static float dhold_roll_spd;
+static float dhold_yaw_spd;
 static float dhold_depth;
 
 // Current sensor data
@@ -230,24 +230,24 @@ void cmdctrl_init(void){
     local_x = 0.0f;
     local_y = 0.0f;
     local_z = 0.0f;
-    local_pitch = 0.0f;
-    local_roll = 0.0f;
-    local_yaw = 0.0f;
+    local_xrot = 0.0f;
+    local_yrot = 0.0f;
+    local_zrot = 0.0f;
 
     // Global mode (zero all)
     global_x = 0.0f;
     global_y = 0.0f;
     global_z = 0.0f;
-    global_pitch = 0.0f;
-    global_roll = 0.0f;
-    global_yaw = 0.0f;
+    global_pitch_spd = 0.0f;
+    global_roll_spd = 0.0f;
+    global_yaw_spd = 0.0f;
 
     // Sassist mode (set valid bool to false)
     sassist_valid = false;
     sassist_variant = 1;
     sassist_x = 0.0f;
     sassist_y = 0.0f;
-    sassist_yaw = 0.0f;
+    sassist_yaw_spd = 0.0f;
     sassist_target_euler.pitch = 0.0f;
     sassist_target_euler.roll = 0.0f;
     sassist_target_euler.yaw = 0.0f;
@@ -257,9 +257,9 @@ void cmdctrl_init(void){
     // Zero depth hold target
     dhold_x = 0.0;
     dhold_y = 0.0;
-    dhold_pitch = 0.0;
-    dhold_roll = 0.0;
-    dhold_yaw = 0.0;
+    dhold_pitch_spd = 0.0;
+    dhold_roll_spd = 0.0;
+    dhold_yaw_spd = 0.0;
     dhold_depth = 0.0;
 
     // Initial sensor status
@@ -353,7 +353,7 @@ void cmdctrl_apply_saved_speed(void){
         mc_set_raw(raw_target);
         break;
     case MODE_LOCAL:
-        mc_set_local(local_x, local_y, local_z, local_pitch, local_roll, local_yaw);
+        mc_set_local(local_x, local_y, local_z, local_xrot, local_yrot, local_zrot);
         break;
     case MODE_GLOBAL:
         xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
@@ -366,7 +366,7 @@ void cmdctrl_apply_saved_speed(void){
             // Thus, stop the thrusters
             mc_set_local(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
         }else{
-            mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, m_quat);
+            mc_set_global(global_x, global_y, global_z, global_pitch_spd, global_roll_spd, global_yaw_spd, m_quat);
         }
         break;
     case MODE_SASSIST:
@@ -383,7 +383,7 @@ void cmdctrl_apply_saved_speed(void){
             }else if(sassist_variant == 1){
                 mc_set_sassist(sassist_x, 
                     sassist_y, 
-                    sassist_yaw, 
+                    sassist_yaw_spd, 
                     sassist_target_euler, 
                     sassist_depth_target, 
                     m_quat,
@@ -411,7 +411,7 @@ void cmdctrl_apply_saved_speed(void){
             // Thus, stop the thrusters
             mc_set_local(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
         }else{
-            mc_set_dhold(dhold_x, dhold_y, dhold_pitch, dhold_roll, dhold_yaw, dhold_depth, m_quat, m_depth);
+            mc_set_dhold(dhold_x, dhold_y, dhold_pitch_spd, dhold_roll_spd, dhold_yaw_spd, dhold_depth, m_quat, m_depth);
         }
         break;
     }
@@ -581,8 +581,8 @@ void cmdctrl_handle_message(void){
         cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
     }else if(MSG_STARTS_WITH(((uint8_t[]){'L', 'O', 'C', 'A', 'L'}))){
         // LOCAL Speed Set
-        // L, O, C, A, L, [x], [y], [z], [pitch], [roll], [yaw]
-        // [x], [y], [z], [pitch], [roll], [yaw]  are 32-bit floats (little endian)
+        // L, O, C, A, L, [x], [y], [z], [xrot], [yrot], [zrot]
+        // [x], [y], [z], [xrot], [yrot], [zrot]  are 32-bit floats (little endian)
 
         if(len != 29){
             // Message is incorrect size
@@ -594,18 +594,18 @@ void cmdctrl_handle_message(void){
             local_x = conversions_data_to_float(&msg[5], true);
             local_y = conversions_data_to_float(&msg[9], true);
             local_z = conversions_data_to_float(&msg[13], true);
-            local_pitch = conversions_data_to_float(&msg[17], true);
-            local_roll = conversions_data_to_float(&msg[21], true);
-            local_yaw = conversions_data_to_float(&msg[25], true);
+            local_xrot = conversions_data_to_float(&msg[17], true);
+            local_yrot = conversions_data_to_float(&msg[21], true);
+            local_zrot = conversions_data_to_float(&msg[25], true);
 
             // Ensure speeds are in valid range
             #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
             LIMIT(local_x);
             LIMIT(local_y);
             LIMIT(local_z);
-            LIMIT(local_pitch);
-            LIMIT(local_roll);
-            LIMIT(local_yaw);
+            LIMIT(local_xrot);
+            LIMIT(local_yrot);
+            LIMIT(local_zrot);
 
             // Reset time until periodic speed set
             xTimerReset(periodic_speed_timer, portMAX_DELAY);
@@ -621,7 +621,7 @@ void cmdctrl_handle_message(void){
             mc_wdog_feed();
 
             // Update motor speeds
-            mc_set_local(local_x, local_y, local_z, local_pitch, local_roll, local_yaw);
+            mc_set_local(local_x, local_y, local_z, local_xrot, local_yrot, local_zrot);
 
             // Acknowledge message w/ no error.
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
@@ -662,8 +662,8 @@ void cmdctrl_handle_message(void){
         }
     }else if(MSG_STARTS_WITH(((uint8_t[]){'G', 'L', 'O', 'B', 'A', 'L'}))){
         // GLOBAL speed set
-        // G, L, O, B, A, L, [x], [y], [z], [pitch], [roll], [yaw]
-        // [x], [y], [z], [pitch], [roll], [yaw]  are 32-bit floats (little endian)
+        // G, L, O, B, A, L, [x], [y], [z], [pitch_spd], [roll_spd], [yaw_spd]
+        // [x], [y], [z], [pitch_spd], [roll_spd], [yaw_spd]  are 32-bit floats (little endian)
         if(len != 30){
             // Message is incorrect size
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
@@ -683,18 +683,18 @@ void cmdctrl_handle_message(void){
                 global_x = conversions_data_to_float(&msg[6], true);
                 global_y = conversions_data_to_float(&msg[10], true);
                 global_z = conversions_data_to_float(&msg[14], true);
-                global_pitch = conversions_data_to_float(&msg[18], true);
-                global_roll = conversions_data_to_float(&msg[22], true);
-                global_yaw = conversions_data_to_float(&msg[26], true);
+                global_pitch_spd = conversions_data_to_float(&msg[18], true);
+                global_roll_spd = conversions_data_to_float(&msg[22], true);
+                global_yaw_spd = conversions_data_to_float(&msg[26], true);
 
                 // Ensure speeds are in valid range
                 #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
                 LIMIT(global_x);
                 LIMIT(global_y);
                 LIMIT(global_z);
-                LIMIT(global_pitch);
-                LIMIT(global_roll);
-                LIMIT(global_yaw);
+                LIMIT(global_pitch_spd);
+                LIMIT(global_roll_spd);
+                LIMIT(global_yaw_spd);
 
                 // Reset time until periodic speed set
                 xTimerReset(periodic_speed_timer, portMAX_DELAY);
@@ -710,7 +710,7 @@ void cmdctrl_handle_message(void){
                 mc_wdog_feed();
 
                 // Update motor speeds
-                mc_set_global(global_x, global_y, global_z, global_pitch, global_roll, global_yaw, m_quat);
+                mc_set_global(global_x, global_y, global_z, global_pitch_spd, global_roll_spd, global_yaw_spd, m_quat);
 
                 // Acknowledge message w/ no error.
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
@@ -821,8 +821,8 @@ void cmdctrl_handle_message(void){
         }
     }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'A', 'S', 'S', 'I', 'S', 'T', '1'}))){
         // STABILITY ASSIST speed set variant 1
-        // S, A, S, S, I, S, T, 1, [x], [y], [yaw], [target_pitch], [target_roll], [target_depth]
-        // [x], [y], [yaw], [target_pitch], [target_roll], [target_depth] are 32-bit floats (little endian)
+        // S, A, S, S, I, S, T, 1, [x], [y], [yaw_spd], [target_pitch], [target_roll], [target_depth]
+        // [x], [y], [yaw_spd], [target_pitch], [target_roll], [target_depth] are 32-bit floats (little endian)
         if(len != 32){
             // Message is incorrect size
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
@@ -845,7 +845,7 @@ void cmdctrl_handle_message(void){
                 sassist_variant = 1;
                 sassist_x = conversions_data_to_float(&msg[8], true);
                 sassist_y = conversions_data_to_float(&msg[12], true);
-                sassist_yaw = conversions_data_to_float(&msg[16], true);
+                sassist_yaw_spd = conversions_data_to_float(&msg[16], true);
                 sassist_target_euler.pitch = conversions_data_to_float(&msg[20], true);
                 sassist_target_euler.roll = conversions_data_to_float(&msg[24], true);
                 sassist_depth_target = conversions_data_to_float(&msg[28], true);
@@ -854,7 +854,7 @@ void cmdctrl_handle_message(void){
                 #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
                 LIMIT(sassist_x);
                 LIMIT(sassist_y);
-                LIMIT(sassist_yaw);
+                LIMIT(sassist_yaw_spd);
 
                 // Reset time until periodic speed set
                 xTimerReset(periodic_speed_timer, portMAX_DELAY);
@@ -872,7 +872,7 @@ void cmdctrl_handle_message(void){
                 // Update motor speeds
                 mc_set_sassist(sassist_x, 
                     sassist_y, 
-                    sassist_yaw, 
+                    sassist_yaw_spd, 
                     sassist_target_euler, 
                     sassist_depth_target, 
                     m_quat,
@@ -886,7 +886,7 @@ void cmdctrl_handle_message(void){
     }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'A', 'S', 'S', 'I', 'S', 'T', '2'}))){
         // STABILITY ASSIST speed set variant 2
         // S, A, S, S, I, S, T, 2, [x], [y], [target_pitch], [target_roll], [target_yaw], [target_depth]
-        // [x], [y], [yaw], [target_pitch], [target_roll], [target_depth] are 32-bit floats (little endian)
+        // [x], [y], [target_pitch], [target_roll], [target_yaw], [target_depth] are 32-bit floats (little endian)
         if(len != 32){
             // Message is incorrect size
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
@@ -918,7 +918,7 @@ void cmdctrl_handle_message(void){
                 #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
                 LIMIT(sassist_x);
                 LIMIT(sassist_y);
-                LIMIT(sassist_yaw);
+                LIMIT(sassist_yaw_spd);
 
                 // Reset time until periodic speed set
                 xTimerReset(periodic_speed_timer, portMAX_DELAY);
@@ -951,8 +951,8 @@ void cmdctrl_handle_message(void){
         wdt_reset_now();
     }else if(MSG_STARTS_WITH(((uint8_t[]){'D', 'H', 'O', 'L', 'D'}))){
         // DEPTH_HOLD speed set
-        // D, H, O, L, D, [x], [y], [pitch], [roll], [yaw], [target_depth]
-        // [x], [y], [pitch], [roll], [yaw], [target_depth] are 32-bit floats (little endian)
+        // D, H, O, L, D, [x], [y], [pitch_spd], [roll_spd], [yaw_spd], [target_depth]
+        // [x], [y], [pitch_spd], [roll_spd], [yaw_spd], [target_depth] are 32-bit floats (little endian)
         if(len != 29){
             // Message is incorrect size
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
@@ -973,18 +973,18 @@ void cmdctrl_handle_message(void){
                 // Get speeds from message
                 dhold_x = conversions_data_to_float(&msg[5], true);
                 dhold_y = conversions_data_to_float(&msg[9], true);
-                dhold_pitch = conversions_data_to_float(&msg[13], true);
-                dhold_roll = conversions_data_to_float(&msg[17], true);
-                dhold_yaw = conversions_data_to_float(&msg[21], true);
+                dhold_pitch_spd = conversions_data_to_float(&msg[13], true);
+                dhold_roll_spd = conversions_data_to_float(&msg[17], true);
+                dhold_yaw_spd = conversions_data_to_float(&msg[21], true);
                 dhold_depth = conversions_data_to_float(&msg[25], true);
 
                 // Ensure speeds are in valid range
                 #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
                 LIMIT(dhold_x);
                 LIMIT(dhold_y);
-                LIMIT(dhold_pitch);
-                LIMIT(dhold_roll);
-                LIMIT(dhold_yaw);
+                LIMIT(dhold_pitch_spd);
+                LIMIT(dhold_roll_spd);
+                LIMIT(dhold_yaw_spd);
                 LIMIT(dhold_depth);
 
                 // Reset time until periodic speed set
@@ -1001,7 +1001,7 @@ void cmdctrl_handle_message(void){
                 mc_wdog_feed();
 
                 // Update motor speeds
-                mc_set_dhold(dhold_x, dhold_y, dhold_pitch, dhold_roll, dhold_yaw, dhold_depth, m_quat, m_depth);
+                mc_set_dhold(dhold_x, dhold_y, dhold_pitch_spd, dhold_roll_spd, dhold_yaw_spd, dhold_depth, m_quat, m_depth);
 
                 // Acknowledge message w/ no error.
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
