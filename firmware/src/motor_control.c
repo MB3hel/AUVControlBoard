@@ -384,6 +384,10 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     quat_conjugate(&q_rollyaw, &q_pitch);
     quat_multiply(&q_rollyaw, &curr_quat, &q_rollyaw);
     quat_twist(&q_roll, &q_rollyaw, 0, 1, 0);
+
+    // TODO: DEBUG. REMOVE!
+    quat_conjugate(&q_pitch, &q_pitch);
+    quat_conjugate(&q_roll, &q_roll);
     
     // w_roll = s_roll = <0, roll_spd, 0>
     float w_roll_y = roll_spd;
@@ -422,6 +426,11 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     xrot /= maxmag;
     yrot /= maxmag;
     zrot /= maxmag;
+
+    // TODO: REMOVE THIS! DEBUG SCALE FACTORS.
+    xrot *= 1.0f;
+    yrot *= 0.44f;
+    zrot *= 0.54f;
 
     mc_set_local(x, y, z, xrot, yrot, zrot);
 }
