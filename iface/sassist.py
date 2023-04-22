@@ -35,21 +35,21 @@ def run(cb: ControlBoard, s: Simulator) -> int:
 
     print("Tuning pitch PID...", end="")
     #                         kP   kI   kD  lim  invert
-    if cb.tune_sassist_pitch(0.8, 0.0, 0.0, 0.6, False) != ControlBoard.AckError.NONE:
+    if cb.tune_sassist_xrot(0.8, 0.0, 0.0, 0.6, False) != ControlBoard.AckError.NONE:
         print("Fail.")
         return 1
     print("Done.")
 
     print("Tuning roll PID...", end="")
     #                         kP   kI   kD  lim  invert
-    if cb.tune_sassist_roll(0.15, 0.0, 0.0, 0.1, False) != ControlBoard.AckError.NONE:
+    if cb.tune_sassist_yrot(0.15, 0.0, 0.0, 0.1, False) != ControlBoard.AckError.NONE:
         print("Fail.")
         return 1
     print("Done.")
 
     print("Tuning yaw PID...", end="")
     #                       kP   kI   kD  lim  invert
-    if cb.tune_sassist_yaw(0.5, 0.0, 0.0, 0.5, False) != ControlBoard.AckError.NONE:
+    if cb.tune_sassist_zrot(0.5, 0.0, 0.0, 0.5, False) != ControlBoard.AckError.NONE:
         print("Fail.")
         return 1
     print("Done.")
