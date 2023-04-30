@@ -117,7 +117,12 @@ void quat_dot(float *dest, quaternion_t *a, quaternion_t *b){
 
 void quat_to_euler(euler_t *dest, quaternion_t *src){
     dest->is_deg = false;
-    dest->pitch = asinf(2.0f * (src->y*src->z + src->w*src->x));
+    float sin_pitch = 2.0f * (src->y*src->z + src->w*src->x);
+    if(sin_pitch > 1.0f)
+        sin_pitch = 1.0f;
+    if(sin_pitch < -1.0f)
+        sin_pitch = -1.0f;
+    dest->pitch = asinf(sin_pitch);
 
     float pitchdeg = 180.0f * dest->pitch / ((float)M_PI);
     if(fabsf(90.0f - fabsf(pitchdeg)) < 0.1f){

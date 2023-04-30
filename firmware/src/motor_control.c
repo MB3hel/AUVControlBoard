@@ -228,6 +228,25 @@ static inline void rotate_vector(float *dx, float *dy, float *dz, float sx, floa
     *dz = qr.z;
 }
 
+// Rotate a vector (x, y, z) buy a the inverse of q
+static inline void rotate_vector_inv(float *dx, float *dy, float *dz, float sx, float sy, float sz, quaternion_t *q){
+    quaternion_t qv;
+    qv.w = 0.0f;
+    qv.x = sx;
+    qv.y = sy;
+    qv.z = sz;    
+    
+    quaternion_t qconj;
+    quat_conjugate(&qconj, q);
+
+    quaternion_t qr;
+    quat_multiply(&qr, &qv, q);
+    quat_multiply(&qr, &qconj, &qr);
+    *dx = qr.x;
+    *dy = qr.y;
+    *dz = qr.z;
+}
+
 // Minimum rotation from a to b (as quaternion)
 static inline void quat_diff(quaternion_t *dest, quaternion_t *a, quaternion_t *b){
     float dot;
@@ -295,6 +314,43 @@ static inline void quat_twist(quaternion_t *twist, quaternion_t *q, float d_x, f
     if(dot < 0.0f){
         quat_multiply_scalar(twist, twist, -1.0f);
     }
+}
+
+static inline float restrict_angle(float angle, bool isdeg){
+    if(isdeg){
+        while(angle > 180.0f){
+            angle -= 360.0f;
+        }
+        while(angle < -180.0f){
+            angle += 360.0f;
+        }
+    }else{
+        while(angle > M_PI){
+            angle -= 2.0f * M_PI;
+        }
+        while(angle < -M_PI){
+            angle += 2.0f * M_PI;
+        }
+    }
+    return angle;
+}
+
+// Get alternate (equivalent, but improper) euler angle
+// Dest uses same unit as src
+static inline void euler_alt(euler_t *dest, euler_t *src){
+    dest->is_deg = src->is_deg;
+    if(src->is_deg){
+        dest->pitch = 180.0f - src->pitch;
+        dest->roll = src->roll - 180.0f;
+        dest->yaw = src->yaw - 180.0f;
+    }else{
+        dest->pitch = M_PI - src->pitch;
+        dest->roll = src->roll - M_PI;
+        dest->yaw = src->yaw - M_PI;
+    }
+    dest->pitch = restrict_angle(dest->pitch, dest->is_deg);
+    dest->roll = restrict_angle(dest->roll, dest->is_deg);
+    dest->yaw = restrict_angle(dest->yaw, dest->is_deg);
 }
 
 void mc_set_raw(float *speeds){
@@ -378,30 +434,37 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     quat_inverse(&qrot, &qrot);
     rotate_vector(&x, &y, &z, x, y, z, &qrot);
 
-    // Calculate q_pitch and q_roll
-    quaternion_t q_pitch, q_rollyaw, q_roll;
-    quat_twist(&q_pitch, &curr_quat, 1, 0, 0);
-    quat_conjugate(&q_rollyaw, &q_pitch);
-    quat_multiply(&q_rollyaw, &curr_quat, &q_rollyaw);
-    quat_twist(&q_roll, &q_rollyaw, 0, 1, 0);
+    euler_t e_orig, e_alt;
+    quat_to_euler(&e_orig, &curr_quat);
+    euler_alt(&e_alt, &e_orig);
+    float e_orig_sum = fabsf(e_orig.pitch) + fabsf(e_orig.roll);
+    float e_alt_sum = fabsf(e_alt.pitch) + fabsf(e_alt.roll);
+    euler_t *e_min = (e_orig_sum < e_alt_sum) ? &e_orig : &e_alt;
+    euler_t e_pitch = {.is_deg = e_min->is_deg, .pitch = e_min->pitch, .roll = 0.0f, .yaw = 0.0f};
+    euler_t e_roll = {.is_deg = e_min->is_deg, .pitch = 0.0f, .roll = e_min->roll, .yaw = 0.0f};
+    euler_t e_yaw = {.is_deg = e_min->is_deg, .pitch = 0.0f, .roll = 0.0f, .yaw = e_min->yaw};
+    quaternion_t q_pitch, q_roll, q_yaw;
+    euler_to_quat(&q_pitch, &e_pitch);
+    euler_to_quat(&q_roll, &e_roll);
+    euler_to_quat(&q_yaw, &e_yaw);
 
-    // TODO: DEBUG. REMOVE!
-    quat_conjugate(&q_pitch, &q_pitch);
-    quat_conjugate(&q_roll, &q_roll);
     
     // w_roll = s_roll = <0, roll_spd, 0>
     float w_roll_y = roll_spd;
 
+    // w_pitch = q_roll_inv * s_pitch * q_roll
     // s_pitch = <pitch_spd, 0, 0>
-    // w_pitch = q_roll * s_pitch * conj(q_roll)
+    float s_pitch_x = pitch_spd, s_pitch_y = 0.0f, s_pitch_z = 0.0f;
     float w_pitch_x, w_pitch_y, w_pitch_z;
-    rotate_vector(&w_pitch_x, &w_pitch_y, &w_pitch_z, pitch_spd, 0, 0, &q_roll);
+    rotate_vector_inv(&w_pitch_x, &w_pitch_y, &w_pitch_z, s_pitch_x, s_pitch_y, s_pitch_z, &q_roll);
 
+    // w_yaw = q_roll_inv * q_pitch_inv * s_yaw * q_pitch * q_roll
     // s_yaw = <0, 0, yaw_spd>
-    // w_yaw = q_roll * q_pitch * s_yaw * conj(q_pitch) * conj(q_roll)
+    float s_yaw_x = 0.0f, s_yaw_y = 0.0f, s_yaw_z = yaw_spd;
     float w_yaw_x, w_yaw_y, w_yaw_z;
-    rotate_vector(&w_yaw_x, &w_yaw_y, &w_yaw_z, 0.0f, 0.0f, yaw_spd, &q_pitch);
-    rotate_vector(&w_yaw_x, &w_yaw_y, &w_yaw_z, w_yaw_x, w_yaw_y, w_yaw_z, &q_roll);
+    rotate_vector_inv(&w_yaw_x, &w_yaw_y, &w_yaw_z, s_yaw_x, s_yaw_y, s_yaw_z, &q_pitch);
+    rotate_vector_inv(&w_yaw_x, &w_yaw_y, &w_yaw_z, w_yaw_x, w_yaw_y, w_yaw_z, &q_roll);
+
 
     // Calculate total rotations in local DoFs
     // These sums may exceed 1.0
