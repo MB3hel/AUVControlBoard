@@ -437,8 +437,8 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     euler_t e_orig, e_alt;
     quat_to_euler(&e_orig, &curr_quat);
     euler_alt(&e_alt, &e_orig);
-    float e_orig_sum = fabsf(e_orig.pitch) + fabsf(e_orig.roll);
-    float e_alt_sum = fabsf(e_alt.pitch) + fabsf(e_alt.roll);
+    float e_orig_sum = fabsf(e_orig.roll);
+    float e_alt_sum = fabsf(e_alt.roll);
     euler_t *e_min = (e_orig_sum < e_alt_sum) ? &e_orig : &e_alt;
     euler_t e_pitch = {.is_deg = e_min->is_deg, .pitch = e_min->pitch, .roll = 0.0f, .yaw = 0.0f};
     euler_t e_roll = {.is_deg = e_min->is_deg, .pitch = 0.0f, .roll = e_min->roll, .yaw = 0.0f};
@@ -451,6 +451,10 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     
     // w_roll = s_roll = <0, roll_spd, 0>
     float w_roll_y = roll_spd;
+
+    if(e_min->pitch > M_PI){
+        pitch_spd *= -1;   
+    }
 
     // w_pitch = q_roll_inv * s_pitch * q_roll
     // s_pitch = <pitch_spd, 0, 0>
