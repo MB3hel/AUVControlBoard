@@ -48,6 +48,8 @@
 
 bool mc_invert[8];                                      // Tracks thruster inversions
 
+float mc_relscale[6];                                   // Relative DoF speeds
+
 static float dof_matrix_arr[8*6];                       // Backing array for DoF matrix
 static matrix dof_matrix;                               // DoF matrix
 
@@ -119,6 +121,11 @@ void mc_init(void){
     // Default all motors to non-inverted
     for(unsigned int i = 0; i < 8; ++i){
         mc_invert[i] = false;
+    }
+
+    // Default to no dof scaling
+    for(unsigned int i = 0; i < 6; ++i){
+        mc_relscale[i] = 1.0f;
     }
 }
 
@@ -469,6 +476,9 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     rotate_vector_inv(&w_yaw_x, &w_yaw_y, &w_yaw_z, s_yaw_x, s_yaw_y, s_yaw_z, &q_pitch);
     rotate_vector_inv(&w_yaw_x, &w_yaw_y, &w_yaw_z, w_yaw_x, w_yaw_y, w_yaw_z, &q_roll);
 
+    // TODO: Each group of speeds may not be properly scaled up. 
+    // Example: pitch of 1.0 with roll of 45 results in 0.7071 in two DoFs
+    //          ideally both would be scaled up to 1.0
 
     // Calculate total rotations in local DoFs
     // These sums may exceed 1.0
@@ -493,11 +503,6 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     xrot /= maxmag;
     yrot /= maxmag;
     zrot /= maxmag;
-
-    // TODO: REMOVE THIS! DEBUG SCALE FACTORS.
-    xrot *= 1.0f;
-    yrot *= 0.44f;
-    zrot *= 0.54f;
 
     mc_set_local(x, y, z, xrot, yrot, zrot);
 }

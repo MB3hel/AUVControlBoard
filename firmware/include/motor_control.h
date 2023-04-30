@@ -26,6 +26,14 @@
 // Inverts positive and negative on specific thrusters
 extern bool mc_invert[8];
 
+// Relative scale down factors for motions
+// Calculated from data provided in RELDOF command
+// Contains 2 groups: linear = [x, y, z] = first half of array
+//                    angular = [xrot, yrot, zrot] = second half of array
+// These are multiplied by speeds to scale DOWN faster motors as needed
+// Scaling down ensures that all speeds will be less than 1.0 if they started that way
+extern float mc_relscale[6];
+
 
 /**
  * Initialize motor control

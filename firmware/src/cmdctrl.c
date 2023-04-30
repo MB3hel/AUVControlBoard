@@ -451,6 +451,8 @@ void cmdctrl_handle_message(void){
     #define MSG_STARTS_WITH(x)      data_startswith(msg, len, (x), sizeof((x)))
     #define MSG_EQUALS(x)           data_matches(msg, len, (x), sizeof(x))
 
+    #define MIN(a, b)    (((a) < (b)) ? (a) : (b))
+
     // msg_id is first two bytes (unsigned 16-bit int big endian)
     uint16_t msg_id = conversions_data_to_int16(pccomm_read_buf, false);
 
@@ -523,6 +525,46 @@ void cmdctrl_handle_message(void){
             // Acknowledge message w/ no error.
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'R', 'E', 'L', 'D', 'O', 'F'}))){
+        // Relative DoF speed set command
+        // R, E, L, D, O, F, [x], [y], [z], [xrot], [yrot], [zrot]
+        // Each value is a little endian float (32-bit)
+
+        if(len != 30){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Message is correct size. Handle it.
+            float x = conversions_data_to_float(&msg[6], true);
+            float y = conversions_data_to_float(&msg[10], true);
+            float z = conversions_data_to_float(&msg[14], true);
+            float xrot = conversions_data_to_float(&msg[18], true);
+            float yrot = conversions_data_to_float(&msg[22], true);
+            float zrot = conversions_data_to_float(&msg[26], true);
+
+            // Linear scale DOWN factors
+            //  x = min(x, y, z) / x
+            //  y = min(x, y, z) / y
+            //  z = min(x, y, z) / z
+            mc_relscale[0] = MIN(x, MIN(y, z)) / x;
+            mc_relscale[1] = MIN(x, MIN(y, z)) / y;
+            mc_relscale[2] = MIN(x, MIN(y, z)) / z;
+
+            // Angular scale DOWN factors
+            //  xrot = min(xrot, yrot, zrot) / xrot
+            //  yrot = min(xrot, yrot, zrot) / yrot
+            //  zrot = min(xrot, yrot, zrot) / zrot
+            mc_relscale[3] = MIN(xrot, MIN(yrot, zrot)) / xrot;
+            mc_relscale[4] = MIN(xrot, MIN(yrot, zrot)) / yrot;
+            mc_relscale[5] = MIN(xrot, MIN(yrot, zrot)) / zrot;
+
+            // Reapply saved speed when scale factors change
+            cmdctrl_apply_saved_speed();
+
+            // Acknowledge message w/ no error
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+        }
+
     }else if(MSG_EQUALS(((uint8_t[]){'W', 'D', 'G', 'F'}))){
         // Feed motor watchdog command
         // W, D, G, F

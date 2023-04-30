@@ -33,6 +33,9 @@ def run(cb: ControlBoard, s: Simulator) -> int:
         print("Fail.")
         return 1
     
+    # print("Setting relative DoF speeds...", end="")
+    # if cb.set_reldof([1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+    
     ############################################################################
     # Local mode set
     ############################################################################

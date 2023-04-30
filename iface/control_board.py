@@ -442,16 +442,35 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
     
-    def _set_tinv_no_ack(self, inversions: List[bool]):
+
+    ## Set relative DoF speeds (impacts global and sassist control modes)
+    #  Use 1.0 for fastest DoF IN EACH GROUP. 
+    #  Other DoFs should be percentage of fastest in it's group(0.0 - 1.0)
+    #  
+    #  Groups of DoFs are linear: [x, y, z] and angular: [xrot, yrot, zrot]
+    #  
+    #  @param x Relative speed in x DoF
+    #  @param y Relative speed in y DoF
+    #  @param z Relative speed in z DoF
+    #  @param xrot Relative speed in xrot DoF
+    #  @param yrot Relative speed in yrot DoF
+    #  @param zrot Relative speed in zrot DoF
+    #  @return Error code (AckError enum) from control board (or timeout)
+    def set_reldof(self, x: float, y: float, z: float, xrot: float, yrot: float, zrot: float, timeout: float = 0.1) -> AckError:
+        # Construct message
         data = bytearray()
-        data.extend(b'TINV')
-        inv_byte = 0
-        for i in range(8):
-            inv_byte <<= 1
-            if inversions[7 - i]:
-                inv_byte |= 1
-        data.append(inv_byte)
-        self.__write_msg(bytes(data), False)
+        data.extend(b'RELDOF')
+        data.extend(struct.pack("<f", x))
+        data.extend(struct.pack("<f", y))
+        data.extend(struct.pack("<f", z))
+        data.extend(struct.pack("<f", xrot))
+        data.extend(struct.pack("<f", yrot))
+        data.extend(struct.pack("<f", zrot))
+
+        # Send message and wait for ack
+        msg_id = self.__write_msg(bytes(data), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
 
     ## Set axis configuration for BNO055 IMU
     #  @param axis Axis configuration (see BNO055 datasheet) P0-P7 (BNO055Axis enum)
