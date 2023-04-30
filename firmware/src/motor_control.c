@@ -455,6 +455,7 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     euler_to_quat(&q_roll, &e_roll);
     euler_to_quat(&q_yaw, &e_yaw);
 
+    // TODO: Apply relscale to translation
     
     // w_roll = s_roll = <0, roll_spd, 0>
     float w_roll_y = roll_spd;
@@ -476,9 +477,21 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     rotate_vector_inv(&w_yaw_x, &w_yaw_y, &w_yaw_z, s_yaw_x, s_yaw_y, s_yaw_z, &q_pitch);
     rotate_vector_inv(&w_yaw_x, &w_yaw_y, &w_yaw_z, w_yaw_x, w_yaw_y, w_yaw_z, &q_roll);
 
-    // TODO: Each group of speeds may not be properly scaled up. 
+    // Scale down each group
+    // This could result in worse speeds unnecessarily, but next step will fix it.
+    w_roll_y *= mc_relscale[4];
+    w_pitch_x *= mc_relscale[3];
+    w_pitch_y *= mc_relscale[4];
+    w_pitch_z *= mc_relscale[5];
+    w_yaw_x *= mc_relscale[3];
+    w_yaw_y *= mc_relscale[4];
+    w_yaw_z *= mc_relscale[5];
+
+    // Each group of speeds may not be properly scaled up. 
     // Example: pitch of 1.0 with roll of 45 results in 0.7071 in two DoFs
     //          ideally both would be scaled up to 1.0
+    // This also solves the problem with scaling down unnecessarily in previous step
+    // TODO: Scale UP each w = (w / max_element(w)) * speed
 
     // Calculate total rotations in local DoFs
     // These sums may exceed 1.0
@@ -707,6 +720,8 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     quat_between(&qrot, grav_x, grav_y, grav_z, 0.0f, 0.0f, -1.0f);
     quat_inverse(&qrot, &qrot);
     rotate_vector(&x, &y, &z, x, y, z, &qrot);
+
+    // TODO: Apply relscale in sassist
 
     // Target motion now relative to the robot's axes
     mc_set_local(x, y, z, xrot, yrot, zrot);
