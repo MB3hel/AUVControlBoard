@@ -33,8 +33,12 @@ def run(cb: ControlBoard, s: Simulator) -> int:
         print("Fail.")
         return 1
     
-    # print("Setting relative DoF speeds...", end="")
-    # if cb.set_reldof([1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
+    print("Setting relative DoF speeds...", end="")
+    if cb.set_reldof(0.7071, 0.7071, 1.0, 0.4413, 1.0, 0.8139) == ControlBoard.AckError.NONE:
+        print("Done.")
+    else:
+        print("Fail.")
+        return 1
     
     ############################################################################
     # Local mode set
