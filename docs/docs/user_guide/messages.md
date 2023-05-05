@@ -52,6 +52,14 @@ Thruster inversion set command is used to invert the positive and negative direc
 `[inv]`: A single byte where each bit represents the inversion status of a thruster. The MSB (bit 7) corresponds to thruster 8 and the LSB corresponds to thruster 1 (bit + 1 = thruster). A bit value of 1 means the thruster is inverted. A bit value of 0 means the thruster is not inverted.  
 This message will be acknowledged. The acknowledge message will contain no result data.
 
+**Relative DoF Speed Set**  
+Used to set relative speeds of motion in each DoF. There are two groups: linear (x, y, z) and angular (xrot, yrot, zrot). Within each group, use 1.0 for the fastest DoF. Other DoFs in the group are percentages of the fastest speed (from -1.0 to 1.0). This message has the following format  
+```none
+'R', 'E', 'L', 'D', 'O', 'F', [x], [y], [z], [xrot], [yrot], [zrot]
+```  
+`[x]`, `[y]`, `[z]`, `[xrot]`, `[yrot]`, `[zrot]`: 32-bit little endian floats.  
+This message will be acknowledged. The acknowledge message will contain no result data.
+
 **BNO055 IMU Axis Configure Command**  
 Used to configure the BNO055 IMU's axis orientation. *Note: This will also reset the accumulated euler angles to zero*.  
 ```none
