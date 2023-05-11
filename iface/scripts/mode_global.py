@@ -31,7 +31,7 @@ import threading
 def run(cb: ControlBoard, s: Simulator) -> int:
     print("Setting global mode vector...", end="")
     #                x    y    z    p    r    y
-    if cb.set_global(0.0, 0.0, 0.0, 0.0, 0.0, 0.3) == ControlBoard.AckError.NONE:
+    if cb.set_global(0.0, 0.3, 0.0, 0.0, 0.0, 0.0) == ControlBoard.AckError.NONE:
         print("Done.")
     else:
         print("Fail.")

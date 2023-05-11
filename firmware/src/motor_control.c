@@ -512,9 +512,11 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     quat_inverse(&qrot, &qrot);
     rotate_vector(&x, &y, &z, x, y, z, &qrot);
     
-    // TODO: Translation relscale
-
     // TODO: Translation upscaling to match input speeds???
+    // TODO: This requires applying qrot to each individually then combining
+
+    // Compensate for differences in vehicle speed in different DoFs
+    mc_downscale_reldof(&x, &y, &z, x, y, z, false);
 
     // Calculate split pitch, roll, and yaw quaternions
     // Required to calculate speeds to change vehicle pitch and yaw
