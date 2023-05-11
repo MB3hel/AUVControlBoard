@@ -486,22 +486,9 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
 
     // w_pitch = q_roll_inv * s_pitch * q_roll
     // s_pitch = <pitch_spd, 0, 0>
-    // NOTE: "Increase pitch" is ambiguous in gimbal lock scenarios (pitch = +/-90)
-    //       Consider initial state = <0, 45, 0> = <pitch, roll, yaw>
-    //       Let the vehicle "increase pitch" towards a pitch of +90
-    //       When the vehicle reaches <90, 45, 0> this could also be <90, 0, 45>
-    //       So "increase pitch" could either mean rotate the path from <0, 45, 0> towards <135, 45, 0>
-    //       Or it could also mean rotate the path from <0, 0, 45> towards <135, 0, 45>
-    //       These are two different paths / motions.
-    //       Currently, because quat_to_euler puts all of the roll/yaw into yaw
-    //       this will take the second path <0, 0, 45> towards <135, 0, 45>
-    //
-    // TODO: This might be solvable with some form of hysteresis
-    //       If a gimbal lock is detected, keep the motions from the last mc_set_global
-    //       Unless it has been "too long"
-    //       This would ensure a consistent path while in motion.
-    //       However, if it has been "too long" (previous non-gimbal lock data invalid)
-    //       this would still choose the "initial-yaw" path as previously described
+    // Note: In gimbal lock scenarios (pitch = +/-90 deg) changing vehicle pitch
+    //       is ambiguous. This will use the "zero roll" solution
+    //       However, this may cause discontinuous motion when moving through gimbal lock positions
     float s_pitch_x = pitch_spd, s_pitch_y = 0.0f, s_pitch_z = 0.0f;
     float w_pitch_x, w_pitch_y, w_pitch_z;
     rotate_vector_inv(&w_pitch_x, &w_pitch_y, &w_pitch_z, s_pitch_x, s_pitch_y, s_pitch_z, &q_roll);
