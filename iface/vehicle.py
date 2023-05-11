@@ -115,3 +115,48 @@ class SW8(Vehicle):
     @property
     def bno055_axis_config(self) -> ControlBoard.BNO055Axis:
         return ControlBoard.BNO055Axis.P6
+
+class SW8Ideal(Vehicle):
+    @property
+    def motor_matrix(self) -> ControlBoard.MotorMatrix:
+        mat = ControlBoard.MotorMatrix()
+        #        MotorNum    x      y      z    pitch   roll     yaw
+        mat.set_row(1,    [ -1,    +1,     0,     0,      0,     -1   ])
+        mat.set_row(2,    [ +1,    +1,     0,     0,      0,     +1   ])
+        mat.set_row(3,    [ -1,    -1,     0,     0,      0,     +1   ])
+        mat.set_row(4,    [ +1,    -1,     0,     0,      0,     -1   ])
+        mat.set_row(5,    [  0,     0,    -1,    +1,     -1,      0   ])
+        mat.set_row(6,    [  0,     0,    -1,    +1,     +1,      0   ])
+        mat.set_row(7,    [  0,     0,    -1,    -1,     -1,      0   ])
+        mat.set_row(8,    [  0,     0,    -1,    -1,     +1,      0   ])
+        return mat
+
+    @property
+    def tinv(self) -> List[bool]:
+        tinv = [
+            True,           # Thruster 1
+            True,           # Thruster 2
+            False,          # Thruster 3
+            False,          # Thruster 4
+            True,           # Thruster 5
+            False,          # Thruster 6
+            False,          # Thruster 7
+            True            # Thruster 8
+        ]
+        return tinv
+
+    @property
+    def reldof(self) -> List[float]:
+        reldof = [
+            1.0,            # x
+            1.0,            # y
+            1.0,            # z
+            1.0,            # xrot
+            1.0,            # yrot
+            1.0             # zrot
+        ]
+        return reldof
+
+    @property
+    def bno055_axis_config(self) -> ControlBoard.BNO055Axis:
+        return ControlBoard.BNO055Axis.P6

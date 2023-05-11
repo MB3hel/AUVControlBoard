@@ -31,12 +31,13 @@ import os
 from control_board import ControlBoard, Simulator
 import importlib
 from serial import SerialException
-from vehicle import SW8, Vehicle
+from vehicle import Vehicle, SW8, SW8Ideal
 from typing import Dict
 
 
 vehicles: Dict[str, Vehicle] = {
-    "sw8": SW8()
+    "sw8": SW8(),                   # AquaPack Robotics's SeaWolf VIII
+    "sw8-ideal": SW8Ideal()         # SeaWolf VIII without reldof correction
 }
 default_vehicle = "sw8"
 
