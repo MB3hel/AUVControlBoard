@@ -542,21 +542,30 @@ void cmdctrl_handle_message(void){
             float yrot = conversions_data_to_float(&msg[22], true);
             float zrot = conversions_data_to_float(&msg[26], true);
 
+            // Restrict to 0.0 - 1.0
+            #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < 0.0f) v = 0.0f;
+            LIMIT(x);
+            LIMIT(y);
+            LIMIT(z);
+            LIMIT(xrot);
+            LIMIT(yrot);
+            LIMIT(zrot);
+
             // Linear scale DOWN factors
             //  x = min(x, y, z) / x
             //  y = min(x, y, z) / y
             //  z = min(x, y, z) / z
-            mc_relscale[0] = MIN(x, MIN(y, z)) / x;
-            mc_relscale[1] = MIN(x, MIN(y, z)) / y;
-            mc_relscale[2] = MIN(x, MIN(y, z)) / z;
+            mc_relscale[0] = x == 0.0f ? 1.0f : MIN(x, MIN(y, z)) / x;
+            mc_relscale[1] = y == 0.0f ? 1.0f : MIN(x, MIN(y, z)) / y;
+            mc_relscale[2] = z == 0.0f ? 1.0f : MIN(x, MIN(y, z)) / z;
 
             // Angular scale DOWN factors
             //  xrot = min(xrot, yrot, zrot) / xrot
             //  yrot = min(xrot, yrot, zrot) / yrot
             //  zrot = min(xrot, yrot, zrot) / zrot
-            mc_relscale[3] = MIN(xrot, MIN(yrot, zrot)) / xrot;
-            mc_relscale[4] = MIN(xrot, MIN(yrot, zrot)) / yrot;
-            mc_relscale[5] = MIN(xrot, MIN(yrot, zrot)) / zrot;
+            mc_relscale[3] = xrot == 0.0f ? 1.0f : MIN(xrot, MIN(yrot, zrot)) / xrot;
+            mc_relscale[4] = yrot == 0.0f ? 1.0f : MIN(xrot, MIN(yrot, zrot)) / yrot;
+            mc_relscale[5] = zrot == 0.0f ? 1.0f : MIN(xrot, MIN(yrot, zrot)) / zrot;
 
             // Reapply saved speed when scale factors change
             cmdctrl_apply_saved_speed();
