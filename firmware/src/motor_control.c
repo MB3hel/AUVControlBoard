@@ -382,6 +382,54 @@ static inline float vec_max_mag(float x, float y, float z){
 /// Motor control
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Use mc_relscale factors to scale down speeds as needed
+// d[x, y, z] = destination (adjusted speeds)
+// s[x, y, z] = source (speeds)
+static inline void mc_downscale_reldof(float *dx, float *dy, float *dz, float sx, float sy, float sz, bool angular){
+    // Get scale factors
+    float scale_x = angular ? MC_RELSCALE_XROT : MC_RELSCALE_X;
+    float scale_y = angular ? MC_RELSCALE_YROT : MC_RELSCALE_Y;
+    float scale_z = angular ? MC_RELSCALE_ZROT : MC_RELSCALE_Z;
+
+    // If a component of the input is zero, no reason to downscale considering that component
+    if(fabsf(sx) < 1e-4){
+        scale_x = 0.0f;
+    }
+    if(fabsf(sy) < 1e-4){
+        scale_y = 0.0f;
+    }
+    if(fabsf(sz) == 1e-4){
+        scale_z = 0.0f;
+    }
+
+    // Rebalance scale factors so largest is 1.0f
+    #define MAX(a, b)   ((a > b) ? a : b)
+    float maxscale = MAX(scale_x, MAX(scale_y, scale_z));
+    scale_x /= maxscale;
+    scale_y /= maxscale;
+    scale_z /= maxscale;
+
+    // Do scaling
+    *dx = sx * scale_x;
+    *dy = sy * scale_y;
+    *dz = sz * scale_z;
+}
+
+// Scale s=<sx, sy, sz> so that largest element is v (assumed that s is unit vector)
+// Store result in d=<dx,dy,dz>
+static inline void mc_upscale_vec(float  *dx, float *dy, float *dz, float sx, float sy, float sz, float v){
+    if(fabsf(v) < 1e-4){
+        *dx = 0.0f;
+        *dy = 0.0f;
+        *dz = 0.0f;
+    }else{
+        float max_mag = vec_max_mag(sx, sy, sz);
+        *dx = (sx / max_mag) * fabsf(v);
+        *dy = (sy / max_mag) * fabsf(v);
+        *dz = (sz / max_mag) * fabsf(v);
+    }
+}
+
 void mc_set_raw(float *speeds){
     xSemaphoreTake(motor_mutex, portMAX_DELAY);   
 
@@ -464,7 +512,9 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     quat_inverse(&qrot, &qrot);
     rotate_vector(&x, &y, &z, x, y, z, &qrot);
     
-    // TODO: Translation scaling
+    // TODO: Translation relscale
+
+    // TODO: Translation upscaling to match input speeds???
 
     // Calculate split pitch, roll, and yaw quaternions
     // Required to calculate speeds to change vehicle pitch and yaw
@@ -501,31 +551,10 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     rotate_vector_inv(&w_yaw_x, &w_yaw_y, &w_yaw_z, s_yaw_x, s_yaw_y, s_yaw_z, &q_pitch);
     rotate_vector_inv(&w_yaw_x, &w_yaw_y, &w_yaw_z, w_yaw_x, w_yaw_y, w_yaw_z, &q_roll);
 
-    // Each group of speeds may not be properly scaled up. 
-    // Example: pitch of 1.0 with roll of 45 results in 0.7071 in two DoFs
-    //          ideally both would be scaled up to 1.0
-    // This also solves the problem with scaling down unnecessarily in previous step
-    // Scale UP w = (w / max_mag_element(w)) * abs(speed)
-    // for each w_pitch and w_yaw
-    // Skip this for w_roll because only the y element is used and it is already
-    // equal to the roll_spd value.
-    // In other words 
-    //     w_roll = <0, roll_spd, 0>
-    //     max_mag_element(w_roll) = abs(roll_spd)
-    //     w_roll / abs(roll_spd) * abs(roll_spd) = <0, roll_spd, 0> = w_roll
-    float max_mag_pitch = vec_max_mag(w_pitch_x, w_pitch_y, w_pitch_z);
-    if(max_mag_pitch > 1e-4){
-        w_pitch_x = (w_pitch_x / max_mag_pitch) * fabsf(pitch_spd);
-        w_pitch_y= (w_pitch_y / max_mag_pitch) * fabsf(pitch_spd);
-        w_pitch_z = (w_pitch_z / max_mag_pitch) * fabsf(pitch_spd);
-    }
-    
-    float max_mag_yaw = vec_max_mag(w_yaw_x, w_yaw_y, w_yaw_z);
-    if(max_mag_yaw > 1e-4){
-        w_yaw_x = (w_yaw_x / max_mag_yaw) * fabsf(yaw_spd);
-        w_yaw_y = (w_yaw_y / max_mag_yaw) * fabsf(yaw_spd);
-        w_yaw_z = (w_yaw_z / max_mag_yaw) * fabsf(yaw_spd);
-    }
+    // Scale up each group as needed
+    // Note: not needed for w_roll because only one component
+    mc_upscale_vec(&w_pitch_x, &w_pitch_y, &w_pitch_z, w_pitch_x, w_pitch_y, w_pitch_z, pitch_spd);
+    mc_upscale_vec(&w_yaw_x, &w_yaw_y, &w_yaw_z, w_yaw_x, w_yaw_y, w_yaw_z, yaw_spd);
 
     // Calculate total rotations in local DoFs
     // These sums may exceed 1.0
@@ -534,9 +563,7 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     float zrot = w_pitch_z  + 0.0f      + w_yaw_z;
 
     // Compensate for differences in vehicle speed in different DoFs
-    xrot *= MC_RELSCALE_XROT;
-    yrot *= MC_RELSCALE_YROT;
-    zrot *= MC_RELSCALE_ZROT;
+    mc_downscale_reldof(&xrot, &yrot, &zrot, xrot, yrot, zrot, true);
 
     // Proportionally scale rotation speeds so all have magnitude less than 1.0
     float maxmag = vec_max_mag(xrot, yrot, zrot);
