@@ -1,39 +1,35 @@
-#!/usr/bin/env python3
+################################################################################
+# Copyright 2022-2023 Marcus Behel
+#
+# This file is part of AUVControlBoard.
+# 
+# AUVControlBoard is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# AUVControlBoard is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public License
+# along with AUVControlBoard.  If not, see <https://www.gnu.org/licenses/>.
+################################################################################
+# Test motor operating using RAW mode. Interactive script which prompts the 
+# user for test parameters (thruster speed and duration of motion) then
+# allows the user to enter thrusters to run one at a time.
+################################################################################
+# Author: Marcus Behel
+# Date: May 10, 2023
+# Version: 1.0.0
+################################################################################
 
 from control_board import ControlBoard, Simulator
 import time
 
 
 def run(cb: ControlBoard, s: Simulator) -> int:
-    ############################################################################
-    # Setup
-    ############################################################################
-    print("Set motor matrix...", end="")
-    mat = ControlBoard.MotorMatrix()
-    #        MotorNum    x      y      z    pitch   roll     yaw
-    mat.set_row(3,    [ -1,    -1,     0,     0,      0,     +1   ])
-    mat.set_row(4,    [ +1,    -1,     0,     0,      0,     -1   ])
-    mat.set_row(1,    [ -1,    +1,     0,     0,      0,     -1   ])
-    mat.set_row(2,    [ +1,    +1,     0,     0,      0,     +1   ])
-    mat.set_row(7,    [  0,     0,    -1,    -1,     -1,      0   ])
-    mat.set_row(8,    [  0,     0,    -1,    -1,     +1,      0   ])
-    mat.set_row(5,    [  0,     0,    -1,    +1,     -1,      0   ])
-    mat.set_row(6,    [  0,     0,    -1,    +1,     +1,      0   ])
-    err = cb.set_motor_matrix(mat)
-    if err == ControlBoard.AckError.NONE:
-        print("Done.")
-    else:
-        print("Fail.")
-        print(err)
-        return 1
-
-    print("Set thruster inversions...", end="")
-    if cb.set_tinv([True, True, False, False, True, False, False, True]) == ControlBoard.AckError.NONE:
-        print("Done.")
-    else:
-        print("Fail.")
-        return 1
-    
     ############################################################################
     # Settings
     ############################################################################

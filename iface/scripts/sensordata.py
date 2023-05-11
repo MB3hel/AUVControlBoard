@@ -1,4 +1,27 @@
-#!/usr/bin/env python3
+################################################################################
+# Copyright 2022-2023 Marcus Behel
+#
+# This file is part of AUVControlBoard.
+# 
+# AUVControlBoard is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# AUVControlBoard is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public License
+# along with AUVControlBoard.  If not, see <https://www.gnu.org/licenses/>.
+################################################################################
+# Print sensor status and data from the vehicle
+################################################################################
+# Author: Marcus Behel
+# Date: May 10, 2023
+# Version: 1.0.0
+################################################################################
 
 from control_board import ControlBoard, Simulator
 import time
@@ -25,13 +48,6 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     ############################################################################
     # Setup
     ############################################################################
-    print("Set axis config...", end="")
-    if cb.set_bno055_axis(ControlBoard.BNO055Axis.P6) == ControlBoard.AckError.NONE:
-        print("Done.")
-    else:
-        print("Fail.")
-        return 1
-
     print("Enable periodic sensor data...", end="")
     if cb.read_bno055_periodic(True) != ControlBoard.AckError.NONE:
         print("Fail.")
