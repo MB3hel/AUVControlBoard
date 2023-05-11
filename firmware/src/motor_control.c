@@ -21,7 +21,6 @@
 #include <matrix.h>
 #include <thruster.h>
 #include <FreeRTOS.h>
-#include <task.h>
 #include <semphr.h>
 #include <timers.h>
 #include <cmdctrl.h>
@@ -452,14 +451,6 @@ void mc_set_local(float x, float y, float z, float xrot, float yrot, float zrot)
 }
 
 void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, float yaw_spd, quaternion_t curr_quat){
-    // Previous target data for gimbal lock solution
-    static bool prev_valid = false;
-    static TickType_t prev_tick = 0;
-    static float prev_w_pitch_x = 0.0f;
-    static float prev_w_pitch_y = 0.0f;
-    static float prev_w_pitch_z = 0.0f;
-    static float prev_pitch_spd = 0.0f;
-    
     // Use gravity vector to transform translation to 
     float grav_x = 2.0f * (-curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);
     float grav_y = 2.0f * (-curr_quat.w*curr_quat.x - curr_quat.y*curr_quat.z);
@@ -511,35 +502,9 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     //       This would ensure a consistent path while in motion.
     //       However, if it has been "too long" (previous non-gimbal lock data invalid)
     //       this would still choose the "initial-yaw" path as previously described
+    float s_pitch_x = pitch_spd, s_pitch_y = 0.0f, s_pitch_z = 0.0f;
     float w_pitch_x, w_pitch_y, w_pitch_z;
-    float pitchdeg = 180.0f * e_min->pitch / ((float)M_PI);
-    bool gimbal_lock = fabsf(90.0f - fabsf(pitchdeg)) < 0.1f;
-    TickType_t now = xTaskGetTickCount();
-    bool expired = (now - prev_tick) <= pdMS_TO_TICKS(500);
-    if(gimbal_lock && prev_valid && !expired){
-        // Use old values. 
-        // These used wrong pitch_spd, but the scale up (later) will sort this out.
-        // UNLESS the sign is wrong.
-        w_pitch_x = prev_w_pitch_x;
-        w_pitch_y = prev_w_pitch_y;
-        w_pitch_z = prev_w_pitch_z;
-        if((prev_pitch_spd < 0.0f && pitch_spd > 0.0f) || (prev_pitch_spd > 0.0f && pitch_spd < 0.0f)){
-            w_pitch_x *= -1;
-            w_pitch_y *= -1;
-            w_pitch_z *= -1;
-        }
-    }else{
-        // Standard calculations
-        float s_pitch_x = pitch_spd, s_pitch_y = 0.0f, s_pitch_z = 0.0f;
-        rotate_vector_inv(&w_pitch_x, &w_pitch_y, &w_pitch_z, s_pitch_x, s_pitch_y, s_pitch_z, &q_roll);
-
-        // If not gimbal lock, store this for potential future use
-        prev_valid = true;
-        prev_tick = now;
-        prev_w_pitch_x = w_pitch_x;
-        prev_w_pitch_y = w_pitch_y;
-        prev_w_pitch_z = w_pitch_z;
-    }
+    rotate_vector_inv(&w_pitch_x, &w_pitch_y, &w_pitch_z, s_pitch_x, s_pitch_y, s_pitch_z, &q_roll);
 
     // w_yaw = q_roll_inv * q_pitch_inv * s_yaw * q_pitch * q_roll
     // s_yaw = <0, 0, yaw_spd>
