@@ -463,7 +463,8 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     quat_between(&qrot, grav_x, grav_y, grav_z, 0.0f, 0.0f, -1.0f);
     quat_inverse(&qrot, &qrot);
     rotate_vector(&x, &y, &z, x, y, z, &qrot);
-    // TODO: Apply relscale to translation
+    
+    // TODO: Translation scaling
 
     // Calculate split pitch, roll, and yaw quaternions
     // Required to calculate speeds to change vehicle pitch and yaw
@@ -500,20 +501,6 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     rotate_vector_inv(&w_yaw_x, &w_yaw_y, &w_yaw_z, s_yaw_x, s_yaw_y, s_yaw_z, &q_pitch);
     rotate_vector_inv(&w_yaw_x, &w_yaw_y, &w_yaw_z, w_yaw_x, w_yaw_y, w_yaw_z, &q_roll);
 
-    // Scale down each group
-    // This could result in worse speeds unnecessarily
-    // (because the "slowest" direction may be a zero and not matter), 
-    // but next step (scale up) will fix it.
-    // This step just ensures correct ratios between speeds.
-    // Skip this for w_roll because only the y element is ever used.
-    // Thus, the other elements are zero so the ratio is correct.
-    w_pitch_x *= MC_RELSCALE_XROT;
-    w_pitch_y *= MC_RELSCALE_YROT;
-    w_pitch_z *= MC_RELSCALE_ZROT;
-    w_yaw_x *= MC_RELSCALE_XROT;
-    w_yaw_y *= MC_RELSCALE_YROT;
-    w_yaw_z *= MC_RELSCALE_ZROT;
-
     // Each group of speeds may not be properly scaled up. 
     // Example: pitch of 1.0 with roll of 45 results in 0.7071 in two DoFs
     //          ideally both would be scaled up to 1.0
@@ -545,6 +532,11 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     float xrot = w_pitch_x  + 0.0f      + w_yaw_x;
     float yrot = w_pitch_y  + w_roll_y  + w_yaw_y;
     float zrot = w_pitch_z  + 0.0f      + w_yaw_z;
+
+    // Compensate for differences in vehicle speed in different DoFs
+    xrot *= MC_RELSCALE_XROT;
+    yrot *= MC_RELSCALE_YROT;
+    zrot *= MC_RELSCALE_ZROT;
 
     // Proportionally scale rotation speeds so all have magnitude less than 1.0
     float maxmag = vec_max_mag(xrot, yrot, zrot);
