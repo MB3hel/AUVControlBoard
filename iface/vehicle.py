@@ -40,7 +40,7 @@ class Vehicle(ABC):
         if ack != ControlBoard.AckError.NONE:
             return ack, "set_tinv"
 
-        ack = cb.set_reldof(self.reldof)
+        ack = cb.set_reldof(*self.reldof)
         if ack != ControlBoard.AckError.NONE:
             return ack, "set_reldof"
         

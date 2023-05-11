@@ -39,6 +39,13 @@
 
 #define MOTOR_WDOG_PERIOD_MS            1500
 
+#define MC_RELSCALE_X                   (mc_relscale[0])
+#define MC_RELSCALE_Y                   (mc_relscale[1])
+#define MC_RELSCALE_Z                   (mc_relscale[2])
+#define MC_RELSCALE_XROT                (mc_relscale[3])
+#define MC_RELSCALE_YROT                (mc_relscale[4])
+#define MC_RELSCALE_ZROT                (mc_relscale[5])
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -361,6 +368,12 @@ static inline void euler_alt(euler_t *dest, euler_t *src){
     dest->yaw = restrict_angle(dest->yaw, dest->is_deg);
 }
 
+// Get element of vector with maximum magnitude
+static inline float vec_max_mag(float x, float y, float z){
+    #define MAX(a, b)   (a > b ? a : b)
+    return MAX(fabsf(x), MAX(fabsf(y), fabsf(z)));
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -450,6 +463,7 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     quat_between(&qrot, grav_x, grav_y, grav_z, 0.0f, 0.0f, -1.0f);
     quat_inverse(&qrot, &qrot);
     rotate_vector(&x, &y, &z, x, y, z, &qrot);
+    // TODO: Apply relscale to translation
 
     // Calculate split pitch, roll, and yaw quaternions
     // Required to calculate speeds to change vehicle pitch and yaw
@@ -467,18 +481,27 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     euler_to_quat(&q_roll, &e_roll);
     euler_to_quat(&q_yaw, &e_yaw);
 
-    // TODO: Apply relscale to translation
-    
     // w_roll = s_roll = <0, roll_spd, 0>
     float w_roll_y = roll_spd;
 
     // w_pitch = q_roll_inv * s_pitch * q_roll
     // s_pitch = <pitch_spd, 0, 0>
-    if(e_min->pitch > M_PI){
-        // Correct direction of rotation if vehicle is upside down from pitching
-        // TODO: Verify this is a numerically stable check
-        pitch_spd *= -1;   
-    }
+    // NOTE: "Increase pitch" is ambiguous in gimbal lock scenarios (pitch = +/-90)
+    //       Consider initial state = <0, 45, 0> = <pitch, roll, yaw>
+    //       Let the vehicle "increase pitch" towards a pitch of +90
+    //       When the vehicle reaches <90, 45, 0> this could also be <90, 0, 45>
+    //       So "increase pitch" could either mean rotate the path from <0, 45, 0> towards <135, 45, 0>
+    //       Or it could also mean rotate the path from <0, 0, 45> towards <135, 0, 45>
+    //       These are two different paths / motions.
+    //       Currently, because quat_to_euler puts all of the roll/yaw into yaw
+    //       this will take the second path <0, 0, 45> towards <135, 0, 45>
+    //
+    // TODO: This might be solvable with some form of hysteresis
+    //       If a gimbal lock is detected, keep the motions from the last mc_set_global
+    //       Unless it has been "too long"
+    //       This would ensure a consistent path while in motion.
+    //       However, if it has been "too long" (previous non-gimbal lock data invalid)
+    //       this would still choose the "initial-yaw" path as previously described
     float s_pitch_x = pitch_spd, s_pitch_y = 0.0f, s_pitch_z = 0.0f;
     float w_pitch_x, w_pitch_y, w_pitch_z;
     rotate_vector_inv(&w_pitch_x, &w_pitch_y, &w_pitch_z, s_pitch_x, s_pitch_y, s_pitch_z, &q_roll);
@@ -491,41 +514,54 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     rotate_vector_inv(&w_yaw_x, &w_yaw_y, &w_yaw_z, w_yaw_x, w_yaw_y, w_yaw_z, &q_roll);
 
     // Scale down each group
-    // This could result in worse speeds unnecessarily, but next step will fix it.
-    w_roll_y *= mc_relscale[4];
-    w_pitch_x *= mc_relscale[3];
-    w_pitch_y *= mc_relscale[4];
-    w_pitch_z *= mc_relscale[5];
-    w_yaw_x *= mc_relscale[3];
-    w_yaw_y *= mc_relscale[4];
-    w_yaw_z *= mc_relscale[5];
+    // This could result in worse speeds unnecessarily
+    // (because the "slowest" direction may be a zero and not matter), 
+    // but next step (scale up) will fix it.
+    // This step just ensures correct ratios between speeds.
+    // Skip this for w_roll because only the y element is ever used.
+    // Thus, the other elements are zero so the ratio is correct.
+    w_pitch_x *= MC_RELSCALE_XROT;
+    w_pitch_y *= MC_RELSCALE_YROT;
+    w_pitch_z *= MC_RELSCALE_ZROT;
+    w_yaw_x *= MC_RELSCALE_XROT;
+    w_yaw_y *= MC_RELSCALE_YROT;
+    w_yaw_z *= MC_RELSCALE_ZROT;
 
     // Each group of speeds may not be properly scaled up. 
     // Example: pitch of 1.0 with roll of 45 results in 0.7071 in two DoFs
     //          ideally both would be scaled up to 1.0
     // This also solves the problem with scaling down unnecessarily in previous step
-    // TODO: Scale UP each w = (w / max_element(w)) * speed
+    // Scale UP w = (w / max_mag_element(w)) * abs(speed)
+    // for each w_pitch and w_yaw
+    // Skip this for w_roll because only the y element is used and it is already
+    // equal to the roll_spd value.
+    // In other words 
+    //     w_roll = <0, roll_spd, 0>
+    //     max_mag_element(w_roll) = abs(roll_spd)
+    //     w_roll / abs(roll_spd) * abs(roll_spd) = <0, roll_spd, 0> = w_roll
+    float max_mag_pitch = vec_max_mag(w_pitch_x, w_pitch_y, w_pitch_z);
+    if(max_mag_pitch > 1e-4){
+        w_pitch_x = (w_pitch_x / max_mag_pitch) * fabsf(pitch_spd);
+        w_pitch_y= (w_pitch_y / max_mag_pitch) * fabsf(pitch_spd);
+        w_pitch_z = (w_pitch_z / max_mag_pitch) * fabsf(pitch_spd);
+    }
+    
+    float max_mag_yaw = vec_max_mag(w_yaw_x, w_yaw_y, w_yaw_z);
+    if(max_mag_yaw > 1e-4){
+        w_yaw_x = (w_yaw_x / max_mag_yaw) * fabsf(yaw_spd);
+        w_yaw_y = (w_yaw_y / max_mag_yaw) * fabsf(yaw_spd);
+        w_yaw_z = (w_yaw_z / max_mag_yaw) * fabsf(yaw_spd);
+    }
 
     // Calculate total rotations in local DoFs
     // These sums may exceed 1.0
-    float xrot = w_pitch_x + 0.0f + w_yaw_x;
-    float yrot = w_pitch_y + w_roll_y + w_yaw_y;
-    float zrot = w_pitch_z + 0.0f + w_yaw_z;
+    float xrot = w_pitch_x  + 0.0f      + w_yaw_x;
+    float yrot = w_pitch_y  + w_roll_y  + w_yaw_y;
+    float zrot = w_pitch_z  + 0.0f      + w_yaw_z;
 
     // Proportionally scale rotation speeds so all have magnitude less than 1.0
-    float maxmag = 1.0f;
-    float abspitch = fabsf(xrot);
-    if(abspitch > maxmag){
-        maxmag = abspitch;
-    }
-    float absroll = fabsf(yrot);
-    if(absroll > maxmag){
-        maxmag = absroll;
-    }
-    float absyaw = fabsf(zrot);
-    if(absyaw > maxmag){
-        maxmag = absyaw;
-    }
+    float maxmag = vec_max_mag(xrot, yrot, zrot);
+    maxmag = (maxmag > 1.0f) ? maxmag : 1.0f;
     xrot /= maxmag;
     yrot /= maxmag;
     zrot /= maxmag;

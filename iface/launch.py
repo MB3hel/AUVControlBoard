@@ -43,14 +43,16 @@ default_vehicle = "sw8"
 
 def configure_vehicle(cb: ControlBoard, vehicle: str) -> bool:
     global vehicles
+    print("Applying Vehicle configuration...", end="")
     if vehicle not in vehicles:
-        print("Unknown vehicle: '{0}'.".format(vehicle))
+        print("  Failed. Unknown vehicle: '{0}'.".format(vehicle))
         return False
     vehicle_obj = vehicles[vehicle]
     ack, where = vehicle_obj.configure(cb)
     if ack != ControlBoard.AckError.NONE:
-        print("Configuring vehicle failed. '{0}' failed with AckError {1}.".format(where, ack))
+        print("Failed. '{0}' failed with AckError {1}.".format(where, ack))
         return False
+    print("Done.")
     return True
 
 
@@ -78,7 +80,7 @@ def main():
         print("Invalid script.")
         return 1
     
-    mod = importlib.import_module(args.script)
+    mod = importlib.import_module("scripts.{0}".format(args.script))
     if not hasattr(mod, "run"):
         print("Script missing run function")
         return 1
@@ -87,7 +89,9 @@ def main():
     # Create connection to the control board or simulator
     if args.sim:
         try:
+            print("Connecting to simulator...", end="")
             s = Simulator(args.debug, args.quiet)
+            print("Done.")
             cb = s.control_board
             if not configure_vehicle(cb, args.vehicle):
                 return 1
@@ -96,14 +100,16 @@ def main():
                 return res
             else:
                 return 0
-        except ConnectionRefusedError:
-            print("Failed to connect to simulator.")
+        except (ConnectionRefusedError, ConnectionResetError):
+            print("Failed.")
             return 1
     else:
         if args.port == "":
             args.port = "/dev/ttyACM0"
         try:
+            print("Connecting to {0}...".format(args.port), end="")
             cb = ControlBoard(args.port, args.debug, args.quiet)
+            print("Done.")
             if not configure_vehicle(cb, args.vehicle):
                 return 1
             res = mod.run(cb, None)
@@ -112,7 +118,7 @@ def main():
             else:
                 return 0
         except SerialException:
-            print("Failed to open serial port.")
+            print("Failed.")
             return 1
 
 
