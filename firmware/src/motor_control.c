@@ -212,8 +212,9 @@ bool mc_wdog_feed(void){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// Motor control
+/// Extra math code (not in angles.c or matrix.c)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Rotate a vector (x, y, z) buy a quaternion q
@@ -360,6 +361,14 @@ static inline void euler_alt(euler_t *dest, euler_t *src){
     dest->yaw = restrict_angle(dest->yaw, dest->is_deg);
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Motor control
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void mc_set_raw(float *speeds){
     xSemaphoreTake(motor_mutex, portMAX_DELAY);   
 
@@ -429,6 +438,7 @@ void mc_set_local(float x, float y, float z, float xrot, float yrot, float zrot)
 }
 
 void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, float yaw_spd, quaternion_t curr_quat){
+    // Use gravity vector to transform translation to 
     float grav_x = 2.0f * (-curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);
     float grav_y = 2.0f * (-curr_quat.w*curr_quat.x - curr_quat.y*curr_quat.z);
     float grav_z = -curr_quat.w*curr_quat.w + curr_quat.x*curr_quat.x + curr_quat.y*curr_quat.y - curr_quat.z*curr_quat.z;
@@ -441,6 +451,8 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     quat_inverse(&qrot, &qrot);
     rotate_vector(&x, &y, &z, x, y, z, &qrot);
 
+    // Calculate split pitch, roll, and yaw quaternions
+    // Required to calculate speeds to change vehicle pitch and yaw
     euler_t e_orig, e_alt;
     quat_to_euler(&e_orig, &curr_quat);
     euler_alt(&e_alt, &e_orig);
@@ -460,12 +472,13 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     // w_roll = s_roll = <0, roll_spd, 0>
     float w_roll_y = roll_spd;
 
-    if(e_min->pitch > M_PI){
-        pitch_spd *= -1;   
-    }
-
     // w_pitch = q_roll_inv * s_pitch * q_roll
     // s_pitch = <pitch_spd, 0, 0>
+    if(e_min->pitch > M_PI){
+        // Correct direction of rotation if vehicle is upside down from pitching
+        // TODO: Verify this is a numerically stable check
+        pitch_spd *= -1;   
+    }
     float s_pitch_x = pitch_spd, s_pitch_y = 0.0f, s_pitch_z = 0.0f;
     float w_pitch_x, w_pitch_y, w_pitch_z;
     rotate_vector_inv(&w_pitch_x, &w_pitch_y, &w_pitch_z, s_pitch_x, s_pitch_y, s_pitch_z, &q_roll);
@@ -517,6 +530,7 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     yrot /= maxmag;
     zrot /= maxmag;
 
+    // Set speeds
     mc_set_local(x, y, z, xrot, yrot, zrot);
 }
 
@@ -728,9 +742,11 @@ void mc_set_sassist(float x, float y, float yaw_spd,
 }
 
 void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth){
-    float z = pid_calculate(&depth_pid, target_depth - curr_depth);
-    mc_set_global(x, y, z, pitch_spd, roll_spd, yaw_spd, curr_quat);
+    // TODO: Redefine
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TODO: local sassist
 
+// TODO: local depth hold
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
