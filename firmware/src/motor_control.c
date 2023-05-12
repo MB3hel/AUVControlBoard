@@ -633,14 +633,12 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
 
     // Proportionally scale translation speeds so all have magnitude less than 1.0
     mc_downscale_if_needed(&lx, &ly, &lz, lx, ly, lz);
-
     // -----------------------------------------------------------------------------------------------------------------
 
 
     // -----------------------------------------------------------------------------------------------------------------
     // Rotation
     // -----------------------------------------------------------------------------------------------------------------
-
     // Get split pitch, roll, and yaw quaternions
     quaternion_t q_pitch, q_roll, q_yaw;
     euler_t e_base;
@@ -687,7 +685,6 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
 
     // Proportionally scale rotation speeds so all have magnitude less than 1.0
     mc_downscale_if_needed(&xrot, &yrot, &zrot, xrot, yrot, zrot);
-
     // -----------------------------------------------------------------------------------------------------------------
 
     // Set speeds
@@ -701,48 +698,56 @@ void mc_set_sassist(float x, float y, float yaw_spd,
         float curr_depth,
         bool yaw_target){
 
+    // Baseline angular motion due to yaw speed (if yaw target not in use)
     float base_xrot = 0.0f;
     float base_yrot = 0.0f;
     float base_zrot = 0.0f;
 
+    // Use gravity vectors to construct pitch and roll compensation quaternion
+    // Used for x/y translation, but also for yaw speed if not using yaw target PID
+    quaternion_t qrot;
+    mc_grav_rot(&qrot, &curr_quat);
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Handle Open-Loop Yaw control (no yaw PID / yaw target, but instead a yaw speed)
+    // -----------------------------------------------------------------------------------------------------------------
     if(!yaw_target){
+        // Get twist part of current quaternion about z axis
         quaternion_t curr_twist;
         quat_twist(&curr_twist, &curr_quat, 0, 0, 1);
+
+        // Extract yaw from twist quaternion.
+        // Doing this with twist quat ensures the extracted yaw is not "offset by 180"
+        // as it could be with converting curr_quat directly to euler angles
+        // Eg: Consider pitch = 115, roll = 0, yaw = 0
+        //     This is improper. The proper representation is pitch = 65, roll = -180, yaw = -180
+        //     But we need a yaw of zero, not 180!
         float curr_yaw = atan2f(-2.0f * (curr_twist.x*curr_twist.y - curr_twist.w*curr_twist.z), 1.0f - 2.0f * (curr_twist.x*curr_twist.x + curr_twist.z*curr_twist.z));
         curr_yaw *= 180.0f / M_PI;
-
         target_euler.yaw = curr_yaw;
 
-
-        quaternion_t curr_swing;
-        quaternion_t curr_twist_conj;
-        quat_conjugate(&curr_twist_conj, &curr_twist);
-        quat_multiply(&curr_swing, &curr_quat, &curr_twist_conj);
-
-        // Same transform as global mode translation
-        float grav_x = 2.0f * (-curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);
-        float grav_y = 2.0f * (-curr_quat.w*curr_quat.x - curr_quat.y*curr_quat.z);
-        float grav_z = -curr_quat.w*curr_quat.w + curr_quat.x*curr_quat.x + curr_quat.y*curr_quat.y - curr_quat.z*curr_quat.z;
-        float grav_mag = sqrtf(grav_x*grav_x + grav_y*grav_y + grav_z*grav_z);
-        grav_x /= grav_mag;
-        grav_y /= grav_mag;
-        grav_z /= grav_mag;
-        quaternion_t qrot;
-        quat_between(&qrot, grav_x, grav_y, grav_z, 0.0f, 0.0f, -1.0f);
-        quat_inverse(&qrot, &qrot);
+        // Same as yaw speed in GLOBAL mode
         rotate_vector(&base_xrot, &base_yrot, &base_zrot, 0.0f, 0.0f, yaw_spd, &qrot);
+        mc_upscale_vec(&base_xrot, &base_yrot, &base_zrot, base_xrot, base_yrot, base_zrot, yaw_spd);
     }
+    // -----------------------------------------------------------------------------------------------------------------
 
-    // Convert target to quaternion
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Rotation
+    // -----------------------------------------------------------------------------------------------------------------
+    // Convert target orientation to quaternion
     quaternion_t target_quat;
     euler_to_quat(&target_quat, &target_euler);
 
-
+    // Get shortest quaternion from current to target   
+    // q_d is shortest rotation from q_c (curr_quat) to q_t (taret_quat) 
     float dot;
     quat_dot(&dot, &curr_quat, &target_quat);
-
     quaternion_t q_c_conj;
     if(dot < 0.0f){
+        // If dot is negative, need to flit curr_quat before conj
+        // to ensure shortest path
         quaternion_t temp;
         temp.w = curr_quat.w;
         temp.x = curr_quat.x;
@@ -753,10 +758,10 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     }else{
         quat_conjugate(&q_c_conj, &curr_quat);
     }
-
     quaternion_t q_d;
     quat_multiply(&q_d, &q_c_conj, &target_quat);
 
+    // Convert q_d to axis angle
     float mag = sqrtf(q_d.x*q_d.x + q_d.y*q_d.y + q_d.z*q_d.z);
     float theta = 2.0f * atan2f(mag, q_d.w);
     float ax = q_d.x;
@@ -768,6 +773,7 @@ void mc_set_sassist(float x, float y, float yaw_spd,
         az /= mag;
     }
 
+    // Angular velocity "errors" (for PIDs) are angle * axis
     float e_x = ax * theta;
     float e_y = ay * theta;
     float e_z = az * theta;
@@ -778,34 +784,26 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     float yrot = pid_calculate(&yrot_pid, e_y);
     float zrot = pid_calculate(&zrot_pid, e_z);
 
-    if(!yaw_target){
-        // Need to add PID outputs to base speeds of vehicle
-        // Base speeds came from rotation of yaw speed onto vehicle basis
-        xrot += base_xrot;
-        yrot += base_yrot;
-        zrot += base_zrot;
+    // Need to add PID outputs to base speeds of vehicle
+    // Base speeds came from rotation of yaw speed onto vehicle basis
+    xrot += base_xrot;
+    yrot += base_yrot;
+    zrot += base_zrot;
 
-        // Proportionally scale rotation speeds so all have magnitude less than 1.0
-        float maxmag = vec_max_mag(xrot, yrot, zrot);
-        maxmag = (maxmag > 1.0f) ? maxmag : 1.0f;
-        xrot /= maxmag;
-        yrot /= maxmag;
-        zrot /= maxmag;
-    }
+    // Compensate for differences in vehicle speed in different DoFs
+    mc_downscale_reldof(&xrot, &yrot, &zrot, xrot, yrot, zrot, true);
 
-    // Use gravity vector to transform translation to
-    float grav_x = 2.0f * (-curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);
-    float grav_y = 2.0f * (-curr_quat.w*curr_quat.x - curr_quat.y*curr_quat.z);
-    float grav_z = -curr_quat.w*curr_quat.w + curr_quat.x*curr_quat.x + curr_quat.y*curr_quat.y - curr_quat.z*curr_quat.z;
-    float grav_mag = sqrtf(grav_x*grav_x + grav_y*grav_y + grav_z*grav_z);
-    grav_x /= grav_mag;
-    grav_y /= grav_mag;
-    grav_z /= grav_mag;
-    quaternion_t qrot;
-    quat_between(&qrot, grav_x, grav_y, grav_z, 0.0f, 0.0f, -1.0f);
-    quat_inverse(&qrot, &qrot);
+    // Proportionally scale rotation speeds so all have magnitude less than 1.0
+    mc_downscale_if_needed(&xrot, &yrot, &zrot, xrot, yrot, zrot);
+    // -----------------------------------------------------------------------------------------------------------------
 
-    // Compute each translation component separately (allows proper up scaling)
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Translation (same as global mode here)
+    // -----------------------------------------------------------------------------------------------------------------
+    // Compute each translation component separately and upscale
+    // Upscaling ensures largest magnitude of each component equals the speed of the component
+    // Note that tx, ty, and tz vectors are in vehicle DoFs
     float tx_x, tx_y, tx_z;
     rotate_vector(&tx_x, &tx_y, &tx_z, x, 0.0f, 0.0f, &qrot);
     mc_upscale_vec(&tx_x, &tx_y, &tx_z, tx_x, tx_y, tx_z, x);
@@ -827,11 +825,8 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     mc_downscale_reldof(&lx, &ly, &lz, lx, ly, lz, false);
 
     // Proportionally scale translation speeds so all have magnitude less than 1.0
-    float maxmag = vec_max_mag(lx, ly, lz);
-    maxmag = (maxmag > 1.0f) ? maxmag : 1.0f;
-    lx /= maxmag;
-    ly /= maxmag;
-    lz /= maxmag;
+    mc_downscale_if_needed(&lx, &ly, &lz, lx, ly, lz);
+    // -----------------------------------------------------------------------------------------------------------------
 
 
     // Target motion now relative to the robot's axes
