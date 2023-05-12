@@ -32,6 +32,10 @@ END_BYTE = b'\xfe'
 ESCAPE_BYTE = b'\xff'
 
 
+default_timeout_uart = 0.1
+default_timeout_sim = 0.25
+
+
 class ControlBoard:
 
     class AckError(IntEnum):
@@ -140,7 +144,7 @@ class ControlBoard:
         self.__write_msg(b'RESET\x0D\x1E', False)
     
     ## Query why control board last reset
-    def why_reset(self, timeout: float = 0.1) -> Tuple[AckError, int]:
+    def why_reset(self, timeout: float = -1.0) -> Tuple[AckError, int]:
         msg_id = self.__write_msg(b'RSTWHY', True)
         ack, res = self.__wait_for_ack(msg_id, timeout)
         if(ack != self.AckError.NONE):
@@ -302,6 +306,8 @@ class ControlBoard:
     def __wait_for_ack(self, msg_id: int, timeout: float) -> Tuple[AckError, bytes]:
         ec = None
         res = None
+        if timeout == -1.0:
+            timeout = self.default_timeout()
         with self.__ack_conds[msg_id]:
             if self.__ack_conds[msg_id].wait(timeout):
                 ec = self.AckError(self.__ack_errrs[msg_id])
@@ -313,6 +319,11 @@ class ControlBoard:
         del self.__ack_errrs[msg_id]
         del self.__ack_results[msg_id]
         return ec, res
+
+    ## Default timeout for wait for ack
+    def default_timeout(self) -> float:
+        global default_timeout_uart
+        return default_timeout_uart
 
     ## Write one byte via serial
     #  @param b Single byte to write
@@ -395,7 +406,7 @@ class ControlBoard:
 
     ## Set the motor matrix defining the vehicle's thruster configuration
     #  @param matrix Motor matrix object containing configuration to set
-    def set_motor_matrix(self, matrix: MotorMatrix, timeout: float = 0.1) -> AckError:
+    def set_motor_matrix(self, matrix: MotorMatrix, timeout: float = -1.0) -> AckError:
         # Set each row one at a time
         raw_data = matrix.raw()
         for i in range(8):
@@ -426,7 +437,7 @@ class ControlBoard:
     #  @param inversions List of 8 booleans indicating if thruster is inverted. 
     #                    True = inverted. False = not inverted.
     #  @return Error code (AckError enum) from control board (or timeout)
-    def set_tinv(self, inversions: List[bool], timeout: float = 0.1) -> AckError:
+    def set_tinv(self, inversions: List[bool], timeout: float = -1.0) -> AckError:
         # Construct message to send
         data = bytearray()
         data.extend(b'TINV')
@@ -456,7 +467,7 @@ class ControlBoard:
     #  @param yrot Relative speed in yrot DoF
     #  @param zrot Relative speed in zrot DoF
     #  @return Error code (AckError enum) from control board (or timeout)
-    def set_reldof(self, x: float, y: float, z: float, xrot: float, yrot: float, zrot: float, timeout: float = 0.1) -> AckError:
+    def set_reldof(self, x: float, y: float, z: float, xrot: float, yrot: float, zrot: float, timeout: float = -1.0) -> AckError:
         # Construct message
         data = bytearray()
         data.extend(b'RELDOF')
@@ -475,10 +486,15 @@ class ControlBoard:
     ## Set axis configuration for BNO055 IMU
     #  @param axis Axis configuration (see BNO055 datasheet) P0-P7 (BNO055Axis enum)
     #  @return Error code (AckError enum) from control board (or timeout)
-    def set_bno055_axis(self, axis: BNO055Axis, timeout: float = 0.15) -> AckError:
+    def set_bno055_axis(self, axis: BNO055Axis, timeout: float = -1.0) -> AckError:
         msg = bytearray()
         msg.extend(b'BNO055A')
         msg.append(int(axis))
+
+        # This can take a little longer than most commands
+        # Thus, use a slightly longer default timeout
+        if timeout == -1.0:
+            timeout = self.default_timeout() + 0.1
 
         msg_id = self.__write_msg(bytes(msg), True)
         ack, _ = self.__wait_for_ack(msg_id, timeout)
@@ -488,7 +504,7 @@ class ControlBoard:
 
     ## Get sensor status (all sensors)
     #  @return Tuple[AckError, bool, bool]  error, bno055_ready, ms5837_ready
-    def get_sensor_status(self, timeout: float = 0.1) -> Tuple[AckError, bool, bool]:
+    def get_sensor_status(self, timeout: float = -1.0) -> Tuple[AckError, bool, bool]:
         # Send the message and wait for acknowledgement
         msg_id = self.__write_msg(b'SSTAT', True)
         ack, res = self.__wait_for_ack(msg_id, timeout)
@@ -537,7 +553,7 @@ class ControlBoard:
     ## Read current BNO055 data. This is a single read. Does not start periodic reads
     #  Use get_bno055_data to get the last read data (either from this or a periodic read)
     #  @return AckError
-    def read_bno055_once(self, timeout: float = 0.1) -> AckError:
+    def read_bno055_once(self, timeout: float = -1.0) -> AckError:
         msg_id = self.__write_msg(b'BNO055R', True)
         ack, res = self.__wait_for_ack(msg_id, timeout)
         if ack != self.AckError.NONE:
@@ -549,7 +565,7 @@ class ControlBoard:
     #  received data will be stored and is retrievable with get_bno055_data
     #  @param enable True to enable periodic reads. False to disable.
     #  @return AckError indicating success of processing this command.
-    def read_bno055_periodic(self, enable: bool, timeout: float = 0.1) -> AckError:
+    def read_bno055_periodic(self, enable: bool, timeout: float = -1.0) -> AckError:
         msg = bytearray()
         msg.extend(b'BNO055P')
         msg.append(1 if enable else 0)
@@ -572,7 +588,7 @@ class ControlBoard:
     ## Read current MS5837 data. This is a single read. Does not start periodic reads
     #  Use get_ms5837_data to get the last read data (either from this or a periodic read)
     #  @return AckError
-    def read_ms5837_once(self, timeout: float = 0.1) -> AckError:
+    def read_ms5837_once(self, timeout: float = -1.0) -> AckError:
         msg_id = self.__write_msg(b'MS5837R', True)
         ack, res = self.__wait_for_ack(msg_id, timeout)
         if ack != self.AckError.NONE:
@@ -584,7 +600,7 @@ class ControlBoard:
     #  received data will be stored and is retrievable with get_ms5837_data
     #  @param enable True to enable periodic reads. False to disable.
     #  @return AckError indicating success of processing this command.
-    def read_ms5837_periodic(self, enable: bool, timeout: float = 0.1) -> AckError:
+    def read_ms5837_periodic(self, enable: bool, timeout: float = -1.0) -> AckError:
         msg = bytearray()
         msg.extend(b'MS5837P')
         msg.append(1 if enable else 0)
@@ -608,7 +624,7 @@ class ControlBoard:
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_xrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = 0.1) -> AckError:
+    def tune_sassist_xrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -631,7 +647,7 @@ class ControlBoard:
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_yrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = 0.1) -> AckError:
+    def tune_sassist_yrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -654,7 +670,7 @@ class ControlBoard:
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_zrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = 0.1) -> AckError:
+    def tune_sassist_zrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -677,7 +693,7 @@ class ControlBoard:
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_depth(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = 0.1) -> AckError:
+    def tune_sassist_depth(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -697,7 +713,7 @@ class ControlBoard:
     ## Set thruster speeds in RAW mode
     #  @param speeds List of 8 speeds to send to control board. Must range from -1 to 1
     #  @return Error code (AckError enum) from control board (or timeout)
-    def set_raw(self, speeds: List[float], timeout: float = 0.1) -> AckError:
+    def set_raw(self, speeds: List[float], timeout: float = -1.0) -> AckError:
         # Validate provided data
         if len(speeds) != 8:
             return
@@ -732,7 +748,7 @@ class ControlBoard:
     #  @param xrot Angular speed about x axis (-1.0 to +1.0)
     #  @param yrot Angular speed about y axis (-1.0 to +1.0)
     #  @param zrot Angular speed about z axis (-1.0 to +1.0)
-    def set_local(self, x: float, y: float, z: float, xrot: float, yrot: float, zrot: float, timeout: float = 0.1) -> AckError:
+    def set_local(self, x: float, y: float, z: float, xrot: float, yrot: float, zrot: float, timeout: float = -1.0) -> AckError:
         # Ensure provided data in valid range
         def limit(v: float):
             if v > 1.0:
@@ -770,7 +786,7 @@ class ControlBoard:
     #  @param pitch_spd Rate of change of pitch (-1.0 to +1.0)
     #  @param roll_spd Rate of change of pitch (-1.0 to +1.0)
     #  @param yaw_spd Rate of change of pitch (-1.0 to +1.0)
-    def set_global(self, x: float, y: float, z: float, pitch_spd: float, roll_spd: float, yaw_spd: float, timeout: float = 0.1) -> AckError:
+    def set_global(self, x: float, y: float, z: float, pitch_spd: float, roll_spd: float, yaw_spd: float, timeout: float = -1.0) -> AckError:
         # Ensure provided data in valid range
         def limit(v: float):
             if v > 1.0:
@@ -808,7 +824,7 @@ class ControlBoard:
     #  @param target_pitch Target pitch in degrees
     #  @param target_roll Target roll in degrees
     #  @param target_depth Target depth in meters (negative for below surface)
-    def set_sassist1(self, x: float, y: float, yaw_spd: float, target_pitch: float, target_roll: float, target_depth: float, timeout: float = 0.1) -> AckError:
+    def set_sassist1(self, x: float, y: float, yaw_spd: float, target_pitch: float, target_roll: float, target_depth: float, timeout: float = -1.0) -> AckError:
         def limit(v: float):
             if v > 1.0:
                 return 1.0
@@ -842,7 +858,7 @@ class ControlBoard:
     #  @param target_roll Target roll in degrees
     #  @param target_yaw Target yaw in degrees
     #  @param target_depth Target depth in meters (negative for below surface)
-    def set_sassist2(self, x: float, y: float, target_pitch: float, target_roll: float, target_yaw: float, target_depth: float, timeout: float = 0.1) -> AckError:
+    def set_sassist2(self, x: float, y: float, target_pitch: float, target_roll: float, target_yaw: float, target_depth: float, timeout: float = -1.0) -> AckError:
         def limit(v: float):
             if v > 1.0:
                 return 1.0
@@ -875,7 +891,7 @@ class ControlBoard:
     #  @param roll_spd Rate of change of pitch (-1.0 to +1.0)
     #  @param yaw_spd Rate of change of pitch (-1.0 to +1.0)
     #  @param target_depth Desired depth in meters (negative below surface)
-    def set_dhold(self, x: float, y: float, pitch_spd: float, roll_spd: float, yaw_spd: float, target_depth: float, timeout: float = 0.1) -> AckError:
+    def set_dhold(self, x: float, y: float, pitch_spd: float, roll_spd: float, yaw_spd: float, target_depth: float, timeout: float = -1.0) -> AckError:
         # Ensure provided data in valid range
         def limit(v: float):
             if v > 1.0:
@@ -909,7 +925,7 @@ class ControlBoard:
     #  (1500ms at time of writing) then control board will kill motors
     #  Note: To avoid giving control board too much to process, feed commands
     #  are limited to every 100ms at most frequent
-    def feed_motor_watchdog(self, timeout: float = 0.1) -> AckError:
+    def feed_motor_watchdog(self, timeout: float = -1.0) -> AckError:
         # Limit watchdog feed rate
         if time.time() - self.__last_wdog_feed < 0.1:
             return self.AckError.NONE
@@ -938,6 +954,11 @@ class SimCboard(ControlBoard):
     #  @return Single byte read (bytes object)
     def _read_one(self) -> bytes:
         return self.__socket.recv(1)
+
+    ## Default timeout for wait for ack
+    def default_timeout(self) -> float:
+        global default_timeout_sim
+        return default_timeout_sim
 
 
 # Used to interface with GodotAUVSim
