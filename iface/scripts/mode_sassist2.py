@@ -32,7 +32,7 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     print("Setting sassist2 mode target...", end="")
 
     #                   x    y    p    r     h      d
-    if cb.set_sassist2(0.0, 0.0, 115.0, 15.0, 135.0, -0.4) == ControlBoard.AckError.NONE:
+    if cb.set_sassist2(0.0, 0.0, 0.0, 0.0, 15.0, -0.4) == ControlBoard.AckError.NONE:
         print("Done.")
     else:
         print("Fail.")
