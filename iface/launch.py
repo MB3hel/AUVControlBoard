@@ -31,24 +31,27 @@ import os
 from control_board import ControlBoard, Simulator
 import importlib
 from serial import SerialException
-from vehicle import Vehicle, SW8, SW8Ideal
-from typing import Dict
+import vehicle
+from typing import Dict, Tuple
 
-
-vehicles: Dict[str, Vehicle] = {
-    "sw8": SW8(),                   # AquaPack Robotics's SeaWolf VIII
-    "sw8-ideal": SW8Ideal()         # SeaWolf VIII without reldof correction
+# Each vehicle has a "normal" and "simulation" variant
+vehicles: Dict[str, Tuple[vehicle.Vehicle, vehicle.Vehicle]] = {
+    "sw8": (vehicle.SW8(), vehicle.SW8Sim()),       # AquaPack Robotics's SeaWolf VIII
 }
 default_vehicle = "sw8"
 
 
-def configure_vehicle(cb: ControlBoard, vehicle: str) -> bool:
+def configure_vehicle(cb: ControlBoard, vehicle: str, sim: bool) -> bool:
     global vehicles
     print("Applying Vehicle configuration...", end="")
     if vehicle not in vehicles:
         print("  Failed. Unknown vehicle: '{0}'.".format(vehicle))
         return False
-    vehicle_obj = vehicles[vehicle]
+    vehicle_tuple = vehicles[vehicle]
+    if sim:
+        vehicle_obj = vehicle_tuple[1]
+    else:
+        vehicle_obj = vehicle_tuple[0]
     ack, where = vehicle_obj.configure(cb)
     if ack != ControlBoard.AckError.NONE:
         print("Failed. '{0}' failed with AckError {1}.".format(where, ack))
@@ -94,7 +97,7 @@ def main():
             s = Simulator(args.debug, args.quiet)
             print("Done.")
             cb = s.control_board
-            if not configure_vehicle(cb, args.vehicle):
+            if not configure_vehicle(cb, args.vehicle, True):
                 return 1
             res = mod.run(cb, s)
             if isinstance(res, int):
@@ -111,7 +114,7 @@ def main():
             print("Connecting to {0}...".format(args.port), end="")
             cb = ControlBoard(args.port, args.debug, args.quiet)
             print("Done.")
-            if not configure_vehicle(cb, args.vehicle):
+            if not configure_vehicle(cb, args.vehicle, False):
                 return 1
             res = mod.run(cb, None)
             if isinstance(res, int):

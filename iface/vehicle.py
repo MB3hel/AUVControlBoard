@@ -47,6 +47,18 @@ class Vehicle(ABC):
         ack = cb.set_bno055_axis(self.bno055_axis_config)
         if ack != ControlBoard.AckError.NONE:
             return ack, "set_bno055_axis"
+        
+        ack = cb.tune_sassist_xrot(*self.xrot_pid_tuning)
+        if ack != ControlBoard.AckError.NONE:
+            return ack, "tune_sassist_xrot"
+
+        ack = cb.tune_sassist_yrot(*self.yrot_pid_tuning)
+        if ack != ControlBoard.AckError.NONE:
+            return ack, "tune_sassist_yrot"
+
+        ack = cb.tune_sassist_zrot(*self.zrot_pid_tuning)
+        if ack != ControlBoard.AckError.NONE:
+            return ack, "tune_sassist_zrot"
 
         return ControlBoard.AckError.NONE, ""
 
@@ -68,6 +80,26 @@ class Vehicle(ABC):
     @property
     @abstractmethod
     def bno055_axis_config(self) -> ControlBoard.BNO055Axis:
+        pass
+
+    @property
+    @abstractmethod
+    def xrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        pass
+
+    @property
+    @abstractmethod
+    def yrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        pass
+    
+    @property
+    @abstractmethod
+    def zrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        pass
+
+    @property
+    @abstractmethod
+    def depth_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
         pass
 
 
@@ -116,47 +148,44 @@ class SW8(Vehicle):
     def bno055_axis_config(self) -> ControlBoard.BNO055Axis:
         return ControlBoard.BNO055Axis.P6
 
-class SW8Ideal(Vehicle):
     @property
-    def motor_matrix(self) -> ControlBoard.MotorMatrix:
-        mat = ControlBoard.MotorMatrix()
-        #        MotorNum    x      y      z    pitch   roll     yaw
-        mat.set_row(1,    [ -1,    +1,     0,     0,      0,     -1   ])
-        mat.set_row(2,    [ +1,    +1,     0,     0,      0,     +1   ])
-        mat.set_row(3,    [ -1,    -1,     0,     0,      0,     +1   ])
-        mat.set_row(4,    [ +1,    -1,     0,     0,      0,     -1   ])
-        mat.set_row(5,    [  0,     0,    -1,    +1,     -1,      0   ])
-        mat.set_row(6,    [  0,     0,    -1,    +1,     +1,      0   ])
-        mat.set_row(7,    [  0,     0,    -1,    -1,     -1,      0   ])
-        mat.set_row(8,    [  0,     0,    -1,    -1,     +1,      0   ])
-        return mat
+    def xrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        #       kP      kI      kD      lim     invert
+        return  0.8,    0.0,    0.0,    0.6,    False
 
     @property
-    def tinv(self) -> List[bool]:
-        tinv = [
-            True,           # Thruster 1
-            True,           # Thruster 2
-            False,          # Thruster 3
-            False,          # Thruster 4
-            True,           # Thruster 5
-            False,          # Thruster 6
-            False,          # Thruster 7
-            True            # Thruster 8
-        ]
-        return tinv
+    def yrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        #       kP      kI      kD      lim     invert
+        return  0.15,   0.0,    0.0,    0.1,    False
+    
+    @property
+    def zrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        #       kP      kI      kD      lim     invert
+        return  0.5,    0.0,    0.0,    0.5,    False
 
     @property
-    def reldof(self) -> List[float]:
-        reldof = [
-            1.0,            # x
-            1.0,            # y
-            1.0,            # z
-            1.0,            # xrot
-            1.0,            # yrot
-            1.0             # zrot
-        ]
-        return reldof
+    def depth_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        #       kP      kI      kD      lim     invert
+        return  1.5,    0.0,    0.0,    1.0,    False
+
+
+class SW8Sim(SW8):
+    @property
+    def xrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        #       kP      kI      kD      lim     invert
+        return  0.8,    0.0,    0.0,    0.6,    False
 
     @property
-    def bno055_axis_config(self) -> ControlBoard.BNO055Axis:
-        return ControlBoard.BNO055Axis.P6
+    def yrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        #       kP      kI      kD      lim     invert
+        return  0.15,   0.0,    0.0,    0.1,    False
+    
+    @property
+    def zrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        #       kP      kI      kD      lim     invert
+        return  0.5,    0.0,    0.0,    0.5,    False
+
+    @property
+    def depth_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        #       kP      kI      kD      lim     invert
+        return  1.5,    0.0,    0.0,    1.0,    False
