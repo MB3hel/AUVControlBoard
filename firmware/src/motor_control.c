@@ -510,13 +510,34 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     quaternion_t qrot;
     quat_between(&qrot, grav_x, grav_y, grav_z, 0.0f, 0.0f, -1.0f);
     quat_inverse(&qrot, &qrot);
-    rotate_vector(&x, &y, &z, x, y, z, &qrot);
-    
-    // TODO: Translation upscaling to match input speeds???
-    // TODO: This requires applying qrot to each individually then combining
 
+    // Compute each translation component separately (allows proper up scaling)
+    float tx_x, tx_y, tx_z;
+    rotate_vector(&tx_x, &tx_y, &tx_z, x, 0.0f, 0.0f, &qrot);
+    mc_upscale_vec(&tx_x, &tx_y, &tx_z, tx_x, tx_y, tx_z, x);
+
+    float ty_x, ty_y, ty_z;
+    rotate_vector(&ty_x, &ty_y, &ty_z, 0.0f, y, 0.0f, &qrot);
+    mc_upscale_vec(&ty_x, &ty_y, &ty_z, ty_x, ty_y, ty_z, y);
+
+    float tz_x, tz_y, tz_z;
+    rotate_vector(&tz_x, &tz_y, &tz_z, 0.0f, 0.0f, z, &qrot);
+    mc_upscale_vec(&tz_x, &tz_y, &tz_z, tz_x, tz_y, tz_z, z);
+    
+    // Combine each translation component
+    float lx = tx_x + ty_x + tz_x;
+    float ly = tx_y + ty_y + tz_y;
+    float lz = tx_z + ty_z + tz_z;
+    
     // Compensate for differences in vehicle speed in different DoFs
-    mc_downscale_reldof(&x, &y, &z, x, y, z, false);
+    mc_downscale_reldof(&lx, &ly, &lz, lx, ly, lz, false);
+
+    // Proportionally scale rotation speeds so all have magnitude less than 1.0
+    float maxmag = vec_max_mag(lx, ly, lz);
+    maxmag = (maxmag > 1.0f) ? maxmag : 1.0f;
+    lx /= maxmag;
+    ly /= maxmag;
+    lz /= maxmag;
 
     // Calculate split pitch, roll, and yaw quaternions
     // Required to calculate speeds to change vehicle pitch and yaw
@@ -568,14 +589,14 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     mc_downscale_reldof(&xrot, &yrot, &zrot, xrot, yrot, zrot, true);
 
     // Proportionally scale rotation speeds so all have magnitude less than 1.0
-    float maxmag = vec_max_mag(xrot, yrot, zrot);
+    maxmag = vec_max_mag(xrot, yrot, zrot);
     maxmag = (maxmag > 1.0f) ? maxmag : 1.0f;
     xrot /= maxmag;
     yrot /= maxmag;
     zrot /= maxmag;
 
     // Set speeds
-    mc_set_local(x, y, z, xrot, yrot, zrot);
+    mc_set_local(lx, ly, lz, xrot, yrot, zrot);
 }
 
 void mc_sassist_tune_xrot(float kp, float ki, float kd, float limit, bool invert){
