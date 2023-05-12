@@ -333,6 +333,7 @@ static inline void quat_twist(quaternion_t *twist, quaternion_t *q, float d_x, f
     }
 }
 
+// Restrict angle to between -PI and PI radians or -180.0 and 180.0 degrees
 static inline float restrict_angle(float angle, bool isdeg){
     if(isdeg){
         while(angle > 180.0f){
@@ -370,7 +371,7 @@ static inline void euler_alt(euler_t *dest, euler_t *src){
     dest->yaw = restrict_angle(dest->yaw, dest->is_deg);
 }
 
-// Get element of vector with maximum magnitude
+// Get magnitude of largest magnitude element of vector
 static inline float vec_max_mag(float x, float y, float z){
     return MAX(fabsf(x), MAX(fabsf(y), fabsf(z)));
 }
@@ -380,7 +381,7 @@ static inline float vec_max_mag(float x, float y, float z){
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// Motor control
+/// Motor control Support
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Use mc_relscale factors to scale down speeds as needed
@@ -430,6 +431,63 @@ static inline void mc_upscale_vec(float  *dx, float *dy, float *dz, float sx, fl
     }
 }
 
+// Ensure all elements of s=<sx, sy, sz> have a magnitude of less than 1.0
+// Downscale proportionally to achieve this if necessary
+static inline void mc_downscale_if_needed(float *dx, float *dy, float *dz, float sx, float sy, float sz){
+    float maxmag = vec_max_mag(sx, sy, sz);
+    if(maxmag > 1.0f){
+        *dx = sx / maxmag;
+        *dy = sy / maxmag;
+        *dz = sz / maxmag;
+    }else{
+        *dx = sx;
+        *dy = sy;
+        *dz = sz;
+    }
+}
+
+// Given the vehicle's current orientation, construct a gravity vector
+// Then, get the angle between the gravity vector and "base" gravity vector
+// Return the angle from the base gravity vector to the current one
+static inline void mc_grav_rot(quaternion_t *qrot, quaternion_t *qcurr){
+    // Gravity vector component equations come from applying rotation matrix form to <0, 0, -1>
+    float grav_x = 2.0f * (-qcurr->x*qcurr->z + qcurr->w*qcurr->y);
+    float grav_y = 2.0f * (-qcurr->w*qcurr->x - qcurr->y*qcurr->z);
+    float grav_z = -qcurr->w*qcurr->w + qcurr->x*qcurr->x + qcurr->y*qcurr->y - qcurr->z*qcurr->z;
+    
+    // Make sure this is a unit vector
+    float grav_mag = sqrtf(grav_x*grav_x + grav_y*grav_y + grav_z*grav_z);
+    grav_x /= grav_mag;
+    grav_y /= grav_mag;
+    grav_z /= grav_mag;
+
+    // Get angle from <0, 0, -1> to <grav_x, grav_y, grav_z>
+    quat_between(qrot, 0.0f, 0.0f, -1.0f, grav_x, grav_y, grav_z);
+}
+
+// Convert the given quaternion to euler angles
+// Construct the alternate euler representation (improper)
+// Return the euler angle with minimal roll component
+static inline void mc_baseline_euler(euler_t *ebase, quaternion_t *qcurr){
+    euler_t e_orig, e_alt;
+    quat_to_euler(&e_orig, qcurr);
+    euler_alt(&e_alt, &e_orig);
+    *ebase = (fabsf(e_orig.roll) < fabsf(e_alt.roll)) ? e_orig : e_alt;
+}
+
+// Split euler e into three quaternions for pitch, roll, and yaw rotations seperately
+// Current orientation of vehicle qcurr = qyaw * qpitch * qroll using the Z-X'-Y'' convention
+static inline void mc_euler_to_split_quat(quaternion_t *qpitch, quaternion_t *qroll, quaternion_t *qyaw, euler_t e){
+    euler_t e_pitch = {.is_deg = e.is_deg, .pitch = e.pitch, .roll = 0.0f, .yaw = 0.0f};
+    euler_t e_roll = {.is_deg = e.is_deg, .pitch = 0.0f, .roll = e.roll, .yaw = 0.0f};
+    euler_t e_yaw = {.is_deg = e.is_deg, .pitch = 0.0f, .roll = 0.0f, .yaw = e.yaw};
+    euler_to_quat(qpitch, &e_pitch);
+    euler_to_quat(qroll, &e_roll);
+    euler_to_quat(qyaw, &e_yaw);
+}
+
+
+
 void mc_sassist_tune_xrot(float kp, float ki, float kd, float limit, bool invert){
     xrot_pid.kP = kp;
     xrot_pid.kI = ki;
@@ -465,6 +523,14 @@ void mc_sassist_tune_depth(float kp, float ki, float kd, float limit, bool inver
     depth_pid.min = -limit;
     depth_pid.invert = invert;
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Motor control
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void mc_set_raw(float *speeds){
     xSemaphoreTake(motor_mutex, portMAX_DELAY);   
@@ -535,19 +601,16 @@ void mc_set_local(float x, float y, float z, float xrot, float yrot, float zrot)
 }
 
 void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, float yaw_spd, quaternion_t curr_quat){
-    // Use gravity vector to transform translation to
-    float grav_x = 2.0f * (-curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);
-    float grav_y = 2.0f * (-curr_quat.w*curr_quat.x - curr_quat.y*curr_quat.z);
-    float grav_z = -curr_quat.w*curr_quat.w + curr_quat.x*curr_quat.x + curr_quat.y*curr_quat.y - curr_quat.z*curr_quat.z;
-    float grav_mag = sqrtf(grav_x*grav_x + grav_y*grav_y + grav_z*grav_z);
-    grav_x /= grav_mag;
-    grav_y /= grav_mag;
-    grav_z /= grav_mag;
+    // -----------------------------------------------------------------------------------------------------------------
+    // Translation
+    // -----------------------------------------------------------------------------------------------------------------
+    // Use gravity vectors to construct pitch and roll compensation quaternion
     quaternion_t qrot;
-    quat_between(&qrot, grav_x, grav_y, grav_z, 0.0f, 0.0f, -1.0f);
-    quat_inverse(&qrot, &qrot);
+    mc_grav_rot(&qrot, &curr_quat);
 
-    // Compute each translation component separately (allows proper up scaling)
+    // Compute each translation component separately and upscale
+    // Upscaling ensures largest magnitude of each component equals the speed of the component
+    // Note that tx, ty, and tz vectors are in vehicle DoFs
     float tx_x, tx_y, tx_z;
     rotate_vector(&tx_x, &tx_y, &tx_z, x, 0.0f, 0.0f, &qrot);
     mc_upscale_vec(&tx_x, &tx_y, &tx_z, tx_x, tx_y, tx_z, x);
@@ -569,29 +632,27 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     mc_downscale_reldof(&lx, &ly, &lz, lx, ly, lz, false);
 
     // Proportionally scale translation speeds so all have magnitude less than 1.0
-    float maxmag = vec_max_mag(lx, ly, lz);
-    maxmag = (maxmag > 1.0f) ? maxmag : 1.0f;
-    lx /= maxmag;
-    ly /= maxmag;
-    lz /= maxmag;
+    mc_downscale_if_needed(&lx, &ly, &lz, lx, ly, lz);
 
-    // Calculate split pitch, roll, and yaw quaternions
-    // Required to calculate speeds to change vehicle pitch and yaw
-    euler_t e_orig, e_alt;
-    quat_to_euler(&e_orig, &curr_quat);
-    euler_alt(&e_alt, &e_orig);
-    float e_orig_sum = fabsf(e_orig.roll);
-    float e_alt_sum = fabsf(e_alt.roll);
-    euler_t *e_min = (e_orig_sum < e_alt_sum) ? &e_orig : &e_alt;
-    euler_t e_pitch = {.is_deg = e_min->is_deg, .pitch = e_min->pitch, .roll = 0.0f, .yaw = 0.0f};
-    euler_t e_roll = {.is_deg = e_min->is_deg, .pitch = 0.0f, .roll = e_min->roll, .yaw = 0.0f};
-    euler_t e_yaw = {.is_deg = e_min->is_deg, .pitch = 0.0f, .roll = 0.0f, .yaw = e_min->yaw};
+    // -----------------------------------------------------------------------------------------------------------------
+
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Rotation
+    // -----------------------------------------------------------------------------------------------------------------
+
+    // Get split pitch, roll, and yaw quaternions
     quaternion_t q_pitch, q_roll, q_yaw;
-    euler_to_quat(&q_pitch, &e_pitch);
-    euler_to_quat(&q_roll, &e_roll);
-    euler_to_quat(&q_yaw, &e_yaw);
+    euler_t e_base;
+    mc_baseline_euler(&e_base, &curr_quat);
+    mc_euler_to_split_quat(&q_pitch, &q_roll, &q_yaw, e_base);
 
-    // w_roll = s_roll = <0, roll_spd, 0>
+    // Compute each rotation component seperately
+    // s_roll, s_pitch, s_yaw are in zero rotation frame
+    // Ie: s_yaw = <0, 0, yaw_spd> means rotation about world z to change vehicle yaw
+    // w_roll, w_pitch, w_yaw  are angular velocities in current vehicle frame
+
+    // Roll is already in vehicle frame (last rotation applied)
     float w_roll_y = roll_spd;
 
     // w_pitch = q_roll_inv * s_pitch * q_roll
@@ -625,11 +686,9 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     mc_downscale_reldof(&xrot, &yrot, &zrot, xrot, yrot, zrot, true);
 
     // Proportionally scale rotation speeds so all have magnitude less than 1.0
-    maxmag = vec_max_mag(xrot, yrot, zrot);
-    maxmag = (maxmag > 1.0f) ? maxmag : 1.0f;
-    xrot /= maxmag;
-    yrot /= maxmag;
-    zrot /= maxmag;
+    mc_downscale_if_needed(&xrot, &yrot, &zrot, xrot, yrot, zrot);
+
+    // -----------------------------------------------------------------------------------------------------------------
 
     // Set speeds
     mc_set_local(lx, ly, lz, xrot, yrot, zrot);
