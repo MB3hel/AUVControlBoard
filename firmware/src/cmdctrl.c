@@ -70,6 +70,13 @@
 #define SENSOR_DATA_PERIOD              20      // ms
 #define SPEED_PERIOD                    20      // ms
 
+
+// Restrict to range -1.0 to 1.0
+#define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
+
+// Restrict range to 0.0 to 1.0
+#define LIMIT_POS(v) if(v > 1.0f) v = 1.0f; if (v < 0.0f) v = 0.0f;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -543,13 +550,12 @@ void cmdctrl_handle_message(void){
             float zrot = conversions_data_to_float(&msg[26], true);
 
             // Restrict to 0.0 - 1.0
-            #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < 0.0f) v = 0.0f;
-            LIMIT(x);
-            LIMIT(y);
-            LIMIT(z);
-            LIMIT(xrot);
-            LIMIT(yrot);
-            LIMIT(zrot);
+            LIMIT_POS(x);
+            LIMIT_POS(y);
+            LIMIT_POS(z);
+            LIMIT_POS(xrot);
+            LIMIT_POS(yrot);
+            LIMIT_POS(zrot);
 
             // Linear scale DOWN factors
             //  x = min(x, y, z) / x
@@ -650,7 +656,6 @@ void cmdctrl_handle_message(void){
             local_zrot = conversions_data_to_float(&msg[25], true);
 
             // Ensure speeds are in valid range
-            #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
             LIMIT(local_x);
             LIMIT(local_y);
             LIMIT(local_z);
@@ -739,7 +744,6 @@ void cmdctrl_handle_message(void){
                 global_yaw_spd = conversions_data_to_float(&msg[26], true);
 
                 // Ensure speeds are in valid range
-                #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
                 LIMIT(global_x);
                 LIMIT(global_y);
                 LIMIT(global_z);
@@ -902,7 +906,6 @@ void cmdctrl_handle_message(void){
                 sassist_depth_target = conversions_data_to_float(&msg[28], true);
 
                 // Ensure speeds are in valid range
-                #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
                 LIMIT(sassist_x);
                 LIMIT(sassist_y);
                 LIMIT(sassist_yaw_spd);
@@ -966,7 +969,6 @@ void cmdctrl_handle_message(void){
                 sassist_depth_target = conversions_data_to_float(&msg[28], true);
 
                 // Ensure speeds are in valid range
-                #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
                 LIMIT(sassist_x);
                 LIMIT(sassist_y);
                 LIMIT(sassist_yaw_spd);
@@ -1030,7 +1032,6 @@ void cmdctrl_handle_message(void){
                 dhold_depth = conversions_data_to_float(&msg[25], true);
 
                 // Ensure speeds are in valid range
-                #define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f;
                 LIMIT(dhold_x);
                 LIMIT(dhold_y);
                 LIMIT(dhold_pitch_spd);

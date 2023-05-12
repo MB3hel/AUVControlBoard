@@ -46,6 +46,8 @@
 #define MC_RELSCALE_YROT                (mc_relscale[4])
 #define MC_RELSCALE_ZROT                (mc_relscale[5])
 
+#define MAX(a, b)   (a > b ? a : b)
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -370,7 +372,6 @@ static inline void euler_alt(euler_t *dest, euler_t *src){
 
 // Get element of vector with maximum magnitude
 static inline float vec_max_mag(float x, float y, float z){
-    #define MAX(a, b)   (a > b ? a : b)
     return MAX(fabsf(x), MAX(fabsf(y), fabsf(z)));
 }
 
@@ -403,7 +404,6 @@ static inline void mc_downscale_reldof(float *dx, float *dy, float *dz, float sx
     }
 
     // Rebalance scale factors so largest is 1.0f
-    #define MAX(a, b)   ((a > b) ? a : b)
     float maxscale = MAX(scale_x, MAX(scale_y, scale_z));
     scale_x /= maxscale;
     scale_y /= maxscale;
@@ -499,7 +499,7 @@ void mc_set_local(float x, float y, float z, float xrot, float yrot, float zrot)
 }
 
 void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, float yaw_spd, quaternion_t curr_quat){
-    // Use gravity vector to transform translation to 
+    // Use gravity vector to transform translation to
     float grav_x = 2.0f * (-curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);
     float grav_y = 2.0f * (-curr_quat.w*curr_quat.x - curr_quat.y*curr_quat.z);
     float grav_z = -curr_quat.w*curr_quat.w + curr_quat.x*curr_quat.x + curr_quat.y*curr_quat.y - curr_quat.z*curr_quat.z;
@@ -532,7 +532,7 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     // Compensate for differences in vehicle speed in different DoFs
     mc_downscale_reldof(&lx, &ly, &lz, lx, ly, lz, false);
 
-    // Proportionally scale rotation speeds so all have magnitude less than 1.0
+    // Proportionally scale translation speeds so all have magnitude less than 1.0
     float maxmag = vec_max_mag(lx, ly, lz);
     maxmag = (maxmag > 1.0f) ? maxmag : 1.0f;
     lx /= maxmag;
@@ -647,11 +647,6 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     float base_zrot = 0.0f;
 
     if(!yaw_target){
-        // euler_t curr_euler;
-        // quat_to_euler(&curr_euler, &curr_quat);
-        // euler_rad2deg(&curr_euler, &curr_euler);
-        // target_euler.yaw = curr_euler.yaw;
-
         quaternion_t curr_twist;
         quat_twist(&curr_twist, &curr_quat, 0, 0, 1);
         float curr_yaw = atan2f(-2.0f * (curr_twist.x*curr_twist.y - curr_twist.w*curr_twist.z), 1.0f - 2.0f * (curr_twist.x*curr_twist.x + curr_twist.z*curr_twist.z));
@@ -684,7 +679,6 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     euler_to_quat(&target_quat, &target_euler);
 
 
-    // TODO: Test this. Dev math.
     float dot;
     quat_dot(&dot, &curr_quat, &target_quat);
 
@@ -713,53 +707,17 @@ void mc_set_sassist(float x, float y, float yaw_spd,
         ax /= mag;
         ay /= mag;
         az /= mag;
-    }else{
-        // TODO: Maybe? Probably better to not?
-        // ax = 0.0f;
-        // ay = 0.0f;
-        // az = 0.0f;
     }
 
-    // TODO: This feels like it won't quite work in 3D
-    // maybe it does, but need to work out the math fully
-    // |theta| > 180.0 deg means we're trying to rotate the long way around
-    // This is not ideal.
-    // So fix it.
-    // if(theta > (float)M_PI){
-    //     theta -= M_PI;
-    //     theta -= M_PI;
-    // }
-    // if(theta < -((float)M_PI)){
-    //     theta += M_PI;
-    //     theta += M_PI;
-    // }
-
-    float ww_x = ax * theta;
-    float ww_y = ay * theta;
-    float ww_z = az * theta;
-
-    quaternion_t q_ww;
-    q_ww.w = 0.0f;
-    q_ww.x = ww_x;
-    q_ww.y = ww_y;
-    q_ww.z = ww_z;
-
-    // quaternion_t q_wv;
-    // quat_multiply(&q_wv, &curr_quat, &q_ww);
-
-    // float wv_x = q_wv.x;
-    // float wv_y = q_wv.y;
-    // float wv_z = q_wv.z;
-
-    float wv_x = ww_x;
-    float wv_y = ww_y;
-    float wv_z = ww_z;
+    float e_x = ax * theta;
+    float e_y = ay * theta;
+    float e_z = az * theta;
 
     // Use PID controllers to calculate current outputs
     float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
-    float xrot = pid_calculate(&xrot_pid, wv_x);
-    float yrot = pid_calculate(&yrot_pid, wv_y);
-    float zrot = pid_calculate(&zrot_pid, wv_z);
+    float xrot = pid_calculate(&xrot_pid, e_x);
+    float yrot = pid_calculate(&yrot_pid, e_y);
+    float zrot = pid_calculate(&zrot_pid, e_z);
 
     if(!yaw_target){
         // Need to add PID outputs to base speeds of vehicle
@@ -768,26 +726,15 @@ void mc_set_sassist(float x, float y, float yaw_spd,
         yrot += base_yrot;
         zrot += base_zrot;
 
-        // Proportionally scale speeds so all have magnitude less than 1.0
-        float maxmag = 1.0f;
-        float abspitch = fabsf(xrot);
-        if(abspitch > maxmag){
-            maxmag = abspitch;
-        }
-        float absroll = fabsf(yrot);
-        if(absroll > maxmag){
-            maxmag = absroll;
-        }
-        float absyaw = fabsf(zrot);
-        if(absyaw > maxmag){
-            maxmag = absyaw;
-        }
+        // Proportionally scale rotation speeds so all have magnitude less than 1.0
+        float maxmag = vec_max_mag(xrot, yrot, zrot);
+        maxmag = (maxmag > 1.0f) ? maxmag : 1.0f;
         xrot /= maxmag;
         yrot /= maxmag;
         zrot /= maxmag;
     }
 
-    // Apply same rotation as in GLOBAL mode to translation target
+    // Use gravity vector to transform translation to
     float grav_x = 2.0f * (-curr_quat.x*curr_quat.z + curr_quat.w*curr_quat.y);
     float grav_y = 2.0f * (-curr_quat.w*curr_quat.x - curr_quat.y*curr_quat.z);
     float grav_z = -curr_quat.w*curr_quat.w + curr_quat.x*curr_quat.x + curr_quat.y*curr_quat.y - curr_quat.z*curr_quat.z;
@@ -798,12 +745,38 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     quaternion_t qrot;
     quat_between(&qrot, grav_x, grav_y, grav_z, 0.0f, 0.0f, -1.0f);
     quat_inverse(&qrot, &qrot);
-    rotate_vector(&x, &y, &z, x, y, z, &qrot);
 
-    // TODO: Apply relscale in sassist
+    // Compute each translation component separately (allows proper up scaling)
+    float tx_x, tx_y, tx_z;
+    rotate_vector(&tx_x, &tx_y, &tx_z, x, 0.0f, 0.0f, &qrot);
+    mc_upscale_vec(&tx_x, &tx_y, &tx_z, tx_x, tx_y, tx_z, x);
+
+    float ty_x, ty_y, ty_z;
+    rotate_vector(&ty_x, &ty_y, &ty_z, 0.0f, y, 0.0f, &qrot);
+    mc_upscale_vec(&ty_x, &ty_y, &ty_z, ty_x, ty_y, ty_z, y);
+
+    float tz_x, tz_y, tz_z;
+    rotate_vector(&tz_x, &tz_y, &tz_z, 0.0f, 0.0f, z, &qrot);
+    mc_upscale_vec(&tz_x, &tz_y, &tz_z, tz_x, tz_y, tz_z, z);
+    
+    // Combine each translation component
+    float lx = tx_x + ty_x + tz_x;
+    float ly = tx_y + ty_y + tz_y;
+    float lz = tx_z + ty_z + tz_z;
+    
+    // Compensate for differences in vehicle speed in different DoFs
+    mc_downscale_reldof(&lx, &ly, &lz, lx, ly, lz, false);
+
+    // Proportionally scale translation speeds so all have magnitude less than 1.0
+    float maxmag = vec_max_mag(lx, ly, lz);
+    maxmag = (maxmag > 1.0f) ? maxmag : 1.0f;
+    lx /= maxmag;
+    ly /= maxmag;
+    lz /= maxmag;
+
 
     // Target motion now relative to the robot's axes
-    mc_set_local(x, y, z, xrot, yrot, zrot);
+    mc_set_local(lx, ly, lz, xrot, yrot, zrot);
 }
 
 void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth){
