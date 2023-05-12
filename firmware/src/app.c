@@ -147,7 +147,7 @@ void imu_task_func(void *argument){
 
     bno055_init();
     while(1){
-        if(!configured){
+        if(!configured && !sim_hijacked){
             // Configure IMU. Will succeed if IMU connected.
             configured = bno055_configure();
 
@@ -190,7 +190,7 @@ void depth_task_func(void *argument){
 
     ms5837_init();
     while(1){
-        if(!configured){
+        if(!configured && !sim_hijacked){
             // Configure sensor. Will succeed if sensor connected.
             configured = ms5837_configure();
 

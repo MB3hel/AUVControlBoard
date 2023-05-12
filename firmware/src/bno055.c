@@ -474,10 +474,11 @@ void bno055_reset_accum_euler(void){
 
 bool bno055_read(bno055_data *data){
     // Read Orientation Quaternion
+    // Ignore failure if sim_hijacked since real data wouldn't be used anyway
     trans.write_buf[0] = BNO055_QUATERNION_DATA_W_LSB_ADDR;
     trans.write_count = 1;
     trans.read_count = 8;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans) && !sim_hijacked)
         return false;
 
     if(sim_hijacked){

@@ -121,32 +121,64 @@ bool ms5837_read(ms5837_data *data){
     trans.write_buf[0] = MS5837_CMD_CONVERT_D1_OSR1024;
     trans.write_count = 1;
     trans.read_count = 0;
-    if(!ms5837_perform(&trans))
+    if(!ms5837_perform(&trans)){
+        if(sim_hijacked){
+            // Ignore read failures if sim hijacked
+            data->pressure_mbar = -999;
+            data->temperature_c = -999;
+            data->depth_m = sim_depth;
+            return true;
+        }
         return false;
+    }
     vTaskDelay(pdMS_TO_TICKS(20));          // Ensure conversion completes before reading ADC
 
     // Read ADC (D1 data)
     trans.write_buf[0] = MS5837_CMD_ADC_READ;
     trans.write_count = 1;
     trans.read_count = 3;
-    if(!ms5837_perform(&trans))
+    if(!ms5837_perform(&trans)){
+        if(sim_hijacked){
+            // Ignore read failures if sim hijacked
+            data->pressure_mbar = -999;
+            data->temperature_c = -999;
+            data->depth_m = sim_depth;
+            return true;
+        }
         return false;
+    }
     d1 = (trans.read_buf[0] << 16) | (trans.read_buf[1] << 8) | trans.read_buf[2];
 
     // Convert D2
     trans.write_buf[0] = MS5837_CMD_CONVERT_D2_OSR1024;
     trans.write_count = 1;
     trans.read_count = 0;
-    if(!ms5837_perform(&trans))
+    if(!ms5837_perform(&trans)){
+        if(sim_hijacked){
+            // Ignore read failures if sim hijacked
+            data->pressure_mbar = -999;
+            data->temperature_c = -999;
+            data->depth_m = sim_depth;
+            return true;
+        }
         return false;
+    }
     vTaskDelay(pdMS_TO_TICKS(20));          // Ensure conversion completes before reading ADC
 
     // Read ADC
     trans.write_buf[0] = MS5837_CMD_ADC_READ;
     trans.write_count = 1;
     trans.read_count = 3;
-    if(!ms5837_perform(&trans))
+    if(!ms5837_perform(&trans)){
+        if(sim_hijacked){
+            // Ignore read failures if sim hijacked
+            data->pressure_mbar = -999;
+            data->temperature_c = -999;
+            data->depth_m = sim_depth;
+            return true;
+        }
         return false;
+    }
     d2 = (trans.read_buf[0] << 16) | (trans.read_buf[1] << 8) | trans.read_buf[2];
 
     ////////////////////////////////////////////////////////////////////////////
@@ -209,7 +241,7 @@ bool ms5837_read(ms5837_data *data){
     if(sim_hijacked){
         // Use data from simulator not depth sensor
         data->pressure_mbar = -999;
-        data->pressure_mbar = -999;
+        data->temperature_c = -999;
         data->depth_m = sim_depth;
     }else{
         data->pressure_mbar = P / 10.0f;
