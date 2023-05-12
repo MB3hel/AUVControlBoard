@@ -60,6 +60,10 @@ class Vehicle(ABC):
         if ack != ControlBoard.AckError.NONE:
             return ack, "tune_sassist_zrot"
 
+        ack = cb.tune_sassist_depth(*self.depth_pid_tuning)
+        if ack != ControlBoard.AckError.NONE:
+            return ack, "tune_sassist_depth"
+
         return ControlBoard.AckError.NONE, ""
 
     @property
