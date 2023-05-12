@@ -430,6 +430,42 @@ static inline void mc_upscale_vec(float  *dx, float *dy, float *dz, float sx, fl
     }
 }
 
+void mc_sassist_tune_xrot(float kp, float ki, float kd, float limit, bool invert){
+    xrot_pid.kP = kp;
+    xrot_pid.kI = ki;
+    xrot_pid.kD = kd;
+    xrot_pid.max = limit;
+    xrot_pid.min = -limit;
+    xrot_pid.invert = invert;
+}
+
+void mc_sassist_tune_yrot(float kp, float ki, float kd, float limit, bool invert){
+    yrot_pid.kP = kp;
+    yrot_pid.kI = ki;
+    yrot_pid.kD = kd;
+    yrot_pid.max = limit;
+    yrot_pid.min = -limit;
+    yrot_pid.invert = invert;
+}
+
+void mc_sassist_tune_zrot(float kp, float ki, float kd, float limit, bool invert){
+    zrot_pid.kP = kp;
+    zrot_pid.kI = ki;
+    zrot_pid.kD = kd;
+    zrot_pid.max = limit;
+    zrot_pid.min = -limit;
+    zrot_pid.invert = invert;
+}
+
+void mc_sassist_tune_depth(float kp, float ki, float kd, float limit, bool invert){
+    depth_pid.kP = kp;
+    depth_pid.kI = ki;
+    depth_pid.kD = kd;
+    depth_pid.max = limit;
+    depth_pid.min = -limit;
+    depth_pid.invert = invert;
+}
+
 void mc_set_raw(float *speeds){
     xSemaphoreTake(motor_mutex, portMAX_DELAY);   
 
@@ -597,42 +633,6 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
 
     // Set speeds
     mc_set_local(lx, ly, lz, xrot, yrot, zrot);
-}
-
-void mc_sassist_tune_xrot(float kp, float ki, float kd, float limit, bool invert){
-    xrot_pid.kP = kp;
-    xrot_pid.kI = ki;
-    xrot_pid.kD = kd;
-    xrot_pid.max = limit;
-    xrot_pid.min = -limit;
-    xrot_pid.invert = invert;
-}
-
-void mc_sassist_tune_yrot(float kp, float ki, float kd, float limit, bool invert){
-    yrot_pid.kP = kp;
-    yrot_pid.kI = ki;
-    yrot_pid.kD = kd;
-    yrot_pid.max = limit;
-    yrot_pid.min = -limit;
-    yrot_pid.invert = invert;
-}
-
-void mc_sassist_tune_zrot(float kp, float ki, float kd, float limit, bool invert){
-    zrot_pid.kP = kp;
-    zrot_pid.kI = ki;
-    zrot_pid.kD = kd;
-    zrot_pid.max = limit;
-    zrot_pid.min = -limit;
-    zrot_pid.invert = invert;
-}
-
-void mc_sassist_tune_depth(float kp, float ki, float kd, float limit, bool invert){
-    depth_pid.kP = kp;
-    depth_pid.kI = ki;
-    depth_pid.kD = kd;
-    depth_pid.max = limit;
-    depth_pid.min = -limit;
-    depth_pid.invert = invert;
 }
 
 void mc_set_sassist(float x, float y, float yaw_spd,
