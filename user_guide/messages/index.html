@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://mb3hel.github.io/AUVControlBoard/user_guide/messages/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
     <title>Messages - AUV Control Board</title>
     <link rel="stylesheet" href="../../css/theme.css" />
@@ -14,7 +14,7 @@
         // Current page data
         var mkdocs_page_name = "Messages";
         var mkdocs_page_input_path = "user_guide/messages.md";
-        var mkdocs_page_url = null;
+        var mkdocs_page_url = "/AUVControlBoard/user_guide/messages/";
       </script>
     
     <script src="../../js/jquery-3.6.0.min.js" defer></script>
@@ -162,6 +162,12 @@ Thruster inversion set command is used to invert the positive and negative direc
 </code></pre>
 <p><code>[inv]</code>: A single byte where each bit represents the inversion status of a thruster. The MSB (bit 7) corresponds to thruster 8 and the LSB corresponds to thruster 1 (bit + 1 = thruster). A bit value of 1 means the thruster is inverted. A bit value of 0 means the thruster is not inverted.<br />
 This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<p><strong>Relative DoF Speed Set</strong><br />
+Used to set relative speeds of motion in each DoF. There are two groups: linear (x, y, z) and angular (xrot, yrot, zrot). Within each group, use 1.0 for the fastest DoF. Other DoFs in the group are percentages of the fastest speed (from -1.0 to 1.0). This message has the following format  </p>
+<pre><code class="language-none">'R', 'E', 'L', 'D', 'O', 'F', [x], [y], [z], [xrot], [yrot], [zrot]
+</code></pre>
+<p><code>[x]</code>, <code>[y]</code>, <code>[z]</code>, <code>[xrot]</code>, <code>[yrot]</code>, <code>[zrot]</code>: 32-bit little endian floats.<br />
+This message will be acknowledged. The acknowledge message will contain no result data.</p>
 <p><strong>BNO055 IMU Axis Configure Command</strong><br />
 Used to configure the BNO055 IMU's axis orientation. <em>Note: This will also reset the accumulated euler angles to zero</em>.  </p>
 <pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'A', [config]
@@ -172,7 +178,7 @@ This message will be acknowledged. The acknowledge message will contain no resul
 Used to tune stability assist mode PID controllers (note that the depth PID is also used for depth hold mode). It has the following format  </p>
 <pre><code class="language-none">'S', 'A', 'S', 'S', 'I', 'S', 'T', 'T', 'N', [which], [kp], [ki], [kd], [limit], [invert]
 </code></pre>
-<p><code>[which]</code> indicates which PID to tune ('P' = pitch hold, 'R' = roll hold, 'Y' = yaw hold, 'D' = depth hold).<br />
+<p><code>[which]</code> indicates which PID to tune ('X' = xrot, 'Y' = yrot, 'Z' = zrot, 'D' = depth hold).<br />
 <code>[kp]</code>, <code>[ki]</code>, <code>[kd]</code> are proportional, integral, derivative, and feed-forward gains (32-bit float little endian).<br />
 <code>[limit]</code> Is the PID controller's max output (limits max speed in the controlled DoF). Must be between 0.0 and 1.0. 32-bit float little endian.<br />
 <code>[invert]</code> Set to one to invert PID output. Zero otherwise.</p>
@@ -185,37 +191,38 @@ Used to set motor speeds in <code>RAW</code> mode. This command has the followin
 This message will be acknowledged. The acknowledge message will contain no result data.</p>
 <p><strong>Local Speed Set</strong><br />
 Used to set motor speeds in <code>LOCAL</code> mode. This command has the following format  </p>
-<pre><code class="language-none">'L', 'O', 'C', 'A', 'L', [x], [y], [z], [pitch], [roll], [yaw]
+<pre><code class="language-none">'L', 'O', 'C', 'A', 'L', [x], [y], [z], [xrot], [yrot], [zrot]
 </code></pre>
-<p><code>[x]</code>, <code>[y]</code>, <code>[z]</code>, <code>[pitch]</code>, <code>[roll]</code>, <code>[yaw]</code>: Speed for each DoF relative to the robot -1.0 to 1.0. A 32-bit float (little endian).<br />
+<p><code>[x]</code>, <code>[y]</code>, <code>[z]</code>, <code>[xrot]</code>, <code>[yrot]</code>, <code>[zrot]</code>: Speed for each DoF relative to the robot -1.0 to 1.0. A 32-bit float (little endian).<br />
 This message will be acknowledged. The acknowledge message will contain no result data.</p>
 <p><strong>Global Speed Set</strong><br />
 Used to set motor speeds in <code>GLOBAL</code> mode. This command has the following format  </p>
-<pre><code class="language-none">'G', 'L', 'O', 'B', 'A', 'L', [x], [y], [z], [pitch], [roll], [yaw]
+<pre><code class="language-none">'G', 'L', 'O', 'B', 'A', 'L', [x], [y], [z], [pitch_spd], [roll_spd], [yaw_spd]
 </code></pre>
-<p><code>[x]</code>, <code>[y]</code>, <code>[z]</code>, <code>[pitch]</code>, <code>[roll]</code>, <code>[yaw]</code>: Speed for each DoF relative to the world (pitch and roll compensated; not yaw compensated) -1.0 to 1.0. A 32-bit float (little endian).<br />
+<p><code>[x]</code>, <code>[y]</code>, <code>[z]</code>: Speed for each "world-relative" (pitch and roll compensated) DoF -1.0 to 1.0. 32-bit float (little endian).<br />
+<code>[pitch_spd]</code>, <code>[roll_spd]</code>, <code>[yaw_spd]</code>: Rate of change of vehicle pitch, roll, and yaw -1.0 to 1.0.<br />
 This message will be acknowledged. The acknowledge message will contain no result data. Note that if the IMU is not working properly, this command will be acknowledged with the "Invalid Command" error code. <em>This can occur if the axis config of the IMU is changed immediately before issuing this command.</em></p>
 <p><strong>Stability Assist Speed Set (Variant 1)</strong><br />
 Used to set motor speeds in <code>STABILITY_ASSIST</code> mode using a speed for yaw. This command has the following format  </p>
-<pre><code class="language-none">'S', 'A', 'S', 'S', 'I', 'S', 'T', 'S', 'T', '1', [x], [y], [yaw], [target_pitch], [target_roll], [target_depth]
+<pre><code class="language-none">'S', 'A', 'S', 'S', 'I', 'S', 'T', 'S', 'T', '1', [x], [y], [yaw_spd], [target_pitch], [target_roll], [target_depth]
 </code></pre>
 <p>Each value is a 32-bit float little endian.</p>
 <p>Pitch and roll are euler angles (in degrees). These are intrinsic euler angles (z-x'-y'' convention per the control board's coordinate system).</p>
 <p>Depth is in meters where negative numbers are below the surface.</p>
-<p>x, y, and yaw are speeds in the x, y, and yaw DoFs the same as in <code>GLOBAL</code> mode.</p>
+<p>x, y, and yaw_spd are x, y, and yaw_spd just as in global mode.</p>
 <p>This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. <em>This can occur if the axis config of the IMU is changed immediately before issuing this command.</em></p>
 <p><strong>Stability Assist Speed Set (Variant 2)</strong><br />
 Used to set motor speeds in <code>STABILITY_ASSIST</code> mode using a PID to maintain a target yaw. This command has the following format  </p>
 <pre><code class="language-none">'S', 'A', 'S', 'S', 'I', 'S', 'T', 'S', 'T', '2', [x], [y], [target_pitch], [target_roll], [target_yaw], [target_depth]
 </code></pre>
 <p>Each value is a 32-bit float little endian. </p>
-<p>Pitch, roll, and yaw are euler angles (in degrees). These are intrinsic euler angles (z-x'-y'' convention per the control board's coordinate system).</p>
+<p>Target Pitch, roll, and yaw are euler angles (in degrees). These are intrinsic euler angles (z-x'-y'' convention per the control board's coordinate system).</p>
 <p>Depth is in meters where negative numbers are below the surface.</p>
 <p>x and y are speeds in the x and y DoFs the same as in <code>GLOBAL</code> mode.</p>
 <p>This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. <em>This can occur if the axis config of the IMU is changed immediately before issuing this command.</em></p>
 <p><strong>Depth Hold Speed Set</strong><br />
 Used to set motor speeds in <code>DEPTH_HOLD</code> mode. This command has the following format  </p>
-<pre><code class="language-none">'D', 'H', 'O', 'L', 'D', [x], [y], [pitch], [roll], [yaw], [target_depth]
+<pre><code class="language-none">'D', 'H', 'O', 'L', 'D', [x], [y], [pitch_spd], [roll_spd], [yaw_spd], [target_depth]
 </code></pre>
 <p>Each value is a 32-bit float. Everything except <code>[target_depth]</code> is a speed (same as GLOBAL mode speeds). Target depth is in meters (negative for below surface).</p>
 <h3 id="other-commands">Other Commands</h3>
@@ -241,6 +248,12 @@ This command is used to rest the control board itself. This will reset the micro
 <pre><code class="language-none">'R', 'E', 'S', 'E', 'T', 0x0D, 0x1E
 </code></pre>
 <p>This message is <strong>not</strong> acknowledged.</p>
+<p><strong>Simulator Hijack Command</strong><br />
+This command is used by the simulator to hijack a real control board. This allows the simulator to pass certain information to and receive certain information from the control board. This enables testing of the actual firmware and reproducing bugs under simulation. The command as the following format.  </p>
+<pre><code class="language-none">'S', 'I', 'M', 'H', 'I', 'J', 'A', 'C', 'K', [hijack]
+</code></pre>
+<p><code>[hijack]</code> is an 8-bit integer (unsigned) with a value of 1 or 0. If 1, the control board is put into simulator hijack mode. If 0, it is removed from simulator hijack mode.<br />
+This message will be acknowledged. The acknowledge message will contain no result data.</p>
 <hr />
 
 <h2 id="queries">Queries</h2>
