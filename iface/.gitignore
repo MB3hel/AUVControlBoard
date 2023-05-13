@@ -1,2 +1,4 @@
 __pycache__/
 scripts/test*.py
+scripts/*
+!scripts/notempty
