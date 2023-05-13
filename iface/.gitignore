@@ -1,5 +1,5 @@
 __pycache__/
 scripts/test*.py
 scripts/*
-!scripts/.notempty
+!scripts/template.py
 user_vehicles.py

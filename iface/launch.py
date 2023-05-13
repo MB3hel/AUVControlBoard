@@ -79,7 +79,7 @@ def main():
     parser.add_argument("-q", dest="quiet", action="store_true", help="Suppress debug log from control board.")
     parser.add_argument("-v", dest="vehicle", metavar="vehicle", type=str, default=default_vehicle, choices=vehicles, 
                         help="Choose a vehicle configuration to apply. Choices: {0}. Default: {1}.".format(vehicles, default_vehicle))
-    parser.add_argument("script", type=str, help="Name of script to run. Must be a .py script in same directory with a run() function")
+    parser.add_argument("script", type=str, help="Name of script to run. Must be a .py script in the same directory as launch.py or a subdirectory (relative paths only).")
     args = parser.parse_args()
 
 
