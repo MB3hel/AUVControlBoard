@@ -786,10 +786,10 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     if(fabsf(pid_target_depth - target_depth) > 0.01){
         PID_RESET(depth_pid);
     }
-    if(fabsf(target_quat.w - pid_target_quat.w) > 0.01 || 
-            fabsf(target_quat.x - pid_target_quat.x) > 0.01 ||
-            fabsf(target_quat.y - pid_target_quat.y) > 0.01 ||
-            fabsf(target_quat.z - pid_target_quat.z) > 0.01){
+    if(fabsf(target_quat.w - pid_target_quat.w) > 1e-4 || 
+            fabsf(target_quat.x - pid_target_quat.x) > 1e-4 ||
+            fabsf(target_quat.y - pid_target_quat.y) > 1e-4 ||
+            fabsf(target_quat.z - pid_target_quat.z) > 1e-4){
         PID_RESET(xrot_pid);
         PID_RESET(yrot_pid);
         PID_RESET(zrot_pid);
