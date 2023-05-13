@@ -20,8 +20,8 @@
 # IF ADDING VEHICLE CLASSES HERE, ADD TO THE "vehicles" DICT IN launch.py
 ################################################################################
 # Author: Marcus Behel
-# Date: May 10, 2023
-# Version: 1.0.0
+# Date: May 12, 2023
+# Version: 1.0.3
 ################################################################################
 
 

@@ -21,8 +21,8 @@
 # the simulator and invokes the test script with instantiated objects.
 ################################################################################
 # Author: Marcus Behel
-# Date: May 10, 2023
-# Version: 1.0.0
+# Date: May 12, 2023
+# Version: 1.0.3
 ################################################################################
 
 import argparse
