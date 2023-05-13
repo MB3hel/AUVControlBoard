@@ -111,9 +111,9 @@ void mc_set_raw(float *speeds);
  * @param x Speed in +x translation DoF (-1.0 to +1.0)
  * @param y Speed in +y translation DoF (-1.0 to +1.0)
  * @param z Speed in +z translation DoF (-1.0 to +1.0)
- * @param xrot Angular speed about x (-1.0 to +1.0)
- * @param yrot Angular speed about y (-1.0 to +1.0)
- * @param zrot Angular speed about z (-1.0 to +1.0)
+ * @param xrot Angular speed about x (-1.o to +1.0)
+ * @param yrot Angular speed about y (-1.o to +1.0)
+ * @param zrot Angular speed about z (-1.o to +1.0)
  */
 void mc_set_local(float x, float y, float z, float xrot, float yrot, float zrot);
 
@@ -123,9 +123,9 @@ void mc_set_local(float x, float y, float z, float xrot, float yrot, float zrot)
  * @param x Speed in +x translation DoF (-1.0 to +1.0)
  * @param y Speed in +y translation DoF (-1.0 to +1.0)
  * @param z Speed in +z translation DoF (-1.0 to +1.0)
- * @param pitch_spd Rate of change of vehicle pitch (-1.0 to +1.0)
- * @param roll_spd Rate of change of vehicle roll (-1.0 to +1.0)
- * @param yaw_spd Rate of change of vehicle yaw (-1.0 to +1.0)
+ * @param pitch_spd Rate of change of vehicle pitch (-1.o to +1.0)
+ * @param roll_spd Rate of change of vehicle roll (-1.o to +1.0)
+ * @param yaw_spd Rate of change of vehicle yaw (-1.o to +1.0)
  * @param curr_quat Current orientation quaternion from IMU
  */
 void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, float yaw_spd, quaternion_t curr_quat);
@@ -165,25 +165,3 @@ void mc_set_sassist(float x, float y, float yaw_spd,
  * @param curr_depth Current depth in meters
  */
 void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth);
-
-/**
- * Set motor speeds in LOCAL_DEPTH_HOLD mode. Similar to DHOLD mode, but DoFs are local to vehicle.
- * However, the depth hold will cause motion along the global Z axis. This will result in a baseline speed
- * in any of the translation DoFs (x, y, z).
- * It is possible that user-set speeds (x, y, z) will fight or counteract the PIDs efforts. Be careful!
- * The SASSIST depth PID is used for depth hold in this mode.
- * 
- * THIS MODE IS MOSTLY INTENDED AS A DEBUG FALLBACK AND NOT RECOMMENDED FOR NORMAL USE!
- * 
- * All DoFs are vehicle relative (LOCAL mode equivalents)
- * @param x Speed in +x translation DoF (-1.0 to 1.0)
- * @param y Speed in +y translation DoF (-1.0 to 1.0)
- * @param z Speed in +z translation DoF (-1.0 to 1.0)
- * @param xrot Angular speed about x (-1.0 to +1.0)
- * @param yrot Angular speed about y (-1.0 to +1.0)
- * @param zrot Angular speed about z (-1.0 to +1.0)
- * @param target_depth Desired depth in meters
- * @param curr_quat Current orientation quaternion from IMU
- * @param curr_depth Current depth in meters
- */
-void mc_set_ldhold(float x, float y, float z, float xrot, float yrot, float zrot, float target_depth, quaternion_t curr_quat, float curr_depth);
