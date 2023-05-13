@@ -2,67 +2,77 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://mb3hel.github.io/AUVControlBoard/</loc>
-         <lastmod>2023-05-12</lastmod>
+         <lastmod>2023-05-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://mb3hel.github.io/AUVControlBoard/none/</loc>
-         <lastmod>2023-05-12</lastmod>
+         <lastmod>2023-05-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://mb3hel.github.io/AUVControlBoard/firmware/build/</loc>
-         <lastmod>2023-05-12</lastmod>
+         <lastmod>2023-05-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://mb3hel.github.io/AUVControlBoard/firmware/developing/</loc>
-         <lastmod>2023-05-12</lastmod>
+         <lastmod>2023-05-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://mb3hel.github.io/AUVControlBoard/firmware/math/</loc>
-         <lastmod>2023-05-12</lastmod>
+         <lastmod>2023-05-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://mb3hel.github.io/AUVControlBoard/firmware/overview/</loc>
-         <lastmod>2023-05-12</lastmod>
+         <lastmod>2023-05-13</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://mb3hel.github.io/AUVControlBoard/firmware/simhijack/</loc>
+         <lastmod>2023-05-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://mb3hel.github.io/AUVControlBoard/hardware/sensors/</loc>
-         <lastmod>2023-05-12</lastmod>
+         <lastmod>2023-05-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://mb3hel.github.io/AUVControlBoard/hardware/v1/</loc>
-         <lastmod>2023-05-12</lastmod>
+         <lastmod>2023-05-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://mb3hel.github.io/AUVControlBoard/hardware/v2/</loc>
-         <lastmod>2023-05-12</lastmod>
+         <lastmod>2023-05-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://mb3hel.github.io/AUVControlBoard/user_guide/comm_protocol/</loc>
-         <lastmod>2023-05-12</lastmod>
+         <lastmod>2023-05-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://mb3hel.github.io/AUVControlBoard/user_guide/general_use/</loc>
-         <lastmod>2023-05-12</lastmod>
+         <lastmod>2023-05-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://mb3hel.github.io/AUVControlBoard/user_guide/messages/</loc>
-         <lastmod>2023-05-12</lastmod>
+         <lastmod>2023-05-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://mb3hel.github.io/AUVControlBoard/user_guide/preparing_board/</loc>
-         <lastmod>2023-05-12</lastmod>
+         <lastmod>2023-05-13</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://mb3hel.github.io/AUVControlBoard/user_guide/simulator/</loc>
+         <lastmod>2023-05-13</lastmod>
          <changefreq>daily</changefreq>
     </url>
 </urlset>

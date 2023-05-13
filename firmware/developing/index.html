@@ -85,7 +85,11 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#development-using-vscode">Development using VSCode</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#development-using-the-simulator">Development using the Simulator</a>
+    </li>
     </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../simhijack/">Simulation Support</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">User Guide</span></p>
@@ -93,6 +97,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="../../user_guide/preparing_board/">Preparing a Control Board</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../user_guide/general_use/">Using Control board</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/simulator/">Using the Simulator</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../user_guide/comm_protocol/">Communication Protocol</a>
                   </li>
@@ -150,8 +156,9 @@
 </tr>
 </tbody>
 </table>
-<p>&ast;There is a firmware for a Raspberry Pi Pico to turn it into a CMSIS-DAP debugger. This is a variant of the Picoprobe firmware.</p>
+<p>&ast;The PicoProbe firmware can be used to turn a low cost Raspberry Pi Pico board into a CMSIS-DAP debugger.</p>
 <p><em>Note that <a href="https://openocd.org/">OpenOCD</a> must be installed and in the <code>PATH</code>.</em></p>
+<p><strong><em>Note: NEVER power the system from both the debug probe and USB at the same time. Generally, power the system over USB and do not connect the power (3.3V) from the debug probe. Signals and GND must be connected from the debug probe.</em></strong></p>
 <h2 id="generator-projects">Generator Projects</h2>
 <p>Each version of ControlBoard has an associated "Generator" project. These are projects used with the chip manufacturer's tools to generate startup / configuration / library code for the chip.</p>
 <p><em>Note: If you are just building the firmware you do not need to understand the generator projects. The necessary portions of each project are copied to the <code>thirdparty</code> folder. These are used for building. The generator projects are only used if something that was generated needs to be changed (or something new needs to be generated).</em></p>
@@ -159,7 +166,7 @@
 <p>The decision to use generator projects comes down to the following</p>
 <ol>
 <li>
-<p>There are multiple versions of Control Board with multiple chips. Using generators to create chip-specific initialization code reduces the chip-specific versions of the firmware that must be written / maintained.</p>
+<p>There are multiple versions of Control Board with multiple chips. Using generators to create chip-specific initialization code reduces the chip-specific parts of the firmware that must be written / maintained.</p>
 </li>
 <li>
 <p>The generators are often required to use the manufacturer's HAL (or make using the HAL much easier). Use of the manufacturer's HAL / libraries reduces development time and makes maintenance easier (especially for those less familiar with the codebase).</p>
@@ -195,12 +202,31 @@
 <h2 id="development-using-vscode">Development using VSCode</h2>
 <p>Install the <code>C/C++</code> and <code>CMake Tools</code> extensions, then open this folder in VSCode. Choose one of the configure presets on the bottom bar. Then, choose a build preset. Finally, click build.</p>
 <p>To debug, install the <code>Cortex-Debug</code> extension in VSCode. Copy <code>tools/debug/launch.json</code> to <code>.vscode</code>. <em>MAKE SURE TO BUILD DEBUG CONFIG BEFORE LAUNCHING DEBUG SESSION. IT WILL NOT BUILD AUTOMATICALLY.</em></p>
+<h2 id="development-using-the-simulator">Development using the Simulator</h2>
+<p>The <a href="https://github.com/MB3hel/GodotAUVSim">simulator</a> can be very helpful for developing or debugging firmware. The simulator is capable of connecting to a real control board, thus the firmware can be tested in simulation. Note that the simulator also offers a simulated control board (simcb), but this is not what we want in this case. The simulated control board does not use a real control board / firmware. Testing with the simulator can also be done while the control board firmware is running with a debugger attached.</p>
+<p>To test with the simulator (your development system will need the simulator running and two USB ports are required)</p>
+<ul>
+<li>Connect the control board to your PC via USB</li>
+<li>Connect a debug probe to the control board (do <strong>NOT</strong> connect power)</li>
+<li>Build and run the firmware under debugger</li>
+<li>In the simulator, choose the UART port for the control board</li>
+<li>Interface scripts can be run as usual using <code>launch.py</code>, but add the <code>-s</code> flag so it will connect to the simulator instead of the physical control board.</li>
+</ul>
+<p>In the setup described above, the simulator connects to and uses the control board. The interface scripts connect to the simulator. The simulator forwards messages from interface scripts to control board and vice versa. The simulator provides simulated sensor data to the control board and the control board provides the simulator with thruster motions.</p>
+<p>There are a few things to not about the simulation</p>
+<ul>
+<li>It does increase traffic over control board UART / USB significantly (shouldn't cause issues, but something to be aware of for debugging purposes)</li>
+<li>Sensor data is provided by the simulator, thus sensors will report ready even if not connected.</li>
+<li>If real sensors are connected, they will be read as normal, however the data will be ignored and simulated data used instead. This allows connecting sensors to create more realistic test scenarios (timing and scheduling wise).</li>
+<li>When controlled by the simulator, the control board will not generate PWM signals on thruster pins. The thruster pins will maintain a pulse corresponding to no motion.</li>
+<li>IMU axis configuration has no effect in the simulator (though the command will still be acknowledged)</li>
+</ul>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="../math/" class="btn btn-neutral float-left" title="Math"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../../user_guide/preparing_board/" class="btn btn-neutral float-right" title="Preparing a Control Board">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../simhijack/" class="btn btn-neutral float-right" title="Simulation Support">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -230,7 +256,7 @@
       <span><a href="../math/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../../user_guide/preparing_board/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../simhijack/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
