@@ -2,3 +2,4 @@ __pycache__/
 scripts/test*.py
 scripts/*
 !scripts/.notempty
+user_vehicles.py

@@ -26,19 +26,26 @@
 ################################################################################
 
 import argparse
+import textwrap
 import sys
 import os
 from control_board import ControlBoard, Simulator
 import importlib
 from serial import SerialException
+
+#####################################
+# KEEP THESE AND IN THIS ORDER!!!
 import vehicle
+if os.path.exists(os.path.join(os.path.dirname(__file__), "user_vehicles.py")):
+    import user_vehicles
+#####################################
+
+from vehicle import Vehicle, all_vehicles, default_vehicle
 from typing import Dict, Tuple
 
-# Each vehicle has a "normal" and "simulation" variant
-vehicles: Dict[str, Tuple[vehicle.Vehicle, vehicle.Vehicle]] = {
-    "sw8": (vehicle.SW8(), vehicle.SW8Sim()),       # AquaPack Robotics's SeaWolf VIII
-}
-default_vehicle = "sw8"
+
+# List of keys
+vehicles = []
 
 
 def configure_vehicle(cb: ControlBoard, vehicle: str, sim: bool) -> bool:
@@ -47,7 +54,7 @@ def configure_vehicle(cb: ControlBoard, vehicle: str, sim: bool) -> bool:
     if vehicle not in vehicles:
         print("  Failed. Unknown vehicle: '{0}'.".format(vehicle))
         return False
-    vehicle_tuple = vehicles[vehicle]
+    vehicle_tuple = all_vehicles[vehicle]
     if sim:
         vehicle_obj = vehicle_tuple[1]
     else:
@@ -61,14 +68,17 @@ def configure_vehicle(cb: ControlBoard, vehicle: str, sim: bool) -> bool:
 
 
 def main():
-    global vehicles, default_vehicle
+    global vehicles
+    vehicles = list(all_vehicles.keys())
+
     # Parse arguments
     parser = argparse.ArgumentParser(description="Interface script launcher")
     parser.add_argument("-s", dest="sim", action="store_true", help="Run via simulator")
     parser.add_argument("-p", dest="port", type=str, default="", help="Serial port to use (ignored with -s). Defaults to /dev/ttyACM0.")
     parser.add_argument("-d", dest="debug", action="store_true", help="Enable debug messages")
     parser.add_argument("-q", dest="quiet", action="store_true", help="Suppress debug log from control board.")
-    parser.add_argument("-v", dest="vehicle", metavar="vehicle", type=str, default=default_vehicle, choices=list(vehicles.keys()), help="Choose a vehicle configuration to apply. Defaults to 'sw8'.")
+    parser.add_argument("-v", dest="vehicle", metavar="vehicle", type=str, default=default_vehicle, choices=vehicles, 
+                        help="Choose a vehicle configuration to apply. Choices: {0}. Default: {1}.".format(vehicles, default_vehicle))
     parser.add_argument("script", type=str, help="Name of script to run. Must be a .py script in same directory with a run() function")
     args = parser.parse_args()
 

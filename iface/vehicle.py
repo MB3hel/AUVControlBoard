@@ -25,10 +25,32 @@
 ################################################################################
 
 
+from collections import OrderedDict
 from control_board import ControlBoard
 from abc import ABC, abstractmethod
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
+# Collection of all vehicles
+all_vehicles: OrderedDict[str, Tuple['Vehicle', 'Vehicle']] = OrderedDict()
+
+default_vehicle = ""
+
+# Register a vehicle after making it's classes
+def register_vehicle(name: str, normal: 'Vehicle', sim: 'Vehicle'):
+    global default_vehicle
+    if len(all_vehicles) == 0:
+        default_vehicle = name
+    all_vehicles[name] = (normal, sim)
+
+# Set the default vehicle
+def set_default_vehicle(name: str):
+    global default_vehicle
+    default_vehicle = name
+
+
+################################################################################
+# Vehicle base class
+################################################################################
 
 class Vehicle(ABC):
     def configure(self, cb: ControlBoard) -> Tuple[ControlBoard.AckError, str]:
@@ -106,6 +128,12 @@ class Vehicle(ABC):
     def depth_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
         pass
 
+################################################################################
+
+
+################################################################################
+# AquaPack Robotics's SeaWolf VIII
+################################################################################
 
 class SW8(Vehicle):
     @property
@@ -193,3 +221,8 @@ class SW8Sim(SW8):
     def depth_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
         #       kP      kI      kD      lim     invert
         return  1.5,    0.0,    0.0,    1.0,    False
+
+
+register_vehicle("sw8", SW8(), SW8Sim())
+
+################################################################################
