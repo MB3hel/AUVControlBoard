@@ -14,10 +14,15 @@ cd "$DIR"
 # Base directory structure
 rm -rf package/
 mkdir package/
-mkdir package/build/
-mkdir package/build/v1/
-mkdir package/build/v2/
-mkdir package/python/
+mkdir package/firmware/
+mkdir package/firmware/tools/
+mkdir package/firmware/build/
+mkdir package/firmware/build/v1/
+mkdir package/firmware/build/v2/
+mkdir package/firmware/source/
+mkdir package/iface/
+mkdir package/iface/scripts/
+mkdir package/iface/example/
 
 # Write version file
 echo "$VERSION" > package/version.txt
@@ -32,13 +37,24 @@ cmake --build --preset v2-release
 cd ..
 
 # Copy firmware files
-cp -r firmware/build/v1/Release/ package/build/v1/
-cp -r firmware/build/v2/Release/ package/build/v2/
-cp firmware/flash.py package/
-cp firmware/reboot_bootloader.py package/
+cp -r firmware/build/v1/Release/ package/firmware/build/v1/
+cp -r firmware/build/v2/Release/ package/firmware/build/v2/
+cp firmware/flash.py package/firmware/
+cp firmware/reboot_bootloader.py package/firmware/
+cp firmware/COPYING package/firmware/
+cp -r firmware/tools/uf2conv/ package/firmware/tools/
+
+cp -r firmware/src/ package/firmware/source/
+cp -r firmware/include/ package/firmware/source/
+cp -r firmware/thirdparty/ package/firmware/source/
+cp firmware/CMakeLists.txt package/firmware/source/
+cp firmware/CMakePresets.json package/firmware/source/
 
 # Copy Python interface code
-cp iface/control_board.py package/python/
+cp iface/*.py package/iface/
+cp iface/scripts/*.py package/iface/scripts/
+cp iface/example/*.py package/iface/example/
+cp iface/COPYING package/iface/COPYING
 
 # Create docs site
 cd docs
