@@ -60,37 +60,6 @@ void mc_recalc(void);
  */
 bool mc_wdog_feed(void);
 
-
-/**
- * Set motor speeds in RAW mode
- * @param speeds Array of 8 speeds (for each thruster). From -1.0 to 1.0
- */
-void mc_set_raw(float *speeds);
-
-/**
- * Set motor speeds in LOCAL mode. Target speeds are in DoFs relative to robot, not world
- * @param x Speed in +x translation DoF (-1.0 to +1.0)
- * @param y Speed in +y translation DoF (-1.0 to +1.0)
- * @param z Speed in +z translation DoF (-1.0 to +1.0)
- * @param xrot Angular speed about x (-1.o to +1.0)
- * @param yrot Angular speed about y (-1.o to +1.0)
- * @param zrot Angular speed about z (-1.o to +1.0)
- */
-void mc_set_local(float x, float y, float z, float xrot, float yrot, float zrot);
-
-/**
- * Set motor speeds in GLOBAL mode.
- * x, y, and z DoFs are pitch and roll compensated
- * @param x Speed in +x translation DoF (-1.0 to +1.0)
- * @param y Speed in +y translation DoF (-1.0 to +1.0)
- * @param z Speed in +z translation DoF (-1.0 to +1.0)
- * @param pitch_spd Rate of change of vehicle pitch (-1.o to +1.0)
- * @param roll_spd Rate of change of vehicle roll (-1.o to +1.0)
- * @param yaw_spd Rate of change of vehicle yaw (-1.o to +1.0)
- * @param curr_quat Current orientation quaternion from IMU
- */
-void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, float yaw_spd, quaternion_t curr_quat);
-
 /**
  * Tune stability assist mode x rotation pid
  * @param kp Proportional gain
@@ -132,6 +101,36 @@ void mc_sassist_tune_zrot(float kp, float ki, float kd, float limit, bool invert
 void mc_sassist_tune_depth(float kp, float ki, float kd, float limit, bool invert);
 
 /**
+ * Set motor speeds in RAW mode
+ * @param speeds Array of 8 speeds (for each thruster). From -1.0 to 1.0
+ */
+void mc_set_raw(float *speeds);
+
+/**
+ * Set motor speeds in LOCAL mode. Target speeds are in DoFs relative to robot, not world
+ * @param x Speed in +x translation DoF (-1.0 to +1.0)
+ * @param y Speed in +y translation DoF (-1.0 to +1.0)
+ * @param z Speed in +z translation DoF (-1.0 to +1.0)
+ * @param xrot Angular speed about x (-1.o to +1.0)
+ * @param yrot Angular speed about y (-1.o to +1.0)
+ * @param zrot Angular speed about z (-1.o to +1.0)
+ */
+void mc_set_local(float x, float y, float z, float xrot, float yrot, float zrot);
+
+/**
+ * Set motor speeds in GLOBAL mode.
+ * x, y, and z DoFs are pitch and roll compensated
+ * @param x Speed in +x translation DoF (-1.0 to +1.0)
+ * @param y Speed in +y translation DoF (-1.0 to +1.0)
+ * @param z Speed in +z translation DoF (-1.0 to +1.0)
+ * @param pitch_spd Rate of change of vehicle pitch (-1.o to +1.0)
+ * @param roll_spd Rate of change of vehicle roll (-1.o to +1.0)
+ * @param yaw_spd Rate of change of vehicle yaw (-1.o to +1.0)
+ * @param curr_quat Current orientation quaternion from IMU
+ */
+void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, float yaw_spd, quaternion_t curr_quat);
+
+/**
  * Set motor speeds in STABILITY_ASSIST mode. Abstracts a 2D plane in which the robot is controlled.
  * The other dimensions are handled by closed-loop control. 
  * Requires speeds for x and y DoFs and uses closed-loop control for depth (z), pitch, and roll. 
@@ -152,16 +151,15 @@ void mc_set_sassist(float x, float y, float yaw_spd,
         float curr_depth,
         bool use_yaw_pid);
 
-
 /**
  * Set motor speeds in DEPTH_HOLD mode. Basically just GLOBAL mode, but instead of a speed
  * for the z axis, the SASSIST PID is used instead.
  * x and y DoFs are pitch and roll compensated
  * @param x Speed in +x translation DoF (-1.0 to +1.0)
  * @param y Speed in +y translation DoF (-1.0 to +1.0)
- * @param pitch_spd Rate of change of vehicle pitch (-1.o to +1.0)
- * @param roll_spd Rate of change of vehicle roll (-1.o to +1.0)
- * @param yaw_spd Rate of change of vehicle yaw (-1.o to +1.0)
+ * @param pitch_spd Rate of change of vehicle pitch (-1.0 to +1.0)
+ * @param roll_spd Rate of change of vehicle roll (-1.0 to +1.0)
+ * @param yaw_spd Rate of change of vehicle yaw (-1.0 to +1.0)
  * @param target_depth Desired depth in meters (negative for below surface)
  * @param curr_quat Current orientation quaternion from IMU
  * @param curr_depth Current depth in meters
