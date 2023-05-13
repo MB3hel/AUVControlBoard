@@ -834,7 +834,8 @@ void mc_set_sassist(float x, float y, float yaw_spd,
 }
 
 void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth){
-    // TODO: Redefine
+    float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
+    mc_set_global(x, y, z, pitch_spd, roll_spd, yaw_spd, curr_quat);
 }
 
 // TODO: local sassist
