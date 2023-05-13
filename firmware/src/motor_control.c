@@ -834,12 +834,32 @@ void mc_set_sassist(float x, float y, float yaw_spd,
 }
 
 void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth){
+    // Just GLOBAL mode with a PID controlling z speed
     float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
     mc_set_global(x, y, z, pitch_spd, roll_spd, yaw_spd, curr_quat);
 }
 
-// TODO: local sassist
+void mc_set_ldhold(float x, float y, float z, float xrot, float yrot, float zrot, float target_depth, quaternion_t curr_quat, float curr_depth){
+    // Get global z speed (to correct depth)
+    float gz = -pid_calculate(&depth_pid, curr_depth - target_depth);
 
-// TODO: local depth hold
+    // Rotate global z speed onto local basis (same way GLOBAL mode does this, but only one DoF)
+    quaternion_t qrot;
+    mc_grav_rot(&qrot, &curr_quat);
+    float lx, ly, lz;
+    rotate_vector(&lx, &ly, &lz, 0.0f, 0.0f, gz, &qrot);
+    mc_upscale_vec(&lx, &ly, &lz, lx, ly, lz, gz);
+
+    // Combine PID translation with user provided translation speeds
+    // and downscale so that each element is less than 1
+    lx += x;
+    ly += y;
+    lz += z;
+    mc_downscale_reldof(&lx, &ly, &lz, lx, ly, lz, false);
+    mc_downscale_if_needed(&lx, &ly, &lz, lx, ly, lz);
+
+    // Move the vehicle
+    mc_set_local(lx, ly, lz, xrot, yrot, zrot);
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
