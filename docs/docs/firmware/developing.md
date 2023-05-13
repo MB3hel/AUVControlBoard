@@ -14,10 +14,11 @@ OpenOCD config files exist in `tools/debug`. The following configurations exist
 | v1                   | CMSIS-DAP&ast;         | `cb_v1_via_cmsisdap.cfg`     |
 | v2                   | ST-LINK v2             | `cb_v2_via_stlink2.cfg`      |
 
-&ast;There is a firmware for a Raspberry Pi Pico to turn it into a CMSIS-DAP debugger. This is a variant of the Picoprobe firmware.
+&ast;The PicoProbe firmware can be used to turn a low cost Raspberry Pi Pico board into a CMSIS-DAP debugger.
 
 *Note that [OpenOCD](https://openocd.org/) must be installed and in the `PATH`.*
 
+***Note: NEVER power the system from both the debug probe and USB at the same time. Generally, power the system over USB and do not connect the power (3.3V) from the debug probe. Signals and GND must be connected from the debug probe.***
 
 ## Generator Projects
 
@@ -29,7 +30,7 @@ Each version of ControlBoard has an associated "Generator" project. These are pr
 
 The decision to use generator projects comes down to the following
 
-1. There are multiple versions of Control Board with multiple chips. Using generators to create chip-specific initialization code reduces the chip-specific versions of the firmware that must be written / maintained.
+1. There are multiple versions of Control Board with multiple chips. Using generators to create chip-specific initialization code reduces the chip-specific parts of the firmware that must be written / maintained.
 
 2. The generators are often required to use the manufacturer's HAL (or make using the HAL much easier). Use of the manufacturer's HAL / libraries reduces development time and makes maintenance easier (especially for those less familiar with the codebase).
 
@@ -73,3 +74,26 @@ After running the generator (as described above) the generated code must be impo
 Install the `C/C++` and `CMake Tools` extensions, then open this folder in VSCode. Choose one of the configure presets on the bottom bar. Then, choose a build preset. Finally, click build.
 
 To debug, install the `Cortex-Debug` extension in VSCode. Copy `tools/debug/launch.json` to `.vscode`. *MAKE SURE TO BUILD DEBUG CONFIG BEFORE LAUNCHING DEBUG SESSION. IT WILL NOT BUILD AUTOMATICALLY.*
+
+
+## Development using the Simulator
+
+The [simulator](https://github.com/MB3hel/GodotAUVSim) can be very helpful for developing or debugging firmware. The simulator is capable of connecting to a real control board, thus the firmware can be tested in simulation. Note that the simulator also offers a simulated control board (simcb), but this is not what we want in this case. The simulated control board does not use a real control board / firmware. Testing with the simulator can also be done while the control board firmware is running with a debugger attached.
+
+To test with the simulator (your development system will need the simulator running and two USB ports are required)
+
+- Connect the control board to your PC via USB
+- Connect a debug probe to the control board (do **NOT** connect power)
+- Build and run the firmware under debugger
+- In the simulator, choose the UART port for the control board
+- Interface scripts can be run as usual using `launch.py`, but add the `-s` flag so it will connect to the simulator instead of the physical control board.
+
+In the setup described above, the simulator connects to and uses the control board. The interface scripts connect to the simulator. The simulator forwards messages from interface scripts to control board and vice versa. The simulator provides simulated sensor data to the control board and the control board provides the simulator with thruster motions.
+
+There are a few things to not about the simulation
+
+- It does increase traffic over control board UART / USB significantly (shouldn't cause issues, but something to be aware of for debugging purposes)
+- Sensor data is provided by the simulator, thus sensors will report ready even if not connected.
+- If real sensors are connected, they will be read as normal, however the data will be ignored and simulated data used instead. This allows connecting sensors to create more realistic test scenarios (timing and scheduling wise).
+- When controlled by the simulator, the control board will not generate PWM signals on thruster pins. The thruster pins will maintain a pulse corresponding to no motion.
+- IMU axis configuration has no effect in the simulator (though the command will still be acknowledged)
