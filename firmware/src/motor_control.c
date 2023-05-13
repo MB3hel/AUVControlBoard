@@ -73,6 +73,10 @@ static SemaphoreHandle_t motor_mutex;                   // Ensures motor & watch
 // PID controllers for SASSIST mode
 static pid_controller_t xrot_pid, yrot_pid, zrot_pid, depth_pid;
 
+// Current targets for PIDs
+static quaternion_t pid_target_quat = {.w = 0, .x = 0, .y = 0, .z = 0};
+static float pid_target_depth = -999.0f;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -778,11 +782,28 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     float e_y = ay * theta;
     float e_z = az * theta;
 
+    // Reset PID controllers when targets change
+    if(pid_target_depth != target_depth){
+        PID_RESET(depth_pid);
+    }
+    if(target_quat.w != pid_target_quat.w || 
+            target_quat.x != pid_target_quat.x ||
+            target_quat.y != pid_target_quat.y ||
+            target_quat.z != pid_target_quat.z){
+        PID_RESET(xrot_pid);
+        PID_RESET(yrot_pid);
+        PID_RESET(zrot_pid);
+    }
+
     // Use PID controllers to calculate current outputs
     float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
     float xrot = pid_calculate(&xrot_pid, e_x);
     float yrot = pid_calculate(&yrot_pid, e_y);
     float zrot = pid_calculate(&zrot_pid, e_z);
+
+    // Store old targets (used to determine when to reset PIDs)
+    pid_target_depth = target_depth;
+    pid_target_quat = target_quat;
 
     // Need to add PID outputs to base speeds of vehicle
     // Base speeds came from rotation of yaw speed onto vehicle basis
@@ -834,12 +855,12 @@ void mc_set_sassist(float x, float y, float yaw_spd,
 }
 
 void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth){
+    if(pid_target_depth != target_depth){
+        PID_RESET(depth_pid);
+    }
     float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
+    pid_target_depth = target_depth;
     mc_set_global(x, y, z, pitch_spd, roll_spd, yaw_spd, curr_quat);
 }
-
-// TODO: local sassist
-
-// TODO: local depth hold
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
