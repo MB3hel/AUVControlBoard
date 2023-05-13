@@ -782,14 +782,14 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     float e_y = ay * theta;
     float e_z = az * theta;
 
-    // Reset PID controllers when targets change
-    if(pid_target_depth != target_depth){
+    // Reset PID controllers when targets change significantlly
+    if(fabsf(pid_target_depth - target_depth) > 0.01){
         PID_RESET(depth_pid);
     }
-    if(target_quat.w != pid_target_quat.w || 
-            target_quat.x != pid_target_quat.x ||
-            target_quat.y != pid_target_quat.y ||
-            target_quat.z != pid_target_quat.z){
+    if(fabsf(target_quat.w - pid_target_quat.w) > 0.01 || 
+            fabsf(target_quat.x - pid_target_quat.x) > 0.01 ||
+            fabsf(target_quat.y - pid_target_quat.y) > 0.01 ||
+            fabsf(target_quat.z - pid_target_quat.z) > 0.01){
         PID_RESET(xrot_pid);
         PID_RESET(yrot_pid);
         PID_RESET(zrot_pid);
@@ -855,7 +855,7 @@ void mc_set_sassist(float x, float y, float yaw_spd,
 }
 
 void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth){
-    if(pid_target_depth != target_depth){
+    if(fabsf(pid_target_depth - target_depth) > 0.01){
         PID_RESET(depth_pid);
     }
     float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
