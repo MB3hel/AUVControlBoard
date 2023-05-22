@@ -23,18 +23,20 @@ While this coordinate system may seem strange to some (especially anyone who has
 
 1. Matrices are assumed to be zero indexed (not 1 indexed). This means the first element of a matrix $M$ is $m_{00}$ not $m_{11}$. This is because the math will be implemented in C (which uses zero indexed arrays).
 2. Thruster numbers (1-8) are used by the control board's user facing components. However, this math will use thruster indices (0-7) where `index = number - 1`. This is b
-3. The terms "pitch", "roll", and "yaw" are used to describe rotational DoFs, as well as orientation in 3D space. The context these words are used in should make it clear which is being used. "Pitch" is angular velocity about the x-axis, "roll" is angular rotation about the y-axis, and "yaw" is angular velocity about the z-axis.
-4. Velocities in DoFs are normalized (meaning -1.0 to 1.0).
+3. Rotations about axis (angular velocities / DoFs) are referred to as "xrot" (about x), "yrot" (about y), and "zrot" (about z).
+4. The terms "pitch", "roll", and "yaw" are used to describe the vehicle's orientation in space. "Pitch" is angular velocity about the x-axis, "roll" is angular rotation about the y-axis, and "yaw" is angular velocity about the z-axis.
+5. Velocities in DoFs are normalized (meaning -1.0 to 1.0).
 
 
 ### System Assumptions
 
 - Vehicle is capable of motion exclusively in each of 6 degrees of freedom (DoFs). These are three translational DoFs, and three rotational DoFs.
+- The vehicle's speed in positive and negative directions are roughly equal for each DoF.
 - Thruster orientations are fixed. Gimbaled thruster vehicles are not supported.
 - At most 8 thrusters (less is fine)
 - System has 3D orientation information
 - System has depth information
-- System does not have translational position information
+- System does **not** have translational position information
 
 
 ### Example Vehicle
@@ -80,14 +82,14 @@ Note that when constructing the DoF matrix for your vehicle, you should assume a
 
 In LOCAL mode, motion is specified as a set of speeds in vehicle relative DoFs. The user provides the control board with a *local target motion vector* ($t_l$) where each element corresponds to a DoF.
 
-$t_l = \begin{pmatrix} x & y & z & p & r & h \end{pmatrix}^T$
+$t_l = \begin{pmatrix} x & y & z & r_x & r_y & r_z \end{pmatrix}^T$
 
 $x$ is normalized velocity in +x direction  
 $y$ is normalized velocity in +y direction  
 $z$ is normalized velocity in +y direction  
-$p$ is normalized velocity in +pitch direction  
-$r$ is normalized velocity in +roll direction  
-$h$ is normalized velocity in +yaw direction
+$r_x$ is normalized velocity in +pitch direction (xrot)
+$r_y$ is normalized velocity in +roll direction (yrot)
+$r_z$ is normalized velocity in +yaw direction (zrot)
 
 By multiplying this target motion by the DoF matrix, $D$, a *speed vector* $s$ is obtained where each element of $s$ corresponds to a specific thruster (by index).
 
@@ -191,7 +193,7 @@ where $c^i$ is the $i$th row of $C$. Thus, $o_i$ is an 8 element vector where ea
 
 For example, 
 
-$o_0 = C (C^0)^T = \begin{pmatrix} 1 & 1 & 1 & 1 & 0 & 0 & 0 & 0 \end{pmatrix}^T$
+$o_0 = C (c^0)^T = \begin{pmatrix} 1 & 1 & 1 & 1 & 0 & 0 & 0 & 0 \end{pmatrix}^T$
 
 This shows that thruster index 0 (T1) overlaps with indices 0, 1, 2, and 3 (T1, T2, T3, T4).
 
@@ -199,9 +201,9 @@ By calculating and storing these overlap vectors for each thruster ($\left\{o_i\
 
 Using overlap vectors, the following algorithm can be used to scale motor speeds:
 
-- Find the thruster with the largest magnitude speed
-- Iterate over that thruster's overlap vector
-- For any thruster it overlaps with, divide speed by the largest speed
+- Find the thruster (`i`) with the largest magnitude speed
+- Iterate over thruster `i`'s overlap vector
+- For any thruster `i` overlaps with (`j`), divide thruster `j`'s speed by the magnitude of thruster `i`'s speed
 - Repeat until the largest magnitude does not exceed 1.0
 
 ```
@@ -228,10 +230,143 @@ This algorithm results in optimal speed scaling by only reducing the speed of th
 
 ### GLOBAL Mode Motion
 
-GLOBAL mode is very similar to LOCAL mode, however, motion is described *partially* relative to the world instead of the robot. Specifically, motion of the vehicle is compensated for vehicle pitch and roll. This results in a coordinate system defined by the axes `gx`, `gy`, and `gz`. Note that the world coordinate system is defined as `wx`, `wy`, `wz`.
-
-![](./math_res/global_coord1.png)
+GLOBAL mode is very similar to LOCAL mode, however, motion is described *partially* relative to the world instead of the robot. Specifically, motion of the vehicle is compensated for vehicle pitch and roll (but **not** yaw). This results in a coordinate system defined by the axes `gx`, `gy`, and `gz`. Note that the world coordinate system is defined as `wx`, `wy`, `wz`.
 
 ![](./math_res/global_coord2.png)
 
-In GLOBAL mode, the user provides the control board with a *global target motion vector*, $t_g$ where each element cooresponds to a DoF relative to the global axis system (`gx`, `gy`, `gz`).
+![](./math_res/global_coord1.png)
+
+*Notably, if the vehicle is pitched 180 degrees, the gx-gy plane becomes aligned to the back of the vehicle ensuring consistent motion.*
+
+TODO: Simulator gif / video of this
+
+<br />
+
+In GLOBAL mode, the user provides the control board with a *global target motion vector*, $t_g$ with 6 elements. This target motion vector is a concatenation of two 3 dimensional vectors. The first, a set of translations along `gx`, `gy`, and `gz`. Second a set of rotations to affect vehicle pitch, roll, and yaw. These are referred to by the following names
+
+- `x`: Speed in `gx` direction (translation)
+- `y`: Speed in `gy` direction (translation)
+- `z`: Speed in `gz` direction (translation)
+- `p`: Speed at which the vehicle's pitch should increase (negative for decrease pitch). Aka "pitch_spd"
+- `r`: Speed at which the vehicle's roll should increase (negative for decrease pitch). Aka "roll_spd"
+- `h`: Speed at which the vehicle's yaw should increase (negative for decrease pitch). Aka "yaw_spd"
+
+$t_g = \begin{pmatrix} x & y & z & p & r & h \end{pmatrix}$
+
+
+It is necessary to transform each DoF's motion into motions in the vehicle's DoFs. These speeds can then be passed to LOCAL mode.
+
+<br />
+
+**Translation DoFs:**
+
+The translation DoFs are easily transformed using gravity vectors. By applying a quaternion based rotation matrix to the base gravity vector, $g_b = \begin{pmatrix}0 & 0 & -1\end{pmatrix}$, the following solution is determined for the current gravity vector, $g_c$ given the vehicle's orientation quaternion, $q$.
+
+$\begin{pmatrix} 2*(q.x*q.z+q.w*q.y) \\  2*(q.w*q.x-q.y*q.z) \\ -(q.w)^2+(q.x)^2+(q.y)^2-(q.z)^2\end{pmatrix}^T$
+
+The minimal rotation from $g_b$ to $g_c$ is then calculated. Let this rotation be called $q_{rot}$. *This rotation will generally include no yaw component, unless the vehicle is upside down and facing backwards (eg pitch of 180 degrees) in which case it will contain a yaw component of 180 degrees. This is desirable as it ensures a continuous definition of what `gy` is even while the vehicle is flipping via pitch.*
+
+This quaternion can then be applied to speeds in the `gx`, `gy`, `gz` basis (`x`, `y`, and `z` here) to rotate them onto the vehicle basis. Thus, this "converts" translation speeds from GLOBAL to LOCAL mode DoFs.
+
+However, it is not ideal to transform the translation vector all at once. It is best to do it in three stages to allow proper upscaling as needed (explained below).
+
+Thus for each global mode translation vector $\begin{pmatrix} 0 & y & 0 \end{pmatrix}$, $\begin{pmatrix} 0 & 0 & z \end{pmatrix}$, and $\begin{pmatrix} x & 0 & 0 \end{pmatrix}$ rotate it by $q_{rot}$ to obtain $t_x$, $t_y$, and $t_z$ respectively (note that $\left\{s, v\right\}$ is a quaternion with scalar s and vector v).
+
+$\left\{0, t_x\right\} = q_{rot} \left\{0, \begin{pmatrix} x & 0 & 0 \end{pmatrix} \right\} q_{rot}^*$
+
+$\left\{0, t_y\right\} = q_{rot} \left\{0, \begin{pmatrix} 0 & y & 0 \end{pmatrix} \right\} q_{rot}^*$
+
+$\left\{0, t_z\right\} = q_{rot} \left\{0, \begin{pmatrix} 0 & 0 & z \end{pmatrix} \right\} q_{rot}^*$
+
+Each of $t_x$, $t_y$, and $t_z$ are speeds in LOCAL mode DoFs, however they may be slower than desired. Consider a speed of 1.0 along `gy`. If the vehicle were rotated 45 degrees (pitch) the resultant $t_y$ would be $t_y = \begin{pmatrix} 0.0 & 0.7071 & 0.7071 \end{pmatrix}$. This is not as fast as possible in the correct direction. Instead $t_y$ should be $t_y = \begin{pmatrix} 0.0 & 1.0 & 1.0 \end{pmatrix}$. In other words, the largest element of $t_y$ should be the speed along `gy`. Thus, each of $t_x$, $t_y$, $t_z$ needs to be upscaled (note that it will never need to be downscaled; it only needs to be upscaled because one DoF may now be spread between multiple).
+
+- let $m$ be the magnitude of the element of $t_x$ with the largest magnitude
+- Normalize $t_x$ so that largest element is 1.0: $t_x = t_x / m$
+- Scale normalized $t_x$ by speed $x$ (gx speed): $t_x = t_x * x$
+- Repeat this for $t_y$ and $t_z$ using $y$ and $z$ speeds respectively.
+
+Once all three $t$ vectors are scaled, they can be combined to create the net LOCAL mode translation vector, $l$
+
+$l = t_x + t_y + t_z$
+
+There are two potential issues with $l$
+
+1. $l$ is a set of proportionally related speeds to result in the desired motion. However, the vehicle may not be capable of the same speeds in each of it's DoFs. Thus, the ratios between $l$'s elements may be incorrect.
+2. $l$ is a sum of three vectors (each with elements no larger than a magnitude of 1), thus it may have elements with a magnitude greater than 1.
+
+Issue 1 should be handled first as correcting it may "fix" issue 2. Handling issue 2 first could result in downscaling speeds more than necessary.
+
+Handling issue 1 requires the user to provide a little more information about the vehicle: relative speeds in each DoF. These can be used to calculate downscaling factors to slow down the faster directions (note: speeding up the slower directions would result in impossible speeds, but would be handled by solving issue 2; regardless it is less ideal).
+
+These downscaling factors are calculated from "RELDOF" information provided by the user (see messages page of user guide). Here we will referr to the scale factors as $m_x$, $m_y$, $m_z$, $m_{rx}$, $m_{ry}$, and $m_{rz}$ for the x, y, z, xrot, yrot, and zrot DoFs respectively (note that these are vehicle DoFs).
+
+Thus, the simplest option would be to let $l = \begin{pmatrix}l.x * m_x & l.y * m_y & l.z * m_z\end{pmatrix}$. However, this may downscale more than necessary. Consider the slowest direction to have a speed of 0 in l. In this case, since the slowest direction is unused, we are downscaling too much. Thus, the following algorithm is used to select the ideal downscaling factors by "ignoring" the downscaling required for unused DoFs (DoFs with a speed of 0).
+
+```
+// Zero downscale factors for unused DoFs
+if abs(l.x) == 0
+    m_x = 0
+endif
+if abs(l.y) == 0
+    m_y = 0
+endif
+if abs(l.z) == 0
+    m_z = 0
+endif
+
+// Rebalance scale factors so largest remaining is 1.0
+m_max = max(m_x, max(m_y, m_z));
+m_x = m_x / m_max;
+m_y = m_y / m_max;
+m_z = m_z / m_max;
+```
+
+$l$ is then downscaled as $l = \begin{pmatrix}l.x * m_x & l.y * m_y & l.z * m_z\end{pmatrix}$ using the scale factors calculated using the above algorithm.
+
+Finally, issue 2 must be handled if any element of $l$ still has a magnitude greater than 1.0. Thus, 
+
+- Let $m$ be the magnitude of the element of $l$ with the largest magnitude
+- If $m$ is less than or equal to 1, do not change $l
+- If $m$ is greater than 1 $l = l / m$
+
+This resultant $l$ is a set of speeds that can be passed to LOCAL mode as it's `x`, `y`, and `z` speeds.
+
+<br />
+
+**Rotation DoFs:**
+
+Converting the GLOBAL mode rotations (increase/decrease pitch, roll, yaw) to motions about DoFs is a little harder. It requires decomposing the quaternion into euler angles, then calculating three quaternions describing one euler rotation each. In other words, given the vehicle's current rotation $q$ we need to find $q_{pitch}$, $q_{roll}$ and $q_{yaw}$ such that (based on the euler angle convention used by the control board)
+
+$q = q_{yaw} q_{pitch} q_{roll}$
+
+
+This can be done by converting $q$ to a set of euler angles $e = \begin{pmatrix}pitch & roll & yaw\end{pmatrix}$ then constructing the following and converting each to a quaternion
+
+$e_{pitch} = \begin{pmatrix}pitch & 0 & 0\end{pmatrix} \rightarrow q_{pitch}$
+
+$e_{roll} = \begin{pmatrix}0 & roll & 0\end{pmatrix} \rightarrow q_{roll}$
+
+$e_{yaw} = \begin{pmatrix}0 & 0 & yaw\end{pmatrix} \rightarrow q_{yaw}$
+
+However, the euler angles obtained from $q$ may not be correct for this use case. An equivalent angle go $e$ (although improper) is $e_{alt} = \begin{pmatrix} \pi - pitch & roll - \pi & yaw - \pi \end{pmatrix}$. We need to compensate for first roll then pitch. Thus, we need the euler angle with minimal roll component. This will be referred to here as $e_b$ (which is either $e$ or $_{alt}$).
+
+Then, given $s$ vectors describing motion to change the vehicle's pitch, roll, or yaw
+
+TODO
+
+
+
+## Sensor Processing
+
+TODO: Euler angle accumulation
+
+
+## Other Derivations
+
+TODO: Euler / Quaternion conversion
+
+TODO: Gravity vector calculation
+
+TODO: Angle between vectors
+
+TODO: Min diff quat between two quats
