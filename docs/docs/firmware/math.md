@@ -352,7 +352,29 @@ However, the euler angles obtained from $q$ may not be correct for this use case
 
 Then, given $s$ vectors describing motion to change the vehicle's pitch, roll, or yaw
 
-TODO
+$s_{pitch} = \begin{pmatrix}p & 0 & 0\end{pmatrix}$
+
+$s_{roll} = \begin{pmatrix}0 & r & 0\end{pmatrix}$
+
+$s_{yaw} = \begin{pmatrix}0 & 0 & h\end{pmatrix}$
+
+We need to transform these onto the robot's axes as $w$ vectors. For roll this is trivial as roll is about the vehicle's y axis. For pitch, this requires undoing roll first (rotate by $q_{roll}*$) and for yaw this requires undoing roll then pitch. Thus
+
+$w_{roll} = s_{roll}$
+
+$\left\{0, w_{pitch}\right\} = q_{roll}^* \left\{0, s_{pitch}\right\} q_{roll}$
+
+$\left\{0, w_{yaw}\right\}  = q_{pitch}^* q_{roll}^* \left\{0, s_{yaw}\right\} q_{roll} q_{pitch}$
+
+These vectors are angular speeds about the vehicle's x, y, and z axes. Thus, just as for translations
+
+- Upscale each $w$ vector using `p`, `r`, and `h` speeds (can skip for roll as this vector is never rotated)
+- Sum the three $w$ vectors into a net $w$ vector
+- Adjust $w$ for relative DoF speeds (using $m_{rx}$, $m_{ry}$, $m_{rz}$)
+- Downscale $w$ if needed so all elements are less than 1
+
+Then $w$ is the xrot, yrot, and zrot parts of the LOCAL mode target.
+
 
 
 
