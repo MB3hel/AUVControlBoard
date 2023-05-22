@@ -240,7 +240,7 @@ GLOBAL mode is very similar to LOCAL mode, however, motion is described *partial
 
 ![](./math_res/global_invert.gif)
 
-<br />
+
 
 In GLOBAL mode, the user provides the control board with a *global target motion vector*, $t_g$ with 6 elements. This target motion vector is a concatenation of two 3 dimensional vectors. The first, a set of translations along `gx`, `gy`, and `gz`. Second a set of rotations to affect vehicle pitch, roll, and yaw. These are referred to by the following names
 
@@ -256,11 +256,10 @@ $t_g = \begin{pmatrix} x & y & z & p & r & h \end{pmatrix}$
 
 It is necessary to transform each DoF's motion into motions in the vehicle's DoFs. These speeds can then be passed to LOCAL mode.
 
-***WARNING:*** *GLOBAL mode is impacted by gimbal lock issues with euler angles. This occurs when the vehicle's pitch is +/- 90 degrees. In this scenario the meaning of "increase / decrease pitch" is ambiguous. The vehicle will take the zero-roll route in this scenario. Thus, GLOBAL mode may produce undesirable motion if the roll is non-zero and you pitch through +/- 90.*
+***WARNING:*** *GLOBAL mode is impacted by gimbal lock issues with euler angles. This occurs when the vehicle's pitch is +/- 90 degrees. In this scenario the meaning of "increase / decrease pitch" is ambiguous. The vehicle will take the zero-roll route in this scenario. Thus, GLOBAL mode may produce undesirable motion if the roll is non-zero and you pitch through +/- 90. A potential solution for this could be some form of motion hysteresis to handle moving through gimbal lock orientations, however this is **not** implemented as of now.*
 
-<br />
 
-**Translation DoFs:**
+#### Translation DoFs
 
 The translation DoFs are easily transformed using gravity vectors. By applying a quaternion based rotation matrix to the base gravity vector, $g_b = \begin{pmatrix}0 & 0 & -1\end{pmatrix}$, the following solution is determined for the current gravity vector, $g_c$ given the vehicle's orientation quaternion, $q$.
 
@@ -333,9 +332,9 @@ Finally, issue 2 must be handled if any element of $l$ still has a magnitude gre
 
 This resultant $l$ is a set of speeds that can be passed to LOCAL mode as it's `x`, `y`, and `z` speeds.
 
-<br />
 
-**Rotation DoFs:**
+
+#### Rotation DoFs:
 
 Converting the GLOBAL mode rotations (increase/decrease pitch, roll, yaw) to motions about DoFs is a little harder. It requires decomposing the quaternion into euler angles, then calculating three quaternions describing one euler rotation each. In other words, given the vehicle's current rotation $q$ we need to find $q_{pitch}$, $q_{roll}$ and $q_{yaw}$ such that (based on the euler angle convention used by the control board)
 
@@ -405,23 +404,23 @@ There are two variants of SASSIST mode
 
 These two variants are the same in how depth control works. However, variant 1 adds some additional complexity for orientation control.
 
-<br />
 
-**Depth Control:**
+
+#### Depth Control
 
 A PID controller (sassist depth PID) is used to control the vehicle's speed in the world z (or GLOBAL z) DoF. The output of this PID controller is the same `z` that could be an input to GLOBAL mode. This PID controller's error is the difference between the user provided target depth and the measured current depth of the vehicle.
 
-<br />
 
 
-**Translation DoFs:**
+
+#### Translation DoFs
 
 The user provided `x` and `y` along with the `z` from the depth PID are handled the same way by SASSIST mode as they are in GLOBAL mode to obtain the final LOCAL mode translation vector $l$.
 
-<br />
 
 
-**SASSIST2 Orientation Control:**
+
+#### SASSIST2 Orientation Control
 
 While translation for SASSIST is nearly identical to GLOBAL mode, rotation DoFs are very different. Orientation is controlled with a set of 3 PID controllers that work in LOCAL DoFs. Thus it is necessary to determine the rotations necessary about the vehicle's axes to achieve the desired orientation.
 
@@ -437,7 +436,7 @@ Therefore
 
 $q_d = q_c^* q_t$
 
-<br />
+
 
 However, this angle may not be minimal. Recall that $q$ and $-q$ represent the same orientation. Thus another solution to this problem would be 
 
@@ -472,11 +471,11 @@ Finally, it is necessary to downscale the $w$ vectors just as in GLOBAL mode
 This $w$ can then be passed to LOCAL mode along with the LOCAL translation vector $l$ obtained earlier.
 
 
-<br />
 
-**SASSIST1 Orientation Control:**
 
-SASSIS1 uses much of the same process to control the vehicle's orientation as SASSIST2, however it is necessary to decouple yaw from pitch and roll. In other words, we want to construct a target quaternion using the user provided pitch and roll, but matching the vehicle's current yaw.
+#### SASSIST1 Orientation Control
+
+SASSIST1 uses much of the same process to control the vehicle's orientation as SASSIST2, however it is necessary to decouple yaw from pitch and roll. In other words, we want to construct a target quaternion using the user provided pitch and roll, but matching the vehicle's current yaw.
 
 The most intuitive option would be to decompose $q_c$ into euler angles and obtain the yaw from those. However, this does not account for the fact that the yaw can be altered by pitch or roll. For example, (p=115, r=0, h=90) would be decomposed as (p=65, r=180, h=-90). Here the heading is 180 degrees off. This would be a significant issue.
 
