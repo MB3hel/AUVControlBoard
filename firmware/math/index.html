@@ -89,8 +89,24 @@
     <li class="toctree-l3"><a class="reference internal" href="#local-mode-motion">LOCAL Mode Motion</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#global-mode-motion">GLOBAL Mode Motion</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#translation-dofs">Translation DoFs</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#rotation-dofs">Rotation DoFs:</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#stability-assist-sassist-mode-motion">Stability Assist (SASSIST) Mode Motion</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#depth-control">Depth Control</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#translation-dofs_1">Translation DoFs</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#sassist2-orientation-control">SASSIST2 Orientation Control</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#sassist1-orientation-control">SASSIST1 Orientation Control</a>
+    </li>
+        </ul>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#depth-hold-dhold-mode-motion">Depth Hold (DHOLD) Mode Motion</a>
     </li>
@@ -314,7 +330,6 @@ endwhile
 <p><img alt="" src="../math_res/global_coord1.png" /></p>
 <p><em>Notably, if the vehicle is pitched 180 degrees, the gx-gy plane becomes aligned to the back of the vehicle ensuring consistent motion. This is shown in the animation below.</em></p>
 <p><img alt="" src="../math_res/global_invert.gif" /></p>
-<p><br /></p>
 <p>In GLOBAL mode, the user provides the control board with a <em>global target motion vector</em>, <span class="arithmatex">\(t_g\)</span> with 6 elements. This target motion vector is a concatenation of two 3 dimensional vectors. The first, a set of translations along <code>gx</code>, <code>gy</code>, and <code>gz</code>. Second a set of rotations to affect vehicle pitch, roll, and yaw. These are referred to by the following names</p>
 <ul>
 <li><code>x</code>: Speed in <code>gx</code> direction (translation)</li>
@@ -326,9 +341,8 @@ endwhile
 </ul>
 <p><span class="arithmatex">\(t_g = \begin{pmatrix} x &amp; y &amp; z &amp; p &amp; r &amp; h \end{pmatrix}\)</span></p>
 <p>It is necessary to transform each DoF's motion into motions in the vehicle's DoFs. These speeds can then be passed to LOCAL mode.</p>
-<p><strong><em>WARNING:</em></strong> <em>GLOBAL mode is impacted by gimbal lock issues with euler angles. This occurs when the vehicle's pitch is +/- 90 degrees. In this scenario the meaning of "increase / decrease pitch" is ambiguous. The vehicle will take the zero-roll route in this scenario. Thus, GLOBAL mode may produce undesirable motion if the roll is non-zero and you pitch through +/- 90.</em></p>
-<p><br /></p>
-<p><strong>Translation DoFs:</strong></p>
+<p><strong><em>WARNING:</em></strong> <em>GLOBAL mode is impacted by gimbal lock issues with euler angles. This occurs when the vehicle's pitch is +/- 90 degrees. In this scenario the meaning of "increase / decrease pitch" is ambiguous. The vehicle will take the zero-roll route in this scenario. Thus, GLOBAL mode may produce undesirable motion if the roll is non-zero and you pitch through +/- 90. A potential solution for this could be some form of motion hysteresis to handle moving through gimbal lock orientations, however this is </em><em>not</em><em> implemented as of now.</em></p>
+<h4 id="translation-dofs">Translation DoFs</h4>
 <p>The translation DoFs are easily transformed using gravity vectors. By applying a quaternion based rotation matrix to the base gravity vector, <span class="arithmatex">\(g_b = \begin{pmatrix}0 &amp; 0 &amp; -1\end{pmatrix}\)</span>, the following solution is determined for the current gravity vector, <span class="arithmatex">\(g_c\)</span> given the vehicle's orientation quaternion, <span class="arithmatex">\(q\)</span>.</p>
 <p><span class="arithmatex">\(\begin{pmatrix} 2*(q.x*q.z+q.w*q.y) \\  2*(q.w*q.x-q.y*q.z) \\ -(q.w)^2+(q.x)^2+(q.y)^2-(q.z)^2\end{pmatrix}^T\)</span></p>
 <p>The minimal rotation from <span class="arithmatex">\(g_b\)</span> to <span class="arithmatex">\(g_c\)</span> is then calculated. Let this rotation be called <span class="arithmatex">\(q_{rot}\)</span>. <em>This rotation will generally include no yaw component, unless the vehicle is upside down and facing backwards (eg pitch of 180 degrees) in which case it will contain a yaw component of 180 degrees. This is desirable as it ensures a continuous definition of what <code>gy</code> is even while the vehicle is flipping via pitch.</em></p>
@@ -381,8 +395,7 @@ m_z = m_z / m_max;
 <li>If <span class="arithmatex">\(m\)</span> is greater than 1 <span class="arithmatex">\(l = l / m\)</span></li>
 </ul>
 <p>This resultant <span class="arithmatex">\(l\)</span> is a set of speeds that can be passed to LOCAL mode as it's <code>x</code>, <code>y</code>, and <code>z</code> speeds.</p>
-<p><br /></p>
-<p><strong>Rotation DoFs:</strong></p>
+<h4 id="rotation-dofs">Rotation DoFs:</h4>
 <p>Converting the GLOBAL mode rotations (increase/decrease pitch, roll, yaw) to motions about DoFs is a little harder. It requires decomposing the quaternion into euler angles, then calculating three quaternions describing one euler rotation each. In other words, given the vehicle's current rotation <span class="arithmatex">\(q\)</span> we need to find <span class="arithmatex">\(q_{pitch}\)</span>, <span class="arithmatex">\(q_{roll}\)</span> and <span class="arithmatex">\(q_{yaw}\)</span> such that (based on the euler angle convention used by the control board)</p>
 <p><span class="arithmatex">\(q = q_{yaw} q_{pitch} q_{roll}\)</span></p>
 <p>This can be done by converting <span class="arithmatex">\(q\)</span> to a set of euler angles <span class="arithmatex">\(e = \begin{pmatrix}pitch &amp; roll &amp; yaw\end{pmatrix}\)</span> then constructing the following and converting each to a quaternion</p>
@@ -429,14 +442,11 @@ m_z = m_z / m_max;
 <li>Variant 2 (SASSIST2): PID is used for yaw (yaw speed / <code>h</code> is ignored)</li>
 </ul>
 <p>These two variants are the same in how depth control works. However, variant 1 adds some additional complexity for orientation control.</p>
-<p><br /></p>
-<p><strong>Depth Control:</strong></p>
+<h4 id="depth-control">Depth Control</h4>
 <p>A PID controller (sassist depth PID) is used to control the vehicle's speed in the world z (or GLOBAL z) DoF. The output of this PID controller is the same <code>z</code> that could be an input to GLOBAL mode. This PID controller's error is the difference between the user provided target depth and the measured current depth of the vehicle.</p>
-<p><br /></p>
-<p><strong>Translation DoFs:</strong></p>
+<h4 id="translation-dofs_1">Translation DoFs</h4>
 <p>The user provided <code>x</code> and <code>y</code> along with the <code>z</code> from the depth PID are handled the same way by SASSIST mode as they are in GLOBAL mode to obtain the final LOCAL mode translation vector <span class="arithmatex">\(l\)</span>.</p>
-<p><br /></p>
-<p><strong>SASSIST2 Orientation Control:</strong></p>
+<h4 id="sassist2-orientation-control">SASSIST2 Orientation Control</h4>
 <p>While translation for SASSIST is nearly identical to GLOBAL mode, rotation DoFs are very different. Orientation is controlled with a set of 3 PID controllers that work in LOCAL DoFs. Thus it is necessary to determine the rotations necessary about the vehicle's axes to achieve the desired orientation.</p>
 <p>We are given a target orientation as euler angles, <span class="arithmatex">\(e_t\)</span>. This can be converted to a target orientation quaternion, <span class="arithmatex">\(q_t\)</span>. </p>
 <p><em>Note: For SASSIST1 things after this point are the same (see section below for details on how to get <span class="arithmatex">\(q_t\)</span> for SASSIST1).</em></p>
@@ -444,7 +454,6 @@ m_z = m_z / m_max;
 <p><span class="arithmatex">\(q_t = q_c q_d\)</span></p>
 <p>Therefore</p>
 <p><span class="arithmatex">\(q_d = q_c^* q_t\)</span></p>
-<p><br /></p>
 <p>However, this angle may not be minimal. Recall that <span class="arithmatex">\(q\)</span> and <span class="arithmatex">\(-q\)</span> represent the same orientation. Thus another solution to this problem would be </p>
 <p><span class="arithmatex">\(q_d = (-q_c)^* q_t\)</span></p>
 <p>The minimal rotation is the one where <span class="arithmatex">\(q_c\)</span> and <span class="arithmatex">\(q_t\)</span> are on the same half of the unit quaternion hypersphere (meaning their dot product is not negative). Thus</p>
@@ -469,9 +478,8 @@ m_z = m_z / m_max;
 <li>Then downscale the vector so that all elements are less than 1. While this is never needed for SASSIST2, it is needed for SASSIST1 and it is simpler branching logic (code implementation) to just always check if downscaling is needed.</li>
 </ul>
 <p>This <span class="arithmatex">\(w\)</span> can then be passed to LOCAL mode along with the LOCAL translation vector <span class="arithmatex">\(l\)</span> obtained earlier.</p>
-<p><br /></p>
-<p><strong>SASSIST1 Orientation Control:</strong></p>
-<p>SASSIS1 uses much of the same process to control the vehicle's orientation as SASSIST2, however it is necessary to decouple yaw from pitch and roll. In other words, we want to construct a target quaternion using the user provided pitch and roll, but matching the vehicle's current yaw.</p>
+<h4 id="sassist1-orientation-control">SASSIST1 Orientation Control</h4>
+<p>SASSIST1 uses much of the same process to control the vehicle's orientation as SASSIST2, however it is necessary to decouple yaw from pitch and roll. In other words, we want to construct a target quaternion using the user provided pitch and roll, but matching the vehicle's current yaw.</p>
 <p>The most intuitive option would be to decompose <span class="arithmatex">\(q_c\)</span> into euler angles and obtain the yaw from those. However, this does not account for the fact that the yaw can be altered by pitch or roll. For example, (p=115, r=0, h=90) would be decomposed as (p=65, r=180, h=-90). Here the heading is 180 degrees off. This would be a significant issue.</p>
 <p>Thus instead, the target quaternion can be decomposed using the swing-twist decomposition of quaternion rotations. We twist about the world z axis (since this is the axis the vehicle initially yawed about). The vehicle's yaw can be calculated from this twist quaternion (using euler conversion formula).</p>
 <p>The target quaternion is constructed from the target pitch and roll provided by the user and the yaw provided by the twist quaternion as described above. This target quaternion is <span class="arithmatex">\(q_t\)</span> and is used the same way described for SASSIST2.</p>
