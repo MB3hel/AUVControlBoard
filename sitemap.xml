@@ -26,11 +26,6 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://mb3hel.github.io/AUVControlBoard/firmware/math_old/</loc>
-         <lastmod>2023-05-22</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://mb3hel.github.io/AUVControlBoard/firmware/overview/</loc>
          <lastmod>2023-05-22</lastmod>
          <changefreq>daily</changefreq>

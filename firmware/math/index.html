@@ -102,8 +102,6 @@
     </li>
     </ul>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../math_old/">Math (Old)</a>
-                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../developing/">Firmware Development</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../simhijack/">Simulation Support</a>
@@ -314,7 +312,7 @@ endwhile
 <p>GLOBAL mode is very similar to LOCAL mode, however, motion is described <em>partially</em> relative to the world instead of the robot. Specifically, motion of the vehicle is compensated for vehicle pitch and roll (but <strong>not</strong> yaw). This results in a coordinate system defined by the axes <code>gx</code>, <code>gy</code>, and <code>gz</code>. Note that the world coordinate system is defined as <code>wx</code>, <code>wy</code>, <code>wz</code>.</p>
 <p><img alt="" src="../math_res/global_coord2.png" /></p>
 <p><img alt="" src="../math_res/global_coord1.png" /></p>
-<p><em>Notably, if the vehicle is pitched 180 degrees, the gx-gy plane becomes aligned to the back of the vehicle ensuring consistent motion.</em></p>
+<p><em>Notably, if the vehicle is pitched 180 degrees, the gx-gy plane becomes aligned to the back of the vehicle ensuring consistent motion. This is shown in the animation below.</em></p>
 <p><img alt="" src="../math_res/global_invert.gif" /></p>
 <p><br /></p>
 <p>In GLOBAL mode, the user provides the control board with a <em>global target motion vector</em>, <span class="arithmatex">\(t_g\)</span> with 6 elements. This target motion vector is a concatenation of two 3 dimensional vectors. The first, a set of translations along <code>gx</code>, <code>gy</code>, and <code>gz</code>. Second a set of rotations to affect vehicle pitch, roll, and yaw. These are referred to by the following names</p>
@@ -498,7 +496,7 @@ m_z = m_z / m_max;
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="../build/" class="btn btn-neutral float-left" title="Build and Flash"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../math_old/" class="btn btn-neutral float-right" title="Math (Old)">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../developing/" class="btn btn-neutral float-right" title="Firmware Development">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -528,7 +526,7 @@ m_z = m_z / m_max;
       <span><a href="../build/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../math_old/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../developing/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
