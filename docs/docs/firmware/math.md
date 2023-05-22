@@ -411,8 +411,6 @@ These two variants are the same in how depth control works. However, variant 1 a
 
 A PID controller (sassist depth PID) is used to control the vehicle's speed in the world z (or GLOBAL z) DoF. The output of this PID controller is the same `z` that could be an input to GLOBAL mode. This PID controller's error is the difference between the user provided target depth and the measured current depth of the vehicle.
 
-TODO: PID Image
-
 <br />
 
 
@@ -463,8 +461,6 @@ Thus, the product of $n$ and $\theta$ is proportional to the error in angle abou
 $e = \theta n$
 
 This error vector, $e$, contains the errors to be provided to each orientation PID (xrot, yrot, zrot). The output of these PIDs are angular velocity percentages (-1.0 to 1.0) about each of the vehicle's axes: $w = \begin{pmatrix} w_x & w_y & w_z \end{pmatrix}$
-
-TODO: PID Image
 
 *Note: for SASSIST 1 there is an extra step here to calculate the correct w (see section below).*
 
