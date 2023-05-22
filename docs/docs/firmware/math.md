@@ -499,6 +499,15 @@ $w_{yaw}$ will then be upscaled just as in GLOBAL mode.
 Then $w = w + w_{yaw}$. This is then downscaled as described for SASSIST2.
 
 
+### Depth Hold (DHOLD) Mode Motion
+
+Depth hold (DHOLD) mode is GLOBAL mode but using a PID to control the vehicle's depth. The same depth PID used for SASSIST mode is used for DHOLD mode.
+
+This mode uses the vehicle's current depth and a user provided target depth to calcualte the depth PIDs error. The depth PID provides the gz-axis speed. Other speeds (`x`, `y`, `p`, `r`, and `h`) are provided by the user and mean the same thing as in GLOBAL mode. 
+
+The calculated `z` along with user-provided speeds are passed directly to GLOBAL mode after calculating `z` using the depth PID.
+
+
 ## Sensor Processing
 
 TODO: Euler angle accumulation
