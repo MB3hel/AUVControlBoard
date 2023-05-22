@@ -238,7 +238,7 @@ GLOBAL mode is very similar to LOCAL mode, however, motion is described *partial
 
 *Notably, if the vehicle is pitched 180 degrees, the gx-gy plane becomes aligned to the back of the vehicle ensuring consistent motion.*
 
-TODO: Simulator gif / video of this
+![](./math_res/global_invert.gif)
 
 <br />
 
@@ -255,6 +255,8 @@ $t_g = \begin{pmatrix} x & y & z & p & r & h \end{pmatrix}$
 
 
 It is necessary to transform each DoF's motion into motions in the vehicle's DoFs. These speeds can then be passed to LOCAL mode.
+
+***WARNING:*** *GLOBAL mode is impacted by gimbal lock issues with euler angles. This occurs when the vehicle's pitch is +/- 90 degrees. In this scenario the meaning of "increase / decrease pitch" is ambiguous. The vehicle will take the zero-roll route in this scenario. Thus, GLOBAL mode may produce undesirable motion if the roll is non-zero and you pitch through +/- 90.*
 
 <br />
 
