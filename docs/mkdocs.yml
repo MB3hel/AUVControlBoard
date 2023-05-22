@@ -30,6 +30,5 @@ nav:
     - Overview: firmware/overview.md
     - Build and Flash: firmware/build.md
     - Math: firmware/math.md
-    - Math (Old): firmware/math_old.md
     - Firmware Development: firmware/developing.md
     - Simulation Support: firmware/simhijack.md

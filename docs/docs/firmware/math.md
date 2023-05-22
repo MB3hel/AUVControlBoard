@@ -236,7 +236,7 @@ GLOBAL mode is very similar to LOCAL mode, however, motion is described *partial
 
 ![](./math_res/global_coord1.png)
 
-*Notably, if the vehicle is pitched 180 degrees, the gx-gy plane becomes aligned to the back of the vehicle ensuring consistent motion.*
+*Notably, if the vehicle is pitched 180 degrees, the gx-gy plane becomes aligned to the back of the vehicle ensuring consistent motion. This is shown in the animation below.*
 
 ![](./math_res/global_invert.gif)
 
