@@ -74,8 +74,9 @@ static SemaphoreHandle_t motor_mutex;                   // Ensures motor & watch
 static pid_controller_t xrot_pid, yrot_pid, zrot_pid, depth_pid;
 
 // Current targets for PIDs
-static quaternion_t pid_target_quat = {.w = 0, .x = 0, .y = 0, .z = 0};
-static float pid_target_depth = -999.0f;
+static euler_t pid_last_target;
+static bool pid_last_yaw_target;
+static float pid_last_depth = -999.0f;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -783,13 +784,31 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     float e_z = az * theta;
 
     // Reset PID controllers when targets change significantlly
-    if(fabsf(pid_target_depth - target_depth) > 0.01){
+    if(fabsf(pid_last_depth - target_depth) > 0.01){
         PID_RESET(depth_pid);
     }
-    if(fabsf(target_quat.w - pid_target_quat.w) > 1e-4 || 
-            fabsf(target_quat.x - pid_target_quat.x) > 1e-4 ||
-            fabsf(target_quat.y - pid_target_quat.y) > 1e-4 ||
-            fabsf(target_quat.z - pid_target_quat.z) > 1e-4){
+    bool do_reset = false;
+    do_reset = 
+            (
+                // Reset when changing from SASSIST1 to SASSIST2
+                yaw_target != pid_last_yaw_target
+            ) 
+            ||
+            (
+                // SASSIST2: reset if any target angle is changed
+                yaw_target && 
+                fabsf(target_euler.pitch - pid_last_target.pitch) > 1e-2 &&
+                fabsf(target_euler.roll - pid_last_target.roll) > 1e-2 &&
+                fabsf(target_euler.yaw - pid_last_target.yaw) > 1e-2
+            ) 
+            ||
+            (   
+                // SASSIST1: reset if pitch or roll target angle is changed
+                !yaw_target &&
+                fabsf(target_euler.pitch - pid_last_target.pitch) > 1e-2 &&
+                fabsf(target_euler.roll - pid_last_target.roll) > 1e-2
+            );
+    if(do_reset){
         PID_RESET(xrot_pid);
         PID_RESET(yrot_pid);
         PID_RESET(zrot_pid);
@@ -802,8 +821,9 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     float zrot = pid_calculate(&zrot_pid, e_z);
 
     // Store old targets (used to determine when to reset PIDs)
-    pid_target_depth = target_depth;
-    pid_target_quat = target_quat;
+    pid_last_depth = target_depth;
+    pid_last_target = target_euler;
+    pid_last_yaw_target = yaw_target;
 
     // Need to add PID outputs to base speeds of vehicle
     // Base speeds came from rotation of yaw speed onto vehicle basis
@@ -855,11 +875,11 @@ void mc_set_sassist(float x, float y, float yaw_spd,
 }
 
 void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth){
-    if(fabsf(pid_target_depth - target_depth) > 0.01){
+    if(fabsf(pid_last_depth - target_depth) > 0.01){
         PID_RESET(depth_pid);
     }
     float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
-    pid_target_depth = target_depth;
+    pid_last_depth = target_depth;
     mc_set_global(x, y, z, pitch_spd, roll_spd, yaw_spd, curr_quat);
 }
 
