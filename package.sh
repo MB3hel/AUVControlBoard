@@ -58,7 +58,7 @@ cp iface/COPYING package/iface/COPYING
 
 # Create docs site
 cd docs
-rm -r site
+rm -rf site
 SITE_URL="" DIR_URLS=false mkdocs build
 cd ..
 
