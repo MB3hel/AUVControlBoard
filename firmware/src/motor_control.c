@@ -33,6 +33,9 @@
 #include <simulator.h>
 
 
+// TODO: Remove this
+#define SASSIST_FALLBACK ' '
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -696,6 +699,7 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     mc_set_local(lx, ly, lz, xrot, yrot, zrot);
 }
 
+#if !defined(SASSIST_FALLBACK) || SASSIST_FALLBACK == ' '
 void mc_set_sassist(float x, float y, float yaw_spd,
         euler_t target_euler,
         float target_depth,
@@ -873,6 +877,7 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     // Target motion now relative to the robot's axes
     mc_set_local(lx, ly, lz, xrot, yrot, zrot);
 }
+#endif
 
 void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth){
     if(fabsf(pid_last_depth - target_depth) > 0.01){
@@ -890,8 +895,9 @@ void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_s
 //       These are "just in case" fallbacks given proper sassit & global have never been tested in water
 //       These SHOULD NOT be used and will likely be removed in the near future after in-water testing.
 
+#if SASSIST_FALLBACK == 'E'
 // Euler angle based PID control of orientation
-void mc_set_esassist(float x, float y, float yaw_spd,
+void mc_set_sassist(float x, float y, float yaw_spd,
         euler_t target_euler,
         float target_depth,
         quaternion_t curr_quat,
@@ -933,9 +939,9 @@ void mc_set_esassist(float x, float y, float yaw_spd,
     euler_t target_euler_rad;
     quat_to_euler(&curr_euler, &curr_quat);
     euler_deg2rad(&target_euler_rad, &target_euler);
-    float pitch_err = -restrict_angle(curr_euler.pitch - target_euler_rad.pitch, true);
-    float roll_err = -restrict_angle(curr_euler.roll - target_euler_rad.roll, true);
-    float yaw_err = -restrict_angle(curr_euler.yaw - target_euler_rad.yaw, true);
+    float pitch_err = -restrict_angle(curr_euler.pitch - target_euler_rad.pitch, false);
+    float roll_err = -restrict_angle(curr_euler.roll - target_euler_rad.roll, false);
+    float yaw_err = -restrict_angle(curr_euler.yaw - target_euler_rad.yaw, false);
 
     // PID calculations
     float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
@@ -984,6 +990,7 @@ void mc_set_esassist(float x, float y, float yaw_spd,
 
     mc_set_local(lx, ly, lz, xrot, yrot, zrot);
 }
+#endif
 
 // LOCAL mode based sassist
 void mc_set_lsassist(float x, float y, float yaw_spd,
