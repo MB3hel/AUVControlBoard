@@ -86,11 +86,13 @@ def main():
     # Make sure script exists and load it
     if args.script.endswith(".py"):
         args.script = args.script[:-3]
-    this_dir = os.path.dirname(__file__)
+    this_dir = os.path.abspath(os.path.dirname(__file__))
     if not os.path.exists(os.path.join(this_dir, "{}.py".format(args.script))):
         print("Invalid script.")
         return 1
     
+    if args.script.startswith(".\\") or args.script.startswith("./"):
+        args.script = args.script[2:]
     mod = importlib.import_module(args.script.replace("/", ".").replace("\\", "."))
     if not hasattr(mod, "run"):
         print("Script missing run function")
