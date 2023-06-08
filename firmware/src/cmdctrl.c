@@ -1127,7 +1127,7 @@ void cmdctrl_ms5837_data(ms5837_data data){
 }
 
 void cmdctrl_send_simstat(void){
-    uint8_t simstat[39];
+    uint8_t simstat[41];
     simstat[0] = 'S';
     simstat[1] = 'I';
     simstat[2] = 'M';
@@ -1143,9 +1143,9 @@ void cmdctrl_send_simstat(void){
     conversions_float_to_data(sim_speeds[5], &simstat[27], true);
     conversions_float_to_data(sim_speeds[6], &simstat[31], true);
     conversions_float_to_data(sim_speeds[7], &simstat[35], true);
-    simstat[31] = mode & 0xFF;
-    simstat[32] = motors_enabled ? 0 : 1;
-    pccomm_write(simstat, 39);
+    simstat[39] = mode & 0xFF;
+    simstat[40] = motors_enabled ? 0 : 1;
+    pccomm_write(simstat, 41);
 }
 
 void cmdctrl_simhijack(bool hijack){
