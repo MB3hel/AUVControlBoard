@@ -992,25 +992,3 @@ void mc_set_sassist(float x, float y, float yaw_spd,
 }
 #endif
 
-// LOCAL mode based sassist
-void mc_set_lsassist(float x, float y, float yaw_spd,
-        euler_t target_euler,
-        float target_depth,
-        quaternion_t curr_quat,
-        float curr_depth,
-        bool yaw_target){
-    // TODO
-}
-
-// Fake sassist without orientation control
-// It's LOCAL mode with a depth PID (assuming -z is down)
-// This is a really bad method, but...
-// really just depth hold mode, but LOCAL not GLOBAL
-void mc_set_fsassist(float x, float y, float yaw_spd,
-        euler_t target_euler,
-        float target_depth,
-        quaternion_t curr_quat,
-        float curr_depth,
-        bool yaw_target){
-    // TODO
-}
