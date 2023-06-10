@@ -31,7 +31,7 @@ from abc import ABC, abstractmethod
 from typing import List, Tuple, Dict
 
 # Collection of all vehicles
-all_vehicles: OrderedDict[str, Tuple['Vehicle', 'Vehicle']] = OrderedDict()
+all_vehicles = OrderedDict()
 
 default_vehicle = ""
 
@@ -193,12 +193,13 @@ class SW8(Vehicle):
     @property
     def zrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
         #       kP      kI      kD      lim     invert
-        return  0.5,    0.0,    0.0,    0.5,    False
+        return  0.8,    0.0,    0.0,    0.8,    False
 
     @property
     def depth_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
         #       kP      kI      kD      lim     invert
         return  1.5,    0.0,    0.0,    1.0,    False
+        # return 0,       0,      0,      0,      False
 
 
 class SW8Sim(SW8):
