@@ -16,13 +16,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with AUVControlBoard.  If not, see <https://www.gnu.org/licenses/>.
 ################################################################################
-# Drive the vehicle using a gamepad. Controls use GLOBAL mode.
+# Drive the vehicle using a gamepad. Controls use STABILITY_ASSIST mode.
 ################################################################################
 # Author: Marcus Behel
 # Date: June 11, 2023
 # Version: 1.0.0
 ################################################################################
-
 
 import signal
 from .arp_gamepad import Gamepad, NetMgr
@@ -36,41 +35,36 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     gp0 = Gamepad.get(0)
 
     print("Enter main loop")
+    depth_target = -0.2
+    pitch_target = 0.0
+    roll_target = 0.0
     try:
         while True:
             # Left stick x and y = strafe
             # Left trigger = yaw ccw
             # Right trigger = yaw cw
             # Dpad up / down = surface / submerge
-            # Right stick x = roll
-            # Right stick y = pitch
             x = gp0.get_axis(0, 0.1)
             y = gp0.get_axis(1, 0.1)
-            roll = gp0.get_axis(2, 0.1)
-            pitch = gp0.get_axis(3, 0.1)
             yawccw = gp0.get_axis(4, 0.1)
             yawcw = gp0.get_axis(5, 0.1)
             yaw = (yawccw - yawcw)
             dpad = gp0.get_dpad(0)
+
             if dpad == 8 or dpad == 1 or dpad == 2:
-                z = 1.0
+                depth_target += 0.05
             elif dpad == 6 or dpad == 5 or dpad == 4:
-                z = -1.0
-            else:
-                z = 0.0
+                depth_target -= 0.05
 
             # Scale speeds to make the robot more controllable
             x *= 0.5
             y *= -0.5
             yaw *= 0.45
-            pitch *= 0.7
-            roll *= 0.2
-            z *= 0.5
 
             # Set the speeds
             # Note that speed updates feed motor watchdog
             # This happens often enough that it is unnecessary to explicitly feed watchdog
-            cb.set_global(x, y, z, pitch, roll, yaw)
+            cb.set_sassist1(x, y, yaw, pitch_target, roll_target, depth_target)
             time.sleep(0.02)
     except (KeyboardInterrupt, Exception) as e:
         cb.set_global(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)

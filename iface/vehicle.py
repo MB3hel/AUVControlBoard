@@ -29,6 +29,7 @@ from collections import OrderedDict
 from control_board import ControlBoard
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Dict
+import time
 
 # Collection of all vehicles
 all_vehicles = OrderedDict()
@@ -85,6 +86,11 @@ class Vehicle(ABC):
         ack = cb.tune_sassist_depth(*self.depth_pid_tuning)
         if ack != ControlBoard.AckError.NONE:
             return ack, "tune_sassist_depth"
+
+        # IMU axis configuration will result in IMU giving zero data
+        # for a few samples. Wait for a few seconds until valid data.
+        # TODO: Implement better solution (probably in control_board.py)
+        time.sleep(2)
 
         return ControlBoard.AckError.NONE, ""
 
