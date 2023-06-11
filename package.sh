@@ -47,8 +47,11 @@ cp -r firmware/tools/uf2conv/ package/firmware/tools/
 cp -r firmware/src/ package/firmware/source/
 cp -r firmware/include/ package/firmware/source/
 cp -r firmware/thirdparty/ package/firmware/source/
+cp -r firmware/toolchains/ package/firmware/source/
 cp firmware/CMakeLists.txt package/firmware/source/
 cp firmware/CMakePresets.json package/firmware/source/
+
+
 
 # Copy Python interface code
 cp iface/*.py package/iface/
