@@ -26,7 +26,6 @@
 ################################################################################
 
 import argparse
-import textwrap
 import sys
 import os
 from control_board import ControlBoard, Simulator

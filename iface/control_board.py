@@ -16,8 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with AUVControlBoard.  If not, see <https://www.gnu.org/licenses/>.
 ################################################################################
-# Vehicle definitions (used by launch.py)
-# IF ADDING VEHICLE CLASSES HERE, ADD TO THE "vehicles" DICT IN launch.py
+# Control board interface class & simulator interface class
 ################################################################################
 # Author: Marcus Behel
 # Date: May 12, 2023
