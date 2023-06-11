@@ -34,8 +34,13 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     netmgr = NetMgr()
     gp0 = Gamepad.get(0)
 
+    print("Enabling sensor data")
+    cb.read_bno055_periodic(True)
+    cb.read_ms5837_periodic(True)
+    time.sleep(0.5) # Wait for data to actually be sent
+
     print("Enter main loop")
-    depth_target = -0.2
+    depth_target = cb.get_ms5837_data().depth
     pitch_target = 0.0
     roll_target = 0.0
     try:
@@ -52,9 +57,9 @@ def run(cb: ControlBoard, s: Simulator) -> int:
             dpad = gp0.get_dpad(0)
 
             if dpad == 8 or dpad == 1 or dpad == 2:
-                depth_target += 0.05
+                depth_target = cb.get_ms5837_data().depth + 0.2
             elif dpad == 6 or dpad == 5 or dpad == 4:
-                depth_target -= 0.05
+                depth_target = cb.get_ms5837_data().depth - 0.2
 
             # Scale speeds to make the robot more controllable
             x *= 0.5
