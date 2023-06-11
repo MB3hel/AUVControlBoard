@@ -17,6 +17,7 @@
 # along with AUVControlBoard.  If not, see <https://www.gnu.org/licenses/>.
 ################################################################################
 # Drive the vehicle using a gamepad. Controls use GLOBAL mode.
+# Requires https://github.com/ArPiRobot/ArPiRobot-DriveStation
 ################################################################################
 # Author: Marcus Behel
 # Date: June 11, 2023

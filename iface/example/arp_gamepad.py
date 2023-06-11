@@ -17,6 +17,7 @@
 # along with AUVControlBoard.  If not, see <https://www.gnu.org/licenses/>.
 ################################################################################
 # Support code to interface with ArPiRobot Drive Station
+# https://github.com/ArPiRobot/ArPiRobot-DriveStation
 # This only supports gamepads. The network table and enable / disable commands
 # are not supported.
 #
