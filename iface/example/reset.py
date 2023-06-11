@@ -25,6 +25,10 @@
 # Version: 1.0.0
 ################################################################################
 
+if __name__ == "__main__":
+    print("Do not run this script directly. Use launch.py to run it.")
+    exit(1)
+
 from control_board import ControlBoard, Simulator
 
 

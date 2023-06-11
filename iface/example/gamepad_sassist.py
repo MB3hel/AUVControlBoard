@@ -24,8 +24,12 @@
 # Version: 1.0.0
 ################################################################################
 
+if __name__ == "__main__":
+    print("Do not run this script directly. Use launch.py to run it.")
+    exit(1)
+
 import signal
-from .arp_gamepad import Gamepad, NetMgr
+from arp_gamepad import Gamepad, NetMgr
 import time
 from control_board import ControlBoard, Simulator
 
@@ -85,3 +89,4 @@ def run(cb: ControlBoard, s: Simulator) -> int:
 def dummy_handler(signum, frame):
     # Used temporarily suppress ctrl-c
     pass
+
