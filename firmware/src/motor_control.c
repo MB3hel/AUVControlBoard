@@ -33,9 +33,6 @@
 #include <simulator.h>
 
 
-// TODO: Remove this
-#define SASSIST_FALLBACK ' '
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -701,7 +698,6 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     mc_set_local(lx, ly, lz, xrot, yrot, zrot);
 }
 
-#if !defined(SASSIST_FALLBACK) || SASSIST_FALLBACK == ' '
 void mc_set_sassist(float x, float y, float yaw_spd,
         euler_t target_euler,
         float target_depth,
@@ -879,7 +875,6 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     // Target motion now relative to the robot's axes
     mc_set_local(lx, ly, lz, xrot, yrot, zrot);
 }
-#endif
 
 void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth){
     if(fabsf(pid_last_depth - target_depth) > 0.01){
@@ -891,106 +886,3 @@ void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_s
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-// TODO: Remove these. These are fallback metods of sassist (all have issues / limitations)
-//       These are "just in case" fallbacks given proper sassit & global have never been tested in water
-//       These SHOULD NOT be used and will likely be removed in the near future after in-water testing.
-
-#if SASSIST_FALLBACK == 'E'
-// Euler angle based PID control of orientation
-void mc_set_sassist(float x, float y, float yaw_spd,
-        euler_t target_euler,
-        float target_depth,
-        quaternion_t curr_quat,
-        float curr_depth,
-        bool yaw_target){
-
-    // PID reset conditions
-    if(fabsf(pid_last_depth - target_depth) > 0.01){
-        PID_RESET(depth_pid);
-    }
-    bool do_reset = false;
-    do_reset = 
-            (
-                // Reset when changing from SASSIST1 to SASSIST2
-                yaw_target != pid_last_yaw_target
-            ) 
-            ||
-            (
-                // SASSIST2: reset if any target angle is changed
-                yaw_target && 
-                fabsf(target_euler.pitch - pid_last_target.pitch) > 1e-2 &&
-                fabsf(target_euler.roll - pid_last_target.roll) > 1e-2 &&
-                fabsf(target_euler.yaw - pid_last_target.yaw) > 1e-2
-            ) 
-            ||
-            (   
-                // SASSIST1: reset if pitch or roll target angle is changed
-                !yaw_target &&
-                fabsf(target_euler.pitch - pid_last_target.pitch) > 1e-2 &&
-                fabsf(target_euler.roll - pid_last_target.roll) > 1e-2
-            );
-    if(do_reset){
-        PID_RESET(xrot_pid);
-        PID_RESET(yrot_pid);
-        PID_RESET(zrot_pid);
-    }
-
-    euler_t curr_euler;
-    euler_t target_euler_rad;
-    quat_to_euler(&curr_euler, &curr_quat);
-    euler_deg2rad(&target_euler_rad, &target_euler);
-    float pitch_err = -restrict_angle(curr_euler.pitch - target_euler_rad.pitch, false);
-    float roll_err = -restrict_angle(curr_euler.roll - target_euler_rad.roll, false);
-    float yaw_err = -restrict_angle(curr_euler.yaw - target_euler_rad.yaw, false);
-
-    // PID calculations
-    float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
-    float xrot = pid_calculate(&xrot_pid, pitch_err);
-    float yrot = pid_calculate(&yrot_pid, roll_err);
-    float zrot;
-    if(yaw_target)
-        zrot = pid_calculate(&zrot_pid, yaw_err);
-    else
-        zrot = yaw_spd;
-
-    // Store old targets (used to determine when to reset PIDs)
-    pid_last_depth = target_depth;
-    pid_last_target = target_euler;
-    pid_last_yaw_target = yaw_target;
-
-    mc_downscale_reldof(&xrot, &yrot, &zrot, xrot, yrot, zrot, true);
-    mc_downscale_if_needed(&xrot, &yrot, &zrot, xrot, yrot, zrot);
-
-    quaternion_t qrot;
-    mc_grav_rot(&qrot, &curr_quat);
-
-    float tx_x, tx_y, tx_z;
-    rotate_vector(&tx_x, &tx_y, &tx_z, x, 0.0f, 0.0f, &qrot);
-    mc_upscale_vec(&tx_x, &tx_y, &tx_z, tx_x, tx_y, tx_z, x);
-
-    float ty_x, ty_y, ty_z;
-    rotate_vector(&ty_x, &ty_y, &ty_z, 0.0f, y, 0.0f, &qrot);
-    mc_upscale_vec(&ty_x, &ty_y, &ty_z, ty_x, ty_y, ty_z, y);
-
-    float tz_x, tz_y, tz_z;
-    rotate_vector(&tz_x, &tz_y, &tz_z, 0.0f, 0.0f, z, &qrot);
-    mc_upscale_vec(&tz_x, &tz_y, &tz_z, tz_x, tz_y, tz_z, z);
-    
-    // Combine each translation component
-    float lx = tx_x + ty_x + tz_x;
-    float ly = tx_y + ty_y + tz_y;
-    float lz = tx_z + ty_z + tz_z;
-    
-    // Compensate for differences in vehicle speed in different DoFs
-    mc_downscale_reldof(&lx, &ly, &lz, lx, ly, lz, false);
-
-    // Proportionally scale translation speeds so all have magnitude less than 1.0
-    mc_downscale_if_needed(&lx, &ly, &lz, lx, ly, lz);
-
-
-    mc_set_local(lx, ly, lz, xrot, yrot, zrot);
-}
-#endif
-
