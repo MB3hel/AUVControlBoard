@@ -810,7 +810,7 @@ void cmdctrl_handle_message(void){
             periodic_bno055 = msg[7];
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'M', 'S', '5', '8', '3', '7', 'R'}))){
+    }else if(MSG_EQUALS(((uint8_t[]){'M', 'S', '5', '8', '3', '7', 'R'}))){
         // One-shot read of BNO055 data (all data)
         // M, S, 5, 8, 3, 7, R
         // Response contains [depth_m]
