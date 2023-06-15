@@ -1037,8 +1037,7 @@ void cmdctrl_handle_message(void){
                 LIMIT(dhold_pitch_spd);
                 LIMIT(dhold_roll_spd);
                 LIMIT(dhold_yaw_spd);
-                LIMIT(dhold_depth);
-
+                
                 // Reset time until periodic speed set
                 xTimerReset(periodic_speed_timer, portMAX_DELAY);
 
