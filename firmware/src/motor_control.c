@@ -799,16 +799,16 @@ void mc_set_sassist(float x, float y, float yaw_spd,
             (
                 // SASSIST2: reset if any target angle is changed
                 yaw_target && 
-                fabsf(target_euler.pitch - pid_last_target.pitch) > 1e-2 &&
-                fabsf(target_euler.roll - pid_last_target.roll) > 1e-2 &&
-                fabsf(target_euler.yaw - pid_last_target.yaw) > 1e-2
+                (fabsf(target_euler.pitch - pid_last_target.pitch) > 1e-2 ||
+                fabsf(target_euler.roll - pid_last_target.roll) > 1e-2 ||
+                fabsf(target_euler.yaw - pid_last_target.yaw) > 1e-2)
             ) 
             ||
             (   
                 // SASSIST1: reset if pitch or roll target angle is changed
                 !yaw_target &&
-                fabsf(target_euler.pitch - pid_last_target.pitch) > 1e-2 &&
-                fabsf(target_euler.roll - pid_last_target.roll) > 1e-2
+                (fabsf(target_euler.pitch - pid_last_target.pitch) > 1e-2 ||
+                fabsf(target_euler.roll - pid_last_target.roll) > 1e-2)
             );
     if(do_reset){
         PID_RESET(xrot_pid);
