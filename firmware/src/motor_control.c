@@ -414,6 +414,8 @@ static inline void mc_downscale_reldof(float *dx, float *dy, float *dz, float sx
 
     // Rebalance scale factors so largest is 1.0f
     float maxscale = MAX(scale_x, MAX(scale_y, scale_z));
+    if(maxscale == 0.0f)
+        maxscale = 1.0f;
     scale_x /= maxscale;
     scale_y /= maxscale;
     scale_z /= maxscale;
