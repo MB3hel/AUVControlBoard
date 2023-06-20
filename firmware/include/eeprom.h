@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Marcus Behel
+ * Copyright 2023 Marcus Behel
  * 
  * This file is part of AUVControlBoard-Firmware.
  * 
@@ -19,8 +19,6 @@
 #pragma once
 
 #include <stdint.h>
-
-// TODO: Addresses as macros (constants)
 
 /**
  * Initialize eeprom (or emulated eeprom)

@@ -35,7 +35,11 @@ SEARCH_DIR(.)
 /* Memory Spaces Definitions */
 MEMORY
 {
-  rom      (rx)  : ORIGIN = 0x00004000, LENGTH = 0x0007C000
+  /*
+    First 16k of rom (flash) for bootloader (at start of flash so offset and reduce size)
+    Also using 2 blocks of flash for SmartEEPROM, (at end of flash thus reduce size by 16384)
+  */
+  rom      (rx)  : ORIGIN = 0x00004000, LENGTH = 0x00078000
   ram      (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00030000 - 0x100
   noinit   (rwx) : ORIGIN = 0x20000000 + 0x00030000 - 0x100, LENGTH = 0x100
   bkupram  (rwx) : ORIGIN = 0x47000000, LENGTH = 0x00002000
