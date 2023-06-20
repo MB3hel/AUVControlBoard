@@ -40,8 +40,8 @@ void eeprom_init(void){
         // Then, the device is reset to apply the configuration.
 
         // See page 56 of datasheet for which bits are what in the user row.
-        // NOTE: Must not loose other parts of user row! Must read then write! Other parts remain unchanged.
-        // NOTE: Loosing power while erasing and writing this page could render the chip unusable!
+        // NOTE: Must not lose other parts of user row! Must read then write! Other parts remain unchanged.
+        // NOTE: Losing power while erasing and writing this page could render the chip unusable!
         uint32_t user_row[128];
         NVMCTRL_Read(user_row, 128, NVMCTRL_USERROW_START_ADDRESS);
         user_row[1] &= ~(FUSES_USER_WORD_1_NVMCTRL_SEESBLK_Msk | FUSES_USER_WORD_1_NVMCTRL_SEEPSZ_Msk);
