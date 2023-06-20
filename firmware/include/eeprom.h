@@ -19,6 +19,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /**
  * Initialize eeprom (or emulated eeprom)
@@ -29,17 +30,15 @@ void eeprom_init(void);
 /**
  * Write data to the eeprom at the specified address
  * 
- * @param address Address to write data at
- * @param data Data to be written (pointer to data array)
- * @param len Length of data to write
+ * @param address Address to write data at (0 for first byte of eeprom)
+ * @param data Data to be written 
  */
-void eeprom_write(uint16_t address, uint8_t *data, unsigned int len);
+bool eeprom_write(uint16_t address, uint8_t data);
 
 /**
  * Read data from the eeprom at the specified address
  * 
- * @param address Address to read data from
- * @param data Pointer to array to read data into
- * @param len Amount of bytes to read (data array must be at least this length)
+ * @param address Address to read data from (0 for first byte of eeprom)
+ * @param data Pointer to variable to store read data in
  */
-void eeprom_read(uint16_t *address, uint8_t *data, unsigned int len);
+bool eeprom_read(uint16_t address, uint8_t *data);
