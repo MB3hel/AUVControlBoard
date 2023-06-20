@@ -30,14 +30,7 @@
 static volatile uint8_t *eeprom;
 static bool valid = false;
 
-void eeprom_init(void){
-    // TODO: Load User page from NVMCTRL
-    // TODO: If SmartEEPROM bits are not correct, update the User page
-    //       See https://github.com/GMagician/SAMD51-SmartEEprom-Manager/blob/master/SEEManager/SEEManager.ino
-    //       This is necessary to update the device configuration bits (sometimes called fuses)
-    // TODO: If this is changed, reset to apply the changes
-    // TODO: If no change required, can continue with init as usual
-    
+void eeprom_init(void){    
     // Check if SmartEEPROM is configured correctly (SBLK and PSZ)
     uint32_t seestat = NVMCTRL_SmartEEPROMStatusGet();
     uint8_t sblk = seestat & NVMCTRL_SEESTAT_SBLK_Msk >> NVMCTRL_SEESTAT_SBLK_Pos;
@@ -48,6 +41,7 @@ void eeprom_init(void){
 
         // See page 56 of datasheet for which bits are what in the user row.
         // NOTE: Must not loose other parts of user row! Must read then write! Other parts remain unchanged.
+        // NOTE: Loosing power while erasing and writing this page could render the chip unusable!
         uint32_t user_row[128];
         NVMCTRL_Read(user_row, 128, NVMCTRL_USERROW_START_ADDRESS);
         user_row[1] &= ~(FUSES_USER_WORD_1_NVMCTRL_SEESBLK_Msk | FUSES_USER_WORD_1_NVMCTRL_SEEPSZ_Msk);
