@@ -56,11 +56,19 @@ void eeprom_init(void){
     }
 
     // SmartEEPROM size is configured correctly via fuses
-    // TODO: Make sure to unlock SEE (NVMCTRL command?)
-    // TODO: other configuration (enable automatic reallocation, unbuffered mode)
-    // TODO: assign eeprom pointer
-    // TODO: Wait until SmartEEPROM not busy
-    // TODO: valid = true;
+
+    // Unlock SmartEEPROM if locked
+    if(NVMCTRL_REGS->NVMCTRL_SEESTAT & NVMCTRL_SEESTAT_LOCK_Msk){
+        NVMCTRL_REGS->NVMCTRL_CTRLB = NVMCTRL_CTRLB_CMD_USEE | NVMCTRL_CTRLB_CMDEX_KEY;
+    }
+
+    // Configure SmartEEPROM (unbuffered, automatic reallocation)
+    NVMCTRL_REGS->NVMCTRL_SEECFG = NVMCTRL_SEECFG_APRDIS(0) | NVMCTRL_SEECFG_WMODE(0);
+
+    // Assign pointer and flag valid once ready
+    eeprom = (uint8_t*)(SEEPROM_ADDR);
+    while(NVMCTRL_SmartEEPROM_IsBusy());
+    valid = true;
 }
 
 bool eeprom_write(uint16_t address, uint8_t data){
