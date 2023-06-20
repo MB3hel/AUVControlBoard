@@ -32,6 +32,7 @@
 #include <wdt.h>
 #include <debug.h>
 #include <pccomm.h>
+#include <eeprom.h>
 
 
 #if defined(CONTROL_BOARD_V1)
@@ -64,6 +65,7 @@ int main(void){
     mc_init();
     cmdctrl_init();
     i2c_init();
+    eeprom_init();
     // -------------------------------------------------------------------------
     
     app_init();

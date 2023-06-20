@@ -26,6 +26,7 @@
 
 #include <eeprom.h>
 #include <framework.h>
+#include <led.h>
 
 static volatile uint8_t *eeprom;
 static bool valid = false;
@@ -33,8 +34,8 @@ static bool valid = false;
 void eeprom_init(void){    
     // Check if SmartEEPROM is configured correctly (SBLK and PSZ)
     uint32_t seestat = NVMCTRL_SmartEEPROMStatusGet();
-    uint8_t sblk = seestat & NVMCTRL_SEESTAT_SBLK_Msk >> NVMCTRL_SEESTAT_SBLK_Pos;
-    uint8_t psz = seestat & NVMCTRL_SEESTAT_PSZ_Msk >> NVMCTRL_SEESTAT_PSZ_Pos;
+    uint32_t sblk = (seestat & NVMCTRL_SEESTAT_SBLK_Msk) >> NVMCTRL_SEESTAT_SBLK_Pos;
+    uint32_t psz = (seestat & NVMCTRL_SEESTAT_PSZ_Msk) >> NVMCTRL_SEESTAT_PSZ_Pos;
     if(sblk != SBLK_VAL || psz != PSZ_VAL){
         // SBLK and PSZ are not correct. These need to be written in the user row. 
         // Then, the device is reset to apply the configuration.
@@ -47,12 +48,12 @@ void eeprom_init(void){
         user_row[1] &= ~(FUSES_USER_WORD_1_NVMCTRL_SEESBLK_Msk | FUSES_USER_WORD_1_NVMCTRL_SEEPSZ_Msk);
         user_row[1] |= FUSES_USER_WORD_1_NVMCTRL_SEESBLK(SBLK_VAL) | FUSES_USER_WORD_1_NVMCTRL_SEEPSZ(PSZ_VAL);
 
-        // TODO: Enable this once above code has been checked under debugger.
-        // TODO: Turn LED white (indication to user to not unplug)
-        // NVMCTRL_USER_ROW_RowErase(NVMCTRL_USERROW_START_ADDRESS);
-        // NVMCTRL_USER_ROW_PageWrite(user_row, NVMCTRL_USERROW_START_ADDRESS);
-        // NVIC_SystemReset();
-        // while(1);
+        // NOTE: LED is white to indicate to user that poweroff is not safe!
+        led_set(255, 255, 255);
+        NVMCTRL_USER_ROW_RowErase(NVMCTRL_USERROW_START_ADDRESS);
+        NVMCTRL_USER_ROW_PageWrite(user_row, NVMCTRL_USERROW_START_ADDRESS);
+        NVIC_SystemReset();
+        while(1);
     }
 
     // SmartEEPROM size is configured correctly via fuses
