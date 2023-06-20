@@ -20,6 +20,7 @@
 // IMPLEMENTED USING SAMD51's NVMCTRL SmartEEPROM (EEPROM emulated using flash)
 // Configured as a 1024 byte EEPROM (see Table 25-6 on page 597 of datasheet)
 // SBLK = 1, PSZ = 8 bytes = 1 (see table 25-11 on page 601 for PSZ values)
+// NOTE: If this is changed you must edit the linker script too (see table 25-10 on page 600 of datasheet)
 #define SBLK_VAL    1
 #define PSZ_VAL     1
 
