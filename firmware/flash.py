@@ -36,7 +36,7 @@ if __name__ == "__main__":
         if args.uploader == "bossa":
             # bossac -o 0x4000 -e -w -v -b -R firmware.bin
             # If port is not auto, port is passed with -p flag
-            cmd = ["bossac", "-o", "0x4000", "-e", "-w", "-v", "-b", "-R"]
+            cmd = ["bossac", "-o", "0x4000", "-w", "-v", "-b", "-R"]
             if args.port != "auto":
                 cmd.extend(["-p", args.port])
             cmd.append(os.path.join(script_dir, "build", "v1", args.config, "ControlBoard.bin"))

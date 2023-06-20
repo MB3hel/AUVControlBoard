@@ -33,6 +33,7 @@
 #include <debug.h>
 #include <pccomm.h>
 #include <eeprom.h>
+#include <calibration.h>
 
 
 #if defined(CONTROL_BOARD_V1)
@@ -66,6 +67,7 @@ int main(void){
     cmdctrl_init();
     i2c_init();
     eeprom_init();
+    calibration_load();
     // -------------------------------------------------------------------------
     
     app_init();
