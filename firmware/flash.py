@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Flash control board firmware.")
     parser.add_argument("cboard_rev", type=str.lower, choices=["v1", "v2"], help="Which control board revision to flash firmware for.")
     parser.add_argument("config", type=str.lower, choices=["debug", "release", "minsizerel", "relwithdebinfo"], help="Which build type to flash.")
-    parser.add_argument("-u", dest="uploader", metavar="uploader", default="auto", type=str, choices=["auto", "bossa", "uf2conv", "dfu-util", "stm32-dfu", "stm32-stlink2"], help="Which tool to use to upload firmware. Available tools depend on target board.")
+    parser.add_argument("-u", dest="uploader", metavar="uploader", default="auto", type=str, choices=["auto", "bossa", "uf2conv", "dfu-util", "stm32-dfu"], help="Which tool to use to upload firmware. Available tools depend on target board.")
     parser.add_argument("-p", dest="port", metavar="port", type=str, default="auto", help="Port to upload to. Meaning depends on uploader.")
     args = parser.parse_args()
 
@@ -78,7 +78,6 @@ if __name__ == "__main__":
             print(" ".join(cmd))
             subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr, stdin=sys.stdin, shell=False)
         elif args.uploader == "stm32-dfu":
-            # Note: Not erasing sectors 1 and 2 because these are used for eeprom emulation
             # BOOT Segment (flash sector 0): STM32_Programmer_CLI -c port=USB1 -w ControlBoard_boot.bin 0x08000000 -w ControlBoard_main.bin 0x0800C000 -v
             # FLASH segment (flash sectors 3+): STM32_Programmer_CLI -c port=USB1 -w ControlBoard_main.bin 0x0800C000 -v -s
             # In port=USB[n] change [n] to args.port if args.port is not auto
@@ -96,20 +95,6 @@ if __name__ == "__main__":
             cmd.append("-w")
             cmd.append(os.path.join(script_dir, "build", "v2", args.config, "ControlBoard_main.bin"))
             cmd.append("0x0800C000")
-            cmd.extend(["-v", "-s"])
-            print(" ".join(cmd))
-            subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr, stdin=sys.stdin, shell=False)
-        elif args.uploader == "stm32-stlink2":
-            # TODO: Test flash method (boot and main flashed correctly)
-            # TODO: Make sure emulated eeprom sectors are not erased
-            print("ERROR: NOT TESTED WITH EMULATED EEPROM!")
-            exit(1)
-            # STM32_Programmer_CLI -c port=SWD freq=4000 index=0 -e -w ControlBoard.hex -v -s
-            # Change index if args.port is not auto
-            cmd = ["STM32_Programmer_CLI", "-c", "port=SWD", "freq=4000"]
-            cmd.append("index={}".format(args.port if args.port != "auto" else "0"))
-            cmd.extend(["-e", "-w"])
-            cmd.append(os.path.join(script_dir, "build", "v2", args.config, "ControlBoard.hex"))
             cmd.extend(["-v", "-s"])
             print(" ".join(cmd))
             subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr, stdin=sys.stdin, shell=False)

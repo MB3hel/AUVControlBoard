@@ -30,7 +30,6 @@ cmake --build --preset=[preset]-[config]
 | v1         | uf2conv (via bootloader)                 | `uf2conv`       | None |
 | v2         | dfu-util (via bootloader)                | `dfu-util`      | [dfu-util](https://dfu-util.sourceforge.net/) |
 | v2         | STM32CubeProgrammer DFU (via bootloader) | `stm32-dfu`     | [STM32CubeProgrammer](https://www.st.com/en/development-tools/stm32cubeprog.html) |
-| v2         | STM32CubeProgrammer ST-LINK v2           | `stm32-stlink2` |[STM32CubeProgrammer](https://www.st.com/en/development-tools/stm32cubeprog.html) |
 
 *Note: required tool (`bossac`, `dfu-util`, `STM32_Programmer_CLI`) must be in your `PATH`.*
 
