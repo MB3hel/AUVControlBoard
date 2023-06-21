@@ -144,7 +144,8 @@ def update_controlboard_v2():
     # Copy files to appropriate directories
     ####################################################################################################################
     # Linker script
-    shutil.copy(os.path.join(generator_proj, "STM32F411CEUx_FLASH.ld"), dest)
+    # DO NOT COPY THE GENERATED ONE. USING MODIFIED ONE IN SUPPLEMENTAL (EEPROM EMULATION SUPPORT)
+    # shutil.copy(os.path.join(generator_proj, "STM32F411CEUx_FLASH.ld"), dest)
 
     # Startup script
     shutil.copy(os.path.join(generator_proj, "startup_stm32f411xe.s"), dest)
@@ -162,6 +163,7 @@ def update_controlboard_v2():
     # Supplemental files
     shutil.copy(os.path.join(generator_proj, "supplemental", "libc_syscalls.c"), dest)
     shutil.copy(os.path.join(generator_proj, "supplemental", "STM32F411.svd"), dest)
+    shutil.copy(os.path.join(generator_proj, "supplemental", "STM32F411CEUx_FLASH.ld"), dest)
 
 
     # --------------------------------------------------------------------------

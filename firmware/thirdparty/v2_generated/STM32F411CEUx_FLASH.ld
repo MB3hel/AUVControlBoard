@@ -59,10 +59,16 @@ _Min_Heap_Size = 0x200;      /* required amount of heap  */
 _Min_Stack_Size = 0x400; /* required amount of stack */
 
 /* Specify the memory areas */
+/* NOTE: modified to use emulated eeprom in sectors 1 and 2
+         boot code (isr_vector) must be in sector 0
+         so most of this sector is wasted. Actual flash used for other code
+         is in sectors 2 onward*/
 MEMORY
 {
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 128K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 512K
+BOOT_FLASH(rx) : ORIGIN = 0x8000000,  LENGTH = 16K
+EMUEEPROM(rx)  : ORIGIN = 0x08004000, LENGTH = 32K
+FLASH (rx)     : ORIGIN = 0x0800C000, LENGTH = 464K
 }
 
 /* Define output sections */
@@ -74,7 +80,7 @@ SECTIONS
     . = ALIGN(4);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-  } >FLASH
+  } > BOOT_FLASH
 
   /* The program code and other data goes into FLASH */
   .text :

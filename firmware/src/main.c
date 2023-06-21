@@ -68,6 +68,10 @@ int main(void){
     i2c_init();
     eeprom_init();
     calibration_load();
+
+    led_set(255, 0, 0);
+    while(1);
+
     // -------------------------------------------------------------------------
     
     app_init();

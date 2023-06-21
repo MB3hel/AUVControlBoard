@@ -191,9 +191,19 @@ target_compile_definitions(ControlBoard PUBLIC ${DEFINES} ${EXTRA_DEFINES})
 target_compile_options(ControlBoard PUBLIC ${CFLAGS} ${EXTRA_CFLAGS})
 target_link_options(ControlBoard PUBLIC ${LDFLAGS} ${EXTRA_LDFLAGS})
 target_link_libraries(ControlBoard m)
-add_custom_command(TARGET ControlBoard POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} ARGS -O binary "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.elf" "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.bin"
-)
-add_custom_command(TARGET ControlBoard POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} ARGS -O ihex "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.elf" "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.hex"
-)
+
+if("${CBOARD_REV}" STREQUAL "v1")
+    add_custom_command(TARGET ControlBoard POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} ARGS -O binary "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.elf" "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.bin"
+    )
+    add_custom_command(TARGET ControlBoard POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} ARGS -O ihex "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.elf" "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.hex"
+    )
+elseif("${CBOARD_REV}" STREQUAL "v2")
+    add_custom_command(TARGET ControlBoard POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} ARGS -O binary "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.elf" "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.bin"
+    )
+    add_custom_command(TARGET ControlBoard POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} ARGS -O ihex "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.elf" "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.hex"
+    )
+endif()

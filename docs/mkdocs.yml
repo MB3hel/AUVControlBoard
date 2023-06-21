@@ -28,6 +28,7 @@ nav:
     - Off-Board Sensors: hardware/sensors.md
   - Developers:
     - Overview: firmware/overview.md
+    - Implementation Details: firmware/details.md
     - Build and Flash: firmware/build.md
     - Math: firmware/math.md
     - Firmware Development: firmware/developing.md
