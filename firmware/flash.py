@@ -59,16 +59,29 @@ if __name__ == "__main__":
         
         # Flash using specified uploader
         if args.uploader == "dfu-util":
-            # dfu-util -d 0483:df11 -a 0 -s 0x08000000:leave -D ControlBoard.bin
+            # BOOT segment (flash sector 0): dfu-util -d 0483:df11 -a 0 -s 0x08000000 -D ControlBoard_boot.bin
+            # FLASH segment (flash sectors 3+): dfu-util -d 0483:df11 -a 0 -s 0x0800C000:leave -D ControlBoard_main.bin
             # Replace -a 0 with -a args.port if args.port is not auto
             cmd = ["dfu-util", "-d", "0483:df11"]
             cmd.extend(["-a", args.port if args.port != "auto" else "0"])
-            cmd.extend(["-s", "0x08000000:leave"])
+            cmd.extend(["-s", "0x08000000"])
             cmd.append("-D")
-            cmd.append(os.path.join(script_dir, "build", "v2", args.config, "ControlBoard.bin"))
+            cmd.append(os.path.join(script_dir, "build", "v2", args.config, "ControlBoard_boot.bin"))
+            print(" ".join(cmd))
+            subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr, stdin=sys.stdin, shell=False)
+
+            cmd = ["dfu-util", "-d", "0483:df11"]
+            cmd.extend(["-a", args.port if args.port != "auto" else "0"])
+            cmd.extend(["-s", "0x0800C000:leave"])
+            cmd.append("-D")
+            cmd.append(os.path.join(script_dir, "build", "v2", args.config, "ControlBoard_main.bin"))
             print(" ".join(cmd))
             subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr, stdin=sys.stdin, shell=False)
         elif args.uploader == "stm32-dfu":
+            # TODO: Test flash method (boot and main flashed correctly)
+            # TODO: Make sure emulated eeprom sectors are not erased
+            print("ERROR: NOT TESTED WITH EMULATED EEPROM!")
+            exit(1)
             # STM32_Programmer_CLI -c port=USB1 -e -w ControlBoard.hex -v -s
             # In port=USB[n] change [n] to args.port if args.port is not auto
             cmd = ["STM32_Programmer_CLI", "-c"]
@@ -79,6 +92,10 @@ if __name__ == "__main__":
             print(" ".join(cmd))
             subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr, stdin=sys.stdin, shell=False)
         elif args.uploader == "stm32-stlink2":
+            # TODO: Test flash method (boot and main flashed correctly)
+            # TODO: Make sure emulated eeprom sectors are not erased
+            print("ERROR: NOT TESTED WITH EMULATED EEPROM!")
+            exit(1)
             # STM32_Programmer_CLI -c port=SWD freq=4000 index=0 -e -w ControlBoard.hex -v -s
             # Change index if args.port is not auto
             cmd = ["STM32_Programmer_CLI", "-c", "port=SWD", "freq=4000"]

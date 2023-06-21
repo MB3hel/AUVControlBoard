@@ -13,6 +13,7 @@ TODO: EEPROM Emulation
     - Using sectors 1 and 2
     - isr_vectors must be in sector 0, most of this sector is wasted
     - Flash used by program starts at sector 3. Leaves 464k flash for use.
+    - Note that since flash is split, flashing must occur in two stages (boot and main) using dfu-util
 
 
 
