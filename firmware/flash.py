@@ -78,16 +78,24 @@ if __name__ == "__main__":
             print(" ".join(cmd))
             subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr, stdin=sys.stdin, shell=False)
         elif args.uploader == "stm32-dfu":
-            # TODO: Test flash method (boot and main flashed correctly)
-            # TODO: Make sure emulated eeprom sectors are not erased
-            print("ERROR: NOT TESTED WITH EMULATED EEPROM!")
-            exit(1)
-            # STM32_Programmer_CLI -c port=USB1 -e -w ControlBoard.hex -v -s
+            # Note: Not erasing sectors 1 and 2 because these are used for eeprom emulation
+            # BOOT Segment (flash sector 0): STM32_Programmer_CLI -c port=USB1 -w ControlBoard_boot.bin 0x08000000 -w ControlBoard_main.bin 0x0800C000 -v
+            # FLASH segment (flash sectors 3+): STM32_Programmer_CLI -c port=USB1 -w ControlBoard_main.bin 0x0800C000 -v -s
             # In port=USB[n] change [n] to args.port if args.port is not auto
             cmd = ["STM32_Programmer_CLI", "-c"]
             cmd.append("port=USB{}".format(args.port if args.port != "auto" else "1"))
-            cmd.extend(["-e", "-w"])
-            cmd.append(os.path.join(script_dir, "build", "v2", args.config, "ControlBoard.hex"))
+            cmd.append("-w")
+            cmd.append(os.path.join(script_dir, "build", "v2", args.config, "ControlBoard_boot.bin"))
+            cmd.append("0x08000000")
+            cmd.extend(["-v"])
+            print(" ".join(cmd))
+            subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr, stdin=sys.stdin, shell=False)
+
+            cmd = ["STM32_Programmer_CLI", "-c"]
+            cmd.append("port=USB{}".format(args.port if args.port != "auto" else "1"))
+            cmd.append("-w")
+            cmd.append(os.path.join(script_dir, "build", "v2", args.config, "ControlBoard_main.bin"))
+            cmd.append("0x0800C000")
             cmd.extend(["-v", "-s"])
             print(" ".join(cmd))
             subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr, stdin=sys.stdin, shell=False)
