@@ -17,12 +17,38 @@
  */
 
 #include <stdbool.h>
+#include <stdint.h>
+
+
+typedef struct {
+    // Accelerometer data
+    uint16_t accel_offset_x;
+    uint16_t accel_offset_y; 
+    uint16_t accel_offset_z; 
+    uint16_t accel_radius;
+
+    // Gyro data
+    uint16_t gyro_offset_x;
+    uint16_t gyro_offset_y;
+    uint16_t gyro_offset_z;
+} calibration_data_t;
 
 
 extern bool calibration_valid;
-// TODO: Calibration constants
+extern calibration_data_t calibration_data;
 
 
+/**
+ * Load calibrations from eeprom
+ */
 void calibration_load(void);
 
-// TODO: void calibration_store(/*todo*/);
+/**
+ * Store the given calibration to eeprom
+ */
+void calibration_store(calibration_data_t new_data);
+
+/**
+ * Erase stored calibration data (invalidates it)
+ */
+void calibration_erase(void);
