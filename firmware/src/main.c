@@ -68,24 +68,6 @@ int main(void){
     i2c_init();
     eeprom_init();
     calibration_load();
-
-    uint16_t data;
-    eeprom_read(0, &data);
-    if(data == 0x2154){
-        led_set(0, 255, 0);
-        while(1);
-    }else{
-        bool res = eeprom_write(0, 0x2154);
-        if(res)
-            led_set(0, 0, 255);
-        else
-            led_set(255, 0, 0);
-        while(1);
-    }
-
-    led_set(0, 0, 255);
-    while(1);
-
     // -------------------------------------------------------------------------
     
     app_init();
