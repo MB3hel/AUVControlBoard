@@ -36,21 +36,16 @@ void eeprom_init(void){
     }
 }
 
-bool eeprom_write(uint16_t address, uint8_t data){
+bool eeprom_write(uint16_t address, uint16_t data){
     if(!valid)
         return false;
-    uint16_t res = EE_WriteVariable(VirtAddVarTab[address], (uint16_t)data);
+    uint16_t res = EE_WriteVariable(VirtAddVarTab[address], data);
     return res == EE_OK;
 }
 
-bool eeprom_read(uint16_t address, uint8_t *data){
+bool eeprom_read(uint16_t address, uint16_t *data){
     if(!valid)
         return false;
-    uint16_t d16;
-    uint16_t res = EE_ReadVariable(VirtAddVarTab[address], &d16);
-    if(res == EE_OK){
-        *data = (uint8_t)d16;
-        return true;
-    }
-    return false;
+    uint16_t res = EE_ReadVariable(VirtAddVarTab[address], data);
+    return res == EE_OK;
 }

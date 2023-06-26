@@ -33,7 +33,7 @@ void eeprom_init(void);
  * @param address Address to write data at (0 for first byte of eeprom)
  * @param data Data to be written 
  */
-bool eeprom_write(uint16_t address, uint8_t data);
+bool eeprom_write(uint16_t address, uint16_t data);
 
 /**
  * Read data from the eeprom at the specified address
@@ -41,4 +41,4 @@ bool eeprom_write(uint16_t address, uint8_t data);
  * @param address Address to read data from (0 for first byte of eeprom)
  * @param data Pointer to variable to store read data in
  */
-bool eeprom_read(uint16_t address, uint8_t *data);
+bool eeprom_read(uint16_t address, uint16_t *data);

@@ -26,22 +26,22 @@ bool calibration_valid = false;
 // TODO: Other values
 
 
-// Indices (addresses) of different bytes in eeprom
-#define SIG_IDX     (0x00)      // First 4 bytes are signature
+// Indices (addresses) of different values (16-bit) in eeprom
+#define SIG_IDX     (0x00)      // First 2 values are signature
 // TODO: Other values
 
 
 void calibration_load(void){
-    // First 4 bytes are a calibration signature. If the bytes match this signature,
+    // First 2 half-words are a calibration signature. If the bytes match this signature,
     // it is assumed that a valid set of calibration constants are stored in the eeprom.
     // Otherwise, it is assumed that the calibration data is not valid (has never been stored).
 
     // This is the correct signature. Will be compared to read signature bytes
-    const uint8_t cal_sig[4] = {0x3b, 0x3b, 0x3b, 0x3b};
+    const uint16_t cal_sig[4] = {0x3b3b, 0x3b3b};
 
     // Read signature from eeprom and compare
-    uint8_t val;
-    for(unsigned int i = 0; i < 4; ++i){
+    uint16_t val;
+    for(unsigned int i = 0; i < 2; ++i){
         eeprom_read(SIG_IDX + i, &val);
         if(val != cal_sig[i]){
             calibration_valid = false;

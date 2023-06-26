@@ -29,7 +29,7 @@
 #include <framework.h>
 #include <led.h>
 
-static volatile uint8_t *eeprom;
+static volatile uint16_t *eeprom;
 static bool valid = false;
 
 void eeprom_init(void){    
@@ -68,12 +68,12 @@ void eeprom_init(void){
     NVMCTRL_REGS->NVMCTRL_SEECFG = NVMCTRL_SEECFG_APRDIS(0) | NVMCTRL_SEECFG_WMODE(0);
 
     // Assign pointer and flag valid once ready
-    eeprom = (uint8_t*)(SEEPROM_ADDR);
+    eeprom = (uint16_t*)(SEEPROM_ADDR);
     while(NVMCTRL_SmartEEPROM_IsBusy());
     valid = true;
 }
 
-bool eeprom_write(uint16_t address, uint8_t data){
+bool eeprom_write(uint16_t address, uint16_t data){
     if(!valid)
         return false;
     while(NVMCTRL_SmartEEPROM_IsBusy());
@@ -85,7 +85,7 @@ bool eeprom_write(uint16_t address, uint8_t data){
     return true;
 }
 
-bool eeprom_read(uint16_t address, uint8_t *data){
+bool eeprom_read(uint16_t address, uint16_t *data){
     if(!valid)
         return false;
     while(NVMCTRL_SmartEEPROM_IsBusy());
