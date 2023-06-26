@@ -29,6 +29,7 @@
 #include <wdt.h>
 #include <debug.h>
 #include <simulator.h>
+#include <calibration.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -1094,6 +1095,27 @@ void cmdctrl_handle_message(void){
             // Message handled successfully
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
+    }else if(MSG_EQUALS(((uint8_t[]){'S', 'E', 'N', 'C', 'A', 'L', 'R'}))){
+        // S, E, N, C, A, L, 'R'
+        // Sensor calibration status query
+        // ACK contains the following data
+        // [valid], [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
+        // Valid is a single byte. 0 = invalid, 1 = valid data
+        // All other values are 16-bit little endian integers. If data is valid these will be calibration constants. If not, these will be zero
+        // TODO
+    }else if(MSG_EQUALS(((uint8_t[]){'S', 'E', 'N', 'C', 'A', 'L', 'E'}))){
+        // S, E, N, C, A, L, E
+        // Sensor calibration erase command
+        calibration_erase();
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'E', 'N', 'C', 'A', 'L', 'S'}))){
+        // S, E, N, C, A, L, S, [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
+        // Sensor calibration set command
+        // All values are 16-bit little endian integers (calibration values)
+        // TODO: Store calibration
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'C'}))){
+        // Get current BNO055 calibration status
+        // Note that this will only be "generated" if the stored calibration (calibration.h/c) is erased (using SENCAL) commands
+        // TODO: Implement
     }else{
         // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG, NULL, 0);
