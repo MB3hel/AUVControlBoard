@@ -71,9 +71,7 @@
 // Thus, vectors can go in section 0 (as required), but the rest of rom is contiguous address space
 // allowing gcc linker script to operate as usual. This does waste a little bit of 
 // flash in sector 0 (just used for vectors so almost 16k wasted flash, but that doesn't really matter here)
-#define EEPROM_START_ADDRESS  ((uint32_t)0x08004000) /* EEPROM emulation start address:
-                                                  from sector2 : after 16KByte of used 
-                                                  Flash memory */
+#define EEPROM_START_ADDRESS  ((uint32_t)0x08004000)
 
 /* Pages 0 and 1 base and end addresses */
 #define PAGE0_BASE_ADDRESS    ((uint32_t)(EEPROM_START_ADDRESS + 0x0000))

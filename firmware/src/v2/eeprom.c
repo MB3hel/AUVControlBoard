@@ -19,15 +19,38 @@
 #include <eeprom.h>
 #include <framework.h>
 #include <led.h>
+#include <st_eeprom.h>
+#include <stdint.h>
 
-void eeprom_init(void){    
-    
+static bool valid = false;
+uint16_t VirtAddVarTab[NB_OF_VAR];
+
+void eeprom_init(void){  
+    for(unsigned int VarIndex = 1; VarIndex <= NB_OF_VAR; VarIndex++){
+        VirtAddVarTab[VarIndex-1] = VarIndex;
+    } 
+    HAL_FLASH_Unlock(); 
+    uint16_t res = EE_Init();
+    if(res == EE_OK){
+        valid = true;
+    }
 }
 
 bool eeprom_write(uint16_t address, uint8_t data){
-    return false;
+    if(!valid)
+        return false;
+    uint16_t res = EE_WriteVariable(VirtAddVarTab[address], (uint16_t)data);
+    return res == EE_OK;
 }
 
 bool eeprom_read(uint16_t address, uint8_t *data){
-    return false; 
+    if(!valid)
+        return false;
+    uint16_t d16;
+    uint16_t res = EE_ReadVariable(VirtAddVarTab[address], &d16);
+    if(res == EE_OK){
+        *data = (uint8_t)d16;
+        return true;
+    }
+    return false;
 }

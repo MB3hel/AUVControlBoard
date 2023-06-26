@@ -69,6 +69,7 @@ int main(void){
     eeprom_init();
     calibration_load();
 
+    // TODO: Remove this (temp debug code)
     led_set(0, 0, 255);
     while(1);
 
