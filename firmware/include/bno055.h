@@ -83,7 +83,8 @@ bool bno055_read(bno055_data *data);
  * @param status Where to store CALIB_STAT register value
  * @return true on success; false on read failure
  */
-bool bno055_read_calibration(uint8_t *status);
+bool bno055_read_calibration(uint8_t *status, int16_t *acc_offset_x, int16_t *acc_offset_y, int16_t *acc_offset_z, 
+        int16_t *acc_radius, int16_t *gyr_offset_x, int16_t *gyr_offset_y, int16_t *gyr_offset_z);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -1117,20 +1117,30 @@ void cmdctrl_handle_message(void){
         // Note that this will only be "generated" if the stored calibration (calibration.h/c) is erased (using SENCAL) commands
         // ACK will contain the following
         // [status], [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
-        // status is an 8-bit integer (CALIB_STAT register value). Others are little endian 16-bit integers
+        // status is an 8-bit integer (CALIB_STAT register value). Others are little endian 16-bit integers (signed)
         
         if(!bno055_ready()){
             // Cannot read status if sensor not ready
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
         }else{
             uint8_t status;
-            if(!bno055_read_calibration(&status)){
+            int16_t acc_offset_x, acc_offset_y, acc_offset_z, acc_radius;
+            int16_t gyr_offset_x, gyr_offset_y, gyr_offset_z;
+            bool res = bno055_read_calibration(&status, &acc_offset_x, &acc_offset_y, &acc_offset_z, &acc_radius,
+                    &gyr_offset_x, &gyr_offset_y, &gyr_offset_z);
+            if(!res){
                 // If this fails, sensor is probably not connected anymore
                 cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
             }else{
                 uint8_t buf[15];
                 buf[0] = status;
-                // TODO: Other values later
+                conversions_int16_to_data(acc_offset_x, &buf[1], true);
+                conversions_int16_to_data(acc_offset_y, &buf[3], true);
+                conversions_int16_to_data(acc_offset_z, &buf[5], true);
+                conversions_int16_to_data(acc_radius, &buf[7], true);
+                conversions_int16_to_data(gyr_offset_x, &buf[9], true);
+                conversions_int16_to_data(gyr_offset_y, &buf[11], true);
+                conversions_int16_to_data(gyr_offset_z, &buf[13], true);
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, buf, 15);
             }
         }

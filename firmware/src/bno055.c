@@ -540,14 +540,81 @@ bool bno055_read(bno055_data *data){
     return true;
 }
 
-bool bno055_read_calibration(uint8_t *status){
+bool bno055_read_calibration(uint8_t *status, int16_t *acc_offset_x, int16_t *acc_offset_y, int16_t *acc_offset_z, 
+        int16_t *acc_radius, int16_t *gyr_offset_x, int16_t *gyr_offset_y, int16_t *gyr_offset_z){
+    
+    // Read CALIB_STAT
     trans.write_buf[0] = BNO055_CALIB_STAT_ADDR;
     trans.write_count = 1;
     trans.read_count = 1;
     if(!bno055_perform(&trans))
         return false;
     *status = trans.read_buf[0];
-    // TODO: Read values
+    vTaskDelay(pdMS_TO_TICKS(10));
+    
+    // Read ACC_OFFSET_X
+    trans.write_buf[0] = BNO055_ACCEL_OFFSET_X_LSB_ADDR;
+    trans.write_count = 1;
+    trans.read_count = 2;
+    if(!bno055_perform(&trans))
+        return false;
+    *acc_offset_x = trans.read_buf[0] | (trans.read_buf[1] << 8);
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    // Read ACC_OFFSET_Y
+    trans.write_buf[0] = BNO055_ACCEL_OFFSET_Y_LSB_ADDR;
+    trans.write_count = 1;
+    trans.read_count = 2;
+    if(!bno055_perform(&trans))
+        return false;
+    *acc_offset_y = trans.read_buf[0] | (trans.read_buf[1] << 8);
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    // Read ACC_OFFSET_Z
+    trans.write_buf[0] = BNO055_ACCEL_OFFSET_Z_LSB_ADDR;
+    trans.write_count = 1;
+    trans.read_count = 2;
+    if(!bno055_perform(&trans))
+        return false;
+    *acc_offset_z = trans.read_buf[0] | (trans.read_buf[1] << 8);
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    // Read ACC_RADIUS
+    trans.write_buf[0] = BNO055_ACCEL_RADIUS_LSB_ADDR;
+    trans.write_count = 1;
+    trans.read_count = 2;
+    if(!bno055_perform(&trans))
+        return false;
+    *acc_radius = trans.read_buf[0] | (trans.read_buf[1] << 8);
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    // Read GYR_OFFSET_X
+    trans.write_buf[0] = BNO055_GYRO_OFFSET_X_LSB_ADDR;
+    trans.write_count = 1;
+    trans.read_count = 2;
+    if(!bno055_perform(&trans))
+        return false;
+    *gyr_offset_x = trans.read_buf[0] | (trans.read_buf[1] << 8);
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    // Read GYR_OFFSET_Y
+    trans.write_buf[0] = BNO055_GYRO_OFFSET_Y_LSB_ADDR;
+    trans.write_count = 1;
+    trans.read_count = 2;
+    if(!bno055_perform(&trans))
+        return false;
+    *gyr_offset_y = trans.read_buf[0] | (trans.read_buf[1] << 8);
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    // Read GYR_OFFSET_Z
+    trans.write_buf[0] = BNO055_GYRO_OFFSET_Z_LSB_ADDR;
+    trans.write_count = 1;
+    trans.read_count = 2;
+    if(!bno055_perform(&trans))
+        return false;
+    *gyr_offset_z = trans.read_buf[0] | (trans.read_buf[1] << 8);
+    vTaskDelay(pdMS_TO_TICKS(10));
+
     return true;
 }
 

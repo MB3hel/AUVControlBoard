@@ -76,6 +76,8 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     print("")
     input("Press enter to continue...")
 
+    ack = None
+    cal = None
     failures = 0
     while True:
         ack, cal = cb.bno055_read_calibration()
@@ -113,6 +115,27 @@ def run(cb: ControlBoard, s: Simulator) -> int:
 
     print("")
     print("Calibration successful!")
+    print("Waiting 3 seconds for sensor registers to update...")
+    time.sleep(3)
+    cal = None
+    failures = 0
+    while True:
+        ack, cal = cb.bno055_read_calibration()
+        if ack == cb.AckError.NONE:
+            break
+        failures += 1
+        if failures == 3:
+            print("Failed to read calibration constants from sensor!")
+            return 1
+        time.sleep(0.5)
+    print("Calibration Values:")
+    print("  Accelerometer Offset X: {0}".format(cal.accel_offset_x))
+    print("  Accelerometer Offset Y: {0}".format(cal.accel_offset_y))
+    print("  Accelerometer Offset Z: {0}".format(cal.accel_offset_z))
+    print("  Accelerometer Radius  : {0}".format(cal.accel_radius))
+    print("  Gyroscope Offset X    : {0}".format(cal.gyro_offset_x))
+    print("  Gyroscope Offset Y    : {0}".format(cal.gyro_offset_y))
+    print("  Gyroscope Offset Z    : {0}".format(cal.gyro_offset_z))
     print("")
     print("You may now save the current calibration to the control board. Doing so will")
     print("result in the calibration being automatically applied on power on.")

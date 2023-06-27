@@ -610,7 +610,13 @@ class ControlBoard:
         if ack == ControlBoard.AckError.NONE:
             cal = ControlBoard.BNO055Calibration()
             cal.status = res[0]
-            # TODO: Other data
+            cal.accel_offset_x = struct.unpack_from("<h", res, 1)[0]
+            cal.accel_offset_y = struct.unpack_from("<h", res, 3)[0]
+            cal.accel_offset_z = struct.unpack_from("<h", res, 5)[0]
+            cal.accel_radius = struct.unpack_from("<h", res, 7)[0]
+            cal.gyro_offset_x = struct.unpack_from("<h", res, 9)[0]
+            cal.gyro_offset_y = struct.unpack_from("<h", res, 11)[0]
+            cal.gyro_offset_z = struct.unpack_from("<h", res, 13)[0]
             return ack, cal
         else:
             return ack, ControlBoard.BNO055Calibration()
