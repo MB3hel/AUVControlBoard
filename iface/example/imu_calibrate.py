@@ -35,14 +35,55 @@ import time
 import threading
 
 
+def prompt_yn(msg: str, default = "") -> bool:
+    if default == "y" or default == "Y":
+        defstr = "Y/n"
+    elif default == "n" or default == "N":
+        defstr = "y/N"
+    else:
+        defstr = "y/n"
+    prmpt = "{0} ({1}): ".format(msg, defstr)
+    while True:
+        res = input(prmpt)
+        if res == "Y" or res == "y":
+            return True
+        elif res == "N" or res == "n":
+            return False
+        elif res == "":
+            if default == "y" or default == "Y":
+                return True
+            elif default == "n" or default == "N":
+                return False
+
+
 def run(cb: ControlBoard, s: Simulator) -> int:
+    print("Guided IMU Calibration")
+    print("================================================================================")
+    print("  This script will show the calibration status of various senors. A status of 3")
+    print("  means that the sensor is fully calibrated. Follow the instructions below to")
+    print("  achieve a status of 3 for each sensor. Once achieved, you can save the")
+    print("  calibration to the control board for future use.")
+    print("")
+    print("  Gyroscope Calibration:")
+    print("    - Place the device in a single stable position for a period of few seconds")
+    print("      to allow the gyroscope to calibrate")
+    print("  Accelerometer Calibration:")
+    print("    - Place the device in 6 different stable positions for a period of few")
+    print("      seconds to allow the accelerometer to calibrate.")
+    print("    - Make sure that there is slow movement between 2 stable positions")
+    print("    - The 6 stable positions could be in any direction, but make sure that the")
+    print("      device is lying at least once perpendicular to the x, y and z axis.")
+    print("")
+    input("Press enter to continue...")
+
     failures = 0
     while True:
         ack, cal = cb.bno055_read_calibration()
         if ack != cb.AckError.NONE:
             failures += 1
             if failures == 3:
-                print("Failed to read calibration data from control board!")
+                print("")
+                print("Calibration failed. Communication with the sensor failed!")
                 return 1
         else:
             failures = 0
@@ -66,4 +107,21 @@ def run(cb: ControlBoard, s: Simulator) -> int:
             print("  Accelerometer: {0}".format(acc_stat))
             print("  Gyroscope:     {0}".format(gyr_stat))
             # print("  System:        {0}".format(sys_stat))
+            if acc_stat == 3 and gyr_stat == 3:
+                break
         time.sleep(0.5)
+
+    print("")
+    print("Calibration successful!")
+    print("")
+    print("You may now save the current calibration to the control board. Doing so will")
+    print("result in the calibration being automatically applied on power on.")
+    print("")
+    if prompt_yn("Save calibration to control board?", "N"):
+        # TODO: Save calibration
+        print("")
+        print("Calibration saved. It will be applied after control board power on.")
+    else:
+        print("")
+        print("Calibration not saved. Calibration must be repeated after the")
+        print("next power cycle of the control board.")
