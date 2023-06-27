@@ -540,4 +540,15 @@ bool bno055_read(bno055_data *data){
     return true;
 }
 
+bool bno055_read_calibration(uint8_t *status){
+    trans.write_buf[0] = BNO055_CALIB_STAT_ADDR;
+    trans.write_count = 1;
+    trans.read_count = 1;
+    if(!bno055_perform(&trans))
+        return false;
+    *status = trans.read_buf[0];
+    // TODO: Read values
+    return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

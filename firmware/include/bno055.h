@@ -77,5 +77,13 @@ void bno055_reset_accum_euler(void);
  */
 bool bno055_read(bno055_data *data);
 
+/**
+ * Get calibration status & values for the sensor
+ * 
+ * @param status Where to store CALIB_STAT register value
+ * @return true on success; false on read failure
+ */
+bool bno055_read_calibration(uint8_t *status);
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -1112,10 +1112,29 @@ void cmdctrl_handle_message(void){
         // Sensor calibration set command
         // All values are 16-bit little endian integers (calibration values)
         // TODO: Store calibration
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'C'}))){
+    }else if(MSG_EQUALS(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'C'}))){
         // Get current BNO055 calibration status
         // Note that this will only be "generated" if the stored calibration (calibration.h/c) is erased (using SENCAL) commands
-        // TODO: Implement
+        // ACK will contain the following
+        // [status], [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
+        // status is an 8-bit integer (CALIB_STAT register value). Others are little endian 16-bit integers
+        
+        if(!bno055_ready()){
+            // Cannot read status if sensor not ready
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+        }else{
+            uint8_t status;
+            if(!bno055_read_calibration(&status)){
+                // If this fails, sensor is probably not connected anymore
+                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+            }else{
+                uint8_t buf[15];
+                buf[0] = status;
+                // TODO: Other values later
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, buf, 15);
+            }
+        }
+        
     }else{
         // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG, NULL, 0);

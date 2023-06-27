@@ -80,6 +80,17 @@ class ControlBoard:
         def __init__(self):
             self.depth: float = 0.0
 
+    class BNO055Calibration:
+        def __init__(self):
+            self.status = 0
+            self.accel_offset_x = 0
+            self.accel_offset_y = 0
+            self.accel_offset_z = 0
+            self.accel_radius = 0
+            self.gyro_offset_x = 0
+            self.gyro_offset_y = 0
+            self.gyro_offset_z = 0
+
     ## Representation of motor matrix using nested lists
     class MotorMatrix:
         def __init__(self):
@@ -586,6 +597,23 @@ class ControlBoard:
     #  @return BNO055Data object containing latest data
     def get_bno055_data(self) -> BNO055Data:
         return copy.copy(self.__bno055_data)
+
+    ## Read the calibration data from the BNO055 sensor
+    #  Note that this is the data from the sensor, not the data saved on the control board
+    #  itself
+    #  @return AckError, BNO055Calibration object containing calibration data
+    def bno055_read_calibration(self, timeout: float = -1.0) -> Tuple[AckError, BNO055Calibration]:
+        msg = bytearray()
+        msg.extend(b'BNO055C')
+        msg_id = self.__write_msg(bytes(msg), True)
+        ack, res = self.__wait_for_ack(msg_id, timeout)
+        if ack == ControlBoard.AckError.NONE:
+            cal = ControlBoard.BNO055Calibration()
+            cal.status = res[0]
+            # TODO: Other data
+            return ack, cal
+        else:
+            return ack, ControlBoard.BNO055Calibration()
 
     ## Parse byte data from BNO055 readings into the data class object
     def __ms5837_parse(self, data: bytes):
