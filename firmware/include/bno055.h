@@ -77,13 +77,16 @@ void bno055_reset_accum_euler(void);
  */
 bool bno055_read(bno055_data *data);
 
+bool bno055_read_calibration_status(uint8_t *status);
+
 /**
- * Get calibration status & values for the sensor
+ * 
+ * Get calibration values for the sensor (only works properly after calibration status is valid)
  * 
  * @param status Where to store CALIB_STAT register value
  * @return true on success; false on read failure
  */
-bool bno055_read_calibration(uint8_t *status, int16_t *acc_offset_x, int16_t *acc_offset_y, int16_t *acc_offset_z, 
+bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16_t *acc_offset_z, 
         int16_t *acc_radius, int16_t *gyr_offset_x, int16_t *gyr_offset_y, int16_t *gyr_offset_z);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

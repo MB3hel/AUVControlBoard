@@ -76,11 +76,9 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     print("")
     input("Press enter to continue...")
 
-    ack = None
-    cal = None
     failures = 0
     while True:
-        ack, cal = cb.bno055_read_calibration()
+        ack, status = cb.bno055_read_calibration_status()
         if ack != cb.AckError.NONE:
             failures += 1
             if failures == 3:
@@ -89,13 +87,6 @@ def run(cb: ControlBoard, s: Simulator) -> int:
                 return 1
         else:
             failures = 0
-
-            if platform.system() == "Windows":
-                os.system("cls")
-            else:
-                os.system("clear")
-
-            status = cal.status
             mag_stat = status & 0b11
             status >>= 2
             acc_stat = status & 0b11
@@ -115,10 +106,6 @@ def run(cb: ControlBoard, s: Simulator) -> int:
 
     print("")
     print("Calibration successful!")
-    print("Waiting 3 seconds for sensor registers to update...")
-    time.sleep(3)
-    cal = None
-    failures = 0
     while True:
         ack, cal = cb.bno055_read_calibration()
         if ack == cb.AckError.NONE:

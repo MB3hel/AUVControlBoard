@@ -1112,39 +1112,52 @@ void cmdctrl_handle_message(void){
         // Sensor calibration set command
         // All values are 16-bit little endian integers (calibration values)
         // TODO: Store calibration
-    }else if(MSG_EQUALS(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'C'}))){
+    }else if(MSG_EQUALS(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'C', 'S'}))){
         // Get current BNO055 calibration status
-        // Note that this will only be "generated" if the stored calibration (calibration.h/c) is erased (using SENCAL) commands
         // ACK will contain the following
-        // [status], [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
-        // status is an 8-bit integer (CALIB_STAT register value). Others are little endian 16-bit integers (signed)
-        
+        // [status] an 8-bit integer with the value of the sensor's CALIB_STAT register
         if(!bno055_ready()){
             // Cannot read status if sensor not ready
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
         }else{
             uint8_t status;
+            bool res = bno055_read_calibration_status(&status);
+            if(!res){
+                // If this fails, sensor is probably not connected anymore
+                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+            }else{
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, &status, 1);
+            }
+        }
+    }else if(MSG_EQUALS(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'C', 'V'}))){
+        // Get current BNO055 calibration values
+        // ACK will contain the following
+        // [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
+        //All are little endian 16-bit integers (signed)
+        
+        if(!bno055_ready()){
+            // Cannot read status if sensor not ready
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+        }else{
             int16_t acc_offset_x, acc_offset_y, acc_offset_z, acc_radius;
             int16_t gyr_offset_x, gyr_offset_y, gyr_offset_z;
-            bool res = bno055_read_calibration(&status, &acc_offset_x, &acc_offset_y, &acc_offset_z, &acc_radius,
+            bool res = bno055_read_calibration(&acc_offset_x, &acc_offset_y, &acc_offset_z, &acc_radius,
                     &gyr_offset_x, &gyr_offset_y, &gyr_offset_z);
             if(!res){
                 // If this fails, sensor is probably not connected anymore
                 cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
             }else{
-                uint8_t buf[15];
-                buf[0] = status;
-                conversions_int16_to_data(acc_offset_x, &buf[1], true);
-                conversions_int16_to_data(acc_offset_y, &buf[3], true);
-                conversions_int16_to_data(acc_offset_z, &buf[5], true);
-                conversions_int16_to_data(acc_radius, &buf[7], true);
-                conversions_int16_to_data(gyr_offset_x, &buf[9], true);
-                conversions_int16_to_data(gyr_offset_y, &buf[11], true);
-                conversions_int16_to_data(gyr_offset_z, &buf[13], true);
-                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, buf, 15);
+                uint8_t buf[14];
+                conversions_int16_to_data(acc_offset_x, &buf[0], true);
+                conversions_int16_to_data(acc_offset_y, &buf[2], true);
+                conversions_int16_to_data(acc_offset_z, &buf[4], true);
+                conversions_int16_to_data(acc_radius, &buf[6], true);
+                conversions_int16_to_data(gyr_offset_x, &buf[8], true);
+                conversions_int16_to_data(gyr_offset_y, &buf[10], true);
+                conversions_int16_to_data(gyr_offset_z, &buf[12], true);
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, buf, 14);
             }
         }
-        
     }else{
         // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG, NULL, 0);

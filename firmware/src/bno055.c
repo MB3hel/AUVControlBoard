@@ -540,9 +540,7 @@ bool bno055_read(bno055_data *data){
     return true;
 }
 
-bool bno055_read_calibration(uint8_t *status, int16_t *acc_offset_x, int16_t *acc_offset_y, int16_t *acc_offset_z, 
-        int16_t *acc_radius, int16_t *gyr_offset_x, int16_t *gyr_offset_y, int16_t *gyr_offset_z){
-    
+bool bno055_read_calibration_status(uint8_t *status){
     // Read CALIB_STAT
     trans.write_buf[0] = BNO055_CALIB_STAT_ADDR;
     trans.write_count = 1;
@@ -551,7 +549,24 @@ bool bno055_read_calibration(uint8_t *status, int16_t *acc_offset_x, int16_t *ac
         return false;
     *status = trans.read_buf[0];
     vTaskDelay(pdMS_TO_TICKS(10));
+    return true;
+}
+
+bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16_t *acc_offset_z, 
+        int16_t *acc_radius, int16_t *gyr_offset_x, int16_t *gyr_offset_y, int16_t *gyr_offset_z){
     
+    //  Note: Can only read calibration status if the sensor has been fully calibrated (3 in CALIB_STAT)
+    //        and the sensor is put into CONFIG mode AFTER!
+    
+    // Put in CONFIG mode
+    trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
+    trans.write_buf[1] = OPMODE_CFG;
+    trans.write_count = 2;
+    trans.read_count = 0;
+    if(!bno055_perform(&trans))
+        return false;
+    vTaskDelay(pdMS_TO_TICKS(25));
+
     // Read ACC_OFFSET_X
     trans.write_buf[0] = BNO055_ACCEL_OFFSET_X_LSB_ADDR;
     trans.write_count = 1;
@@ -614,6 +629,15 @@ bool bno055_read_calibration(uint8_t *status, int16_t *acc_offset_x, int16_t *ac
         return false;
     *gyr_offset_z = trans.read_buf[0] | (trans.read_buf[1] << 8);
     vTaskDelay(pdMS_TO_TICKS(10));
+
+    // Restore to IMU mode
+    trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
+    trans.write_buf[1] = OPMODE_IMU;
+    trans.write_count = 2;
+    trans.read_count = 0;
+    if(!bno055_perform(&trans))
+        return false;
+    vTaskDelay(pdMS_TO_TICKS(35));
 
     return true;
 }
