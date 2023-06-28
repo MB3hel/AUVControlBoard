@@ -1,2 +1,3 @@
 - Using sectors 1 and 2 for eeprom not 2 and 3
 - Increased number of variables to 32
+- EE_VerifyPageFullyErased modified to actually work for PAGE1 using the method implemented here: https://os.mbed.com/users/mega64/code/00_eeprom_emulation_f401//file/bc0ee9ad46aa/eeprom/eeprom.cpp/
