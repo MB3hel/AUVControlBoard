@@ -52,6 +52,8 @@ static const float fluid_density = 997.0f;
 // TODO: Make this configurable via pc command
 static const float atm_pressure = 101325.0f;
 
+// Note: No transaction mutex needed here because this does not need to be thread safe
+//       All I2C comm with MS5837 occurs on MS5837 thread. Cmdctrl never touches it
 static i2c_trans trans;
 static uint8_t write_buf[WRITE_BUF_SIZE];
 static uint8_t read_buf[READ_BUF_SIZE];

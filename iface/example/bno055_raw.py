@@ -51,25 +51,13 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     ############################################################################
     # Periodically print sensor data
     ############################################################################
+    print("Accel X, Accel Y, Accel Z, Gyro X, Gyro Y, Gyro Z")
     failures = 0
     while True:
         ack, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z = cb.read_bno055_raw()
         if ack == cb.AckError.NONE:
             failures = 0
-            if platform.system() == "Windows":
-                os.system("cls")
-            else:
-                os.system("clear")
-
-            print("Accelerometer Data:")
-            print("  X: {0}".format(accel_x))
-            print("  Y: {0}".format(accel_y))
-            print("  Z: {0}".format(accel_z))
-            print("Gyroscope Data:")
-            print("  X: {0}".format(gyro_x))
-            print("  Y: {0}".format(gyro_y))
-            print("  Z: {0}".format(gyro_z))
-            print("Press CTRL+C to exit")
+            print("{0}, {1}, {2}, {3}, {4}, {5}".format(accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z))
         else:
             failures += 1
             if failures == 5:

@@ -21,6 +21,7 @@
 #include <i2c.h>
 #include <FreeRTOS.h>
 #include <task.h>
+#include <semphr.h>
 #include <simulator.h>
 #include <calibration.h>
 
@@ -245,6 +246,9 @@
 #define WRITE_BUF_SIZE          16
 #define READ_BUF_SIZE           16
 
+// Note: Mutex required here because during calibration processes cmdctrl thread may use the transaction
+//       instead of the BNO055 thread. This could cause issues without mutex.
+static SemaphoreHandle_t trans_mutex;
 static i2c_trans trans;
 static uint8_t write_buf[WRITE_BUF_SIZE];
 static uint8_t read_buf[READ_BUF_SIZE];
@@ -263,6 +267,8 @@ static float accum_pitch, accum_roll, accum_yaw;
 #define bno055_perform(x)           i2c_perform_retries((x), 20, 5)
 
 void bno055_init(void){
+    trans_mutex = xSemaphoreCreateMutex();
+
     trans.address = BNO055_ADDR;
     trans.write_buf = write_buf;
     trans.read_buf = read_buf;
@@ -275,12 +281,16 @@ void bno055_init(void){
 }
 
 bool bno055_configure(void){
+    xSemaphoreTake(trans_mutex, portMAX_DELAY);
+
     // Read chip ID register to make sure right device is on bus
     trans.write_buf[0] = BNO055_CHIP_ID_ADDR;
     trans.write_count = 1;
     trans.read_count = 1;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     if(trans.read_buf[0] != BNO055_ID)
         return false;
 
@@ -289,16 +299,20 @@ bool bno055_configure(void){
     trans.write_buf[1] = OPMODE_CFG;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
 
     // Reset IMU
     trans.write_buf[0] = BNO055_SYS_TRIGGER_ADDR;
     trans.write_buf[1] = 0x20;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     
     // Wait for reset to complete
     vTaskDelay(pdMS_TO_TICKS(500));
@@ -320,8 +334,10 @@ bool bno055_configure(void){
     trans.write_buf[1] = 0x00;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     vTaskDelay(pdMS_TO_TICKS(10));
 
     // Zero page ID register
@@ -329,8 +345,10 @@ bool bno055_configure(void){
     trans.write_buf[1] = 0x00;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
 
     // TODO: Set units
     // Windows fusion data output mode
@@ -344,32 +362,40 @@ bool bno055_configure(void){
     trans.write_buf[1] = unitsel_val;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
 
     // Default Axis remap = P1
     trans.write_buf[0] = BNO055_AXIS_MAP_CONFIG_ADDR;
     trans.write_buf[1] = REMAP_P1;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
 
     // Default Axis sign = P1
     trans.write_buf[0] = BNO055_AXIS_MAP_SIGN_ADDR;
     trans.write_buf[1] = SIGN_P1;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
 
     // Clear sys trigger register
     trans.write_buf[0] = BNO055_SYS_TRIGGER_ADDR;
     trans.write_buf[1] = 0x00;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     vTaskDelay(pdMS_TO_TICKS(10));
 
     // Apply stored calibrations (if any are stored)
@@ -450,15 +476,20 @@ bool bno055_configure(void){
     trans.write_buf[1] = OPMODE_IMU;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     vTaskDelay(pdMS_TO_TICKS(20));
 
     // Done configuring IMU
+    xSemaphoreGive(trans_mutex);
     return true;   
 }
 
 bool bno055_set_axis(uint8_t mode){
+    xSemaphoreTake(trans_mutex, portMAX_DELAY);
+
     uint8_t remap = 0x00;
     uint8_t sign = 0x00;
 
@@ -506,8 +537,10 @@ bool bno055_set_axis(uint8_t mode){
     trans.write_buf[1] = OPMODE_CFG;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     vTaskDelay(pdMS_TO_TICKS(25));
 
     // Set remap
@@ -515,8 +548,10 @@ bool bno055_set_axis(uint8_t mode){
     trans.write_buf[1] = remap;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     vTaskDelay(pdMS_TO_TICKS(10));
     
     // Set sign
@@ -524,8 +559,10 @@ bool bno055_set_axis(uint8_t mode){
     trans.write_buf[1] = sign;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     vTaskDelay(pdMS_TO_TICKS(10));
 
     // Restore to IMU mode
@@ -533,9 +570,12 @@ bool bno055_set_axis(uint8_t mode){
     trans.write_buf[1] = OPMODE_IMU;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     vTaskDelay(pdMS_TO_TICKS(35));
+    xSemaphoreGive(trans_mutex);
     return true;
 }
 
@@ -547,13 +587,17 @@ void bno055_reset_accum_euler(void){
 }
 
 bool bno055_read(bno055_data *data){
+    xSemaphoreTake(trans_mutex, portMAX_DELAY);
+
     // Read Orientation Quaternion
     // Ignore failure if sim_hijacked since real data wouldn't be used anyway
     trans.write_buf[0] = BNO055_QUATERNION_DATA_W_LSB_ADDR;
     trans.write_count = 1;
     trans.read_count = 8;
-    if(!bno055_perform(&trans) && !sim_hijacked)
+    if(!bno055_perform(&trans) && !sim_hijacked){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
 
     if(sim_hijacked){
         // When under simulation, use the data provided by simulator not the IMU
@@ -611,24 +655,31 @@ bool bno055_read(bno055_data *data){
     data->accum_yaw = accum_yaw;
 
     // Success
+    xSemaphoreGive(trans_mutex);
     return true;
 }
 
 bool bno055_read_calibration_status(uint8_t *status){
+    xSemaphoreTake(trans_mutex, portMAX_DELAY);
+
     // Read CALIB_STAT
     trans.write_buf[0] = BNO055_CALIB_STAT_ADDR;
     trans.write_count = 1;
     trans.read_count = 1;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     *status = trans.read_buf[0];
     vTaskDelay(pdMS_TO_TICKS(10));
+    xSemaphoreGive(trans_mutex);
     return true;
 }
 
 bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16_t *acc_offset_z, 
         int16_t *acc_radius, int16_t *gyr_offset_x, int16_t *gyr_offset_y, int16_t *gyr_offset_z){
-    
+    xSemaphoreTake(trans_mutex, portMAX_DELAY);
+
     //  Note: Can only read calibration status if the sensor has been fully calibrated (3 in CALIB_STAT)
     //        and the sensor is put into CONFIG mode AFTER!
     
@@ -637,16 +688,20 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     trans.write_buf[1] = OPMODE_CFG;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     vTaskDelay(pdMS_TO_TICKS(25));
 
     // Read ACC_OFFSET_X
     trans.write_buf[0] = BNO055_ACCEL_OFFSET_X_LSB_ADDR;
     trans.write_count = 1;
     trans.read_count = 2;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     *acc_offset_x = trans.read_buf[0] | (trans.read_buf[1] << 8);
     vTaskDelay(pdMS_TO_TICKS(10));
 
@@ -654,8 +709,10 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     trans.write_buf[0] = BNO055_ACCEL_OFFSET_Y_LSB_ADDR;
     trans.write_count = 1;
     trans.read_count = 2;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     *acc_offset_y = trans.read_buf[0] | (trans.read_buf[1] << 8);
     vTaskDelay(pdMS_TO_TICKS(10));
 
@@ -663,8 +720,10 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     trans.write_buf[0] = BNO055_ACCEL_OFFSET_Z_LSB_ADDR;
     trans.write_count = 1;
     trans.read_count = 2;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     *acc_offset_z = trans.read_buf[0] | (trans.read_buf[1] << 8);
     vTaskDelay(pdMS_TO_TICKS(10));
 
@@ -672,8 +731,10 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     trans.write_buf[0] = BNO055_ACCEL_RADIUS_LSB_ADDR;
     trans.write_count = 1;
     trans.read_count = 2;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     *acc_radius = trans.read_buf[0] | (trans.read_buf[1] << 8);
     vTaskDelay(pdMS_TO_TICKS(10));
 
@@ -681,8 +742,10 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     trans.write_buf[0] = BNO055_GYRO_OFFSET_X_LSB_ADDR;
     trans.write_count = 1;
     trans.read_count = 2;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     *gyr_offset_x = trans.read_buf[0] | (trans.read_buf[1] << 8);
     vTaskDelay(pdMS_TO_TICKS(10));
 
@@ -690,8 +753,10 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     trans.write_buf[0] = BNO055_GYRO_OFFSET_Y_LSB_ADDR;
     trans.write_count = 1;
     trans.read_count = 2;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     *gyr_offset_y = trans.read_buf[0] | (trans.read_buf[1] << 8);
     vTaskDelay(pdMS_TO_TICKS(10));
 
@@ -699,8 +764,10 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     trans.write_buf[0] = BNO055_GYRO_OFFSET_Z_LSB_ADDR;
     trans.write_count = 1;
     trans.read_count = 2;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     *gyr_offset_z = trans.read_buf[0] | (trans.read_buf[1] << 8);
     vTaskDelay(pdMS_TO_TICKS(10));
 
@@ -709,22 +776,45 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     trans.write_buf[1] = OPMODE_IMU;
     trans.write_count = 2;
     trans.read_count = 0;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     vTaskDelay(pdMS_TO_TICKS(35));
 
+    xSemaphoreGive(trans_mutex);
     return true;
 }
 
 bool bno055_read_raw(bno055_raw_data *data){
+    xSemaphoreTake(trans_mutex, portMAX_DELAY);
+
     int16_t tmp16;
+
+    // Raw gyroscope data
+    trans.write_buf[0] = BNO055_GYRO_DATA_X_LSB_ADDR;
+    trans.write_count = 1;
+    trans.read_count = 6;
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
+        return false;
+    }
+    tmp16 = trans.read_buf[0] | (trans.read_buf[1] << 8);
+    data->gyro_x = tmp16 / 16.0f;
+    tmp16 = trans.read_buf[2] | (trans.read_buf[3] << 8);
+    data->gyro_y = tmp16 / 16.0f;
+    tmp16 = trans.read_buf[4] | (trans.read_buf[5] << 8);
+    data->gyro_z = tmp16 / 16.0f;
+    vTaskDelay(pdMS_TO_TICKS(10));
 
     // Raw accelerometer data
     trans.write_buf[0] = BNO055_ACCEL_DATA_X_LSB_ADDR;
     trans.write_count = 1;
     trans.read_count = 6;
-    if(!bno055_perform(&trans))
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
         return false;
+    }
     tmp16 = trans.read_buf[0] | (trans.read_buf[1] << 8);
     data->accel_x = tmp16 / 100.0f;
     tmp16 = trans.read_buf[2] | (trans.read_buf[3] << 8);
@@ -732,19 +822,7 @@ bool bno055_read_raw(bno055_raw_data *data){
     tmp16 = trans.read_buf[4] | (trans.read_buf[5] << 8);
     data->accel_z = tmp16 / 100.0f;
 
-    // Raw gyroscope data
-    trans.write_buf[0] = BNO055_GYRO_DATA_X_LSB_ADDR;
-    trans.write_count = 1;
-    trans.read_count = 6;
-    if(!bno055_perform(&trans))
-        return false;
-    tmp16 = trans.read_buf[0] | (trans.read_buf[1] << 8);
-    data->gyro_x = tmp16 / 16.0f;
-    tmp16 = trans.read_buf[2] | (trans.read_buf[3] << 8);
-    data->gyro_y = tmp16 / 16.0f;
-    tmp16 = trans.read_buf[4] | (trans.read_buf[5] << 8);
-    data->gyro_z = tmp16 / 16.0f;
-
+    xSemaphoreGive(trans_mutex);
     return true;
 }
 
