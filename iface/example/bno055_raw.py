@@ -51,6 +51,9 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     ############################################################################
     # Periodically print sensor data
     ############################################################################
+    print("Units:")
+    print("  Accel: m/s^2")
+    print("  Gyro:  dps")
     print("Accel X, Accel Y, Accel Z, Gyro X, Gyro Y, Gyro Z")
     failures = 0
     while True:
