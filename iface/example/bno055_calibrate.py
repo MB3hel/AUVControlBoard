@@ -56,20 +56,21 @@ def prompt_yn(msg: str, default = "") -> bool:
                 return False
 
 
-def run(cb: ControlBoard, s: Simulator) -> int:
-    if platform.system() == "Windows":
-        os.system("cls")
-    else:
-        os.system("clear")
+def prompt_int(msg: str) -> int:
+    while True:
+        num_str = input(msg)
+        try:
+            num = int(num_str)
+            return num
+        except ValueError:
+            pass
 
-    print("BNO055 IMU Calibration")
-    print("================================================================================")
 
+def check_existing_cal(cb: ControlBoard, s: Simulator) -> int:
     ack, sc_valid, sc_cal = cb.read_stored_bno055_calibration()
     if ack != cb.AckError.NONE:
-        print("Failed to read currently stored calibration.")
+        print("  Failed to read currently stored calibration.")
         return 1
-
     if sc_valid:
         print("  There is currently a calibration for the BNO055 stored on the control board.")
         print("  Stored Calibration Values:")
@@ -90,10 +91,18 @@ def run(cb: ControlBoard, s: Simulator) -> int:
             else:
                 print("Fail.")
                 return 1
+            print("")
         else:
             return 1
+    print("  There is no BNO055 calibration stored on the control board.")
+    return 0
 
+
+def guided_calibration(cb: ControlBoard, s: Simulator) -> int:
+    # Show calibration instructions
     print("")
+    print("Guided Calibration")
+    print("--------------------------------------------------------------------------------")
     print("Calibration Procedure:")
     print("  This script will show the calibration status of various senors. A status of 3")
     print("  means that the sensor is fully calibrated. Follow the instructions below to")
@@ -113,6 +122,7 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     input("  Press enter to begin calibration.")
     print("")
 
+    # Periodically show calibration status
     failures = 0
     while True:
         ack, status = cb.bno055_read_calibration_status()
@@ -141,6 +151,7 @@ def run(cb: ControlBoard, s: Simulator) -> int:
                 break
         time.sleep(0.5)
 
+    # Show resulting calibration values
     print("")
     print("  Calibration successful!")
     while True:
@@ -162,6 +173,8 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     print("    Gyroscope Offset Y    : {0}".format(cal.gyro_offset_y))
     print("    Gyroscope Offset Z    : {0}".format(cal.gyro_offset_z))
     print("")
+
+    # Prompt to save calibration
     print("  You may now save the current calibration to the control board. Doing so will")
     print("  result in the calibration being automatically applied at power on.")
     print("")
@@ -178,3 +191,85 @@ def run(cb: ControlBoard, s: Simulator) -> int:
         print("")
         print("  Calibration not saved. Calibration must be repeated after the next power cycle")
         print("  of the control board.")
+    return 0
+
+
+def manual_calibration(cb: ControlBoard, s: Simulator):
+    print("")
+    print("Manual Calibration")
+    print("--------------------------------------------------------------------------------")
+    print("  Enter values for each calibration constant. These are all signed 16-bit")
+    print("  integers. The valid range and meaning of each is as follows (see BNO055")
+    print("  datasheet for more information).")
+    print("")
+    print("  The instructions below can be used along with data from the bno055_raw script")
+    print("  to calculate a set of calibration constants. Once done, enter those constants")
+    print("  below to save them to the control board. Saved calibration constants will be")
+    print("  applied each time the control board is powered on.")
+    print("")
+    print("  Accelerometer Offsets (x, y, z):")
+    print("    Changes the \"zero\" location for each axis of the accelerometer. Adjust so")
+    print("    accelerometer reads as close to zero as possible while stationary, except")
+    print("    for axis with gravity, which should read +9.8 in the direction of gravity.")
+    print("    Range: -500 LSB to +500 LSB; 1 m/s^2 = 100 LSB")
+    print("  Accelerometer Radius:")
+    print("    Distance between vehicle's point of rotation and the sensor.")
+    print("    Range: -2048 LSB to +2048 LSB; 1 m = 100 LSB")
+    print("  Gyroscope Offsets (x, y, z): ")
+    print("    Changes the\"zero\" location for each axis of the gyroscope. Adjust so")
+    print("    gyroscope reads as close to zero as possible while stationary.")
+    print("    Range: -2000 LSB to 2000 LSB; 1 dps = 16 LSB")
+    print("")
+    print("  Enter Calibration constants")
+    cal = cb.BNO055Calibration()
+    cal.accel_offset_x = prompt_int("    Accel Offset X: ")
+    cal.accel_offset_y = prompt_int("    Accel Offset Y: ")
+    cal.accel_offset_z = prompt_int("    Accel Offset Z: ")
+    cal.accel_radius =   prompt_int("    Accel Radius:   ")
+    cal.gyro_offset_x =  prompt_int("    Gyro Offset X:  ")
+    cal.gyro_offset_y =  prompt_int("    Gyro Offset Y:  ")
+    cal.gyro_offset_z =  prompt_int("    Gyro Offset Z:  ")
+    if prompt_yn("  Write above calibration to control board?", "y"):
+        ack = cb.store_bno055_calibration(cal)
+        if ack == cb.AckError.NONE:
+            print("")
+            print("  Calibration saved. It will be applied after control board power on.")
+        else:
+            print("")
+            print("  Failed to save calibration!")
+            return 1
+    return 0
+
+
+def run(cb: ControlBoard, s: Simulator) -> int:
+    if platform.system() == "Windows":
+        os.system("cls")
+    else:
+        os.system("clear")
+
+    print("BNO055 IMU Calibration")
+    print("================================================================================")
+
+    # Simulation check
+    if s is not None:
+        print("  Sensor calibration cannot occur under simulation!")
+        return 1
+    
+    # Check if calibration is already saved. If so, prompt for deletion
+    res = check_existing_cal(cb, s)
+    if res != 0:
+        return res
+
+    # Calibration type menu
+    print("  Calibration Types")
+    print("    1. Guided Calibration (pick this if unsure)")
+    print("    2. Manual Calibration")
+    choice = 0
+    while choice > 2 or choice < 1:
+        choice = prompt_int("  Select Calibration Type: ")
+    if choice == 1:
+        return guided_calibration(cb, s)
+    elif choice == 2:
+        return manual_calibration(cb, s)
+    else:
+        return 1
