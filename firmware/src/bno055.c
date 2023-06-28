@@ -716,4 +716,36 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     return true;
 }
 
+bool bno055_read_raw(bno055_raw_data *data){
+    int16_t tmp16;
+
+    // Raw accelerometer data
+    trans.write_buf[0] = BNO055_ACCEL_DATA_X_LSB_ADDR;
+    trans.write_count = 1;
+    trans.read_count = 6;
+    if(!bno055_perform(&trans))
+        return false;
+    tmp16 = trans.read_buf[0] | (trans.read_buf[1] << 8);
+    data->accel_x = tmp16 / 100.0f;
+    tmp16 = trans.read_buf[2] | (trans.read_buf[3] << 8);
+    data->accel_y = tmp16 / 100.0f;
+    tmp16 = trans.read_buf[4] | (trans.read_buf[5] << 8);
+    data->accel_z = tmp16 / 100.0f;
+
+    // Raw gyroscope data
+    trans.write_buf[0] = BNO055_GYRO_DATA_X_LSB_ADDR;
+    trans.write_count = 1;
+    trans.read_count = 6;
+    if(!bno055_perform(&trans))
+        return false;
+    tmp16 = trans.read_buf[0] | (trans.read_buf[1] << 8);
+    data->gyro_x = tmp16 / 16.0f;
+    tmp16 = trans.read_buf[2] | (trans.read_buf[3] << 8);
+    data->gyro_y = tmp16 / 16.0f;
+    tmp16 = trans.read_buf[4] | (trans.read_buf[5] << 8);
+    data->gyro_z = tmp16 / 16.0f;
+
+    return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

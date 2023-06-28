@@ -38,6 +38,11 @@ typedef struct{
     float accum_pitch, accum_roll, accum_yaw;
 } bno055_data;
 
+typedef struct{
+    float accel_x, accel_y, accel_z;
+    float gyro_x, gyro_y, gyro_z;
+} bno055_raw_data;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// BNO055 Functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -88,6 +93,13 @@ bool bno055_read_calibration_status(uint8_t *status);
  */
 bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16_t *acc_offset_z, 
         int16_t *acc_radius, int16_t *gyr_offset_x, int16_t *gyr_offset_y, int16_t *gyr_offset_z);
+
+/**
+ * Read raw data from BNO055
+ * Used only for manual calibration / calibration verification or debugging
+ * 
+ */
+bool bno055_read_raw(bno055_raw_data *data);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

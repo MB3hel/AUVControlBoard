@@ -800,6 +800,32 @@ void cmdctrl_handle_message(void){
             // Send ack with response data
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 28);
         }
+    }else if(MSG_EQUALS(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'W'}))){
+        // Read BNO055 RAW data
+        // B, N, O, 0, 5, 5, W
+        // Response contains [accel_x], [accel_y], [accel_z], [gyro_x], [gyro_y], [gyro_z]
+        // where each value is a 32-bit float little endian
+
+        if(!bno055_ready()){
+            // Sensor not ready. This command is not valid right now.
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+        }else{
+            // Store current readings
+            bno055_raw_data data;
+            bno055_read_raw(&data);
+
+            // Construct response data
+            uint8_t response_data[24];
+            conversions_float_to_data(data.accel_x, &response_data[0], true);
+            conversions_float_to_data(data.accel_y, &response_data[4], true);
+            conversions_float_to_data(data.accel_z, &response_data[8], true);
+            conversions_float_to_data(data.gyro_x, &response_data[12], true);
+            conversions_float_to_data(data.gyro_y, &response_data[16], true);
+            conversions_float_to_data(data.gyro_z, &response_data[20], true);
+
+            // Send ack with response data
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 24);
+        }
     }else if(MSG_STARTS_WITH(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'P'}))){
         // BNO055 periodic read configure
         // B, N, O, 0, 5, 5, P, [enable]

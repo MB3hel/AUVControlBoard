@@ -591,6 +591,22 @@ class ControlBoard:
         ack, res = self.__wait_for_ack(msg_id, timeout)
         return ack
 
+    ## Read RAW data from BNO055
+    #  Typically only useful for debug use
+    #  @return AckError, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z
+    def read_bno055_raw(self, timeout: float = -1.0) -> Tuple[AckError, float, float, float, float, float, float]:
+        msg_id = self.__write_msg(b'BNO055W', True)
+        ack, res = self.__wait_for_ack(msg_id, timeout)
+        if ack != self.AckError.NONE:
+            return ack, 0, 0, 0, 0, 0, 0
+        accel_x = struct.unpack_from("<f", res, 0)[0]
+        accel_y = struct.unpack_from("<f", res, 4)[0]
+        accel_z = struct.unpack_from("<f", res, 8)[0]
+        gyro_x = struct.unpack_from("<f", res, 12)[0]
+        gyro_y = struct.unpack_from("<f", res, 16)[0]
+        gyro_z = struct.unpack_from("<f", res, 20)[0]
+        return ack, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z
+
     ## Get current BNO055 data. Current data is latest of either periodically received
     #  status messages or data received from a read_bno055_once call.
     #  @return BNO055Data object containing latest data
