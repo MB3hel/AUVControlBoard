@@ -1095,25 +1095,54 @@ void cmdctrl_handle_message(void){
             // Message handled successfully
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
-    }else if(MSG_EQUALS(((uint8_t[]){'S', 'E', 'N', 'C', 'A', 'L', 'R'}))){
-        // S, E, N, C, A, L, 'R'
-        // Sensor calibration status query
+    }else if(MSG_EQUALS(((uint8_t[]){'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'R'}))){
+        // S, C, B, N, O, 0, 5, 5, R
+        // Read stored calibration constants for BNO055
         // ACK contains the following data
         // [valid], [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
         // Valid is a single byte. 0 = invalid, 1 = valid data
-        // All other values are 16-bit little endian integers. If data is valid these will be calibration constants. If not, these will be zero
-        // TODO
-    }else if(MSG_EQUALS(((uint8_t[]){'S', 'E', 'N', 'C', 'A', 'L', 'E'}))){
-        // S, E, N, C, A, L, E
-        // Sensor calibration erase command
-        calibration_erase();
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'E', 'N', 'C', 'A', 'L', 'S'}))){
-        // S, E, N, C, A, L, S, [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
-        // Sensor calibration set command
+        // All other values are 16-bit little endian integers. If data is valid these will be calibration constants.
+        
+        // Calibration constants are loaded on program startup (and will not change)
+        // so no reason to call calibration_load_bno055 again
+        uint8_t buf[15];
+        buf[0] = calibration_bno055.valid ? 1 : 0;
+        conversions_int16_to_data(calibration_bno055.accel_offset_x, &buf[1], true);
+        conversions_int16_to_data(calibration_bno055.accel_offset_y, &buf[3], true);
+        conversions_int16_to_data(calibration_bno055.accel_offset_z, &buf[5], true);
+        conversions_int16_to_data(calibration_bno055.accel_radius, &buf[7], true);
+        conversions_int16_to_data(calibration_bno055.gyro_offset_x, &buf[9], true);
+        conversions_int16_to_data(calibration_bno055.gyro_offset_y, &buf[11], true);
+        conversions_int16_to_data(calibration_bno055.gyro_offset_z, &buf[13], true);
+        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, buf, 15);
+    }else if(MSG_EQUALS(((uint8_t[]){'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'E'}))){
+        // S, C, B, N, O, 0, 5, 5, E
+        // Erase stored calibration constants for BNO055
+        // Then reset the sensor (so it loosed the ones programmed earlier)
+        calibration_erase_bno055();
+        bno055_configure();   // This will reset the sensor as a part of configuration process
+        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'S'}))){
+        // S, C, B, N, O, 0, 5, 5, S, [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
+        // Write stored calibration constants for BNO055
         // All values are 16-bit little endian integers (calibration values)
-        // TODO: Store calibration
+        if(len != 23){
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            bno055_cal_t new_cal;
+            new_cal.accel_offset_x = conversions_data_to_int16(&msg[9], true);
+            new_cal.accel_offset_y = conversions_data_to_int16(&msg[11], true);
+            new_cal.accel_offset_z = conversions_data_to_int16(&msg[13], true);
+            new_cal.accel_radius = conversions_data_to_int16(&msg[15], true);
+            new_cal.gyro_offset_x = conversions_data_to_int16(&msg[17], true);
+            new_cal.gyro_offset_y = conversions_data_to_int16(&msg[19], true);
+            new_cal.gyro_offset_z = conversions_data_to_int16(&msg[21], true);
+            calibration_store_bno055(new_cal);
+            bno055_configure();     // Reconfigure bno055 will reset the sensor and apply the stored calibration
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+        }
     }else if(MSG_EQUALS(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'C', 'S'}))){
-        // Get current BNO055 calibration status
+        // Get current BNO055 calibration status (from the sensor itself)
         // ACK will contain the following
         // [status] an 8-bit integer with the value of the sensor's CALIB_STAT register
         if(!bno055_ready()){
@@ -1130,7 +1159,7 @@ void cmdctrl_handle_message(void){
             }
         }
     }else if(MSG_EQUALS(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'C', 'V'}))){
-        // Get current BNO055 calibration values
+        // Get current BNO055 calibration values (from the sensor itself)
         // ACK will contain the following
         // [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
         //All are little endian 16-bit integers (signed)

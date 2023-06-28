@@ -597,46 +597,6 @@ class ControlBoard:
     def get_bno055_data(self) -> BNO055Data:
         return copy.copy(self.__bno055_data)
 
-    ## Get the BNO055 calibration status register value
-    #  @return AckError and an integer indicating calibration status (value of BNO055 register)
-    def bno055_read_calibration_status(self, timeout: float = -1.0) -> Tuple[AckError, int]:
-        msg = bytearray()
-        msg.extend(b'BNO055CS')
-        msg_id = self.__write_msg(bytes(msg), True)
-        ack, res = self.__wait_for_ack(msg_id, timeout)
-        if ack == ControlBoard.AckError.NONE:
-            return ack, res[0]
-        else:
-            return ack, 0
-
-    ## Read the calibration data from the BNO055 sensor (only valid if the status is good)
-    #  Note that this is the data from the sensor, not the data saved on the control board
-    #  itself
-    #  @return AckError, BNO055Calibration object containing calibration data
-    def bno055_read_calibration(self, timeout: float = -1.0) -> Tuple[AckError, BNO055Calibration]:
-        # This can take a little longer than most commands
-        # This can take a little longer than most commands
-        # Thus, use a slightly longer default timeout
-        if timeout == -1.0:
-            timeout = self.default_timeout() + 0.5
-
-        msg = bytearray()
-        msg.extend(b'BNO055CV')
-        msg_id = self.__write_msg(bytes(msg), True)
-        ack, res = self.__wait_for_ack(msg_id, timeout)
-        if ack == ControlBoard.AckError.NONE:
-            cal = ControlBoard.BNO055Calibration()
-            cal.accel_offset_x = struct.unpack_from("<h", res, 0)[0]
-            cal.accel_offset_y = struct.unpack_from("<h", res, 2)[0]
-            cal.accel_offset_z = struct.unpack_from("<h", res, 4)[0]
-            cal.accel_radius = struct.unpack_from("<h", res, 6)[0]
-            cal.gyro_offset_x = struct.unpack_from("<h", res, 8)[0]
-            cal.gyro_offset_y = struct.unpack_from("<h", res, 10)[0]
-            cal.gyro_offset_z = struct.unpack_from("<h", res, 12)[0]
-            return ack, cal
-        else:
-            return ack, ControlBoard.BNO055Calibration()
-
     ## Parse byte data from BNO055 readings into the data class object
     def __ms5837_parse(self, data: bytes):
         new_data = self.MS5837Data()
@@ -993,6 +953,103 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
+
+    ## Get the BNO055 calibration status register value
+    #  Note that this is the data from the sensor, not the data saved on the control board
+    #  @return AckError and an integer indicating calibration status (value of BNO055 register)
+    def bno055_read_calibration_status(self, timeout: float = -1.0) -> Tuple[AckError, int]:
+        msg = bytearray()
+        msg.extend(b'BNO055CS')
+        msg_id = self.__write_msg(bytes(msg), True)
+        ack, res = self.__wait_for_ack(msg_id, timeout)
+        if ack == ControlBoard.AckError.NONE:
+            return ack, res[0]
+        else:
+            return ack, 0
+
+    ## Read the calibration data from the BNO055 sensor (only valid if the status is good)
+    #  Note that this is the data from the sensor, not the data saved on the control board
+    #  itself
+    #  @return AckError, BNO055Calibration object containing calibration data
+    def bno055_read_calibration(self, timeout: float = -1.0) -> Tuple[AckError, BNO055Calibration]:
+        # This can take a little longer than most commands
+        # This can take a little longer than most commands
+        # Thus, use a slightly longer default timeout
+        if timeout == -1.0:
+            timeout = self.default_timeout() + 0.5
+
+        msg = bytearray()
+        msg.extend(b'BNO055CV')
+        msg_id = self.__write_msg(bytes(msg), True)
+        ack, res = self.__wait_for_ack(msg_id, timeout)
+        if ack == ControlBoard.AckError.NONE:
+            cal = ControlBoard.BNO055Calibration()
+            cal.accel_offset_x = struct.unpack_from("<h", res, 0)[0]
+            cal.accel_offset_y = struct.unpack_from("<h", res, 2)[0]
+            cal.accel_offset_z = struct.unpack_from("<h", res, 4)[0]
+            cal.accel_radius = struct.unpack_from("<h", res, 6)[0]
+            cal.gyro_offset_x = struct.unpack_from("<h", res, 8)[0]
+            cal.gyro_offset_y = struct.unpack_from("<h", res, 10)[0]
+            cal.gyro_offset_z = struct.unpack_from("<h", res, 12)[0]
+            return ack, cal
+        else:
+            return ack, ControlBoard.BNO055Calibration()
+
+
+    ## Read the BNO055 calibration constants stored on the control board
+    #  @return AckError, valid (True / False), calibration data
+    def read_stored_bno055_calibration(self, timeout: float = -1.0) -> Tuple[AckError, bool, BNO055Calibration]:
+        msg = bytearray()
+        msg.extend(b'SCBNO055R')
+        msg_id = self.__write_msg(bytes(msg), True)
+        ack, res = self.__wait_for_ack(msg_id, timeout)
+        if ack == ControlBoard.AckError.NONE:
+            cal = ControlBoard.BNO055Calibration()
+            valid = res[0] == 1
+            if valid:
+                cal.accel_offset_x = struct.unpack_from("<h", res, 1)[0]
+                cal.accel_offset_y = struct.unpack_from("<h", res, 3)[0]
+                cal.accel_offset_z = struct.unpack_from("<h", res, 5)[0]
+                cal.accel_radius = struct.unpack_from("<h", res, 7)[0]
+                cal.gyro_offset_x = struct.unpack_from("<h", res, 9)[0]
+                cal.gyro_offset_y = struct.unpack_from("<h", res, 11)[0]
+                cal.gyro_offset_z = struct.unpack_from("<h", res, 13)[0]
+            return ack, valid, cal
+        else:
+            return ack, False, ControlBoard.BNO055Calibration()
+
+    ## Erase the BNO055 calibration constants stored on the control board
+    #  @return AckError
+    def erase_stored_bno055_calibration(self, timeout: float = -1.0) -> AckError:
+        # This can take a little longer than most commands
+        # Thus, use a slightly longer default timeout
+        if timeout == -1.0:
+            timeout = self.default_timeout() + 0.3
+        msg = bytearray()
+        msg.extend(b'SCBNO055E')
+        msg_id = self.__write_msg(bytes(msg), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+
+    ## Store BNO055 calibration constants on the control board
+    #  @return AckError
+    def store_bno055_calibration(self, cal: BNO055Calibration, timeout: float = -1.0) -> AckError:
+        # This can take a little longer than most commands
+        # Thus, use a slightly longer default timeout
+        if timeout == -1.0:
+            timeout = self.default_timeout() + 0.3
+        msg = bytearray()
+        msg.extend(b'SCBNO055S')
+        msg.extend(struct.pack("<h", cal.accel_offset_x))
+        msg.extend(struct.pack("<h", cal.accel_offset_y))
+        msg.extend(struct.pack("<h", cal.accel_offset_z))
+        msg.extend(struct.pack("<h", cal.accel_radius))
+        msg.extend(struct.pack("<h", cal.gyro_offset_x))
+        msg.extend(struct.pack("<h", cal.gyro_offset_y))
+        msg.extend(struct.pack("<h", cal.gyro_offset_z))
+        msg_id = self.__write_msg(bytes(msg), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
 
 # Used to interface with simulator. Do not instantiate directly
 # Use the Simulator class instead

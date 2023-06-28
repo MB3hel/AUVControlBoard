@@ -19,8 +19,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-
 typedef struct {
+    // Is data valid
+    bool valid;
+
     // Accelerometer data (BNO055)
     uint16_t accel_offset_x;
     uint16_t accel_offset_y; 
@@ -31,24 +33,29 @@ typedef struct {
     uint16_t gyro_offset_x;
     uint16_t gyro_offset_y;
     uint16_t gyro_offset_z;
-} calibration_data_t;
+} bno055_cal_t;
 
 
-extern bool calibration_valid;
-extern calibration_data_t calibration_data;
+extern bno055_cal_t calibration_bno055;
 
 
 /**
- * Load calibrations from eeprom
+ * Load calibration constants for all sensors
+ * 
  */
 void calibration_load(void);
 
 /**
- * Store the given calibration to eeprom
+ * Load calibrations constants for BNO055 from eeprom
  */
-void calibration_store(calibration_data_t new_data);
+void calibration_load_bno055(void);
 
 /**
- * Erase stored calibration data (invalidates it)
+ * Store calibration constants for BNO055 to eeprom
  */
-void calibration_erase(void);
+void calibration_store_bno055(bno055_cal_t new_data);
+
+/**
+ * Erase calibration constants for BNO055 from eeprom
+ */
+void calibration_erase_bno055(void);

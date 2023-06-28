@@ -21,72 +21,60 @@
 #include <stdint.h>
 #include <eeprom.h>
 
-
-static const uint16_t cal_sig[4] = {0x3B3B, 0x3B3B};
-
-
-bool calibration_valid = false;
-calibration_data_t calibration_data;
+bno055_cal_t calibration_bno055;
 
 
+#define SIG_VALID 0x3B3B
+
+// -----------------------------------------------------------------------------
 // Indices (addresses) of different values (16-bit) in eeprom
-#define SIG_IDX     (0x0000)        // First 2 values are signature
-//                  (0x0001)        // Also signature
-#define ACC_X_IDX   (0x0002)        // Accel offset x
-#define ACC_Y_IDX   (0x0003)        // Accel offset y
-#define ACC_Z_IDX   (0x0004)        // Accel offset z
-#define ACC_R_IDX   (0x0005)        // Accel radius
-#define GYR_X_IDX   (0x0006)        // Gyro offset x
-#define GYR_Y_IDX   (0x0007)        // Gyro offset y
-#define GYR_Z_IDX   (0x0008)        // Gyro offset z
-
-
+// -----------------------------------------------------------------------------
+// BNO055 IMU
+#define BNO055_SIG_IDX      (0x0000)        // Valid calibration signature
+#define BNO055_ACC_X_IDX    (0x0001)        // Accel offset x
+#define BNO055_ACC_Y_IDX    (0x0002)        // Accel offset y
+#define BNO055_ACC_Z_IDX    (0x0003)        // Accel offset z
+#define BNO055_ACC_R_IDX    (0x0004)        // Accel radius
+#define BNO055_GYR_X_IDX    (0x0005)        // Gyro offset x
+#define BNO055_GYR_Y_IDX    (0x0006)        // Gyro offset y
+#define BNO055_GYR_Z_IDX    (0x0007)        // Gyro offset z
+// -----------------------------------------------------------------------------
 
 void calibration_load(void){
-    // First 2 half-words are a calibration signature. If the bytes match this signature,
-    // it is assumed that a valid set of calibration constants are stored in the eeprom.
-    // Otherwise, it is assumed that the calibration data is not valid (has never been stored).
-
-    // This is the correct signature. Will be compared to read signature bytes
-    
-
-    // Read signature from eeprom and compare
-    uint16_t val;
-    bool valid = true;
-    for(unsigned int i = 0; i < 2; ++i){
-        eeprom_read(SIG_IDX + i, &val);
-        if(val != cal_sig[i]){
-            valid = false;
-            break;
-        }
-    }
-    if(valid){
-        eeprom_read(ACC_X_IDX, &calibration_data.accel_offset_x);
-        eeprom_read(ACC_Y_IDX, &calibration_data.accel_offset_y);
-        eeprom_read(ACC_Z_IDX, &calibration_data.accel_offset_z);
-        eeprom_read(ACC_R_IDX, &calibration_data.accel_radius);
-        eeprom_read(GYR_X_IDX, &calibration_data.gyro_offset_x);
-        eeprom_read(GYR_Y_IDX, &calibration_data.gyro_offset_y);
-        eeprom_read(GYR_Z_IDX, &calibration_data.gyro_offset_z);
-    }
-    calibration_valid = valid;
+    calibration_load_bno055();
 }
 
-void calibration_store(calibration_data_t new_data){
-    eeprom_write(ACC_X_IDX, new_data.accel_offset_x);
-    eeprom_write(ACC_Y_IDX, new_data.accel_offset_x);
-    eeprom_write(ACC_Z_IDX, new_data.accel_offset_x);
-    eeprom_write(ACC_R_IDX, new_data.accel_radius);
-    eeprom_write(GYR_X_IDX, new_data.gyro_offset_x);
-    eeprom_write(GYR_Y_IDX, new_data.gyro_offset_y);
-    eeprom_write(GYR_Z_IDX, new_data.gyro_offset_z);
-    eeprom_write(SIG_IDX, cal_sig[0]);
-    eeprom_write(SIG_IDX + 1, cal_sig[0]);
-    calibration_data = new_data;
+void calibration_load_bno055(void){
+    uint16_t sig;
+    eeprom_read(BNO055_SIG_IDX, &sig);
+    calibration_bno055.valid = (sig == SIG_VALID);
+    if(calibration_bno055.valid){
+        eeprom_read(BNO055_ACC_X_IDX, &calibration_bno055.accel_offset_x);
+        eeprom_read(BNO055_ACC_Y_IDX, &calibration_bno055.accel_offset_y);
+        eeprom_read(BNO055_ACC_Z_IDX, &calibration_bno055.accel_offset_z);
+        eeprom_read(BNO055_ACC_R_IDX, &calibration_bno055.accel_radius);
+        eeprom_read(BNO055_GYR_X_IDX, &calibration_bno055.gyro_offset_x);
+        eeprom_read(BNO055_GYR_Y_IDX, &calibration_bno055.gyro_offset_y);
+        eeprom_read(BNO055_GYR_Z_IDX, &calibration_bno055.gyro_offset_z);
+    }
 }
 
-void calibration_erase(void){
+void calibration_store_bno055(bno055_cal_t new_data){
+    eeprom_write(BNO055_ACC_X_IDX, new_data.accel_offset_x);
+    eeprom_write(BNO055_ACC_Y_IDX, new_data.accel_offset_x);
+    eeprom_write(BNO055_ACC_Z_IDX, new_data.accel_offset_x);
+    eeprom_write(BNO055_ACC_R_IDX, new_data.accel_radius);
+    eeprom_write(BNO055_GYR_X_IDX, new_data.gyro_offset_x);
+    eeprom_write(BNO055_GYR_Y_IDX, new_data.gyro_offset_y);
+    eeprom_write(BNO055_GYR_Z_IDX, new_data.gyro_offset_z);
+    eeprom_write(BNO055_SIG_IDX, SIG_VALID);
+    calibration_bno055 = new_data;
+    calibration_bno055.valid = true;
+}
+
+void calibration_erase_bno055(void){
     // Instead of actually erasing data (potentially more flash writes)
-    // Just invalidate the signature (fewer flash writes)
-    eeprom_write(SIG_IDX, 0xFF);
+    // Just invalidate the signature (fewer flash writes / erases)
+    eeprom_write(BNO055_SIG_IDX, 0x0000);
+    calibration_bno055.valid = false;
 }
