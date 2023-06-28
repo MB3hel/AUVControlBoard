@@ -6,39 +6,12 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright � 2017 STMicroelectronics International N.V. 
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2017 STMicroelectronics.
+  * All rights reserved.
   *
-  * Redistribution and use in source and binary forms, with or without 
-  * modification, are permitted, provided that the following conditions are met:
-  *
-  * 1. Redistribution of source code must retain the above copyright notice, 
-  *    this list of conditions and the following disclaimer.
-  * 2. Redistributions in binary form must reproduce the above copyright notice,
-  *    this list of conditions and the following disclaimer in the documentation
-  *    and/or other materials provided with the distribution.
-  * 3. Neither the name of STMicroelectronics nor the names of other 
-  *    contributors to this software may be used to endorse or promote products 
-  *    derived from this software without specific written permission.
-  * 4. This software, including modifications and/or derivative works of this 
-  *    software, must execute solely and exclusively on microcontroller or
-  *    microprocessor devices manufactured by or for STMicroelectronics.
-  * 5. Redistribution and use of this software other than as permitted under 
-  *    this license is void and will automatically terminate your rights under 
-  *    this license. 
-  *
-  * THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND CONTRIBUTORS "AS IS" 
-  * AND ANY EXPRESS, IMPLIED OR STATUTORY WARRANTIES, INCLUDING, BUT NOT 
-  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
-  * PARTICULAR PURPOSE AND NON-INFRINGEMENT OF THIRD PARTY INTELLECTUAL PROPERTY
-  * RIGHTS ARE DISCLAIMED TO THE FULLEST EXTENT PERMITTED BY LAW. IN NO EVENT 
-  * SHALL STMICROELECTRONICS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-  * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
-  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
@@ -328,24 +301,72 @@ uint16_t EE_Init(void)
   *           - 0: if Page not erased
   *           - 1: if Page erased
   */
+// uint16_t EE_VerifyPageFullyErased(uint32_t Address)
+// {
+//   uint32_t ReadStatus = 1;
+//   uint16_t AddressValue = 0x5555;
+    
+//   /* Check each active page address starting from end */
+//   while (Address <= PAGE0_END_ADDRESS)
+//   {
+//     /* Get the current location content to be compared with virtual address */
+//     AddressValue = (*(__IO uint16_t*)Address);
+
+//     /* Compare the read address with the virtual address */
+//     if (AddressValue != ERASED)
+//     {
+      
+//       /* In case variable value is read, reset ReadStatus flag */
+//       ReadStatus = 0;
+
+//       break;
+//     }
+//     /* Next address location */
+//     Address = Address + 4;
+//   }
+  
+//   /* Return ReadStatus value: (0: Page not erased, 1: Sector erased) */
+//   return ReadStatus;
+// }
+
+/**
+ * @brief  Verify if specified page is fully erased.
+ * @param  Address: page address
+ *   This parameter can be one of the following values:
+ *     @arg PAGE0_BASE_ADDRESS: Page0 base address
+ *     @arg PAGE1_BASE_ADDRESS: Page1 base address
+ * @retval page fully erased status:
+ *           - 0: if Page not erased
+ *           - 1: if Page erased
+ */
 uint16_t EE_VerifyPageFullyErased(uint32_t Address)
 {
-  uint32_t ReadStatus = 1;
-  uint32_t BeginAddress = Address;
-  uint16_t AddressValue = 0x5555;
+  uint32_t readstatus = 1;
+  uint16_t addressvalue = 0x5555;
+  uint32_t end_address;
+  
+  if (PAGE0_BASE_ADDRESS==Address)
+  {
+    end_address = PAGE0_END_ADDRESS;
+  }
+  else
+  {
+    end_address = PAGE1_END_ADDRESS;
+  };
+  
     
   /* Check each active page address starting from end */
-  while (Address <= (BeginAddress + PAGE_SIZE - 1))
+  while (Address <= end_address)
   {
     /* Get the current location content to be compared with virtual address */
-    AddressValue = (*(__IO uint16_t*)Address);
+    addressvalue = (*(__IO uint16_t*)Address);
 
     /* Compare the read address with the virtual address */
-    if (AddressValue != ERASED)
+    if (addressvalue != ERASED)
     {
       
-      /* In case variable value is read, reset ReadStatus flag */
-      ReadStatus = 0;
+      /* In case variable value is read, reset readstatus flag */
+      readstatus = 0;
 
       break;
     }
@@ -353,8 +374,8 @@ uint16_t EE_VerifyPageFullyErased(uint32_t Address)
     Address = Address + 4;
   }
   
-  /* Return ReadStatus value: (0: Page not erased, 1: Sector erased) */
-  return ReadStatus;
+  /* Return readstatus value: (0: Page not erased, 1: Page erased) */
+  return readstatus;
 }
 
 /**
@@ -417,7 +438,7 @@ uint16_t EE_ReadVariable(uint16_t VirtAddress, uint16_t* Data)
 }
 
 /**
-  * @brief  Writes/upadtes variable data in EEPROM.
+  * @brief  Writes/updates variable data in EEPROM.
   * @param  VirtAddress: Variable virtual address
   * @param  Data: 16 bit data to be written
   * @retval Success or error status:
@@ -448,7 +469,7 @@ uint16_t EE_WriteVariable(uint16_t VirtAddress, uint16_t Data)
   * @brief  Erases PAGE and PAGE1 and writes VALID_PAGE header to PAGE
   * @param  None
   * @retval Status of the last operation (Flash write or erase) done during
-  *         EEPROM formating
+  *         EEPROM formatting
   */
 static HAL_StatusTypeDef EE_Format(void)
 {
@@ -595,7 +616,7 @@ static uint16_t EE_VerifyPageFullWriteVariable(uint16_t VirtAddress, uint16_t Da
   /* Get the valid Page end Address */
   PageEndAddress = (uint32_t)((EEPROM_START_ADDRESS - 1) + (uint32_t)((ValidPage + 1) * PAGE_SIZE));
 
-  /* Check each active page address starting from begining */
+  /* Check each active page address starting from beginning */
   while (Address < PageEndAddress)
   {
     /* Verify if Address and Address+2 contents are 0xFFFFFFFF */
@@ -734,5 +755,3 @@ static uint16_t EE_PageTransfer(uint16_t VirtAddress, uint16_t Data)
 /**
   * @}
   */ 
-
-/******************* (C) COPYRIGHT 2017 STMicroelectronics *****END OF FILE****/

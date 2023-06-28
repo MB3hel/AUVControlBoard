@@ -126,6 +126,7 @@ elseif("${CBOARD_REV}" STREQUAL "v2")
         "${PROJECT_SOURCE_DIR}/src/v2/*.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/*.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/startup_stm32f411xe.s"
+        "${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/emueeprom/src/*.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/MemMang/heap_4.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/TinyUSB/portable/synopsys/dwc2/dcd_dwc2.c"
@@ -137,6 +138,7 @@ elseif("${CBOARD_REV}" STREQUAL "v2")
         "${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/Drivers/CMSIS/Include"
         "${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/Drivers/CMSIS/Device/ST/STM32F4xx/Include"
         "${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/Drivers/STM32F4xx_HAL_Driver/Inc"
+        "${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/emueeprom/inc"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/GCC/ARM_CM4F"
         "${PROJECT_SOURCE_DIR}/include/v2"
     )
@@ -197,11 +199,7 @@ add_custom_command(TARGET ControlBoard POST_BUILD
 add_custom_command(TARGET ControlBoard POST_BUILD
     COMMAND ${CMAKE_OBJCOPY} ARGS -O binary "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.elf" "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.bin"
 )
-if("${CBOARD_REV}" STREQUAL "v1")
-    add_custom_command(TARGET ControlBoard POST_BUILD
-        COMMAND ${CMAKE_OBJCOPY} ARGS -O binary "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.elf" "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.bin"
-    )
-elseif("${CBOARD_REV}" STREQUAL "v2")
+if("${CBOARD_REV}" STREQUAL "v2")
     # Different because of eeprom emulation using flash (breaks up flash space on this device)
 
     # Stuff that goes in sector 0 of flash (BOOT segment of address space in linker)

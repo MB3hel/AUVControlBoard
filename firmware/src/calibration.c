@@ -75,6 +75,6 @@ void calibration_store_bno055(bno055_cal_t new_data){
 void calibration_erase_bno055(void){
     // Instead of actually erasing data (potentially more flash writes)
     // Just invalidate the signature (fewer flash writes / erases)
-    eeprom_write(BNO055_SIG_IDX, 0x0000);
+    eeprom_write(BNO055_SIG_IDX, 0x0001);
     calibration_bno055.valid = false;
 }

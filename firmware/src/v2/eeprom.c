@@ -21,6 +21,8 @@
 #include <led.h>
 #include <st_eeprom.h>
 #include <stdint.h>
+#include <FreeRTOS.h>
+#include <task.h>
 
 static bool valid = false;
 uint16_t VirtAddVarTab[NB_OF_VAR];
@@ -29,8 +31,9 @@ void eeprom_init(void){
     for(unsigned int VarIndex = 1; VarIndex <= NB_OF_VAR; VarIndex++){
         VirtAddVarTab[VarIndex-1] = VarIndex;
     } 
-    HAL_FLASH_Unlock(); 
+    HAL_FLASH_Unlock();
     uint16_t res = EE_Init();
+    HAL_FLASH_Lock();
     if(res == EE_OK){
         valid = true;
     }
@@ -39,7 +42,9 @@ void eeprom_init(void){
 bool eeprom_write(uint16_t address, uint16_t data){
     if(!valid)
         return false;
+    HAL_FLASH_Unlock();
     uint16_t res = EE_WriteVariable(VirtAddVarTab[address], data);
+    HAL_FLASH_Lock();
     return res == EE_OK;
 }
 

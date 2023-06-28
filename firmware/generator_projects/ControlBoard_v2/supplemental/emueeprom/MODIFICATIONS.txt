@@ -1,0 +1,2 @@
+- Using sectors 1 and 2 for eeprom not 2 and 3
+- Increased number of variables to 32

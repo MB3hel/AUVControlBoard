@@ -8,8 +8,7 @@ TODO: EEPROM Emulation
     - Note that as such, configuring fuse settings with MCC Standalone generator will do no good (it assumes XC32)
     - Linker script modified to shorten rom to avoid the data for eeprom
 - STM32 (CBv2)
-    - Using https://github.com/lamik/EEPROM-emulation-STM32F4-HAL/tree/master
-    - Adapted code is st_eeprom.h/c
+    - Using code from https://github.com/STMicroelectronics/STM32CubeF4/tree/master/Projects/STM32F411RE-Nucleo/Applications/EEPROM/EEPROM_Emulation as st_eeprom.h/c
     - Using sectors 1 and 2
     - isr_vectors must be in sector 0, most of this sector is wasted
     - Flash used by program starts at sector 3. Leaves 464k flash for use.

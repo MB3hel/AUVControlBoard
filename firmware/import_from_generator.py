@@ -164,6 +164,7 @@ def update_controlboard_v2():
     shutil.copy(os.path.join(generator_proj, "supplemental", "libc_syscalls.c"), dest)
     shutil.copy(os.path.join(generator_proj, "supplemental", "STM32F411.svd"), dest)
     shutil.copy(os.path.join(generator_proj, "supplemental", "STM32F411CEUx_FLASH.ld"), dest)
+    shutil.copytree(os.path.join(generator_proj, "supplemental", "emueeprom"), os.path.join(dest, "emueeprom"))
 
 
     # --------------------------------------------------------------------------
