@@ -21,13 +21,13 @@
 
 
 typedef struct {
-    // Accelerometer data
+    // Accelerometer data (BNO055)
     uint16_t accel_offset_x;
     uint16_t accel_offset_y; 
     uint16_t accel_offset_z; 
     uint16_t accel_radius;
 
-    // Gyro data
+    // Gyro data (BNO055)
     uint16_t gyro_offset_x;
     uint16_t gyro_offset_y;
     uint16_t gyro_offset_z;
