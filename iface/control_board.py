@@ -1024,7 +1024,7 @@ class ControlBoard:
         # This can take a little longer than most commands
         # Thus, use a slightly longer default timeout
         if timeout == -1.0:
-            timeout = self.default_timeout() + 0.3
+            timeout = self.default_timeout() + 2.0
         msg = bytearray()
         msg.extend(b'SCBNO055E')
         msg_id = self.__write_msg(bytes(msg), True)
@@ -1037,7 +1037,7 @@ class ControlBoard:
         # This can take a little longer than most commands
         # Thus, use a slightly longer default timeout
         if timeout == -1.0:
-            timeout = self.default_timeout() + 0.3
+            timeout = self.default_timeout() + 2.0
         msg = bytearray()
         msg.extend(b'SCBNO055S')
         msg.extend(struct.pack("<h", cal.accel_offset_x))

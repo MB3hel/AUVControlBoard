@@ -84,14 +84,12 @@ def run(cb: ControlBoard, s: Simulator) -> int:
         print("")
         res = prompt_yn("  Erase stored calibration?", "Y")
         if res:
-            print("  Erasing calibration and resetting IMU...", end="")
+            print("  Erasing calibration...", end="")
             if cb.erase_stored_bno055_calibration() == cb.AckError.NONE:
                 print("Done.")
             else:
                 print("Fail.")
                 return 1
-            print("  Waiting 3 seconds for IMU startup after resetting.")
-            time.sleep(3)
         else:
             return 1
 

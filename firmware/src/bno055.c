@@ -22,6 +22,7 @@
 #include <FreeRTOS.h>
 #include <task.h>
 #include <simulator.h>
+#include <calibration.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// BNO055 Info Macros
@@ -294,20 +295,20 @@ bool bno055_configure(void){
     // Reset IMU
     trans.write_buf[0] = BNO055_SYS_TRIGGER_ADDR;
     trans.write_buf[1] = 0x20;
-    trans.write_count = 1;
+    trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans))
         return false;
     
     // Wait for reset to complete
-    vTaskDelay(pdMS_TO_TICKS(50));
+    vTaskDelay(pdMS_TO_TICKS(500));
     unsigned int attempts = 0;
     do{
         trans.write_buf[0] = BNO055_CHIP_ID_ADDR;
         trans.write_count = 1;
         trans.read_count = 1;
         if(!bno055_perform(&trans))
-            vTaskDelay(pdMS_TO_TICKS(10));
+            vTaskDelay(pdMS_TO_TICKS(20));
         attempts++;
         if(attempts > 50)
             return false;
@@ -370,6 +371,79 @@ bool bno055_configure(void){
     if(!bno055_perform(&trans))
         return false;
     vTaskDelay(pdMS_TO_TICKS(10));
+
+    // Apply stored calibrations (if any are stored)
+    if(calibration_bno055.valid){
+        // ACC_OFFSET_X
+        trans.write_buf[0] = BNO055_ACCEL_OFFSET_X_LSB_ADDR;
+        trans.write_buf[1] = calibration_bno055.accel_offset_x & 0xFF;
+        trans.write_buf[2] = (calibration_bno055.accel_offset_x & 0xFF00) >> 8;
+        trans.write_count = 3;
+        trans.read_count = 0;
+        if(!bno055_perform(&trans))
+            return false;
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        // ACC_OFFSET_Y
+        trans.write_buf[0] = BNO055_ACCEL_OFFSET_Y_LSB_ADDR;
+        trans.write_buf[1] = calibration_bno055.accel_offset_y & 0xFF;
+        trans.write_buf[2] = (calibration_bno055.accel_offset_y & 0xFF00) >> 8;
+        trans.write_count = 3;
+        trans.read_count = 0;
+        if(!bno055_perform(&trans))
+            return false;
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        // ACC_OFFSET_Z
+        trans.write_buf[0] = BNO055_ACCEL_OFFSET_Z_LSB_ADDR;
+        trans.write_buf[1] = calibration_bno055.accel_offset_z & 0xFF;
+        trans.write_buf[2] = (calibration_bno055.accel_offset_z & 0xFF00) >> 8;
+        trans.write_count = 3;
+        trans.read_count = 0;
+        if(!bno055_perform(&trans))
+            return false;
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        // ACC_RADIUS
+        trans.write_buf[0] = BNO055_ACCEL_RADIUS_LSB_ADDR;
+        trans.write_buf[1] = calibration_bno055.accel_radius & 0xFF;
+        trans.write_buf[2] = (calibration_bno055.accel_radius & 0xFF00) >> 8;
+        trans.write_count = 3;
+        trans.read_count = 0;
+        if(!bno055_perform(&trans))
+            return false;
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        // GYR_OFFSET_X
+        trans.write_buf[0] = BNO055_GYRO_OFFSET_X_LSB_ADDR;
+        trans.write_buf[1] = calibration_bno055.gyro_offset_x & 0xFF;
+        trans.write_buf[2] = (calibration_bno055.gyro_offset_x & 0xFF00) >> 8;
+        trans.write_count = 3;
+        trans.read_count = 0;
+        if(!bno055_perform(&trans))
+            return false;
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        // GYR_OFFSET_Y
+        trans.write_buf[0] = BNO055_GYRO_OFFSET_Y_LSB_ADDR;
+        trans.write_buf[1] = calibration_bno055.gyro_offset_y & 0xFF;
+        trans.write_buf[2] = (calibration_bno055.gyro_offset_y & 0xFF00) >> 8;
+        trans.write_count = 3;
+        trans.read_count = 0;
+        if(!bno055_perform(&trans))
+            return false;
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+        // GYR_OFFSET_Z
+        trans.write_buf[0] = BNO055_GYRO_OFFSET_Z_LSB_ADDR;
+        trans.write_buf[1] = calibration_bno055.gyro_offset_z & 0xFF;
+        trans.write_buf[2] = (calibration_bno055.gyro_offset_z & 0xFF00) >> 8;
+        trans.write_count = 3;
+        trans.read_count = 0;
+        if(!bno055_perform(&trans))
+            return false;
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
 
     // Set to IMU (fusion) operating mode
     trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
