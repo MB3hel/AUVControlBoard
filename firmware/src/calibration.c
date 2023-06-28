@@ -61,8 +61,8 @@ void calibration_load_bno055(void){
 
 void calibration_store_bno055(bno055_cal_t new_data){
     eeprom_write(BNO055_ACC_X_IDX, new_data.accel_offset_x);
-    eeprom_write(BNO055_ACC_Y_IDX, new_data.accel_offset_x);
-    eeprom_write(BNO055_ACC_Z_IDX, new_data.accel_offset_x);
+    eeprom_write(BNO055_ACC_Y_IDX, new_data.accel_offset_y);
+    eeprom_write(BNO055_ACC_Z_IDX, new_data.accel_offset_z);
     eeprom_write(BNO055_ACC_R_IDX, new_data.accel_radius);
     eeprom_write(BNO055_GYR_X_IDX, new_data.gyro_offset_x);
     eeprom_write(BNO055_GYR_Y_IDX, new_data.gyro_offset_y);
