@@ -49,24 +49,24 @@ void calibration_load_bno055(void){
     eeprom_read(BNO055_SIG_IDX, &sig);
     calibration_bno055.valid = (sig == SIG_VALID);
     if(calibration_bno055.valid){
-        eeprom_read(BNO055_ACC_X_IDX, &calibration_bno055.accel_offset_x);
-        eeprom_read(BNO055_ACC_Y_IDX, &calibration_bno055.accel_offset_y);
-        eeprom_read(BNO055_ACC_Z_IDX, &calibration_bno055.accel_offset_z);
-        eeprom_read(BNO055_ACC_R_IDX, &calibration_bno055.accel_radius);
-        eeprom_read(BNO055_GYR_X_IDX, &calibration_bno055.gyro_offset_x);
-        eeprom_read(BNO055_GYR_Y_IDX, &calibration_bno055.gyro_offset_y);
-        eeprom_read(BNO055_GYR_Z_IDX, &calibration_bno055.gyro_offset_z);
+        eeprom_read(BNO055_ACC_X_IDX, (uint16_t*)&calibration_bno055.accel_offset_x);
+        eeprom_read(BNO055_ACC_Y_IDX, (uint16_t*)&calibration_bno055.accel_offset_y);
+        eeprom_read(BNO055_ACC_Z_IDX, (uint16_t*)&calibration_bno055.accel_offset_z);
+        eeprom_read(BNO055_ACC_R_IDX, (uint16_t*)&calibration_bno055.accel_radius);
+        eeprom_read(BNO055_GYR_X_IDX, (uint16_t*)&calibration_bno055.gyro_offset_x);
+        eeprom_read(BNO055_GYR_Y_IDX, (uint16_t*)&calibration_bno055.gyro_offset_y);
+        eeprom_read(BNO055_GYR_Z_IDX, (uint16_t*)&calibration_bno055.gyro_offset_z);
     }
 }
 
 void calibration_store_bno055(bno055_cal_t new_data){
-    eeprom_write(BNO055_ACC_X_IDX, new_data.accel_offset_x);
-    eeprom_write(BNO055_ACC_Y_IDX, new_data.accel_offset_y);
-    eeprom_write(BNO055_ACC_Z_IDX, new_data.accel_offset_z);
-    eeprom_write(BNO055_ACC_R_IDX, new_data.accel_radius);
-    eeprom_write(BNO055_GYR_X_IDX, new_data.gyro_offset_x);
-    eeprom_write(BNO055_GYR_Y_IDX, new_data.gyro_offset_y);
-    eeprom_write(BNO055_GYR_Z_IDX, new_data.gyro_offset_z);
+    eeprom_write(BNO055_ACC_X_IDX, (uint16_t)new_data.accel_offset_x);
+    eeprom_write(BNO055_ACC_Y_IDX, (uint16_t)new_data.accel_offset_y);
+    eeprom_write(BNO055_ACC_Z_IDX, (uint16_t)new_data.accel_offset_z);
+    eeprom_write(BNO055_ACC_R_IDX, (uint16_t)new_data.accel_radius);
+    eeprom_write(BNO055_GYR_X_IDX, (uint16_t)new_data.gyro_offset_x);
+    eeprom_write(BNO055_GYR_Y_IDX, (uint16_t)new_data.gyro_offset_y);
+    eeprom_write(BNO055_GYR_Z_IDX, (uint16_t)new_data.gyro_offset_z);
     eeprom_write(BNO055_SIG_IDX, SIG_VALID);
     calibration_bno055 = new_data;
     calibration_bno055.valid = true;

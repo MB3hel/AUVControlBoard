@@ -301,23 +301,72 @@ uint16_t EE_Init(void)
   *           - 0: if Page not erased
   *           - 1: if Page erased
   */
+// uint16_t EE_VerifyPageFullyErased(uint32_t Address)
+// {
+//   uint32_t ReadStatus = 1;
+//   uint16_t AddressValue = 0x5555;
+    
+//   /* Check each active page address starting from end */
+//   while (Address <= PAGE0_END_ADDRESS)
+//   {
+//     /* Get the current location content to be compared with virtual address */
+//     AddressValue = (*(__IO uint16_t*)Address);
+
+//     /* Compare the read address with the virtual address */
+//     if (AddressValue != ERASED)
+//     {
+      
+//       /* In case variable value is read, reset ReadStatus flag */
+//       ReadStatus = 0;
+
+//       break;
+//     }
+//     /* Next address location */
+//     Address = Address + 4;
+//   }
+  
+//   /* Return ReadStatus value: (0: Page not erased, 1: Sector erased) */
+//   return ReadStatus;
+// }
+
+/**
+ * @brief  Verify if specified page is fully erased.
+ * @param  Address: page address
+ *   This parameter can be one of the following values:
+ *     @arg PAGE0_BASE_ADDRESS: Page0 base address
+ *     @arg PAGE1_BASE_ADDRESS: Page1 base address
+ * @retval page fully erased status:
+ *           - 0: if Page not erased
+ *           - 1: if Page erased
+ */
 uint16_t EE_VerifyPageFullyErased(uint32_t Address)
 {
-  uint32_t ReadStatus = 1;
-  uint16_t AddressValue = 0x5555;
+  uint32_t readstatus = 1;
+  uint16_t addressvalue = 0x5555;
+  uint32_t end_address;
+  
+  if (PAGE0_BASE_ADDRESS==Address)
+  {
+    end_address = PAGE0_END_ADDRESS;
+  }
+  else
+  {
+    end_address = PAGE1_END_ADDRESS;
+  };
+  
     
   /* Check each active page address starting from end */
-  while (Address <= PAGE0_END_ADDRESS)
+  while (Address <= end_address)
   {
     /* Get the current location content to be compared with virtual address */
-    AddressValue = (*(__IO uint16_t*)Address);
+    addressvalue = (*(__IO uint16_t*)Address);
 
     /* Compare the read address with the virtual address */
-    if (AddressValue != ERASED)
+    if (addressvalue != ERASED)
     {
       
-      /* In case variable value is read, reset ReadStatus flag */
-      ReadStatus = 0;
+      /* In case variable value is read, reset readstatus flag */
+      readstatus = 0;
 
       break;
     }
@@ -325,8 +374,8 @@ uint16_t EE_VerifyPageFullyErased(uint32_t Address)
     Address = Address + 4;
   }
   
-  /* Return ReadStatus value: (0: Page not erased, 1: Sector erased) */
-  return ReadStatus;
+  /* Return readstatus value: (0: Page not erased, 1: Page erased) */
+  return readstatus;
 }
 
 /**
