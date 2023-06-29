@@ -230,9 +230,6 @@ bool ms5837_read(ms5837_data *data){
     TEMP = (TEMP-Ti);
     P = ((d1 * SENS2) / 2097152l - OFF2) / 8192l;
 
-    float atm_pressure = calibration_ms5837.valid ? calibration_ms5837.atm_pressure : 101325.0f;
-    float fluid_density = calibration_ms5837.valid ? calibration_ms5837.fluid_density : 997.0f;
-
     // P in mbar * 10
     // TEMP in celsius * 100
     // 1mbar = 100Pa -> P * 10 = Pa
@@ -244,7 +241,9 @@ bool ms5837_read(ms5837_data *data){
     }else{
         data->pressure_mbar = P / 10.0f;
         data->temperature_c = TEMP / 100.0f;
-        data->depth_m = (atm_pressure - (P * 10.0f)) / (fluid_density * 9.80665f);   // Negative for below surface of water
+
+        // Negative for below surface of water
+        data->depth_m = (calibration_ms5837.atm_pressure - (P * 10.0f)) / (calibration_ms5837.fluid_density * 9.80665f);
     }
 
     ////////////////////////////////////////////////////////////////////////////
