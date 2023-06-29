@@ -69,3 +69,5 @@ The control board provides commands to manage both the stored calibration consta
 You should always recalibrate if you change the physical sensor in use on the control board (swap a different BNO055) or if you are using a different control board. Calibration constants will vary between sensors, thus constants from one control board cannot be used on another. Likewise, if you change the sensor on your control board the old constants will no longer be valid.
 
 Additionally, significant operating environment changes (pressure, temperature, elevation, etc) can cause enough of a change in sensor behavior to require re-calibration. Similarly, a change of the position of the sensor in the vehicle could require re-calibration. It is recommended to recalibrate if any such changes seem to result in degradation of sensor performance.
+
+If the BNO055 axis configuration used by your vehicle changes, the BNO055 should be recalibrated.
