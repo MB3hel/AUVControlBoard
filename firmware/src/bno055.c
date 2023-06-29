@@ -257,6 +257,10 @@ static quaternion_t prev_quat;
 static bool prev_quat_valid;
 static float accum_pitch, accum_roll, accum_yaw;
 
+// Last applied axis configuration
+static uint8_t remap = REMAP_P1;
+static uint8_t sign = SIGN_P1;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -367,9 +371,9 @@ bool bno055_configure(void){
         return false;
     }
 
-    // Default Axis remap = P1
+    // Apply last configured axis remap
     trans.write_buf[0] = BNO055_AXIS_MAP_CONFIG_ADDR;
-    trans.write_buf[1] = REMAP_P1;
+    trans.write_buf[1] = remap;
     trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans)){
@@ -377,9 +381,9 @@ bool bno055_configure(void){
         return false;
     }
 
-    // Default Axis sign = P1
+    // Apply last configured axis sign
     trans.write_buf[0] = BNO055_AXIS_MAP_SIGN_ADDR;
-    trans.write_buf[1] = SIGN_P1;
+    trans.write_buf[1] = sign;
     trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans)){
@@ -489,9 +493,6 @@ bool bno055_configure(void){
 
 bool bno055_set_axis(uint8_t mode){
     xSemaphoreTake(trans_mutex, portMAX_DELAY);
-
-    uint8_t remap = 0x00;
-    uint8_t sign = 0x00;
 
     // Set remap and sign registers
     switch(mode){
