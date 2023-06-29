@@ -88,5 +88,6 @@ def run(cb: ControlBoard, s: Simulator) -> int:
         print("Accum Yaw: {}".format(imu_data.accum_yaw))
         print()
         print("Depth: {}".format(depth_data.depth))
+        print("Pressure: {}".format(depth_data.pressure))
 
         time.sleep(0.1)

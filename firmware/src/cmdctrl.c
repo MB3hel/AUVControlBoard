@@ -192,10 +192,11 @@ static void send_sensor_data(TimerHandle_t timer){
         // Store current readings
         xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
         float m_depth_m = curr_ms5837_data.depth_m;
+        float m_pressure = curr_ms5837_data.pressure_mbar;
         xSemaphoreGive(sensor_data_mutex);
 
         // Construct message
-        uint8_t ms5837_data[11];
+        uint8_t ms5837_data[15];
         ms5837_data[0] = 'M';
         ms5837_data[1] = 'S';
         ms5837_data[2] = '5';
@@ -204,9 +205,10 @@ static void send_sensor_data(TimerHandle_t timer){
         ms5837_data[5] = '7';
         ms5837_data[6] = 'D';
         conversions_float_to_data(m_depth_m, &ms5837_data[7], true);
+        conversions_float_to_data(m_pressure, &ms5837_data[11], true);
 
         // Send message (status message from CB to PC)
-        pccomm_write(ms5837_data, 11);
+        pccomm_write(ms5837_data, 15);
     }
 
     // Not using auto reload so that any time taken to
@@ -842,7 +844,7 @@ void cmdctrl_handle_message(void){
     }else if(MSG_EQUALS(((uint8_t[]){'M', 'S', '5', '8', '3', '7', 'R'}))){
         // One-shot read of BNO055 data (all data)
         // M, S, 5, 8, 3, 7, R
-        // Response contains [depth_m]
+        // Response contains [depth_m], [pressure]
         // where each value is a 32-bit float little endian
 
         if(!ms5837_ready()){
@@ -852,14 +854,16 @@ void cmdctrl_handle_message(void){
             // Store current readings
             xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
             float m_depth_m = curr_ms5837_data.depth_m;
+            float m_pressure = curr_ms5837_data.pressure_mbar;
             xSemaphoreGive(sensor_data_mutex);
 
             // Construct response data
-            uint8_t response_data[4];
+            uint8_t response_data[8];
             conversions_float_to_data(m_depth_m, &response_data[0], true);
+            conversions_float_to_data(m_pressure, &response_data[4], true);
 
             // Send ack with response data
-            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 4);
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 8);
         }
     }else if(MSG_STARTS_WITH(((uint8_t[]){'M', 'S', '5', '8', '3', '7', 'P'}))){
         // MS5837 periodic read configure
@@ -1213,6 +1217,34 @@ void cmdctrl_handle_message(void){
                 conversions_int16_to_data(gyr_offset_y, &buf[10], true);
                 conversions_int16_to_data(gyr_offset_z, &buf[12], true);
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, buf, 14);
+            }
+        }
+    }else if(MSG_EQUALS(((uint8_t[]){'M', 'S', '5', '8', '3', '7', 'C', 'A', 'L', 'G'}))){
+        // M, S, 5, 8, 3, 7, C, A, L, G
+        // Read MS5837 calibration
+        // ACK contains [atm_pressure], [fluid_density]
+        // Each is a little endian 32-bit float
+        if(!ms5837_ready()){
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+        }else{
+            uint8_t buf[8];
+            conversions_float_to_data(calibration_ms5837.atm_pressure, &buf[0], true);
+            conversions_float_to_data(calibration_ms5837.fluid_density, &buf[4], true);
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, buf, 8);
+        }
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'M', 'S', '5', '8', '3', '7', 'C', 'A', 'L', 'S'}))){
+        // M, S, 5, 8, 3, 7, C, A, L, S, [atm_pressure], [fluid_density]
+        // Set MS5837 calibration
+        // Both values are little endian 32-bit floats
+        if(len != 18){
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            if(!ms5837_ready()){
+                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+            }else{
+                calibration_ms5837.atm_pressure = conversions_data_to_float(&msg[10], true);
+                calibration_ms5837.fluid_density = conversions_data_to_float(&msg[14], true);
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
             }
         }
     }else{

@@ -79,6 +79,7 @@ class ControlBoard:
     class MS5837Data:
         def __init__(self):
             self.depth: float = 0.0
+            self.pressure: float = 0.0
 
     class BNO055Calibration:
         def __init__(self):
@@ -238,7 +239,7 @@ class ControlBoard:
                 self.__bno055_parse(msg[7:])
         elif msg.startswith(b'MS5837D'):
             # MS5837 data status message
-            if len(msg) == 11:
+            if len(msg) == 15:
                 self.__ms5837_parse(msg[7:])
         elif msg.startswith(b'DEBUG') and self.__cboard_debug:
             print("CBOARD_DEBUG: {}".format(msg[5:].decode('ascii')))
@@ -617,6 +618,7 @@ class ControlBoard:
     def __ms5837_parse(self, data: bytes):
         new_data = self.MS5837Data()
         new_data.depth = struct.unpack("<f", data[0:4])[0]
+        new_data.pressure = struct.unpack("<f", data[4:8])[0]
         self.__ms5837_data = new_data
 
     ## Read current MS5837 data. This is a single read. Does not start periodic reads

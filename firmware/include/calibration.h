@@ -36,9 +36,6 @@ typedef struct {
 } bno055_cal_t;
 
 typedef struct {
-    // Is data valid
-    bool valid;
-
     // Atmospheric pressure at surface
     float atm_pressure;
 
