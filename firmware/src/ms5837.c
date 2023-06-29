@@ -21,6 +21,7 @@
 #include <i2c.h>
 #include <stdint.h>
 #include <simulator.h>
+#include <calibration.h>
 
 #define MS5837_ADDR                     0x76
 #define MS5837_30BA_VER                 0x1A   // Sensor version ID for 30BA
@@ -43,14 +44,6 @@
 
 #define WRITE_BUF_SIZE          16
 #define READ_BUF_SIZE           16
-
-// TODO: Make this configurable via pc command
-// freshwater = 997.0f
-// saltwater = 1029.0f
-static const float fluid_density = 997.0f;
-
-// TODO: Make this configurable via pc command
-static const float atm_pressure = 101325.0f;
 
 // Note: No transaction mutex needed here because this does not need to be thread safe
 //       All I2C comm with MS5837 occurs on MS5837 thread. Cmdctrl never touches it
@@ -237,6 +230,9 @@ bool ms5837_read(ms5837_data *data){
     TEMP = (TEMP-Ti);
     P = ((d1 * SENS2) / 2097152l - OFF2) / 8192l;
 
+    float atm_pressure = calibration_ms5837.valid ? calibration_ms5837.atm_pressure : 101325.0f;
+    float fluid_density = calibration_ms5837.valid ? calibration_ms5837.fluid_density : 997.0f;
+
     // P in mbar * 10
     // TEMP in celsius * 100
     // 1mbar = 100Pa -> P * 10 = Pa
@@ -248,7 +244,7 @@ bool ms5837_read(ms5837_data *data){
     }else{
         data->pressure_mbar = P / 10.0f;
         data->temperature_c = TEMP / 100.0f;
-        data->depth_m = (atm_pressure - (P * 10.0f)) / (fluid_density * 9.80665);   // Negative for below surface of water
+        data->depth_m = (atm_pressure - (P * 10.0f)) / (fluid_density * 9.80665f);   // Negative for below surface of water
     }
 
     ////////////////////////////////////////////////////////////////////////////

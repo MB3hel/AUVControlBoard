@@ -35,8 +35,20 @@ typedef struct {
     int16_t gyro_offset_z;
 } bno055_cal_t;
 
+typedef struct {
+    // Is data valid
+    bool valid;
+
+    // Atmospheric pressure at surface
+    float atm_pressure;
+
+    // Fluid density
+    float fluid_density;
+} ms5837_cal_t;
+
 
 extern bno055_cal_t calibration_bno055;
+extern ms5837_cal_t calibration_ms5837;
 
 
 /**
@@ -59,3 +71,18 @@ void calibration_store_bno055(bno055_cal_t new_data);
  * Erase calibration constants for BNO055 from eeprom
  */
 void calibration_erase_bno055(void);
+
+/**
+ * Load calibrations constants for MS5837 from eeprom
+ */
+void calibration_load_ms5837(void);
+
+/**
+ * Store calibration constants for MS5837 to eeprom
+ */
+void calibration_store_ms5837(ms5837_cal_t new_data);
+
+/**
+ * Erase calibration constants for MS5837 from eeprom
+ */
+void calibration_erase_ms5837(void);
