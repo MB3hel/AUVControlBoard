@@ -92,6 +92,11 @@ class ControlBoard:
             self.gyro_offset_y = 0
             self.gyro_offset_z = 0
 
+    class MS5837Calibration:
+        def __init__(self):
+            self.atm_pressure = 0.0         # Pa
+            self.fluid_density = 0.0        # kg / m^3
+
     ## Representation of motor matrix using nested lists
     class MotorMatrix:
         def __init__(self):
@@ -1067,6 +1072,30 @@ class ControlBoard:
         msg.extend(struct.pack("<h", cal.gyro_offset_x))
         msg.extend(struct.pack("<h", cal.gyro_offset_y))
         msg.extend(struct.pack("<h", cal.gyro_offset_z))
+        msg_id = self.__write_msg(bytes(msg), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+
+    ## Read the MS5837 calibration
+    #  @return AckError, calibration constants for MS5837
+    def ms5837_read_calibration(self, timeout: float = -1.0) -> Tuple[AckError, MS5837Calibration]:
+        msg = bytearray()
+        msg.extend(b'MS5837CALG')
+        msg_id = self.__write_msg(bytes(msg), True)
+        ack, res = self.__wait_for_ack(msg_id, timeout)
+        if ack == ControlBoard.AckError.NONE:
+            cal = ControlBoard.MS5837Calibration()
+            cal.atm_pressure = struct.unpack_from("<f", res, 0)[0]
+            cal.fluid_density = struct.unpack_from("<f", res, 4)[0]
+            return ack, cal
+        else:
+            return ack, ControlBoard.MS5837Calibration()
+
+    def ms5837_write_calibration(self, cal: MS5837Calibration, timeout: float = -1.0) -> AckError:
+        msg = bytearray()
+        msg.extend(b'MS5837CALS')
+        msg.extend(struct.pack("<f", cal.atm_pressure))
+        msg.extend(struct.pack("<f", cal.fluid_density))
         msg_id = self.__write_msg(bytes(msg), True)
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
