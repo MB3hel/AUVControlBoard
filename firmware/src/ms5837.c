@@ -119,7 +119,7 @@ bool ms5837_read(ms5837_data *data){
     if(!ms5837_perform(&trans)){
         if(sim_hijacked){
             // Ignore read failures if sim hijacked
-            data->pressure_pa = 101325.0f - (977.23005f * sim_depth);
+            data->pressure_pa = 101325.0f - (9777.23005f * sim_depth);
             data->temperature_c = 25;
             data->depth_m = sim_depth;
             return true;
@@ -135,7 +135,7 @@ bool ms5837_read(ms5837_data *data){
     if(!ms5837_perform(&trans)){
         if(sim_hijacked){
             // Ignore read failures if sim hijacked
-            data->pressure_pa = 101325.0f - (977.23005f * sim_depth);
+            data->pressure_pa = 101325.0f - (9777.23005f * sim_depth);
             data->temperature_c = 25;
             data->depth_m = sim_depth;
             return true;
@@ -151,7 +151,7 @@ bool ms5837_read(ms5837_data *data){
     if(!ms5837_perform(&trans)){
         if(sim_hijacked){
             // Ignore read failures if sim hijacked
-            data->pressure_pa = 101325.0f - (977.23005f * sim_depth);
+            data->pressure_pa = 101325.0f - (9777.23005f * sim_depth);
             data->temperature_c = 25;
             data->depth_m = sim_depth;
             return true;
@@ -167,7 +167,7 @@ bool ms5837_read(ms5837_data *data){
     if(!ms5837_perform(&trans)){
         if(sim_hijacked){
             // Ignore read failures if sim hijacked
-            data->pressure_pa = 101325.0f - (977.23005f * sim_depth);
+            data->pressure_pa = 101325.0f - (9777.23005f * sim_depth);
             data->temperature_c = 25;
             data->depth_m = sim_depth;
             return true;
@@ -235,7 +235,7 @@ bool ms5837_read(ms5837_data *data){
     // 1mbar = 100Pa -> P * 10 = Pa
     if(sim_hijacked){
         // Use data from simulator not depth sensor
-        data->pressure_pa = 101325.0f - (977.23005f * sim_depth);
+        data->pressure_pa = 101325.0f - (9777.23005f * sim_depth);
         data->temperature_c = 25;
         data->depth_m = sim_depth;
     }else{
