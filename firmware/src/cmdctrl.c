@@ -193,10 +193,11 @@ static void send_sensor_data(TimerHandle_t timer){
         xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
         float m_depth_m = curr_ms5837_data.depth_m;
         float m_pressure = curr_ms5837_data.pressure_pa;
+        float m_temp = curr_ms5837_data.temperature_c;
         xSemaphoreGive(sensor_data_mutex);
 
         // Construct message
-        uint8_t ms5837_data[15];
+        uint8_t ms5837_data[19];
         ms5837_data[0] = 'M';
         ms5837_data[1] = 'S';
         ms5837_data[2] = '5';
@@ -206,9 +207,10 @@ static void send_sensor_data(TimerHandle_t timer){
         ms5837_data[6] = 'D';
         conversions_float_to_data(m_depth_m, &ms5837_data[7], true);
         conversions_float_to_data(m_pressure, &ms5837_data[11], true);
+        conversions_float_to_data(m_temp, &ms5837_data[15], true);
 
         // Send message (status message from CB to PC)
-        pccomm_write(ms5837_data, 15);
+        pccomm_write(ms5837_data, 19);
     }
 
     // Not using auto reload so that any time taken to
@@ -844,7 +846,7 @@ void cmdctrl_handle_message(void){
     }else if(MSG_EQUALS(((uint8_t[]){'M', 'S', '5', '8', '3', '7', 'R'}))){
         // One-shot read of BNO055 data (all data)
         // M, S, 5, 8, 3, 7, R
-        // Response contains [depth_m], [pressure]
+        // Response contains [depth_m], [pressure], [temp]
         // where each value is a 32-bit float little endian
 
         if(!ms5837_ready()){
@@ -855,15 +857,17 @@ void cmdctrl_handle_message(void){
             xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
             float m_depth_m = curr_ms5837_data.depth_m;
             float m_pressure = curr_ms5837_data.pressure_pa;
+            float m_temp = curr_ms5837_data.temperature_c;
             xSemaphoreGive(sensor_data_mutex);
 
             // Construct response data
-            uint8_t response_data[8];
+            uint8_t response_data[12];
             conversions_float_to_data(m_depth_m, &response_data[0], true);
             conversions_float_to_data(m_pressure, &response_data[4], true);
+            conversions_float_to_data(m_temp, &response_data[8], true);
 
             // Send ack with response data
-            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 8);
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 12);
         }
     }else if(MSG_STARTS_WITH(((uint8_t[]){'M', 'S', '5', '8', '3', '7', 'P'}))){
         // MS5837 periodic read configure

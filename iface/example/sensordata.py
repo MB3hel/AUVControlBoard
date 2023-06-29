@@ -89,5 +89,6 @@ def run(cb: ControlBoard, s: Simulator) -> int:
         print()
         print("Depth: {}".format(depth_data.depth))
         print("Pressure: {}".format(depth_data.pressure))
+        print("Temperature: {}".format(depth_data.temperature))
 
         time.sleep(0.1)

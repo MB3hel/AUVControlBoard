@@ -237,9 +237,9 @@ Reads MS5837 data once.
 ```  
 This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format. Note that this is the same format as the data contained within the MS5837 data status message.  
 ```none
-[depth_m], [pressure_pa]
+[depth_m], [pressure_pa], [temp_c]
 ```  
-`depth_m` is a 32-bit float, little endian (meters below surface). `pressure_pa` is a 32-bit float, little endian (measured pressure in Pa).
+`depth_m` is a 32-bit float, little endian (meters below surface). `pressure_pa` is a 32-bit float, little endian (measured pressure in Pa). `temp_c` is a 32-bit float, little endian (temperature of air / water).
 
 **Last Reset Cause Query**  
 Get error code for last system reset cause of the control board. Generally not useful for end users, except for reporting errors. Mainly a debug / development tool. See error codes in firmware source `debug.h`.
@@ -327,9 +327,9 @@ Each value is a 32-bit float, little endian. `quat_` values are components of th
 **MS5837 Data Status**  
 Used by the control board to periodically send IMU data to the PC. Only sent when BNO055 periodic reads are enabled via the BNO055 periodic read command. The message has the following format  
 ```none
-'M', 'S', '5', '8', '3', '7', 'D', [depth_m], [pressure_pa]
+'M', 'S', '5', '8', '3', '7', 'D', [depth_m], [pressure_pa], [temp_c]
 ```  
-`depth_m` is a 32-bit float, little endian (meters below surface). `pressure_pa` is a 32-bit float, little endian (measured pressure in Pa).
+`depth_m` is a 32-bit float, little endian (meters below surface). `pressure_pa` is a 32-bit float, little endian (measured pressure in Pa). `temp_c` is a 32-bit float, little endian (temperature of air / water).
 
 
 **Debug Status Messages**  
