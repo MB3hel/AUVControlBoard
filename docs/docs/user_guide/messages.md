@@ -178,11 +178,26 @@ This command is used to rest the control board itself. This will reset the micro
 This message is **not** acknowledged.
 
 **Simulator Hijack Command**  
-This command is used by the simulator to hijack a real control board. This allows the simulator to pass certain information to and receive certain information from the control board. This enables testing of the actual firmware and reproducing bugs under simulation. The command as the following format.  
+This command is used by the simulator to hijack a real control board. This allows the simulator to pass certain information to and receive certain information from the control board. This enables testing of the actual firmware and reproducing bugs under simulation. The command has the following format.  
 ```none
 'S', 'I', 'M', 'H', 'I', 'J', 'A', 'C', 'K', [hijack]
 ```  
 `[hijack]` is an 8-bit integer (unsigned) with a value of 1 or 0. If 1, the control board is put into simulator hijack mode. If 0, it is removed from simulator hijack mode.  
+This message will be acknowledged. The acknowledge message will contain no result data.
+
+**Save BNO055 Stored Calibration Command**  
+This command is used to store a set of calibration constants for the BNO055 to the control board. This will write the "stored calibration constants". This command will also cause the IMU to be reconfigured (this can take some time, so acknowledgements for this command may take longer than most). The command has the following format  
+```none
+'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'S', [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
+```  
+Each value is a signed 16-bit integer. The meaning of each value is described in the BNO055 datasheet.  
+This message will be acknowledged. The acknowledge message will contain no result data.
+
+**Erase BNO055 Stored Calibration Command**  
+This command is used to erase calibration constants for the BNO055 from the control board. This will erase the "stored calibration constants". This command will also cause the IMU to be reconfigured (this can take some time, so acknowledgements for this command may take longer than most). The command has the following format  
+```none
+'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'E'
+```  
 This message will be acknowledged. The acknowledge message will contain no result data.
 
 <hr />
@@ -236,6 +251,41 @@ This message will be acknowledged. If acknowledged with no error, the response w
 [error_code]
 ```  
 `error_code` is a 32-bit integer (signed), little endian.
+
+**Read BNO055 Stored Calibration Query**  
+This command is used to read a set of calibration constants for the BNO055 from the control board. This will read the "stored calibration constants". The command has the following format  
+```none
+'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'R'
+```  
+This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format.  
+```none
+[valid], [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
+```  
+`valid` is an 8-bit integer. A value of 0 indicates that no calibration is stored on the control board (other values have no meaning). A value of 1 indicates that a calibration is stored (other values are that calibration).  
+All other values in the acknowledge data are signed 16-bit integers. The meaning of these integers is described in the BNO055 datasheet.
+
+**Read BNO055 Live Calibration Status Query**  
+This command is used to read the status of the BNO055's calibration routine. Note that this reads the value directly from the BNO055. This value is meaningless if a calibration was manually applied to the sensor. Thus, this is only useful if any "stored calibration constants" are first erased. The command has the following format  
+```none
+'B', 'N', 'O', '0', '5', '5', 'C', 'S'
+```  
+This message will be acknowledged. Note that if the IMU is not working properly, this command will be acknowledged with the "Invalid Command" error code. If acknowledged with no error, the response will contain data in the following format.  
+```none
+[status]
+```  
+`status` is an 8-bit integer. The value of `status` is the value of the BNO055's `CALIB_STAT` register. The meaning of this number is described in the BNO055 datasheet.
+
+
+**Read BNO055 Live Calibration Values Query**  
+This command is used to read a set of calibration constants from the BNO055. This will read the "live calibration constants" directly from the BNO055. Note that the calibration constants are only valid if the calibration status from the BNO055 is 3 for the accelerometer and gyroscope. The command has the following format  
+```none
+'B', 'N', 'O', '0', '5', '5', 'C', 'V'
+```  
+This message will be acknowledged. Note that if the IMU is not working properly, this command will be acknowledged with the "Invalid Command" error code. If acknowledged with no error, the response will contain data in the following format.  
+```none
+[accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
+```  
+All  values in the acknowledge data are signed 16-bit integers. The meaning of these integers is described in the BNO055 datasheet.
 
 <hr />
 
