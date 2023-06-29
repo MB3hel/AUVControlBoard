@@ -40,13 +40,6 @@ ms5837_cal_t calibration_ms5837;
 #define BNO055_GYR_X_IDX    (0x0005)        // Gyro offset x
 #define BNO055_GYR_Y_IDX    (0x0006)        // Gyro offset y
 #define BNO055_GYR_Z_IDX    (0x0007)        // Gyro offset z
-
-// MS5837 Depth Sensor
-#define MS5837_SIG_IDX      (0x0008)        // Valid calibration signature
-#define MS5837_ATM_LSB_IDX  (0x0009)        // Atmospheric pressure lower bytes
-#define MS5837_ATM_MSB_IDX  (0x000A)        // Atmospheric pressure upper bytes
-#define MS5837_FDN_LSB_IDX  (0x000B)        // Fluid density lower bytes
-#define MS5837_FDN_MSB_IDX  (0x000C)        // Fluid density upper bytes
 // -----------------------------------------------------------------------------
 
 void calibration_load(void){
