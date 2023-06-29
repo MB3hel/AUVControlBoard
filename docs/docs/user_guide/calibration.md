@@ -71,3 +71,23 @@ You should always recalibrate if you change the physical sensor in use on the co
 Additionally, significant operating environment changes (pressure, temperature, elevation, etc) can cause enough of a change in sensor behavior to require re-calibration. Similarly, a change of the position of the sensor in the vehicle could require re-calibration. It is recommended to recalibrate if any such changes seem to result in degradation of sensor performance.
 
 If the BNO055 axis configuration used by your vehicle changes, the BNO055 should be recalibrated.
+
+
+## MS5837 (Depth Sensor) Calibration
+
+The depth sensor is really just a pressure & temperature sensor. The depth is calculated using two "constant" values: the density of the water the vehicle is operating in and the atmospheric pressure at the surface of the water.
+
+For the MS5837 atmospheric pressure must be provided in Pascals and the fluid density must be provided in kg / m^3. The default values are
+
+- Atmospheric Pressure: 101325 Pa
+- Fluid Density: 997 kg / m^3
+
+These default values are applied on control board reset / power on. **MS5837 calibration is not persistent (it cannot be stored on the control board like the BNO055 can).**
+
+These values can be adjusted using a command sent to the control board or by using the python interface script. The fluid density must be provided by the user (there is no good way to experimentally determine this on the vehicle). However, the pressure can be measured while the vehicle (and sensor) are in air at / above the surface.
+
+The example interface script `ms5837_calibration.py` demonstrates calibration of the depth sensor.
+
+**Again, since the calibration is not persistent it must be applied by command / interface script function each time the device is started.**
+
+Note that depth sensor calibration is not persistent due to this being of limited use. The atmospheric conditions the vehicle is operating in will change with time. Thus, any persistent configuration would not be trusted and would be frequently overwritten.
