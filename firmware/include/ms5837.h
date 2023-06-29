@@ -24,7 +24,7 @@
 
 typedef struct{
     float depth_m;
-    float pressure_mbar;
+    float pressure_pa;
     float temperature_c;
 } ms5837_data;
 

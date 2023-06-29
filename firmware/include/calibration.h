@@ -36,10 +36,10 @@ typedef struct {
 } bno055_cal_t;
 
 typedef struct {
-    // Atmospheric pressure at surface
+    // Atmospheric pressure at surface (Pa NOT kPa)
     float atm_pressure;
 
-    // Fluid density
+    // Fluid density (kg / m^3)
     float fluid_density;
 } ms5837_cal_t;
 

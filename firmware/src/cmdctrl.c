@@ -192,7 +192,7 @@ static void send_sensor_data(TimerHandle_t timer){
         // Store current readings
         xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
         float m_depth_m = curr_ms5837_data.depth_m;
-        float m_pressure = curr_ms5837_data.pressure_mbar;
+        float m_pressure = curr_ms5837_data.pressure_pa;
         xSemaphoreGive(sensor_data_mutex);
 
         // Construct message
@@ -854,7 +854,7 @@ void cmdctrl_handle_message(void){
             // Store current readings
             xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
             float m_depth_m = curr_ms5837_data.depth_m;
-            float m_pressure = curr_ms5837_data.pressure_mbar;
+            float m_pressure = curr_ms5837_data.pressure_pa;
             xSemaphoreGive(sensor_data_mutex);
 
             // Construct response data
