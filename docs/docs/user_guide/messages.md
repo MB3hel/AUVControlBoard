@@ -200,6 +200,15 @@ This command is used to erase calibration constants for the BNO055 from the cont
 ```  
 This message will be acknowledged. The acknowledge message will contain no result data.
 
+**Write MS5837 Calibration Command**  
+This command is used to write the values of the MS5837 calibration constants. The command has the following format  
+```none
+'M', 'S', '5', '8', '3', '7', 'C', 'A', 'L', 'S', [atm_pressure], [fluid_density]
+```  
+Both values are 32-bit little endian floats.  
+This message will be acknowledged. The acknowledge message will contain no result data.
+
+
 <hr />
 
 
@@ -286,6 +295,18 @@ This message will be acknowledged. Note that if the IMU is not working properly,
 [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
 ```  
 All  values in the acknowledge data are signed 16-bit integers. The meaning of these integers is described in the BNO055 datasheet.
+
+
+**Read MS5837 Calibration Query**  
+This command is used to read the values of the MS5837 calibration constants. The command has the following format  
+```none
+'M', 'S', '5', '8', '3', '7', 'C', 'A', 'L', 'G'
+```  
+This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format.  
+```none
+[atm_pressure], [fluid_density]
+```  
+Both values are 32-bit little endian floats.
 
 <hr />
 
