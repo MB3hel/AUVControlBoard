@@ -1020,6 +1020,19 @@ class ControlBoard:
         else:
             return ack, ControlBoard.BNO055Calibration()
 
+    ## Reset & reconfigure the BNO055
+    #  This is typically used to clear auto generated calibration constants
+    #  when no calibration is stored to the control board
+    def bno055_reset(self, timeout: float = -1.0) -> AckError:
+        # This can take a little longer than most commands
+        # Thus, use a slightly longer default timeout
+        if timeout == -1.0:
+            timeout = self.default_timeout() + 2.0
+        msg = bytearray()
+        msg.extend(b'BNO055RST')
+        msg_id = self.__write_msg(bytes(msg), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
 
     ## Read the BNO055 calibration constants stored on the control board
     #  @return AckError, valid (True / False), calibration data

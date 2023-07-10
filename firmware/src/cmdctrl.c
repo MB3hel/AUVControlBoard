@@ -1223,6 +1223,13 @@ void cmdctrl_handle_message(void){
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, buf, 14);
             }
         }
+    }else if(MSG_EQUALS(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'R', 'S', 'T'}))){
+        // B, N, O, 0, 5, 5, R, S, T
+        // BNO055 reset / reconfigure
+        // This is typically used to clear auto generated calibration constants when
+        // no calibration is stored.
+        bno055_configure();
+        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
     }else if(MSG_EQUALS(((uint8_t[]){'M', 'S', '5', '8', '3', '7', 'C', 'A', 'L', 'G'}))){
         // M, S, 5, 8, 3, 7, C, A, L, G
         // Read MS5837 calibration

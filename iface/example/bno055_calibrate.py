@@ -122,6 +122,15 @@ def guided_calibration(cb: ControlBoard, s: Simulator) -> int:
     input("  Press enter to begin calibration.")
     print("")
 
+    # This erases any existing live calibration constants (auto generated calibration on BNO055 itself)
+    # Avoids issues where this script is run after the device has moved a lot
+    # In this case, the BNO055 may have generated constants (bad ones likely)
+    # So the status would be "3" immediately
+    ack = cb.bno055_reset()
+    if ack != cb.AckError.NONE:
+        print("Communication failed while resetting BNO055.")
+        return 1
+
     # Periodically show calibration status
     failures = 0
     while True:
