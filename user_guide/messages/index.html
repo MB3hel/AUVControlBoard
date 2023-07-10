@@ -13,7 +13,7 @@
       <script>
         // Current page data
         var mkdocs_page_name = "Messages";
-        var mkdocs_page_input_path = "user_guide/messages.md";
+        var mkdocs_page_input_path = "user_guide\\messages.md";
         var mkdocs_page_url = "/AUVControlBoard/user_guide/messages/";
       </script>
     
@@ -51,6 +51,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="../general_use/">Using Control board</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../simulator/">Using the Simulator</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../calibration/">Sensor Calibration</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../comm_protocol/">Communication Protocol</a>
                   </li>
@@ -92,6 +94,8 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../firmware/overview/">Overview</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/details/">Implementation Details</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../firmware/build/">Build and Flash</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../firmware/math/">Math</a>
@@ -115,14 +119,15 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../.." class="icon icon-home" alt="Docs"></a> &raquo;</li>
-          <li>User Guide &raquo;</li>
-      <li>Messages</li>
+          <li>User Guide &raquo;</li><li>Messages</li>
     <li class="wy-breadcrumbs-aside">
-          <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/user_guide/messages.md" class="icon icon-github"> Edit on GitHub</a>
+        <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/user_guide/messages.md"
+          class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
 </div>
+
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
@@ -253,11 +258,33 @@ This command is used to rest the control board itself. This will reset the micro
 </code></pre>
 <p>This message is <strong>not</strong> acknowledged.</p>
 <p><strong>Simulator Hijack Command</strong><br />
-This command is used by the simulator to hijack a real control board. This allows the simulator to pass certain information to and receive certain information from the control board. This enables testing of the actual firmware and reproducing bugs under simulation. The command as the following format.  </p>
+This command is used by the simulator to hijack a real control board. This allows the simulator to pass certain information to and receive certain information from the control board. This enables testing of the actual firmware and reproducing bugs under simulation. The command has the following format.  </p>
 <pre><code class="language-none">'S', 'I', 'M', 'H', 'I', 'J', 'A', 'C', 'K', [hijack]
 </code></pre>
 <p><code>[hijack]</code> is an 8-bit integer (unsigned) with a value of 1 or 0. If 1, the control board is put into simulator hijack mode. If 0, it is removed from simulator hijack mode.<br />
 This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<p><strong>Save BNO055 Stored Calibration Command</strong><br />
+This command is used to store a set of calibration constants for the BNO055 to the control board. This will write the "stored calibration constants". This command will also cause the IMU to be reconfigured (this can take some time, so acknowledgements for this command may take longer than most). The command has the following format  </p>
+<pre><code class="language-none">'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'S', [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
+</code></pre>
+<p>Each value is a signed 16-bit integer. The meaning of each value is described in the BNO055 datasheet.<br />
+This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<p><strong>Erase BNO055 Stored Calibration Command</strong><br />
+This command is used to erase calibration constants for the BNO055 from the control board. This will erase the "stored calibration constants". This command will also cause the IMU to be reconfigured (this can take some time, so acknowledgements for this command may take longer than most). The command has the following format  </p>
+<pre><code class="language-none">'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'E'
+</code></pre>
+<p>This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<p><strong>Write MS5837 Calibration Command</strong><br />
+This command is used to write the values of the MS5837 calibration constants. The command has the following format  </p>
+<pre><code class="language-none">'M', 'S', '5', '8', '3', '7', 'C', 'A', 'L', 'S', [atm_pressure], [fluid_density]
+</code></pre>
+<p>Both values are 32-bit little endian floats.<br />
+This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<p><strong>Reset BNO055 Command</strong><br />
+This command is used to reset / reconfigure the BNO055. This is typically used to clear any auto generated calibration constants. The command has the following format  </p>
+<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'R', 'S', 'T'
+</code></pre>
+<p>This message will be acknowledged. The acknowledge message will contain no result data.</p>
 <hr />
 
 <h2 id="queries">Queries</h2>
@@ -282,9 +309,9 @@ Reads MS5837 data once.  </p>
 <pre><code class="language-none">'M', 'S', '5', '8', '3', '7', 'R'
 </code></pre>
 <p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format. Note that this is the same format as the data contained within the MS5837 data status message.  </p>
-<pre><code class="language-none">[depth_m]
+<pre><code class="language-none">[depth_m], [pressure_pa], [temp_c]
 </code></pre>
-<p><code>depth_m</code> is a 32-bit float, little endian.</p>
+<p><code>depth_m</code> is a 32-bit float, little endian (meters below surface). <code>pressure_pa</code> is a 32-bit float, little endian (measured pressure in Pa). <code>temp_c</code> is a 32-bit float, little endian (temperature of air / water).</p>
 <p><strong>Last Reset Cause Query</strong><br />
 Get error code for last system reset cause of the control board. Generally not useful for end users, except for reporting errors. Mainly a debug / development tool. See error codes in firmware source <code>debug.h</code>.</p>
 <pre><code class="language-none">'R', 'S', 'T', 'W', 'H', 'Y'
@@ -293,6 +320,39 @@ Get error code for last system reset cause of the control board. Generally not u
 <pre><code class="language-none">[error_code]
 </code></pre>
 <p><code>error_code</code> is a 32-bit integer (signed), little endian.</p>
+<p><strong>Read BNO055 Stored Calibration Query</strong><br />
+This command is used to read a set of calibration constants for the BNO055 from the control board. This will read the "stored calibration constants". The command has the following format  </p>
+<pre><code class="language-none">'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'R'
+</code></pre>
+<p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format.  </p>
+<pre><code class="language-none">[valid], [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
+</code></pre>
+<p><code>valid</code> is an 8-bit integer. A value of 0 indicates that no calibration is stored on the control board (other values have no meaning). A value of 1 indicates that a calibration is stored (other values are that calibration).<br />
+All other values in the acknowledge data are signed 16-bit integers. The meaning of these integers is described in the BNO055 datasheet.</p>
+<p><strong>Read BNO055 Live Calibration Status Query</strong><br />
+This command is used to read the status of the BNO055's calibration routine. Note that this reads the value directly from the BNO055. This value is meaningless if a calibration was manually applied to the sensor. Thus, this is only useful if any "stored calibration constants" are first erased. The command has the following format  </p>
+<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'C', 'S'
+</code></pre>
+<p>This message will be acknowledged. Note that if the IMU is not working properly, this command will be acknowledged with the "Invalid Command" error code. If acknowledged with no error, the response will contain data in the following format.  </p>
+<pre><code class="language-none">[status]
+</code></pre>
+<p><code>status</code> is an 8-bit integer. The value of <code>status</code> is the value of the BNO055's <code>CALIB_STAT</code> register. The meaning of this number is described in the BNO055 datasheet.</p>
+<p><strong>Read BNO055 Live Calibration Values Query</strong><br />
+This command is used to read a set of calibration constants from the BNO055. This will read the "live calibration constants" directly from the BNO055. Note that the calibration constants are only valid if the calibration status from the BNO055 is 3 for the accelerometer and gyroscope. The command has the following format  </p>
+<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'C', 'V'
+</code></pre>
+<p>This message will be acknowledged. Note that if the IMU is not working properly, this command will be acknowledged with the "Invalid Command" error code. If acknowledged with no error, the response will contain data in the following format.  </p>
+<pre><code class="language-none">[accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
+</code></pre>
+<p>All  values in the acknowledge data are signed 16-bit integers. The meaning of these integers is described in the BNO055 datasheet.</p>
+<p><strong>Read MS5837 Calibration Query</strong><br />
+This command is used to read the values of the MS5837 calibration constants. The command has the following format  </p>
+<pre><code class="language-none">'M', 'S', '5', '8', '3', '7', 'C', 'A', 'L', 'G'
+</code></pre>
+<p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format.  </p>
+<pre><code class="language-none">[atm_pressure], [fluid_density]
+</code></pre>
+<p>Both values are 32-bit little endian floats.</p>
 <hr />
 
 <h2 id="acknowledgements">Acknowledgements</h2>
@@ -322,9 +382,9 @@ Used by the control board to periodically send IMU data to the PC. Only sent whe
 <p>Each value is a 32-bit float, little endian. <code>quat_</code> values are components of the orientation quaternion. <code>accum_</code> values are accumulated euler angles.</p>
 <p><strong>MS5837 Data Status</strong><br />
 Used by the control board to periodically send IMU data to the PC. Only sent when BNO055 periodic reads are enabled via the BNO055 periodic read command. The message has the following format  </p>
-<pre><code class="language-none">'M', 'S', '5', '8', '3', '7', 'D', [depth_m]
+<pre><code class="language-none">'M', 'S', '5', '8', '3', '7', 'D', [depth_m], [pressure_pa], [temp_c]
 </code></pre>
-<p><code>depth_m</code> is a 32-bit float, little endian.</p>
+<p><code>depth_m</code> is a 32-bit float, little endian (meters below surface). <code>pressure_pa</code> is a 32-bit float, little endian (measured pressure in Pa). <code>temp_c</code> is a 32-bit float, little endian (temperature of air / water).</p>
 <p><strong>Debug Status Messages</strong><br />
 Used only during development. These will not occur on release builds of the firmware. These are arbitrary messages sent by the control board to the PC for the firmware developer's use during development. They have the following format</p>
 <pre><code class="language-none">'D', 'E', 'B', 'U', 'G', [msg]

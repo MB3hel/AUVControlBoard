@@ -3,18 +3,18 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://mb3hel.github.io/AUVControlBoard/user_guide/simulator/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://mb3hel.github.io/AUVControlBoard/firmware/details/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
-    <title>Using the Simulator - AUV Control Board</title>
+    <title>Implementation Details - AUV Control Board</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Using the Simulator";
-        var mkdocs_page_input_path = "user_guide\\simulator.md";
-        var mkdocs_page_url = "/AUVControlBoard/user_guide/simulator/";
+        var mkdocs_page_name = "Implementation Details";
+        var mkdocs_page_input_path = "firmware\\details.md";
+        var mkdocs_page_url = "/AUVControlBoard/firmware/details/";
       </script>
     
     <script src="../../js/jquery-3.6.0.min.js" defer></script>
@@ -45,20 +45,18 @@
                 </li>
               </ul>
               <p class="caption"><span class="caption-text">User Guide</span></p>
-              <ul class="current">
-                  <li class="toctree-l1"><a class="reference internal" href="../preparing_board/">Preparing a Control Board</a>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/preparing_board/">Preparing a Control Board</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../general_use/">Using Control board</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/general_use/">Using Control board</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="./">Using the Simulator</a>
-    <ul class="current">
-    </ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/simulator/">Using the Simulator</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../calibration/">Sensor Calibration</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/calibration/">Sensor Calibration</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../comm_protocol/">Communication Protocol</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/comm_protocol/">Communication Protocol</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../messages/">Messages</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/messages/">Messages</a>
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Hardware</span></p>
@@ -71,18 +69,20 @@
                   </li>
               </ul>
               <p class="caption"><span class="caption-text">Developers</span></p>
-              <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/overview/">Overview</a>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../overview/">Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/details/">Implementation Details</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="./">Implementation Details</a>
+    <ul class="current">
+    </ul>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/build/">Build and Flash</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../build/">Build and Flash</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/math/">Math</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../math/">Math</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/developing/">Firmware Development</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../developing/">Firmware Development</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/simhijack/">Simulation Support</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../simhijack/">Simulation Support</a>
                   </li>
               </ul>
       </div>
@@ -99,9 +99,9 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href="../.." class="icon icon-home" alt="Docs"></a> &raquo;</li>
-          <li>User Guide &raquo;</li><li>Using the Simulator</li>
+          <li>Developers &raquo;</li><li>Implementation Details</li>
     <li class="wy-breadcrumbs-aside">
-        <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/user_guide/simulator.md"
+        <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/firmware/details.md"
           class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
@@ -111,14 +111,43 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="using-the-simulator">Using the Simulator</h1>
-<p>TODO</p>
+                <h1 id="implementation-details">Implementation Details</h1>
+<p>TODO: EEPROM Emulation</p>
+<ul>
+<li>SAMD51 (CBv1)<ul>
+<li>Using NVMCTRL SmartEEPROM</li>
+<li>Must configure size using NVMCTRL user page (requires write of fuses / config bits then device reset; XC32 compiler uses pragma config to configur this. I see no other way with GCC)</li>
+<li>Note that as such, configuring fuse settings with MCC Standalone generator will do no good (it assumes XC32)</li>
+<li>Linker script modified to shorten rom to avoid the data for eeprom</li>
+</ul>
+</li>
+<li>STM32 (CBv2)<ul>
+<li>Using code from https://github.com/STMicroelectronics/STM32CubeF4/tree/master/Projects/STM32F411RE-Nucleo/Applications/EEPROM/EEPROM_Emulation as st_eeprom.h/c</li>
+<li>Using sectors 1 and 2</li>
+<li>isr_vectors must be in sector 0, most of this sector is wasted</li>
+<li>Flash used by program starts at sector 3. Leaves 464k flash for use.</li>
+<li>Note that since flash is split, flashing must occur in two stages (boot and main) using dfu-util</li>
+</ul>
+</li>
+</ul>
+<p>TODO: Threading model mutexes, dataflow details</p>
+<p>TODO: Generator use and import process details</p>
+<p>TODO: Calibration of BNO055
+- EEPROM calibration status signature for valid check
+- Erase only invalidates signature (potentially fewer writes)
+- If calibration constants are valid, they are applied during bno055 configuration. Applying constants will prevent BNO055 from running calibration routine in bg. Applied calibration is assumed to be good by the sensor (CALIB_STAT has no relevance).
+- Stored calibration commands
+    - Erase triggers reset of sensor causing constants to be lost and auto calibration routine to run
+    - Store triggers reset of sensor using the newly stored constants (thus no auto calibration runs)
+    - Load will send the stuff from eeprom
+- There are separate BNO055 commands to read its calibration status register and the values from its calibration registers (these are only valid if CALIB_STAT is 3 for sensors used and BNO055 is in config mode)
+- What are each of the calibration constants (offsets, radius)</p>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../general_use/" class="btn btn-neutral float-left" title="Using Control board"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../calibration/" class="btn btn-neutral float-right" title="Sensor Calibration">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../overview/" class="btn btn-neutral float-left" title="Overview"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../build/" class="btn btn-neutral float-right" title="Build and Flash">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -145,10 +174,10 @@
         </span>
     
     
-      <span><a href="../general_use/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../overview/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../calibration/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../build/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
