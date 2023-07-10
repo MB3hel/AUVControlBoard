@@ -208,6 +208,12 @@ This command is used to write the values of the MS5837 calibration constants. Th
 Both values are 32-bit little endian floats.  
 This message will be acknowledged. The acknowledge message will contain no result data.
 
+**Reset BNO055 Command**  
+This command is used to reset / reconfigure the BNO055. This is typically used to clear any auto generated calibration constants. The command has the following format  
+```none
+'B', 'N', 'O', '0', '5', '5', 'R', 'S', 'T'
+```  
+This message will be acknowledged. The acknowledge message will contain no result data.
 
 <hr />
 
