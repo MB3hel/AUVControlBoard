@@ -24,6 +24,8 @@ cmake --build --preset=[preset]-[config]
 
 ## Flashing
 
+***Note: Control Board v1 Units must update Adafruit's bootloader before first use. This only needs to be done once, but it must be done. Follow Adafruit's instructions [here](https://learn.adafruit.com/introducing-adafruit-itsybitsy-m4/update-the-uf2-bootloader). DO NOT SKIP THIS!!!***
+
 | Version    | Flash Method                             | Tool Alias      | Required software                         |
 | ---------- | ---------------------------------------- | --------------- | ----------------------------------------- |
 | v1         | sam-ba (via bootloader)                  | `bossa`         | [BOSSA](http://www.shumatech.com/web/products/bossa) (specifically bossac / bossa-cli) |
