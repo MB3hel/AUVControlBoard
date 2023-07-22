@@ -48,6 +48,7 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     depth_target = cb.get_ms5837_data().depth
     pitch_target = 0.0
     roll_target = 0.0
+    depth_ramp = 0.0
     try:
         while True:
             # Left stick x and y = strafe
@@ -62,9 +63,16 @@ def run(cb: ControlBoard, s: Simulator) -> int:
             dpad = gp0.get_dpad(0)
 
             if dpad == 8 or dpad == 1 or dpad == 2:
-                depth_target = cb.get_ms5837_data().depth + 0.2
+                depth_target = cb.get_ms5837_data().depth + (0.2 + depth_ramp)
+                depth_ramp += 0.01
             elif dpad == 6 or dpad == 5 or dpad == 4:
-                depth_target = cb.get_ms5837_data().depth - 0.2
+                depth_target = cb.get_ms5837_data().depth - (0.2 + depth_ramp)
+                depth_ramp += 0.01
+            else:
+                depth_ramp = 0.0
+            
+            if depth_ramp > 0.3:
+                depth_ramp = 0.3
 
             # Scale speeds to make the robot more controllable
             x *= 0.5
