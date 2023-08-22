@@ -885,4 +885,17 @@ void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_s
     mc_set_global(x, y, z, pitch_spd, roll_spd, yaw_spd, curr_quat);
 }
 
+void mc_set_lnav(float x, float y, float yaw_spd, 
+        euler_t target_euler,
+        float target_depth,
+        quaternion_t curr_quat,
+        float curr_depth,
+        bool yaw_target){
+    
+}
+
+void mc_set_ldhold(float x, float y, float xrot, float yrot, float zrot, float target_depth, float curr_depth){
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

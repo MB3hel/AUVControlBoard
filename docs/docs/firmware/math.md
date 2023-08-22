@@ -30,7 +30,7 @@ While this coordinate system may seem strange to some (especially anyone who has
 
 ### System Assumptions
 
-- Vehicle is capable of motion exclusively in each of 6 degrees of freedom (DoFs). These are three translational DoFs, and three rotational DoFs.
+- Vehicle is capable of motion exclusively in each of 6 degrees of freedom (DoFs). These are three translational DoFs, and three rotational DoFs. *Vehicles that are not capable of this can still use some control modes. See the "Motor Control With Fewer DoFs" section.*
 - The vehicle's speed in positive and negative directions are roughly equal for each DoF.
 - Thruster orientations are fixed. Gimbaled thruster vehicles are not supported.
 - At most 8 thrusters (less is fine)
@@ -299,7 +299,7 @@ Issue 1 should be handled first as correcting it may "fix" issue 2. Handling iss
 
 Handling issue 1 requires the user to provide a little more information about the vehicle: relative speeds in each DoF. These can be used to calculate downscaling factors to slow down the faster directions (note: speeding up the slower directions would result in impossible speeds, but would be handled by solving issue 2; regardless it is less ideal).
 
-These downscaling factors are calculated from "RELDOF" information provided by the user (see messages page of user guide). Here we will referr to the scale factors as $m_x$, $m_y$, $m_z$, $m_{rx}$, $m_{ry}$, and $m_{rz}$ for the x, y, z, xrot, yrot, and zrot DoFs respectively (note that these are vehicle DoFs).
+These downscaling factors are calculated from "RELDOF" information provided by the user (see messages page of user guide). Here we will refer to the scale factors as $m_x$, $m_y$, $m_z$, $m_{rx}$, $m_{ry}$, and $m_{rz}$ for the x, y, z, xrot, yrot, and zrot DoFs respectively (note that these are vehicle DoFs).
 
 Thus, the simplest option would be to let $l = \begin{pmatrix}l.x * m_x & l.y * m_y & l.z * m_z\end{pmatrix}$. However, this may downscale more than necessary. Consider the slowest direction to have a speed of 0 in l. In this case, since the slowest direction is unused, we are downscaling too much. Thus, the following algorithm is used to select the ideal downscaling factors by "ignoring" the downscaling required for unused DoFs (DoFs with a speed of 0).
 
@@ -501,6 +501,18 @@ Depth hold (DHOLD) mode is GLOBAL mode but using a PID to control the vehicle's 
 This mode uses the vehicle's current depth and a user provided target depth to calcualte the depth PIDs error. The depth PID provides the gz-axis speed. Other speeds (`x`, `y`, `p`, `r`, and `h`) are provided by the user and mean the same thing as in GLOBAL mode. 
 
 The calculated `z` along with user-provided speeds are passed directly to GLOBAL mode after calculating `z` using the depth PID.
+
+
+## Motor Control With Fewer DoFs
+
+Some vehicles are not designed to move with 6 degrees of freedom. Such vehicles are not able to use GLOBAL mode, or any modes of control built on top of GLOBAL mode (DHOLD and SASSIST).
+
+However, these vehicles can use LOCAL mode control without any changes to the mathematical model of the system (columns of the DoF matrix corresponding to DoFs the vehicle cannot move in are simply zeroed).
+
+Unfortunately, LOCAL mode on its own is often not very useful for vehicle control. Thus, two additional control modes are defined based on LOCAL mode.
+
+- Local Navigation Mode (LNAV): Similar to SASSIST, but built on LOCAL mode (not GLOBAL)
+- Local Depth Hold Mode (LDHOLD): Similar to DHOLD, but built on LOCAL mode (not GLOBAL)
 
 
 ## Sensor Processing
