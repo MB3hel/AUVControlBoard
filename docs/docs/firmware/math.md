@@ -514,6 +514,14 @@ Unfortunately, LOCAL mode on its own is often not very useful for vehicle contro
 - Local Navigation Mode (LNAV): Similar to SASSIST, but built on LOCAL mode (not GLOBAL)
 - Local Depth Hold Mode (LDHOLD): Similar to DHOLD, but built on LOCAL mode (not GLOBAL)
 
+Both of these modes operate under the assumption that the vehicle's z axis is aligned with the world's z-axis. Thus,
+
+- Depth is controlled by translating along the vehicle's z axis
+- Pitch is controlled by rotating about the vehicle's x axis
+- Roll is controlled by rotating about the vehicle's y axis
+
+Thus, it is necessary that the vehicle be capable of motion in the z translation and x, y rotation DoFs to use these modes. **Additionally, when using LNAV, maintaining a vehicle pitch or roll (target angle) may result in undefined motions.
+
 
 ## Sensor Processing
 
