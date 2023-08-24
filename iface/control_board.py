@@ -1214,6 +1214,21 @@ class Simulator:
         res = self.__read_until_newline(self.__cmd_client).decode("ascii")
         return int(res)
 
+    def set_vehicle(self, vehicle_id: str) -> int:
+        self.__cmd_client.sendall("set_vehicle {}\n".format(vehicle_id).encode("ascii"))
+        res = self.__read_until_newline(self.__cmd_client).decode("ascii")
+        return int(res)
+
+    def get_vehicle(self) -> Tuple[int, str]:
+        self.__cmd_client.sendall("get_vehicle\n".encode("ascii"))
+        res = self.__read_until_newline(self.__cmd_client).decode("ascii")
+        res_parts = res.split(" ")
+        ec = int(res_parts[0])
+        if ec != 0:
+            return ec, None
+        vehicle_id = res_parts[1]
+        return ec, vehicle_id
+    
     # Euler same convention as cboard. IN DEGREES
     def quat_to_euler(self, w: float, x: float, y: float, z: float) -> Tuple[float, float, float]:
         pitch = math.asin(2.0 * (y*z + w*x))

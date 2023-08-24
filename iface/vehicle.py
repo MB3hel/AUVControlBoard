@@ -134,6 +134,10 @@ class Vehicle(ABC):
     def depth_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
         pass
 
+    @property
+    def simulator_vehicle_id(self) -> str:
+        return ""
+
 ################################################################################
 
 
@@ -206,6 +210,10 @@ class SW8(Vehicle):
         #       kP      kI      kD      lim     invert
         return  1.5,    0.0,    0.0,    1.0,    False
         # return 0,       0,      0,      0,      False
+
+    @property
+    def simulator_vehicle_id(self) -> str:
+        return "SW8"
 
 
 class SW8Sim(SW8):

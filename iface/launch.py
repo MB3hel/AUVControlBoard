@@ -107,6 +107,11 @@ def main():
             cb = s.control_board
             if not configure_vehicle(cb, args.vehicle, True):
                 return 1
+            vehicle_tuple = all_vehicles[args.vehicle]
+            vehicle_obj = vehicle_tuple[1]
+            veh_id = vehicle_obj.simulator_vehicle_id
+            if veh_id is not None and veh_id != "":
+                s.set_vehicle(veh_id)
             res = mod.run(cb, s)
             if isinstance(res, int):
                 return res
