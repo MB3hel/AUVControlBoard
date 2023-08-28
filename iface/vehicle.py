@@ -241,3 +241,106 @@ class SW8Sim(SW8):
 register_vehicle("sw8", SW8(), SW8Sim())
 
 ################################################################################
+
+
+################################################################################
+# Project CUR vehicle
+################################################################################
+
+class ProjCUR(Vehicle):
+    @property
+    def motor_matrix(self) -> ControlBoard.MotorMatrix:
+        mat = ControlBoard.MotorMatrix()
+        #        MotorNum    x          y       z         pitch     roll     yaw
+        mat.set_row(1,    [  0.0,       0.5,     -0.75,    -0.75,    0,       0     ])
+        mat.set_row(2,    [  -0.26,     -0.25,   -1,       1,        -1,      0.25  ])
+        mat.set_row(3,    [  0.26,      -0.25,   -1,       1,        1,       -0.25 ])
+        mat.set_row(4,    [  -0.43,     1,       0,        0,        0,       -1    ])
+        mat.set_row(5,    [  0.43,      1,       0,        0,        0,       1     ])
+        mat.set_row(6,    [  -1,        0,       0,        0,        0,       1     ])
+        # --------------------------------------------------------------------------
+        mat.set_row(7,    [  0,         0,       0,        0,        0,       0     ])
+        mat.set_row(8,    [  0,         0,       0,        0,        0,       0     ])
+        return mat
+
+    @property
+    def tinv(self) -> List[bool]:
+        tinv = [
+            False,          # Thruster 1
+            False,          # Thruster 2
+            False,          # Thruster 3
+            False,          # Thruster 4
+            False,          # Thruster 5
+            False,          # Thruster 6
+            False,          # Thruster 7
+            False           # Thruster 8
+        ]
+        return tinv
+
+    @property
+    def reldof(self) -> List[float]:
+        reldof = [
+            1.0,            # x
+            1.0,            # y
+            1.0,            # z
+            1.0,            # xrot
+            1.0,            # yrot
+            1.0             # zrot
+        ]
+        return reldof
+
+    @property
+    def bno055_axis_config(self) -> ControlBoard.BNO055Axis:
+        return ControlBoard.BNO055Axis.P6
+
+    @property
+    def xrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        #       kP      kI      kD      lim     invert
+        return  0.8,    0.0,    0.0,    0.6,    False
+
+    @property
+    def yrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        #       kP      kI      kD      lim     invert
+        return  0.15,   0.0,    0.0,    0.1,    False
+    
+    @property
+    def zrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        #       kP      kI      kD      lim     invert
+        return  0.8,    0.0,    0.0,    0.8,    False
+
+    @property
+    def depth_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        #       kP      kI      kD      lim     invert
+        return  1.5,    0.0,    0.0,    1.0,    False
+        # return 0,       0,      0,      0,      False
+
+    @property
+    def simulator_vehicle_id(self) -> str:
+        return "ProjCUR"
+
+
+class ProjCURSim(ProjCUR):
+    @property
+    def xrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        #       kP      kI      kD      lim     invert
+        return  2.0,    0.0,    0.0,    0.8,    False
+
+    @property
+    def yrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        #       kP      kI      kD      lim     invert
+        return  0.15,   0.0,    0.0,    0.1,    False
+    
+    @property
+    def zrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        #       kP      kI      kD      lim     invert
+        return  0.5,    0.0,    0.0,    0.5,    False
+
+    @property
+    def depth_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
+        #       kP      kI      kD      lim     invert
+        return  1.5,    0.0,    0.0,    1.0,    False
+
+
+register_vehicle("projcur", ProjCUR(), ProjCURSim())
+
+################################################################################
