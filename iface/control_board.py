@@ -963,6 +963,76 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
+    ## Set thruster speeds in ORIENTATION_HOLD mode (variant 1)
+    #  x, y, and z DoFs are pitch and roll compensated
+    #  @param x Speed in +x translation DoF
+    #  @param y Speed in +y translation DoF
+    #  @param z Speed in +z translation DoF
+    #  @param yaw_spd Rate of change of yaw
+    #  @param target_pitch Target pitch in degrees
+    #  @param target_roll Target roll in degrees
+    def set_ohold1(self, x: float, y: float, z: float, yaw_spd: float, target_pitch: float, target_roll: float, timeout: float = -1.0) -> AckError:
+        def limit(v: float):
+            if v > 1.0:
+                return 1.0
+            if v < -1.0:
+                return -1.0
+            return v
+        x = limit(x)
+        y = limit(y)
+        z = limit(z)
+        yaw_spd = limit(yaw_spd)
+        
+        # Construct message to send
+        data = bytearray()
+        data.extend(b'OHOLD1')
+        data.extend(struct.pack("<f", x))
+        data.extend(struct.pack("<f", y))
+        data.extend(struct.pack("<f", z))
+        data.extend(struct.pack("<f", yaw_spd))
+        data.extend(struct.pack("<f", target_pitch))
+        data.extend(struct.pack("<f", target_roll))
+
+        # Send the message and wait for acknowledgement
+        msg_id = self.__write_msg(bytes(data), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+    
+    ## Set thruster speeds in ORIENTATION_HOLD mode (variant 2)
+    #  x, y, and z DoFs are pitch and roll compensated
+    #  @param x Speed in +x translation DoF
+    #  @param y Speed in +y translation DoF
+    #  @param z Speed in +z translation DoF
+    #  @param target_pitch Target pitch in degrees
+    #  @param target_roll Target roll in degrees
+    #  @param target_yaw Target yaw in degrees
+    def set_ohold2(self, x: float, y: float, z: float, target_pitch: float, target_roll: float, target_yaw: float, timeout: float = -1.0) -> AckError:
+        def limit(v: float):
+            if v > 1.0:
+                return 1.0
+            if v < -1.0:
+                return -1.0
+            return v
+        x = limit(x)
+        y = limit(y)
+        z = limit(z)
+        
+        # Construct message to send
+        data = bytearray()
+        data.extend(b'OHOLD2')
+        data.extend(struct.pack("<f", x))
+        data.extend(struct.pack("<f", y))
+        data.extend(struct.pack("<f", z))
+        data.extend(struct.pack("<f", target_pitch))
+        data.extend(struct.pack("<f", target_roll))
+        data.extend(struct.pack("<f", target_yaw))
+
+        # Send the message and wait for acknowledgement
+        msg_id = self.__write_msg(bytes(data), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+
+
     ## Keep motors alive even when speed should not change
     #  If no speed set commands and no watchdog speed for long enough
     #  (1500ms at time of writing) then control board will kill motors
