@@ -64,7 +64,7 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     cb.read_ms5837_periodic(True)
 
     print("Enter main loop")
-    print("WARNING: Vehicle is ENABLED! Enable / Disable in the drive station do nothing here!")
+    print("WARNING: Vehicle is ENABLED! Enable / Disable in the drive station does nothing here!")
     depth_target = cb.get_ms5837_data().depth
     pitch_target = 0.0
     roll_target = 0.0
