@@ -41,6 +41,7 @@
 #define MODE_GLOBAL     2
 #define MODE_SASSIST    3
 #define MODE_DHOLD      4
+#define MODE_OHOLD      5
 
 // LED colors for different modes
 // Different colors on different versions b/c LEDs are different
@@ -51,12 +52,16 @@
 #define COLOR_GLOBAL        150, 50, 0
 #define COLOR_SASSIST       0, 100, 100
 #define COLOR_DHOLD         10, 50, 0
+// TODO: OHOLD COLOR
+#define COLOR_OHOLD         100, 0, 100
 #elif defined(CONTROL_BOARD_V2)
 #define COLOR_RAW           170, 40, 0
 #define COLOR_LOCAL         30, 0, 100
 #define COLOR_GLOBAL        255, 15, 0
 #define COLOR_SASSIST       0, 100, 100
 #define COLOR_DHOLD         10, 40, 0
+// TODO: OHOLD COLOR
+#define COLOR_OHOLD         120, 0, 100
 #endif
 
 // Acknowledge message error codes
@@ -124,6 +129,15 @@ static float dhold_pitch_spd;
 static float dhold_roll_spd;
 static float dhold_yaw_spd;
 static float dhold_depth;
+
+// Last used orientation hold target
+static bool ohold_valid;
+static unsigned int ohold_variant;
+static float ohold_x;
+static float ohold_y;
+static float ohold_z;
+static float ohold_yaw_spd;
+static euler_t ohold_target_euler;
 
 // Current sensor data
 // Need mutex b/c don't want to read one value (eg x) then have others (y, z) changed before reading them
@@ -273,6 +287,18 @@ void cmdctrl_init(void){
     dhold_roll_spd = 0.0;
     dhold_yaw_spd = 0.0;
     dhold_depth = 0.0;
+    
+    // Zero ohold target (set valid to false too)
+    ohold_valid = false;
+    ohold_variant = 1;
+    ohold_x = 0.0f;
+    ohold_y = 0.0f;
+    ohold_z = 0.0f;
+    ohold_yaw_spd = 0.0f;
+    ohold_target_euler.pitch = 0.0f;
+    ohold_target_euler.roll = 0.0f;
+    ohold_target_euler.yaw = 0.0f;
+    ohold_target_euler.is_deg = true;
 
     // Initial sensor status
     _bno055_ready = false;
@@ -424,6 +450,35 @@ void cmdctrl_apply_saved_speed(void){
             mc_set_local(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
         }else{
             mc_set_dhold(dhold_x, dhold_y, dhold_pitch_spd, dhold_roll_spd, dhold_yaw_spd, dhold_depth, m_quat, m_depth);
+        }
+        break;
+    case MODE_OHOLD:
+        if(ohold_valid){
+            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+            m_quat = curr_bno055_data.curr_quat;
+            xSemaphoreGive(sensor_data_mutex);
+
+            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
+                // Cannot apply real speed b/c sensor data not available or invalid
+                // Thus, stop the thrusters
+                mc_set_local(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+            }else if(ohold_variant == 1){
+                mc_set_ohold(ohold_x, 
+                    ohold_y,
+                    ohold_z, 
+                    ohold_yaw_spd, 
+                    ohold_target_euler, 
+                    m_quat,
+                    false);
+            }else if(ohold_variant == 2){
+                mc_set_ohold(ohold_x, 
+                    ohold_y,
+                    ohold_z, 
+                    0.0f,
+                    ohold_target_euler, 
+                    m_quat,
+                    true);
+            }
         }
         break;
     }
@@ -1255,6 +1310,127 @@ void cmdctrl_handle_message(void){
             }else{
                 calibration_ms5837.atm_pressure = conversions_data_to_float(&msg[10], true);
                 calibration_ms5837.fluid_density = conversions_data_to_float(&msg[14], true);
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+            }
+        }
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'O', 'H', 'O', 'L', 'D', '1'}))){
+        // ORIENTATION HOLD speed set variant 1
+        // O, H, O, L, D, 1 [x], [y], [z], [yaw_spd], [target_pitch], [target_roll]
+        // [x], [y], [z], [yaw_spd], [target_pitch], [target_roll] are 32-bit floats (little endian)
+        if(len != 30){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Message is correct size. Handle it.
+
+            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+            quaternion_t m_quat = curr_bno055_data.curr_quat;
+            xSemaphoreGive(sensor_data_mutex);
+
+            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
+                // Need BNO055 IMU data to use ohold mode.
+                // If not ready, then this command is invalid at this time
+                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+            }else{
+                // Get arguments from message
+                ohold_valid = true;
+                ohold_variant = 1;
+                ohold_x = conversions_data_to_float(&msg[6], true);
+                ohold_y = conversions_data_to_float(&msg[10], true);
+                ohold_z = conversions_data_to_float(&msg[14], true);
+                ohold_yaw_spd = conversions_data_to_float(&msg[18], true);
+                ohold_target_euler.pitch = conversions_data_to_float(&msg[22], true);
+                ohold_target_euler.roll = conversions_data_to_float(&msg[26], true);
+
+                // Ensure speeds are in valid range
+                LIMIT(ohold_x);
+                LIMIT(ohold_y);
+                LIMIT(ohold_z);
+                LIMIT(ohold_yaw_spd);
+
+                // Reset time until periodic speed set
+                xTimerReset(periodic_speed_timer, portMAX_DELAY);
+
+                // Update mode variable and LED color (if needed)
+                if(mode != MODE_OHOLD){
+                    mode = MODE_OHOLD;
+                    led_set(COLOR_OHOLD);
+                }
+
+                // Feed watchdog when speeds are set
+                // Important to call before speed set function in case currently killed
+                mc_wdog_feed();
+
+                // Update motor speeds
+                mc_set_ohold(ohold_x, 
+                    ohold_y,
+                    ohold_z, 
+                    ohold_yaw_spd, 
+                    ohold_target_euler, 
+                    m_quat,
+                    false);
+
+                // Acknowledge message w/ no error.
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+            }
+        }
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'O', 'H', 'O', 'L', 'D', '2'}))){
+        // ORIENTATION HOLD speed set variant 2
+        // O, H, O, L, D, 2, [x], [y], [z], [target_pitch], [target_roll], [target_yaw]
+        // [x], [y], [z], [target_pitch], [target_roll], [target_yaw] are 32-bit floats (little endian)
+        if(len != 30){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Message is correct size. Handle it.
+
+            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
+            quaternion_t m_quat = curr_bno055_data.curr_quat;
+            xSemaphoreGive(sensor_data_mutex);
+
+            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
+                // Need BNO055 IMU data to use ohold mode.
+                // If not ready, then this command is invalid at this time
+                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+            }else{
+                // Get arguments from message
+                ohold_valid = true;
+                ohold_variant = 2;
+                ohold_x = conversions_data_to_float(&msg[8], true);
+                ohold_y = conversions_data_to_float(&msg[12], true);
+                ohold_z = conversions_data_to_float(&msg[16], true);
+                ohold_target_euler.pitch = conversions_data_to_float(&msg[16], true);
+                ohold_target_euler.roll = conversions_data_to_float(&msg[20], true);
+                ohold_target_euler.yaw = conversions_data_to_float(&msg[24], true);
+
+                // Ensure speeds are in valid range
+                LIMIT(ohold_x);
+                LIMIT(ohold_y);
+                LIMIT(ohold_z);
+
+                // Reset time until periodic speed set
+                xTimerReset(periodic_speed_timer, portMAX_DELAY);
+
+                // Update mode variable and LED color (if needed)
+                if(mode != MODE_OHOLD){
+                    mode = MODE_OHOLD;
+                    led_set(COLOR_OHOLD);
+                }
+
+                // Feed watchdog when speeds are set
+                // Important to call before speed set function in case currently killed
+                mc_wdog_feed();
+
+                // Update motor speeds
+                mc_set_ohold(ohold_x, 
+                    ohold_y,
+                    ohold_z, 
+                    0.0f,
+                    ohold_target_euler, 
+                    m_quat,
+                    true);
+
+                // Acknowledge message w/ no error.
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
             }
         }

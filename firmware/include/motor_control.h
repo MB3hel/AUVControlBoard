@@ -184,5 +184,4 @@ void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_s
 void mc_set_ohold(float x, float y, float z, float yaw_spd, 
         euler_t target_euler, 
         quaternion_t curr_quat,
-        float curr_depth,
         bool use_yaw_pid);

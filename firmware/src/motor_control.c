@@ -712,7 +712,7 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     
     float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
     
-    mc_set_ohold(x, y, z, yaw_spd, target_euler, curr_quat, curr_depth, yaw_target);
+    mc_set_ohold(x, y, z, yaw_spd, target_euler, curr_quat, yaw_target);
 }
 
 void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth){
@@ -727,7 +727,6 @@ void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_s
 void mc_set_ohold(float x, float y, float z, float yaw_spd,
         euler_t target_euler,
         quaternion_t curr_quat,
-        float curr_depth,
         bool yaw_target){
 
     // Baseline angular motion due to yaw speed (if yaw target not in use)
