@@ -45,7 +45,7 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     time.sleep(0.5) # Wait for data to actually be sent
 
     print("Enter main loop")
-    depth_target = cb.get_ms5837_data().depth
+    depth_target = -0.2
     pitch_target = 0.0
     roll_target = 0.0
     depth_ramp = 0.0
@@ -63,7 +63,7 @@ def run(cb: ControlBoard, s: Simulator) -> int:
             dpad = gp0.get_dpad(0)
 
             if dpad == 8 or dpad == 1 or dpad == 2:
-                depth_target = cb.get_ms5837_data().depth + (0.2 + depth_ramp)
+                depth_target = cb.get_ms5837_data().depth + (0.05)
                 depth_ramp += 0.01
             elif dpad == 6 or dpad == 5 or dpad == 4:
                 depth_target = cb.get_ms5837_data().depth - (0.2 + depth_ramp)
@@ -73,6 +73,9 @@ def run(cb: ControlBoard, s: Simulator) -> int:
             
             if depth_ramp > 0.3:
                 depth_ramp = 0.3
+
+            if depth_target > -0.1:
+                depth_target = -0.1
 
             # Scale speeds to make the robot more controllable
             x *= 0.5
