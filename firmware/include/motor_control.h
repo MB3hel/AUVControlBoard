@@ -140,6 +140,7 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
  * @param y Speed in +y DoF (-1.0 to +1.0)
  * @param yaw_spd Rate of change of vehicle yaw (-1.0 to 1.0)
  * @param target_euler Target orientation (ZYX euler; yaw is ignored if use_yaw_pid is false)
+ * @param target_depth Target vehicle depth (meters, negative is below surface)
  * @param curr_quat Current orientation quaternion
  * @param curr_depth Current depth in meters (negative below surface)
  * @param use_yaw_pid If true, closed loop control is used for yaw not a speed
@@ -165,3 +166,23 @@ void mc_set_sassist(float x, float y, float yaw_spd,
  * @param curr_depth Current depth in meters
  */
 void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth);
+
+
+/**
+ * Set motor speeds in ORIENTATION_HOLD mode. Like SASSIST, but a speed is provided by depth
+ * instead of depth being controlled by the PID.
+ * Abstracts a 2D plane in which the robot is controlled.
+ * Like SASSIST, has two variants (with and without yaw PID control)
+ * @param x Speed in +x DoF (-1.0 to +1.0)
+ * @param y Speed in +y DoF (-1.0 to +1.0)
+ * @param z Speed in +z DoF (-1.0 to 1.0)
+ * @param yaw_spd Rate of change of vehicle yaw (-1.0 to 1.0)
+ * @param target_euler Target orientation (ZYX euler; yaw is ignored if use_yaw_pid is false)
+ * @param curr_quat Current orientation quaternion
+ * @param use_yaw_pid If true, closed loop control is used for yaw not a speed
+ */
+void mc_set_ohold(float x, float y, float z, float yaw_spd, 
+        euler_t target_euler, 
+        quaternion_t curr_quat,
+        float curr_depth,
+        bool use_yaw_pid);
