@@ -45,7 +45,7 @@ def run(cb: ControlBoard, s: Simulator) -> int:
 
     print("Checking sensors")
     ack, bno055, ms5837 = cb.get_sensor_status()
-    if ack == cb.AckError.NONE:
+    if ack != cb.AckError.NONE:
         print("Failed to check senor status!")
         return 1
     if not bno055:
@@ -63,11 +63,21 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     cb.read_bno055_periodic(True)
     cb.read_ms5837_periodic(True)
 
+    print("")
+    print("********************************************************************************")
+    print("IMPORTANT")
+    print("  1. Enable / Disable in the drive station does nothing!")
+    print("     The code is always enabled!")
+    print("  2. Check the box next to the controller you want to use")
+    print("     and drag it to the top (make it number 0).")
+    print("********************************************************************************")
+    print("")
+
     print("Enter main loop")
-    print("WARNING: Vehicle is ENABLED! Enable / Disable in the drive station does nothing here!")
     depth_target = cb.get_ms5837_data().depth
     pitch_target = 0.0
     roll_target = 0.0
+    was_ohold = False
     try:
         while True:
             # Left stick x and y = strafe
@@ -99,10 +109,13 @@ def run(cb: ControlBoard, s: Simulator) -> int:
             # This happens often enough that it is unnecessary to explicitly feed watchdog
             if z == 0.0:
                 # No z speed from dpad, hold current depth (SASSIST mode)
+                if was_ohold:
+                    depth_target = cb.get_ms5837_data().depth
                 cb.set_sassist1(x, y, yaw, pitch_target, roll_target, depth_target)
             else:
                 # Use OHOLD mode to maintain orientation, but change depth based on dpad
                 cb.set_ohold1(x, y, z, yaw, pitch_target, roll_target)
+                was_ohold = True
             time.sleep(0.02)
     except (KeyboardInterrupt, Exception) as e:
         cb.set_global(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
