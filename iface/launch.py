@@ -31,6 +31,7 @@ import os
 from control_board import ControlBoard, Simulator
 import importlib
 from serial import SerialException
+import control_board
 
 #####################################
 # KEEP THESE AND IN THIS ORDER!!!
@@ -112,6 +113,14 @@ def main():
             veh_id = vehicle_obj.simulator_vehicle_id
             if veh_id is not None and veh_id != "":
                 s.set_vehicle(veh_id)
+            ack, cb_ver, fw_ver = cb.get_version_info()
+            if ack != ControlBoard.AckError.NONE:
+                print("WARNING: ControlBoard firmware version unknown!")
+            else:
+                if fw_ver != control_board.VER_STR:
+                    print("WARNING: Version mismatch!")
+                    print("  CB FW Version: {}".format(fw_ver))
+                    print("  Iface Version: {}".format(control_board.VER_STR))
             res = mod.run(cb, s)
             if isinstance(res, int):
                 return res
@@ -129,6 +138,13 @@ def main():
             print("Done.")
             if not configure_vehicle(cb, args.vehicle, False):
                 return 1
+            ack, cb_ver, fw_ver = cb.get_version_info()
+            if ack != ControlBoard.AckError.NONE:
+                print("WARNING: ControlBoard firmware version unknown!")
+            elif fw_ver != control_board.VER_STR:
+                print("WARNING: Version mismatch!")
+                print("  CB FW Version: {}".format(fw_ver))
+                print("  Iface Version: {}".format(control_board.VER_STR))
             res = mod.run(cb, None)
             if isinstance(res, int):
                 return res
