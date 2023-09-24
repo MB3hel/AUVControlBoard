@@ -1394,12 +1394,12 @@ void cmdctrl_handle_message(void){
                 // Get arguments from message
                 ohold_valid = true;
                 ohold_variant = 2;
-                ohold_x = conversions_data_to_float(&msg[8], true);
-                ohold_y = conversions_data_to_float(&msg[12], true);
-                ohold_z = conversions_data_to_float(&msg[16], true);
-                ohold_target_euler.pitch = conversions_data_to_float(&msg[16], true);
-                ohold_target_euler.roll = conversions_data_to_float(&msg[20], true);
-                ohold_target_euler.yaw = conversions_data_to_float(&msg[24], true);
+                ohold_x = conversions_data_to_float(&msg[6], true);
+                ohold_y = conversions_data_to_float(&msg[10], true);
+                ohold_z = conversions_data_to_float(&msg[14], true);
+                ohold_target_euler.pitch = conversions_data_to_float(&msg[18], true);
+                ohold_target_euler.roll = conversions_data_to_float(&msg[22], true);
+                ohold_target_euler.yaw = conversions_data_to_float(&msg[26], true);
 
                 // Ensure speeds are in valid range
                 LIMIT(ohold_x);
