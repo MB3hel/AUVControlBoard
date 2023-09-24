@@ -667,7 +667,7 @@ class ControlBoard:
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_xrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
+    def tune_pid_xrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -690,7 +690,7 @@ class ControlBoard:
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_yrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
+    def tune_pid_yrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -713,7 +713,7 @@ class ControlBoard:
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_zrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
+    def tune_pid_zrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -736,7 +736,7 @@ class ControlBoard:
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_depth(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
+    def tune_pid_depth(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
