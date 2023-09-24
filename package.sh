@@ -12,7 +12,7 @@ echo "  For type, use the following: "
 echo "    a = alpha"
 echo "    b = beta"
 echo "    c = release candidate (rc)"
-echo "    space = full release"
+echo "    - = full release"
 echo "  If type is specified (not space), also provide a build number."
 echo "  Nubmers (major, minor, revision, build) must be 0-255 (inclusive)"
 echo ""
@@ -25,7 +25,7 @@ case "$VER_TYPE" in
 "a") VER_TYPE_FULL="alpha";;
 "b") VER_TYPE_FULL="beta";;
 "c") VER_TYPE_FULL="rc";;
-" ") ;;
+"-") VER_TYPE=" "; VER_TYPE_FULL="";;
 *) echo "Invalid type!"; exit 1;;
 esac
 
@@ -33,7 +33,7 @@ if [ "$VER_TYPE" != " " ]; then
     read -p "Build: " VER_BUILD
     VERSION="$VER_MAJOR.$VER_MINOR.$VER_REV-$VER_TYPE_FULL$VER_BUILD"
 else
-    VER_BUILD="0"
+    VER_BUILD=0
     VERSION="$VER_MAJOR.$VER_MINOR.$VER_REV"
 fi
 echo ""

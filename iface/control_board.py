@@ -428,6 +428,26 @@ class ControlBoard:
         return msg_id
 
 
+    ## Read control board version information
+    #  @return AckError, CB version, FW version (both versions are strings)
+    def get_version_info(self, timeout: float = -1.0) -> Tuple[AckError, str, str]:
+        msg_id = self.__write_msg(b'CBVER', True)
+        ack, res = self.__wait_for_ack(msg_id, timeout)
+        if ack != self.AckError.NONE:
+            return ack, "", ""
+        cb_ver = res[0]
+        fw_ver_maj = res[1]
+        fw_ver_min = res[2]
+        fw_ver_rev = res[3]
+        fw_ver_type = res[4:5].decode('ascii')
+        fw_ver_build = res[5]
+        fw_ver_str = ""
+        if fw_ver_type == " ":
+            fw_ver_str = "{0}.{1}.{2}".format(fw_ver_maj, fw_ver_min, fw_ver_rev)
+        else:
+            fw_ver_str = "{0}.{1}.{2}-{3}{4}".format(fw_ver_maj, fw_ver_min, fw_ver_rev, fw_ver_type, fw_ver_build)
+        return ack, "CBv{}".format(cb_ver), fw_ver_str
+
 
     ## Set the motor matrix defining the vehicle's thruster configuration
     #  @param matrix Motor matrix object containing configuration to set
