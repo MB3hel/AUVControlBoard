@@ -377,40 +377,33 @@ These vectors are angular speeds about the vehicle's x, y, and z axes. Thus, jus
 Then $w$ is the xrot, yrot, and zrot parts of the LOCAL mode target.
 
 
-### Stability Assist (SASSIST) Mode Motion
+### Orientation Hold (OHOLD) Mode Motion
 
-Stability assist mode (SASSIST) uses closed-loop control for vehicle depth and orientation in 3D space. This is achieved using four PID controllers
+Orientation hold mode uses closed-loop control for vehicle orientation in 3D space. This is achieved using three PID controllers
 
-- Depth PID: Controls translation along world z-axis
 - xrot PID: Controls rotation about vehicle x-axis
 - yrot PID: Controls rotation about vehicle y-axis
 - zrot PID: Controls rotation about vehicle z-axis
 
-The inputs to SASSIST mode are as follows
+*Note that in some code, these PIDs are referred to as "SASSIST" PIDs. However, they are used for OHOLD too!*
+
+The inputs to OHOLD mode are as follows
 
 - `x`: Translation along gx-axis (same as in GLOBAL mode)
 - `y`: Translation along gy-axis (same as in GLOBAL mode)
-- `d_t`: Target depth (meters; negative for below the surface)
+- `z`: Translation along gz-axis (same as in GLOBAL mode)
 - `e_t`: Target orientation as euler angles
 
 Optionally, a yaw speed (`h`) can be provided. In this case, PIDs will not adjust the vehicle's yaw (heading). Instead the `h` value works similar to GLOBAL mode (it is a rate of change of vehicle yaw).
 
 This effectively abstracts a 2D plane in which the vehicle operates. This is the same gx-gy plane described in the GLOBAL mode section.
 
-There are two variants of SASSIST mode
+There are two variants of OHOLD mode
 
-- Variant 1 (SASSIST1): Speed for yaw (`h`) is used instead of PID control
-- Variant 2 (SASSIST2): PID is used for yaw (yaw speed / `h` is ignored)
+- Variant 1 (OHOLD1): Speed for yaw (`h`) is used instead of PID control
+- Variant 2 (OHOLD2): PID is used for yaw (yaw speed / `h` is ignored)
 
-These two variants are the same in how depth control works. However, variant 1 adds some additional complexity for orientation control.
-
-
-
-#### Depth Control
-
-A PID controller (sassist depth PID) is used to control the vehicle's speed in the world z (or GLOBAL z) DoF. The output of this PID controller is the same `z` that could be an input to GLOBAL mode. This PID controller's error is the difference between the user provided target depth and the measured current depth of the vehicle.
-
-
+Variant 2 is actually then simpler variant. Variant 2 adds some additional complexity for orientation control.
 
 
 #### Translation DoFs
@@ -419,14 +412,13 @@ The user provided `x` and `y` along with the `z` from the depth PID are handled 
 
 
 
+#### OHOLD2 Orientation Control
 
-#### SASSIST2 Orientation Control
+While translation for OHOLD is nearly identical to GLOBAL mode, rotation DoFs are very different. Orientation is controlled with a set of 3 PID controllers that work in LOCAL DoFs. Thus it is necessary to determine the rotations necessary about the vehicle's axes to achieve the desired orientation.
 
-While translation for SASSIST is nearly identical to GLOBAL mode, rotation DoFs are very different. Orientation is controlled with a set of 3 PID controllers that work in LOCAL DoFs. Thus it is necessary to determine the rotations necessary about the vehicle's axes to achieve the desired orientation.
+We are given a target orientation as euler angles, $e_t$. This can be converted to a target orientation quaternion, $q_t$ using the formulas derived in later sections. 
 
-We are given a target orientation as euler angles, $e_t$. This can be converted to a target orientation quaternion, $q_t$. 
-
-*Note: For SASSIST1 things after this point are the same (see section below for details on how to get $q_t$ for SASSIST1).*
+*Note: For OHOLD1 things after this point are the same (see section below for details on how to get $q_t$ for OHOLD1).*
 
 The vehicle's current orientation (as a quaternion) is also available from the IMU as $q_c$. We need to calculate a quaternion $q_d$ that represents the minimal rotation from $q_c$ to $q_t$. However, importantly we want $q_d$ to be a rotation in the vehicle's basis. Recall that right multiplication of quaternions are applied in the vehicle's basis. Thus, to describe the target orientation as the current orientation plus a rotation in the vehicle's basis
 
@@ -461,29 +453,29 @@ $e = \theta n$
 
 This error vector, $e$, contains the errors to be provided to each orientation PID (xrot, yrot, zrot). The output of these PIDs are angular velocity percentages (-1.0 to 1.0) about each of the vehicle's axes: $w = \begin{pmatrix} w_x & w_y & w_z \end{pmatrix}$
 
-*Note: for SASSIST 1 there is an extra step here to calculate the correct w (see section below).*
+*Note: for OHOLD 1 there is an extra step here to calculate the correct w (see section below).*
 
 Finally, it is necessary to downscale the $w$ vectors just as in GLOBAL mode
 
 - First downscale using $m_{rx}$, $m_{ry}$ and $m_{rz}$ using the algorithm described in the GLOBAL mode section
-- Then downscale the vector so that all elements are less than 1. While this is never needed for SASSIST2, it is needed for SASSIST1 and it is simpler branching logic (code implementation) to just always check if downscaling is needed.
+- Then downscale the vector so that all elements are less than 1. While this is never needed for OHOLD2, it is needed for OHOLD1 and it is simpler branching logic (code implementation) to just always check if downscaling is needed.
 
 This $w$ can then be passed to LOCAL mode along with the LOCAL translation vector $l$ obtained earlier.
 
 
 
 
-#### SASSIST1 Orientation Control
+#### OHOLD1 Orientation Control
 
-SASSIST1 uses much of the same process to control the vehicle's orientation as SASSIST2, however it is necessary to decouple yaw from pitch and roll. In other words, we want to construct a target quaternion using the user provided pitch and roll, but matching the vehicle's current yaw.
+OHOLD1 uses much of the same process to control the vehicle's orientation as OHOLD2, however it is necessary to decouple yaw from pitch and roll. In other words, we want to construct a target quaternion using the user provided pitch and roll, but matching the vehicle's current yaw.
 
 The most intuitive option would be to decompose $q_c$ into euler angles and obtain the yaw from those. However, this does not account for the fact that the yaw can be altered by pitch or roll. For example, (p=115, r=0, h=90) would be decomposed as (p=65, r=180, h=-90). Here the heading is 180 degrees off. This would be a significant issue.
 
 Thus instead, the target quaternion can be decomposed using the swing-twist decomposition of quaternion rotations. We twist about the world z axis (since this is the axis the vehicle initially yawed about). The vehicle's yaw can be calculated from this twist quaternion (using euler conversion formula).
 
-The target quaternion is constructed from the target pitch and roll provided by the user and the yaw provided by the twist quaternion as described above. This target quaternion is $q_t$ and is used the same way described for SASSIST2.
+The target quaternion is constructed from the target pitch and roll provided by the user and the yaw provided by the twist quaternion as described above. This target quaternion is $q_t$ and is used the same way described for OHOLD2.
 
-After calculating $w$ as described for SASSIST2, there is one extra step before handling DoF scaling. The yaw speed (`h`) provided by the user must be transformed to the vehicle's axes and added to the $w$ from the PIDs.
+After calculating $w$ as described for OHOLD2, there is one extra step before handling DoF scaling. The yaw speed (`h`) provided by the user must be transformed to the vehicle's axes and added to the $w$ from the PIDs.
 
 This can be done similar to GLOBAL mode
 
@@ -491,16 +483,31 @@ $\left\{0, w_{yaw}\right\} = q_{rot} \left\{0, \begin{pmatrix}0 & 0 & h\end{pmat
 
 $w_{yaw}$ will then be upscaled just as in GLOBAL mode.
 
-Then $w = w + w_{yaw}$. This is then downscaled as described for SASSIST2.
+Then $w = w + w_{yaw}$. This is then downscaled as described for OHOLD2.
+
+
+### Stability Assist (SASSIST) Mode
+
+Stability assist mode (SASSIST) is simply OHOLD mode, with the addition of closed-loop control for vehicle depth. Thus, instead of providing a `z` speed (for motion along the gz-axis), a PID controller is used to acheive the target depth.
+
+Inputs to this mode are the same as OHOLD mode, however instead of `z`, `d_t` is provided.
+
+- `d_t`: Target depth (meters; negative for below the surface)
+
+The PID used to maintain vehicle depth is referred to as the Depth PID. This PID uses the current vehicle depth (provided by a depth sensor) to calculate a z speed in the gz-axis, then provides it as an input to OHOLD mode. 
+
+All other inputs from SASSIST are passed through to OHOLD mode as provided. Thus, there are two variants of SASSIST mode (variant 1 and variant 2) built ontop of the corresponding variants of OHOLD mode.
 
 
 ### Depth Hold (DHOLD) Mode Motion
 
 Depth hold (DHOLD) mode is GLOBAL mode but using a PID to control the vehicle's depth. The same depth PID used for SASSIST mode is used for DHOLD mode.
 
-This mode uses the vehicle's current depth and a user provided target depth to calcualte the depth PIDs error. The depth PID provides the gz-axis speed. Other speeds (`x`, `y`, `p`, `r`, and `h`) are provided by the user and mean the same thing as in GLOBAL mode. 
+This mode uses the vehicle's current depth and a user provided target depth to calculate the depth PIDs error. The depth PID provides the gz-axis speed. Other speeds (`x`, `y`, `p`, `r`, and `h`) are provided by the user and mean the same thing as in GLOBAL mode. 
 
 The calculated `z` along with user-provided speeds are passed directly to GLOBAL mode after calculating `z` using the depth PID.
+
+*Note that this mode does not maintain vehicle orientation. In practice, this control mode is rarely useful.*
 
 
 ## Sensor Processing

@@ -69,7 +69,7 @@ Used to configure the BNO055 IMU's axis orientation. *Note: This will also reset
 This message will be acknowledged. The acknowledge message will contain no result data.
 
 **Stability Assist Mode PID Tune Command**  
-Used to tune stability assist mode PID controllers (note that the depth PID is also used for depth hold mode). It has the following format  
+Used to tune stability assist mode PID controllers. Note that the rotation PIDs (xrot, yrot, and zrot) are also used in OHOLD mode. Likewise, the depth PID is also used in DHOLD mode. The command has the following format  
 ```none  
 'S', 'A', 'S', 'S', 'I', 'S', 'T', 'T', 'N', [which], [kp], [ki], [kd], [limit], [invert]
 ```  
