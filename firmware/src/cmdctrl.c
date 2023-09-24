@@ -30,6 +30,7 @@
 #include <debug.h>
 #include <simulator.h>
 #include <calibration.h>
+#include <metadata.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Macros
@@ -1432,6 +1433,32 @@ void cmdctrl_handle_message(void){
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
             }
         }
+    }else if(MSG_EQUALS(((uint8_t[]){'C', 'B', 'V', 'E', 'R'}))){
+        // Control board version info query
+        // C, B, V, E, R
+        // Responds with
+        // [CB_VER], [FW_MAJOR], [FW_MINOR], [FW_REV], [FW_TYPE], [FW_BUILD]
+        // All values are unsigned 8-bit integers
+        // CB_VER = control board version (v1 or v2 hardware)
+        // FW_MAJOR = Firmware major version
+        // FW_MINOR = Firmware minor version
+        // FW_REV = Firmware revision version
+        // FW_TYPE = Firmware type (ASCII: a = alpha, b = beta, c = release candidate, ' ' = full release)
+        // FW_BUILD = Firmware build version (if type is not ' '). If type is ' ' this will be 0.
+        uint8_t response[6];
+        #if defined(CONTROL_BOARD_V1)
+            response[0] = 1;
+        #elif defined(CONTROL_BOARD_V2)
+            response[0] = 2;
+        #else
+            response[0] = 255;
+        #endif
+        response[1] = FW_VER_MAJOR;
+        response[2] = FW_VER_MINOR;
+        response[3] = FW_VER_REVISION;
+        response[4] = FW_VER_TYPE;
+        response[5] = (FW_VER_TYPE == ' ') ? 0 : FW_VER_BUILD;
+        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response, 6);
     }else{
         // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG, NULL, 0);
