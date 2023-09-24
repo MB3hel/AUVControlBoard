@@ -106,6 +106,32 @@ Used to set motor speeds in `GLOBAL` mode. This command has the following format
 `[pitch_spd]`, `[roll_spd]`, `[yaw_spd]`: Rate of change of vehicle pitch, roll, and yaw -1.0 to 1.0.  
 This message will be acknowledged. The acknowledge message will contain no result data. Note that if the IMU is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
 
+**Orientation Hold Speed Set (Variant 1)**  
+Used to set motor speeds in `ORIENTATION_HOLD` mode using a speed for yaw. This command has the following format  
+```none  
+'O', 'H', 'O', 'L', 'D', '1', [x], [y], [z], [yaw_spd], [target_pitch], [target_roll]
+```  
+Each value is a 32-bit float little endian.
+
+Pitch and roll are euler angles (in degrees). These are intrinsic euler angles (z-x'-y'' convention per the control board's coordinate system).
+
+x, y, z, and yaw_spd are x, y, z, and yaw_spd just as in global mode.
+
+This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
+
+**Orientation Hold Speed Set (Variant 2)**  
+Used to set motor speeds in `ORIENTATION_HOLD` mode using a PID to maintain a target yaw. This command has the following format  
+```none  
+'O', 'H', 'O', 'L', 'D', '2', [x], [y], [z], [target_pitch], [target_roll], [target_yaw]
+```  
+Each value is a 32-bit float little endian. 
+
+Target Pitch, roll, and yaw are euler angles (in degrees). These are intrinsic euler angles (z-x'-y'' convention per the control board's coordinate system).
+
+x, y, and z are speeds in the x, y, and z DoFs the same as in `GLOBAL` mode.
+
+This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
+
 **Stability Assist Speed Set (Variant 1)**  
 Used to set motor speeds in `STABILITY_ASSIST` mode using a speed for yaw. This command has the following format  
 ```none  
