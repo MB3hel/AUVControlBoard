@@ -60,8 +60,7 @@
 #define COLOR_GLOBAL        255, 15, 0
 #define COLOR_SASSIST       0, 100, 100
 #define COLOR_DHOLD         10, 40, 0
-// TODO: OHOLD COLOR
-#define COLOR_OHOLD         120, 0, 100
+#define COLOR_OHOLD         0, 100, 0
 #endif
 
 // Acknowledge message error codes
@@ -236,7 +235,7 @@ static void periodic_reapply_speed(TimerHandle_t timer){
     (void)timer;
 
     // Modes using sensor data (which may change) need to be periodically reapplied
-    if(mode == MODE_GLOBAL || mode == MODE_SASSIST || mode == MODE_DHOLD){
+    if(mode == MODE_GLOBAL || mode == MODE_SASSIST || mode == MODE_DHOLD || mode == MODE_OHOLD){
         cmdctrl_apply_saved_speed();
     }
 
