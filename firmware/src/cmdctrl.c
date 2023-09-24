@@ -52,15 +52,14 @@
 #define COLOR_GLOBAL        150, 50, 0
 #define COLOR_SASSIST       0, 100, 100
 #define COLOR_DHOLD         10, 50, 0
-// TODO: OHOLD COLOR
-#define COLOR_OHOLD         100, 0, 100
+#define COLOR_OHOLD         100, 7, 7
 #elif defined(CONTROL_BOARD_V2)
 #define COLOR_RAW           170, 40, 0
 #define COLOR_LOCAL         30, 0, 100
 #define COLOR_GLOBAL        255, 15, 0
 #define COLOR_SASSIST       0, 100, 100
 #define COLOR_DHOLD         10, 40, 0
-#define COLOR_OHOLD         0, 100, 0
+#define COLOR_OHOLD         140, 5, 5
 #endif
 
 // Acknowledge message error codes
