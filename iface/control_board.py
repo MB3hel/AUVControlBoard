@@ -35,6 +35,11 @@ import threading
 from typing import List, Dict, Tuple
 
 
+# Version of interface scripts (automatically updated by package.sh)
+# DO NOT MODIFY MANUALLY!!!
+VER_STR = "1.0.2"
+
+
 START_BYTE = b'\xfd'
 END_BYTE = b'\xfe'
 ESCAPE_BYTE = b'\xff'

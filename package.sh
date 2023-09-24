@@ -32,9 +32,11 @@ esac
 if [ "$VER_TYPE" != " " ]; then
     read -p "Build: " VER_BUILD
     VERSION="$VER_MAJOR.$VER_MINOR.$VER_REV-$VER_TYPE_FULL$VER_BUILD"
+    VERSION_SHORT="$VER_MAJOR.$VER_MINOR.$VER_REV-$VER_TYPE$VER_BUILD"
 else
     VER_BUILD=0
     VERSION="$VER_MAJOR.$VER_MINOR.$VER_REV"
+    VERSION_SHORT="$VER_MAJOR.$VER_MINOR.$VER_REV"
 fi
 echo ""
 
@@ -62,6 +64,9 @@ sed -i "s/#define FW_VER_MINOR.*/#define FW_VER_MINOR $VER_MINOR/g" firmware/inc
 sed -i "s/#define FW_VER_REVISION.*/#define FW_VER_REVISION $VER_REV/g" firmware/include/metadata.h
 sed -i "s/#define FW_VER_TYPE.*/#define FW_VER_TYPE '$VER_TYPE'/g" firmware/include/metadata.h
 sed -i "s/#define FW_VER_BUILD.*/#define FW_VER_BUILD $VER_BUILD/g" firmware/include/metadata.h
+
+# Update version in interface script
+sed -i "s/VER_STR = .*/VER_STR = \"$VERSION_SHORT\"/g" iface/control_board.py
 
 # Write version file
 echo "$VERSION" > package/version.txt
