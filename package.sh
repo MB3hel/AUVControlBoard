@@ -20,9 +20,18 @@ read -p "Major: " VER_MAJOR
 read -p "Minor: " VER_MINOR
 read -p "Revision: " VER_REV
 read -p "Type: " VER_TYPE
+
+case "$VER_TYPE" in
+"a") VER_TYPE_FULL="alpha";;
+"b") VER_TYPE_FULL="beta";;
+"c") VER_TYPE_FULL="rc";;
+" ") ;;
+*) echo "Invalid type!"; exit 1;;
+esac
+
 if [ "$VER_TYPE" != " " ]; then
     read -p "Build: " VER_BUILD
-    VERSION="$VER_MAJOR.$VER_MINOR.$VER_REV-$VER_TYPE$VER_BUILD"
+    VERSION="$VER_MAJOR.$VER_MINOR.$VER_REV-$VER_TYPE_FULL$VER_BUILD"
 else
     VER_BUILD="0"
     VERSION="$VER_MAJOR.$VER_MINOR.$VER_REV"
@@ -48,11 +57,11 @@ mkdir package/iface/scripts/
 mkdir package/iface/example/
 
 # Update version in firmware code
-sed -i "s/#define FW_VER_MAJOR.*/#define FW_VER_MAJOR \"$VER_MAJOR\"/g" firmware/include/metadata.h
-sed -i "s/#define FW_VER_MINOR.*/#define FW_VER_MINOR \"$VER_MINOR\"/g" firmware/include/metadata.h
-sed -i "s/#define FW_VER_REVISION.*/#define FW_VER_REVISION \"$VER_REV\"/g" firmware/include/metadata.h
-sed -i "s/#define FW_VER_TYPE.*/#define FW_VER_TYPE \"$VER_TYPE\"/g" firmware/include/metadata.h
-sed -i "s/#define FW_VER_BUILD.*/#define FW_VER_BUILD \"$VER_BUILD\"/g" firmware/include/metadata.h
+sed -i "s/#define FW_VER_MAJOR.*/#define FW_VER_MAJOR $VER_MAJOR/g" firmware/include/metadata.h
+sed -i "s/#define FW_VER_MINOR.*/#define FW_VER_MINOR $VER_MINOR/g" firmware/include/metadata.h
+sed -i "s/#define FW_VER_REVISION.*/#define FW_VER_REVISION $VER_REV/g" firmware/include/metadata.h
+sed -i "s/#define FW_VER_TYPE.*/#define FW_VER_TYPE '$VER_TYPE'/g" firmware/include/metadata.h
+sed -i "s/#define FW_VER_BUILD.*/#define FW_VER_BUILD $VER_BUILD/g" firmware/include/metadata.h
 
 # Write version file
 echo "$VERSION" > package/version.txt

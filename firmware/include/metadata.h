@@ -24,8 +24,8 @@
 // Type is a character indicating release type (eg a = alpha, b = beta, c = release candidate, space = release)
 // BUILD is a number indicating pre-release revision
 // If type is a space (' ') build is ignored
-#define FW_VER_MAJOR        9
-#define FW_VER_MINOR        9
-#define FW_VER_REVISION     9
-#define FW_VER_TYPE         'x'
-#define FW_VER_BUILD        9
+#define FW_VER_MAJOR 1
+#define FW_VER_MINOR 0
+#define FW_VER_REVISION 2
+#define FW_VER_TYPE 'b'
+#define FW_VER_BUILD 5
