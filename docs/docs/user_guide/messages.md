@@ -247,6 +247,23 @@ This message will be acknowledged. The acknowledge message will contain no resul
 
 ## Queries
 
+**Version Info Query**  
+Get the version info from the control board.  
+```none
+'C', 'B', 'V', 'E', 'R'
+```  
+This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format  
+```none
+[cb_ver],[fw_ver_major],[fw_ver_minor],[fw_ver_revision],[fw_ver_type],[fw_ver_build]
+```  
+Each value is an unsigned 8-bit integer. All are simply interpreted as numbers, except for `fw_ver_type`, which is an ASCII character.  
+`cb_ver`: Version of the control board hardware (CBv1 or CBv2 = 1 or 2)  
+`fw_ver_major`: Major version of firmware running on the control board  
+`fw_ver_minor`: Minor version of firmware running on the control board  
+`fw_ver_revision`: Revision version of firmware running on the control board  
+`fw_ver_type`: Type of firmware release. 'a' = alpha, 'b' = beta, 'c' = release candidate (rc), ' ' (space) = full release  
+`fw_ver_build`: Build number for pre-release firmware. Should be ignored for fw_ver_type release (' ')
+
 **Sensor Status Query**  
 Gets the status of all sensors (BNO055 and MS5837).  
 ```none
