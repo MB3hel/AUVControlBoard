@@ -446,12 +446,17 @@ class ControlBoard:
         fw_ver_rev = res[3]
         fw_ver_type = res[4:5].decode('ascii')
         fw_ver_build = res[5]
+        cb_ver_str = ""
         fw_ver_str = ""
+        if cb_ver == 0:
+            cb_ver_str = "SimCB"
+        else:
+            cb_ver_str = "CBv{}".format(cb_ver)
         if fw_ver_type == " ":
             fw_ver_str = "{0}.{1}.{2}".format(fw_ver_maj, fw_ver_min, fw_ver_rev)
         else:
             fw_ver_str = "{0}.{1}.{2}-{3}{4}".format(fw_ver_maj, fw_ver_min, fw_ver_rev, fw_ver_type, fw_ver_build)
-        return ack, "CBv{}".format(cb_ver), fw_ver_str
+        return ack, cb_ver_str, fw_ver_str
 
 
     ## Set the motor matrix defining the vehicle's thruster configuration

@@ -257,7 +257,7 @@ This message will be acknowledged. If acknowledged with no error, the response w
 [cb_ver],[fw_ver_major],[fw_ver_minor],[fw_ver_revision],[fw_ver_type],[fw_ver_build]
 ```  
 Each value is an unsigned 8-bit integer. All are simply interpreted as numbers, except for `fw_ver_type`, which is an ASCII character.  
-`cb_ver`: Version of the control board hardware (CBv1 or CBv2 = 1 or 2)  
+`cb_ver`: Version of the control board hardware (CBv1 or CBv2 = 1 or 2; 0 = SimCB in simulator)  
 `fw_ver_major`: Major version of firmware running on the control board  
 `fw_ver_minor`: Minor version of firmware running on the control board  
 `fw_ver_revision`: Revision version of firmware running on the control board  
