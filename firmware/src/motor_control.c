@@ -705,6 +705,30 @@ void mc_set_sassist(float x, float y, float yaw_spd,
         float curr_depth,
         bool yaw_target){
 
+    // Reset PID controllers when targets change significantlly
+    if(fabsf(pid_last_depth - target_depth) > 0.01){
+        PID_RESET(depth_pid);
+    }
+    
+    float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
+    pid_last_depth = target_depth;
+    mc_set_ohold(x, y, z, yaw_spd, target_euler, curr_quat, yaw_target);
+}
+
+void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth){
+    if(fabsf(pid_last_depth - target_depth) > 0.01){
+        PID_RESET(depth_pid);
+    }
+    float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
+    pid_last_depth = target_depth;
+    mc_set_global(x, y, z, pitch_spd, roll_spd, yaw_spd, curr_quat);
+}
+
+void mc_set_ohold(float x, float y, float z, float yaw_spd,
+        euler_t target_euler,
+        quaternion_t curr_quat,
+        bool yaw_target){
+
     // Baseline angular motion due to yaw speed (if yaw target not in use)
     float base_xrot = 0.0f;
     float base_yrot = 0.0f;
@@ -786,9 +810,6 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     float e_z = az * theta;
 
     // Reset PID controllers when targets change significantlly
-    if(fabsf(pid_last_depth - target_depth) > 0.01){
-        PID_RESET(depth_pid);
-    }
     bool do_reset = false;
     do_reset = 
             (
@@ -817,13 +838,11 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     }
 
     // Use PID controllers to calculate current outputs
-    float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
     float xrot = pid_calculate(&xrot_pid, e_x);
     float yrot = pid_calculate(&yrot_pid, e_y);
     float zrot = pid_calculate(&zrot_pid, e_z);
 
     // Store old targets (used to determine when to reset PIDs)
-    pid_last_depth = target_depth;
     pid_last_target = target_euler;
     pid_last_yaw_target = yaw_target;
 
@@ -876,13 +895,5 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     mc_set_local(lx, ly, lz, xrot, yrot, zrot);
 }
 
-void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth){
-    if(fabsf(pid_last_depth - target_depth) > 0.01){
-        PID_RESET(depth_pid);
-    }
-    float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
-    pid_last_depth = target_depth;
-    mc_set_global(x, y, z, pitch_spd, roll_spd, yaw_spd, curr_quat);
-}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
