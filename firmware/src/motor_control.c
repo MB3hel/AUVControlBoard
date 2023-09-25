@@ -711,7 +711,7 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     }
     
     float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
-    
+    pid_last_depth = target_depth;
     mc_set_ohold(x, y, z, yaw_spd, target_euler, curr_quat, yaw_target);
 }
 
