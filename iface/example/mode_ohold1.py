@@ -33,10 +33,10 @@ import threading
 
 
 def run(cb: ControlBoard, s: Simulator) -> int:
-    print("Setting sassist1 mode target...", end="")
+    print("Setting ohold1 mode target...", end="")
 
     #                 x    y    z   yaw    p    r  
-    if cb.set_ohold1(0.0, 0.0, 0.0, 0.0, 115.0, 15.0) == ControlBoard.AckError.NONE:
+    if cb.set_ohold1(0.0, 0.0, -0.1, 0.0, 115.0, 15.0) == ControlBoard.AckError.NONE:
         print("Done.")
     else:
         print("Fail.")
