@@ -26,6 +26,6 @@
 // If type is a space (' ') build is ignored
 #define FW_VER_MAJOR 1
 #define FW_VER_MINOR 0
-#define FW_VER_REVISION 2
-#define FW_VER_TYPE ' '
+#define FW_VER_REVISION 3
+#define FW_VER_TYPE 'b'
 #define FW_VER_BUILD 0
