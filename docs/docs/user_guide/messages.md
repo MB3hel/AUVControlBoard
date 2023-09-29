@@ -109,7 +109,7 @@ This message will be acknowledged. The acknowledge message will contain no resul
 **Stability Assist Speed Set (Variant 1)**  
 Used to set motor speeds in `STABILITY_ASSIST` mode using a speed for yaw. This command has the following format  
 ```none  
-'S', 'A', 'S', 'S', 'I', 'S', 'T', 'S', 'T', '1', [x], [y], [yaw_spd], [target_pitch], [target_roll], [target_depth]
+'S', 'A', 'S', 'S', 'I', 'S', 'T', '1', [x], [y], [yaw_spd], [target_pitch], [target_roll], [target_depth]
 ```  
 Each value is a 32-bit float little endian.
 
@@ -124,7 +124,7 @@ This message will be acknowledged with no data. Note that if the IMU or depth se
 **Stability Assist Speed Set (Variant 2)**  
 Used to set motor speeds in `STABILITY_ASSIST` mode using a PID to maintain a target yaw. This command has the following format  
 ```none  
-'S', 'A', 'S', 'S', 'I', 'S', 'T', 'S', 'T', '2', [x], [y], [target_pitch], [target_roll], [target_yaw], [target_depth]
+'S', 'A', 'S', 'S', 'I', 'S', 'T', '2', [x], [y], [target_pitch], [target_roll], [target_yaw], [target_depth]
 ```  
 Each value is a 32-bit float little endian. 
 
