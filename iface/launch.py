@@ -121,6 +121,7 @@ def main():
                     print("WARNING: Version mismatch!")
                     print("  CB FW Version: {}".format(fw_ver))
                     print("  Iface Version: {}".format(control_board.VER_STR))
+            cb.set_local(0, 0, 0, 0, 0, 0)
             res = mod.run(cb, s)
             if isinstance(res, int):
                 return res
@@ -145,6 +146,7 @@ def main():
                 print("WARNING: Version mismatch!")
                 print("  CB FW Version: {}".format(fw_ver))
                 print("  Iface Version: {}".format(control_board.VER_STR))
+            cb.set_local(0, 0, 0, 0, 0, 0)
             res = mod.run(cb, None)
             if isinstance(res, int):
                 return res
