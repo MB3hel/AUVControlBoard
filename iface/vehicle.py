@@ -71,21 +71,21 @@ class Vehicle(ABC):
         if ack != ControlBoard.AckError.NONE:
             return ack, "set_bno055_axis"
         
-        ack = cb.tune_sassist_xrot(*self.xrot_pid_tuning)
+        ack = cb.tune_pid_xrot(*self.xrot_pid_tuning)
         if ack != ControlBoard.AckError.NONE:
-            return ack, "tune_sassist_xrot"
+            return ack, "tune_pid_xrot"
 
-        ack = cb.tune_sassist_yrot(*self.yrot_pid_tuning)
+        ack = cb.tune_pid_yrot(*self.yrot_pid_tuning)
         if ack != ControlBoard.AckError.NONE:
-            return ack, "tune_sassist_yrot"
+            return ack, "tune_pid_yrot"
 
-        ack = cb.tune_sassist_zrot(*self.zrot_pid_tuning)
+        ack = cb.tune_pid_zrot(*self.zrot_pid_tuning)
         if ack != ControlBoard.AckError.NONE:
-            return ack, "tune_sassist_zrot"
+            return ack, "tune_pid_zrot"
 
-        ack = cb.tune_sassist_depth(*self.depth_pid_tuning)
+        ack = cb.tune_pid_depth(*self.depth_pid_tuning)
         if ack != ControlBoard.AckError.NONE:
-            return ack, "tune_sassist_depth"
+            return ack, "tune_pid_depth"
 
         # IMU axis configuration will result in IMU giving zero data
         # for a few samples. Wait for a few seconds until valid data.

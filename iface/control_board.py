@@ -35,6 +35,11 @@ import threading
 from typing import List, Dict, Tuple
 
 
+# Version of interface scripts (automatically updated by package.sh)
+# DO NOT MODIFY MANUALLY!!!
+VER_STR = "1.0.3"
+
+
 START_BYTE = b'\xfd'
 END_BYTE = b'\xfe'
 ESCAPE_BYTE = b'\xff'
@@ -428,6 +433,31 @@ class ControlBoard:
         return msg_id
 
 
+    ## Read control board version information
+    #  @return AckError, CB version, FW version (both versions are strings)
+    def get_version_info(self, timeout: float = -1.0) -> Tuple[AckError, str, str]:
+        msg_id = self.__write_msg(b'CBVER', True)
+        ack, res = self.__wait_for_ack(msg_id, timeout)
+        if ack != self.AckError.NONE:
+            return ack, "", ""
+        cb_ver = res[0]
+        fw_ver_maj = res[1]
+        fw_ver_min = res[2]
+        fw_ver_rev = res[3]
+        fw_ver_type = res[4:5].decode('ascii')
+        fw_ver_build = res[5]
+        cb_ver_str = ""
+        fw_ver_str = ""
+        if cb_ver == 0:
+            cb_ver_str = "SimCB"
+        else:
+            cb_ver_str = "CBv{}".format(cb_ver)
+        if fw_ver_type == " ":
+            fw_ver_str = "{0}.{1}.{2}".format(fw_ver_maj, fw_ver_min, fw_ver_rev)
+        else:
+            fw_ver_str = "{0}.{1}.{2}-{3}{4}".format(fw_ver_maj, fw_ver_min, fw_ver_rev, fw_ver_type, fw_ver_build)
+        return ack, cb_ver_str, fw_ver_str
+
 
     ## Set the motor matrix defining the vehicle's thruster configuration
     #  @param matrix Motor matrix object containing configuration to set
@@ -667,7 +697,7 @@ class ControlBoard:
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_xrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
+    def tune_pid_xrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -690,7 +720,7 @@ class ControlBoard:
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_yrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
+    def tune_pid_yrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -713,7 +743,7 @@ class ControlBoard:
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_zrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
+    def tune_pid_zrot(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -736,7 +766,7 @@ class ControlBoard:
     #  @param limit Max output of PID (controls max speed in sassist mode)
     #  @param invert True to reverse direction of PID output
     #  @return AckError
-    def tune_sassist_depth(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
+    def tune_pid_depth(self, kp: float, ki: float, kd: float, limit: float, invert: bool, timeout: float = -1.0) -> AckError:
         msg = bytearray()
         limit = abs(limit)
         if limit > 1.0:
@@ -962,6 +992,76 @@ class ControlBoard:
         msg_id = self.__write_msg(bytes(data), True)
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
+
+    ## Set thruster speeds in ORIENTATION_HOLD mode (variant 1)
+    #  x, y, and z DoFs are pitch and roll compensated
+    #  @param x Speed in +x translation DoF
+    #  @param y Speed in +y translation DoF
+    #  @param z Speed in +z translation DoF
+    #  @param yaw_spd Rate of change of yaw
+    #  @param target_pitch Target pitch in degrees
+    #  @param target_roll Target roll in degrees
+    def set_ohold1(self, x: float, y: float, z: float, yaw_spd: float, target_pitch: float, target_roll: float, timeout: float = -1.0) -> AckError:
+        def limit(v: float):
+            if v > 1.0:
+                return 1.0
+            if v < -1.0:
+                return -1.0
+            return v
+        x = limit(x)
+        y = limit(y)
+        z = limit(z)
+        yaw_spd = limit(yaw_spd)
+        
+        # Construct message to send
+        data = bytearray()
+        data.extend(b'OHOLD1')
+        data.extend(struct.pack("<f", x))
+        data.extend(struct.pack("<f", y))
+        data.extend(struct.pack("<f", z))
+        data.extend(struct.pack("<f", yaw_spd))
+        data.extend(struct.pack("<f", target_pitch))
+        data.extend(struct.pack("<f", target_roll))
+
+        # Send the message and wait for acknowledgement
+        msg_id = self.__write_msg(bytes(data), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+    
+    ## Set thruster speeds in ORIENTATION_HOLD mode (variant 2)
+    #  x, y, and z DoFs are pitch and roll compensated
+    #  @param x Speed in +x translation DoF
+    #  @param y Speed in +y translation DoF
+    #  @param z Speed in +z translation DoF
+    #  @param target_pitch Target pitch in degrees
+    #  @param target_roll Target roll in degrees
+    #  @param target_yaw Target yaw in degrees
+    def set_ohold2(self, x: float, y: float, z: float, target_pitch: float, target_roll: float, target_yaw: float, timeout: float = -1.0) -> AckError:
+        def limit(v: float):
+            if v > 1.0:
+                return 1.0
+            if v < -1.0:
+                return -1.0
+            return v
+        x = limit(x)
+        y = limit(y)
+        z = limit(z)
+        
+        # Construct message to send
+        data = bytearray()
+        data.extend(b'OHOLD2')
+        data.extend(struct.pack("<f", x))
+        data.extend(struct.pack("<f", y))
+        data.extend(struct.pack("<f", z))
+        data.extend(struct.pack("<f", target_pitch))
+        data.extend(struct.pack("<f", target_roll))
+        data.extend(struct.pack("<f", target_yaw))
+
+        # Send the message and wait for acknowledgement
+        msg_id = self.__write_msg(bytes(data), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+
 
     ## Keep motors alive even when speed should not change
     #  If no speed set commands and no watchdog speed for long enough

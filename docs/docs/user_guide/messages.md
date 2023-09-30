@@ -69,7 +69,7 @@ Used to configure the BNO055 IMU's axis orientation. *Note: This will also reset
 This message will be acknowledged. The acknowledge message will contain no result data.
 
 **Stability Assist Mode PID Tune Command**  
-Used to tune stability assist mode PID controllers (note that the depth PID is also used for depth hold mode). It has the following format  
+Used to tune stability assist mode PID controllers. Note that the rotation PIDs (xrot, yrot, and zrot) are also used in OHOLD mode. Likewise, the depth PID is also used in DHOLD mode. The command has the following format  
 ```none  
 'S', 'A', 'S', 'S', 'I', 'S', 'T', 'T', 'N', [which], [kp], [ki], [kd], [limit], [invert]
 ```  
@@ -105,6 +105,32 @@ Used to set motor speeds in `GLOBAL` mode. This command has the following format
 `[x]`, `[y]`, `[z]`: Speed for each "world-relative" (pitch and roll compensated) DoF -1.0 to 1.0. 32-bit float (little endian).  
 `[pitch_spd]`, `[roll_spd]`, `[yaw_spd]`: Rate of change of vehicle pitch, roll, and yaw -1.0 to 1.0.  
 This message will be acknowledged. The acknowledge message will contain no result data. Note that if the IMU is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
+
+**Orientation Hold Speed Set (Variant 1)**  
+Used to set motor speeds in `ORIENTATION_HOLD` mode using a speed for yaw. This command has the following format  
+```none  
+'O', 'H', 'O', 'L', 'D', '1', [x], [y], [z], [yaw_spd], [target_pitch], [target_roll]
+```  
+Each value is a 32-bit float little endian.
+
+Pitch and roll are euler angles (in degrees). These are intrinsic euler angles (z-x'-y'' convention per the control board's coordinate system).
+
+x, y, z, and yaw_spd are x, y, z, and yaw_spd just as in global mode.
+
+This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
+
+**Orientation Hold Speed Set (Variant 2)**  
+Used to set motor speeds in `ORIENTATION_HOLD` mode using a PID to maintain a target yaw. This command has the following format  
+```none  
+'O', 'H', 'O', 'L', 'D', '2', [x], [y], [z], [target_pitch], [target_roll], [target_yaw]
+```  
+Each value is a 32-bit float little endian. 
+
+Target Pitch, roll, and yaw are euler angles (in degrees). These are intrinsic euler angles (z-x'-y'' convention per the control board's coordinate system).
+
+x, y, and z are speeds in the x, y, and z DoFs the same as in `GLOBAL` mode.
+
+This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. *This can occur if the axis config of the IMU is changed immediately before issuing this command.*
 
 **Stability Assist Speed Set (Variant 1)**  
 Used to set motor speeds in `STABILITY_ASSIST` mode using a speed for yaw. This command has the following format  
@@ -220,6 +246,23 @@ This message will be acknowledged. The acknowledge message will contain no resul
 
 
 ## Queries
+
+**Version Info Query**  
+Get the version info from the control board.  
+```none
+'C', 'B', 'V', 'E', 'R'
+```  
+This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format  
+```none
+[cb_ver],[fw_ver_major],[fw_ver_minor],[fw_ver_revision],[fw_ver_type],[fw_ver_build]
+```  
+Each value is an unsigned 8-bit integer. All are simply interpreted as numbers, except for `fw_ver_type`, which is an ASCII character.  
+`cb_ver`: Version of the control board hardware (CBv1 or CBv2 = 1 or 2; 0 = SimCB in simulator)  
+`fw_ver_major`: Major version of firmware running on the control board  
+`fw_ver_minor`: Minor version of firmware running on the control board  
+`fw_ver_revision`: Revision version of firmware running on the control board  
+`fw_ver_type`: Type of firmware release. 'a' = alpha, 'b' = beta, 'c' = release candidate (rc), ' ' (space) = full release  
+`fw_ver_build`: Build number for pre-release firmware. Should be ignored for fw_ver_type release (' ')
 
 **Sensor Status Query**  
 Gets the status of all sensors (BNO055 and MS5837).  
