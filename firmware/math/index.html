@@ -100,17 +100,17 @@
     </li>
         </ul>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#stability-assist-sassist-mode-motion">Stability Assist (SASSIST) Mode Motion</a>
+    <li class="toctree-l3"><a class="reference internal" href="#orientation-hold-ohold-mode-motion">Orientation Hold (OHOLD) Mode Motion</a>
         <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#depth-control">Depth Control</a>
-    </li>
     <li class="toctree-l4"><a class="reference internal" href="#translation-dofs_1">Translation DoFs</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#sassist2-orientation-control">SASSIST2 Orientation Control</a>
+    <li class="toctree-l4"><a class="reference internal" href="#ohold2-orientation-control">OHOLD2 Orientation Control</a>
     </li>
-    <li class="toctree-l4"><a class="reference internal" href="#sassist1-orientation-control">SASSIST1 Orientation Control</a>
+    <li class="toctree-l4"><a class="reference internal" href="#ohold1-orientation-control">OHOLD1 Orientation Control</a>
     </li>
         </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#stability-assist-sassist-mode">Stability Assist (SASSIST) Mode</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#depth-hold-dhold-mode-motion">Depth Hold (DHOLD) Mode Motion</a>
     </li>
@@ -424,37 +424,35 @@ m_z = m_z / m_max;
 <li>Downscale <span class="arithmatex">\(w\)</span> if needed so all elements are less than 1</li>
 </ul>
 <p>Then <span class="arithmatex">\(w\)</span> is the xrot, yrot, and zrot parts of the LOCAL mode target.</p>
-<h3 id="stability-assist-sassist-mode-motion">Stability Assist (SASSIST) Mode Motion</h3>
-<p>Stability assist mode (SASSIST) uses closed-loop control for vehicle depth and orientation in 3D space. This is achieved using four PID controllers</p>
+<h3 id="orientation-hold-ohold-mode-motion">Orientation Hold (OHOLD) Mode Motion</h3>
+<p>Orientation hold mode uses closed-loop control for vehicle orientation in 3D space. This is achieved using three PID controllers</p>
 <ul>
-<li>Depth PID: Controls translation along world z-axis</li>
 <li>xrot PID: Controls rotation about vehicle x-axis</li>
 <li>yrot PID: Controls rotation about vehicle y-axis</li>
 <li>zrot PID: Controls rotation about vehicle z-axis</li>
 </ul>
-<p>The inputs to SASSIST mode are as follows</p>
+<p><em>Note that in some code, these PIDs are referred to as "SASSIST" PIDs. However, they are used for OHOLD too!</em></p>
+<p>The inputs to OHOLD mode are as follows</p>
 <ul>
 <li><code>x</code>: Translation along gx-axis (same as in GLOBAL mode)</li>
 <li><code>y</code>: Translation along gy-axis (same as in GLOBAL mode)</li>
-<li><code>d_t</code>: Target depth (meters; negative for below the surface)</li>
+<li><code>z</code>: Translation along gz-axis (same as in GLOBAL mode)</li>
 <li><code>e_t</code>: Target orientation as euler angles</li>
 </ul>
 <p>Optionally, a yaw speed (<code>h</code>) can be provided. In this case, PIDs will not adjust the vehicle's yaw (heading). Instead the <code>h</code> value works similar to GLOBAL mode (it is a rate of change of vehicle yaw).</p>
 <p>This effectively abstracts a 2D plane in which the vehicle operates. This is the same gx-gy plane described in the GLOBAL mode section.</p>
-<p>There are two variants of SASSIST mode</p>
+<p>There are two variants of OHOLD mode</p>
 <ul>
-<li>Variant 1 (SASSIST1): Speed for yaw (<code>h</code>) is used instead of PID control</li>
-<li>Variant 2 (SASSIST2): PID is used for yaw (yaw speed / <code>h</code> is ignored)</li>
+<li>Variant 1 (OHOLD1): Speed for yaw (<code>h</code>) is used instead of PID control</li>
+<li>Variant 2 (OHOLD2): PID is used for yaw (yaw speed / <code>h</code> is ignored)</li>
 </ul>
-<p>These two variants are the same in how depth control works. However, variant 1 adds some additional complexity for orientation control.</p>
-<h4 id="depth-control">Depth Control</h4>
-<p>A PID controller (sassist depth PID) is used to control the vehicle's speed in the world z (or GLOBAL z) DoF. The output of this PID controller is the same <code>z</code> that could be an input to GLOBAL mode. This PID controller's error is the difference between the user provided target depth and the measured current depth of the vehicle.</p>
+<p>Variant 2 is actually then simpler variant. Variant 2 adds some additional complexity for orientation control.</p>
 <h4 id="translation-dofs_1">Translation DoFs</h4>
 <p>The user provided <code>x</code> and <code>y</code> along with the <code>z</code> from the depth PID are handled the same way by SASSIST mode as they are in GLOBAL mode to obtain the final LOCAL mode translation vector <span class="arithmatex">\(l\)</span>.</p>
-<h4 id="sassist2-orientation-control">SASSIST2 Orientation Control</h4>
-<p>While translation for SASSIST is nearly identical to GLOBAL mode, rotation DoFs are very different. Orientation is controlled with a set of 3 PID controllers that work in LOCAL DoFs. Thus it is necessary to determine the rotations necessary about the vehicle's axes to achieve the desired orientation.</p>
-<p>We are given a target orientation as euler angles, <span class="arithmatex">\(e_t\)</span>. This can be converted to a target orientation quaternion, <span class="arithmatex">\(q_t\)</span>. </p>
-<p><em>Note: For SASSIST1 things after this point are the same (see section below for details on how to get <span class="arithmatex">\(q_t\)</span> for SASSIST1).</em></p>
+<h4 id="ohold2-orientation-control">OHOLD2 Orientation Control</h4>
+<p>While translation for OHOLD is nearly identical to GLOBAL mode, rotation DoFs are very different. Orientation is controlled with a set of 3 PID controllers that work in LOCAL DoFs. Thus it is necessary to determine the rotations necessary about the vehicle's axes to achieve the desired orientation.</p>
+<p>We are given a target orientation as euler angles, <span class="arithmatex">\(e_t\)</span>. This can be converted to a target orientation quaternion, <span class="arithmatex">\(q_t\)</span> using the formulas derived in later sections. </p>
+<p><em>Note: For OHOLD1 things after this point are the same (see section below for details on how to get <span class="arithmatex">\(q_t\)</span> for OHOLD1).</em></p>
 <p>The vehicle's current orientation (as a quaternion) is also available from the IMU as <span class="arithmatex">\(q_c\)</span>. We need to calculate a quaternion <span class="arithmatex">\(q_d\)</span> that represents the minimal rotation from <span class="arithmatex">\(q_c\)</span> to <span class="arithmatex">\(q_t\)</span>. However, importantly we want <span class="arithmatex">\(q_d\)</span> to be a rotation in the vehicle's basis. Recall that right multiplication of quaternions are applied in the vehicle's basis. Thus, to describe the target orientation as the current orientation plus a rotation in the vehicle's basis</p>
 <p><span class="arithmatex">\(q_t = q_c q_d\)</span></p>
 <p>Therefore</p>
@@ -476,27 +474,36 @@ m_z = m_z / m_max;
 <p>Thus, the product of <span class="arithmatex">\(n\)</span> and <span class="arithmatex">\(\theta\)</span> is proportional to the error in angle about each of the vehicle's axes.</p>
 <p><span class="arithmatex">\(e = \theta n\)</span></p>
 <p>This error vector, <span class="arithmatex">\(e\)</span>, contains the errors to be provided to each orientation PID (xrot, yrot, zrot). The output of these PIDs are angular velocity percentages (-1.0 to 1.0) about each of the vehicle's axes: <span class="arithmatex">\(w = \begin{pmatrix} w_x &amp; w_y &amp; w_z \end{pmatrix}\)</span></p>
-<p><em>Note: for SASSIST 1 there is an extra step here to calculate the correct w (see section below).</em></p>
+<p><em>Note: for OHOLD 1 there is an extra step here to calculate the correct w (see section below).</em></p>
 <p>Finally, it is necessary to downscale the <span class="arithmatex">\(w\)</span> vectors just as in GLOBAL mode</p>
 <ul>
 <li>First downscale using <span class="arithmatex">\(m_{rx}\)</span>, <span class="arithmatex">\(m_{ry}\)</span> and <span class="arithmatex">\(m_{rz}\)</span> using the algorithm described in the GLOBAL mode section</li>
-<li>Then downscale the vector so that all elements are less than 1. While this is never needed for SASSIST2, it is needed for SASSIST1 and it is simpler branching logic (code implementation) to just always check if downscaling is needed.</li>
+<li>Then downscale the vector so that all elements are less than 1. While this is never needed for OHOLD2, it is needed for OHOLD1 and it is simpler branching logic (code implementation) to just always check if downscaling is needed.</li>
 </ul>
 <p>This <span class="arithmatex">\(w\)</span> can then be passed to LOCAL mode along with the LOCAL translation vector <span class="arithmatex">\(l\)</span> obtained earlier.</p>
-<h4 id="sassist1-orientation-control">SASSIST1 Orientation Control</h4>
-<p>SASSIST1 uses much of the same process to control the vehicle's orientation as SASSIST2, however it is necessary to decouple yaw from pitch and roll. In other words, we want to construct a target quaternion using the user provided pitch and roll, but matching the vehicle's current yaw.</p>
+<h4 id="ohold1-orientation-control">OHOLD1 Orientation Control</h4>
+<p>OHOLD1 uses much of the same process to control the vehicle's orientation as OHOLD2, however it is necessary to decouple yaw from pitch and roll. In other words, we want to construct a target quaternion using the user provided pitch and roll, but matching the vehicle's current yaw.</p>
 <p>The most intuitive option would be to decompose <span class="arithmatex">\(q_c\)</span> into euler angles and obtain the yaw from those. However, this does not account for the fact that the yaw can be altered by pitch or roll. For example, (p=115, r=0, h=90) would be decomposed as (p=65, r=180, h=-90). Here the heading is 180 degrees off. This would be a significant issue.</p>
 <p>Thus instead, the target quaternion can be decomposed using the swing-twist decomposition of quaternion rotations. We twist about the world z axis (since this is the axis the vehicle initially yawed about). The vehicle's yaw can be calculated from this twist quaternion (using euler conversion formula).</p>
-<p>The target quaternion is constructed from the target pitch and roll provided by the user and the yaw provided by the twist quaternion as described above. This target quaternion is <span class="arithmatex">\(q_t\)</span> and is used the same way described for SASSIST2.</p>
-<p>After calculating <span class="arithmatex">\(w\)</span> as described for SASSIST2, there is one extra step before handling DoF scaling. The yaw speed (<code>h</code>) provided by the user must be transformed to the vehicle's axes and added to the <span class="arithmatex">\(w\)</span> from the PIDs.</p>
+<p>The target quaternion is constructed from the target pitch and roll provided by the user and the yaw provided by the twist quaternion as described above. This target quaternion is <span class="arithmatex">\(q_t\)</span> and is used the same way described for OHOLD2.</p>
+<p>After calculating <span class="arithmatex">\(w\)</span> as described for OHOLD2, there is one extra step before handling DoF scaling. The yaw speed (<code>h</code>) provided by the user must be transformed to the vehicle's axes and added to the <span class="arithmatex">\(w\)</span> from the PIDs.</p>
 <p>This can be done similar to GLOBAL mode</p>
 <p><span class="arithmatex">\(\left\{0, w_{yaw}\right\} = q_{rot} \left\{0, \begin{pmatrix}0 &amp; 0 &amp; h\end{pmatrix}\right\} q_{rot}^*\)</span></p>
 <p><span class="arithmatex">\(w_{yaw}\)</span> will then be upscaled just as in GLOBAL mode.</p>
-<p>Then <span class="arithmatex">\(w = w + w_{yaw}\)</span>. This is then downscaled as described for SASSIST2.</p>
+<p>Then <span class="arithmatex">\(w = w + w_{yaw}\)</span>. This is then downscaled as described for OHOLD2.</p>
+<h3 id="stability-assist-sassist-mode">Stability Assist (SASSIST) Mode</h3>
+<p>Stability assist mode (SASSIST) is simply OHOLD mode, with the addition of closed-loop control for vehicle depth. Thus, instead of providing a <code>z</code> speed (for motion along the gz-axis), a PID controller is used to acheive the target depth.</p>
+<p>Inputs to this mode are the same as OHOLD mode, however instead of <code>z</code>, <code>d_t</code> is provided.</p>
+<ul>
+<li><code>d_t</code>: Target depth (meters; negative for below the surface)</li>
+</ul>
+<p>The PID used to maintain vehicle depth is referred to as the Depth PID. This PID uses the current vehicle depth (provided by a depth sensor) to calculate a z speed in the gz-axis, then provides it as an input to OHOLD mode. </p>
+<p>All other inputs from SASSIST are passed through to OHOLD mode as provided. Thus, there are two variants of SASSIST mode (variant 1 and variant 2) built ontop of the corresponding variants of OHOLD mode.</p>
 <h3 id="depth-hold-dhold-mode-motion">Depth Hold (DHOLD) Mode Motion</h3>
 <p>Depth hold (DHOLD) mode is GLOBAL mode but using a PID to control the vehicle's depth. The same depth PID used for SASSIST mode is used for DHOLD mode.</p>
-<p>This mode uses the vehicle's current depth and a user provided target depth to calcualte the depth PIDs error. The depth PID provides the gz-axis speed. Other speeds (<code>x</code>, <code>y</code>, <code>p</code>, <code>r</code>, and <code>h</code>) are provided by the user and mean the same thing as in GLOBAL mode. </p>
+<p>This mode uses the vehicle's current depth and a user provided target depth to calculate the depth PIDs error. The depth PID provides the gz-axis speed. Other speeds (<code>x</code>, <code>y</code>, <code>p</code>, <code>r</code>, and <code>h</code>) are provided by the user and mean the same thing as in GLOBAL mode. </p>
 <p>The calculated <code>z</code> along with user-provided speeds are passed directly to GLOBAL mode after calculating <code>z</code> using the depth PID.</p>
+<p><em>Note that this mode does not maintain vehicle orientation. In practice, this control mode is rarely useful.</em></p>
 <h2 id="sensor-processing">Sensor Processing</h2>
 <p>TODO: Euler angle accumulation</p>
 <h2 id="other-derivations">Other Derivations</h2>

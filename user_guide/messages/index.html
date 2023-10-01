@@ -184,7 +184,7 @@ Used to configure the BNO055 IMU's axis orientation. <em>Note: This will also re
 <p><code>[config]</code>: A single byte. The value of this byte is between 0 and 7 (inclusive) representing on of the BNO055 axis configs (P0 to P7) as described in the BNO055 datasheet. <em>Note: Changing the axis config changes IMU mode. Thus, there will be a brief time afterwards where the IMU may report zeros for all data.</em><br />
 This message will be acknowledged. The acknowledge message will contain no result data.</p>
 <p><strong>Stability Assist Mode PID Tune Command</strong><br />
-Used to tune stability assist mode PID controllers (note that the depth PID is also used for depth hold mode). It has the following format  </p>
+Used to tune stability assist mode PID controllers. Note that the rotation PIDs (xrot, yrot, and zrot) are also used in OHOLD mode. Likewise, the depth PID is also used in DHOLD mode. The command has the following format  </p>
 <pre><code class="language-none">'S', 'A', 'S', 'S', 'I', 'S', 'T', 'T', 'N', [which], [kp], [ki], [kd], [limit], [invert]
 </code></pre>
 <p><code>[which]</code> indicates which PID to tune ('X' = xrot, 'Y' = yrot, 'Z' = zrot, 'D' = depth hold).<br />
@@ -211,6 +211,22 @@ Used to set motor speeds in <code>GLOBAL</code> mode. This command has the follo
 <p><code>[x]</code>, <code>[y]</code>, <code>[z]</code>: Speed for each "world-relative" (pitch and roll compensated) DoF -1.0 to 1.0. 32-bit float (little endian).<br />
 <code>[pitch_spd]</code>, <code>[roll_spd]</code>, <code>[yaw_spd]</code>: Rate of change of vehicle pitch, roll, and yaw -1.0 to 1.0.<br />
 This message will be acknowledged. The acknowledge message will contain no result data. Note that if the IMU is not working properly, this command will be acknowledged with the "Invalid Command" error code. <em>This can occur if the axis config of the IMU is changed immediately before issuing this command.</em></p>
+<p><strong>Orientation Hold Speed Set (Variant 1)</strong><br />
+Used to set motor speeds in <code>ORIENTATION_HOLD</code> mode using a speed for yaw. This command has the following format  </p>
+<pre><code class="language-none">'O', 'H', 'O', 'L', 'D', '1', [x], [y], [z], [yaw_spd], [target_pitch], [target_roll]
+</code></pre>
+<p>Each value is a 32-bit float little endian.</p>
+<p>Pitch and roll are euler angles (in degrees). These are intrinsic euler angles (z-x'-y'' convention per the control board's coordinate system).</p>
+<p>x, y, z, and yaw_spd are x, y, z, and yaw_spd just as in global mode.</p>
+<p>This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. <em>This can occur if the axis config of the IMU is changed immediately before issuing this command.</em></p>
+<p><strong>Orientation Hold Speed Set (Variant 2)</strong><br />
+Used to set motor speeds in <code>ORIENTATION_HOLD</code> mode using a PID to maintain a target yaw. This command has the following format  </p>
+<pre><code class="language-none">'O', 'H', 'O', 'L', 'D', '2', [x], [y], [z], [target_pitch], [target_roll], [target_yaw]
+</code></pre>
+<p>Each value is a 32-bit float little endian. </p>
+<p>Target Pitch, roll, and yaw are euler angles (in degrees). These are intrinsic euler angles (z-x'-y'' convention per the control board's coordinate system).</p>
+<p>x, y, and z are speeds in the x, y, and z DoFs the same as in <code>GLOBAL</code> mode.</p>
+<p>This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. <em>This can occur if the axis config of the IMU is changed immediately before issuing this command.</em></p>
 <p><strong>Stability Assist Speed Set (Variant 1)</strong><br />
 Used to set motor speeds in <code>STABILITY_ASSIST</code> mode using a speed for yaw. This command has the following format  </p>
 <pre><code class="language-none">'S', 'A', 'S', 'S', 'I', 'S', 'T', '1', [x], [y], [yaw_spd], [target_pitch], [target_roll], [target_depth]
@@ -288,6 +304,20 @@ This command is used to reset / reconfigure the BNO055. This is typically used t
 <hr />
 
 <h2 id="queries">Queries</h2>
+<p><strong>Version Info Query</strong><br />
+Get the version info from the control board.  </p>
+<pre><code class="language-none">'C', 'B', 'V', 'E', 'R'
+</code></pre>
+<p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format  </p>
+<pre><code class="language-none">[cb_ver],[fw_ver_major],[fw_ver_minor],[fw_ver_revision],[fw_ver_type],[fw_ver_build]
+</code></pre>
+<p>Each value is an unsigned 8-bit integer. All are simply interpreted as numbers, except for <code>fw_ver_type</code>, which is an ASCII character.<br />
+<code>cb_ver</code>: Version of the control board hardware (CBv1 or CBv2 = 1 or 2; 0 = SimCB in simulator)<br />
+<code>fw_ver_major</code>: Major version of firmware running on the control board<br />
+<code>fw_ver_minor</code>: Minor version of firmware running on the control board<br />
+<code>fw_ver_revision</code>: Revision version of firmware running on the control board<br />
+<code>fw_ver_type</code>: Type of firmware release. 'a' = alpha, 'b' = beta, 'c' = release candidate (rc), ' ' (space) = full release<br />
+<code>fw_ver_build</code>: Build number for pre-release firmware. Should be ignored for fw_ver_type release (' ')</p>
 <p><strong>Sensor Status Query</strong><br />
 Gets the status of all sensors (BNO055 and MS5837).  </p>
 <pre><code class="language-none">'S', 'S', 'T', 'A', 'T'
