@@ -24,6 +24,7 @@
 #include <semphr.h>
 #include <simulator.h>
 #include <calibration.h>
+#include <debug.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// BNO055 Info Macros
@@ -307,6 +308,7 @@ bool bno055_configure(void){
         xSemaphoreGive(trans_mutex);
         return false;
     }
+    vTaskDelay(pdMS_TO_TICKS(25));
 
     // Reset IMU
     trans.write_buf[0] = BNO055_SYS_TRIGGER_ADDR;
@@ -484,7 +486,7 @@ bool bno055_configure(void){
         xSemaphoreGive(trans_mutex);
         return false;
     }
-    vTaskDelay(pdMS_TO_TICKS(20));
+    vTaskDelay(pdMS_TO_TICKS(600));
 
     // Done configuring IMU
     xSemaphoreGive(trans_mutex);
@@ -575,8 +577,9 @@ bool bno055_set_axis(uint8_t mode){
         xSemaphoreGive(trans_mutex);
         return false;
     }
-    vTaskDelay(pdMS_TO_TICKS(35));
+    vTaskDelay(pdMS_TO_TICKS(600));
     xSemaphoreGive(trans_mutex);
+
     return true;
 }
 

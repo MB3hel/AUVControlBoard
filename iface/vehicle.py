@@ -87,11 +87,6 @@ class Vehicle(ABC):
         if ack != ControlBoard.AckError.NONE:
             return ack, "tune_pid_depth"
 
-        # IMU axis configuration will result in IMU giving zero data
-        # for a few samples. Wait for a few seconds until valid data.
-        # TODO: Implement better solution (probably in control_board.py)
-        time.sleep(2)
-
         return ControlBoard.AckError.NONE, ""
 
     @property

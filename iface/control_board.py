@@ -549,7 +549,7 @@ class ControlBoard:
         # This can take a little longer than most commands
         # Thus, use a slightly longer default timeout
         if timeout == -1.0:
-            timeout = self.default_timeout() + 0.1
+            timeout = self.default_timeout() + 1.0
 
         msg_id = self.__write_msg(bytes(msg), True)
         ack, _ = self.__wait_for_ack(msg_id, timeout)
