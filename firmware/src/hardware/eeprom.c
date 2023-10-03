@@ -101,6 +101,8 @@ bool eeprom_read(uint16_t address, uint16_t *data){
 
 #ifdef CONTROL_BOARD_V2
 
+#include <st_eeprom.h>
+
 static bool valid = false;
 uint16_t VirtAddVarTab[NB_OF_VAR];
 

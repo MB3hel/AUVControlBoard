@@ -94,6 +94,8 @@ void SERCOM2_OTHER_Handler(void){
 
 #ifdef CONTROL_BOARD_V2
 
+#include <tusb.h>
+
 extern TIM_HandleTypeDef htim11;
 extern TIM_HandleTypeDef htim1;
 extern I2C_HandleTypeDef hi2c1;

@@ -213,7 +213,7 @@ bool i2c_perform(i2c_trans *trans){
 
 #include <FreeRTOS.h>
 #include <semphr.h>
-#include <delay.h>
+#include <hardware/delay.h>
 
 extern I2C_HandleTypeDef hi2c1;
 
