@@ -16,23 +16,25 @@
  * 
  */
 
+#include <hardware/led.h>
+#include <hardware/delay.h>
+#include <hardware/thruster.h>
+#include <hardware/eeprom.h>
+#include <hardware/i2c.h>
+#include <hardware/wdt.h>
+
+#include <util/conversions.h>
+
 #include <framework.h>
 #include <FreeRTOS.h>
 #include <task.h>
-#include <led.h>
-#include <delay.h>
 #include <math.h>
-#include <usb.h>
-#include <thruster.h>
+#include <hardware/usb.h>
 #include <app.h>
 #include <cmdctrl.h>
-#include <conversions.h>
 #include <motor_control.h>
-#include <i2c.h>
-#include <wdt.h>
 #include <debug.h>
 #include <pccomm.h>
-#include <eeprom.h>
 #include <calibration.h>
 
 

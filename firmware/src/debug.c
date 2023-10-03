@@ -21,8 +21,8 @@
 #include <string.h>
 #include <FreeRTOS.h>
 #include <task.h>
-#include <led.h>
-#include <usb.h>
+#include <hardware/led.h>
+#include <hardware/usb.h>
 #include <stdlib.h>
 #include <framework.h>
 

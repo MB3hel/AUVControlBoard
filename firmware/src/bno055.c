@@ -17,8 +17,8 @@
  */
 
 #include <bno055.h>
-#include <angles.h>
-#include <i2c.h>
+#include <util/angles.h>
+#include <hardware/i2c.h>
 #include <FreeRTOS.h>
 #include <task.h>
 #include <semphr.h>

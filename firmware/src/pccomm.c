@@ -17,7 +17,7 @@
  */
 
 #include <pccomm.h>
-#include <conversions.h>
+#include <util/conversions.h>
 #include <FreeRTOS.h>
 #include <semphr.h>
 #include <tusb_wrapper.h>

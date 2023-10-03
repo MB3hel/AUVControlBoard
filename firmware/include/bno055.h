@@ -20,7 +20,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <angles.h>
+#include <util/angles.h>
 
 // Axis configurations
 // Note: Px macro needs to have value x

@@ -18,13 +18,13 @@
 
 #include <motor_control.h>
 #include <app.h>
-#include <matrix.h>
-#include <thruster.h>
+#include <util/matrix.h>
+#include <hardware/thruster.h>
 #include <FreeRTOS.h>
 #include <semphr.h>
 #include <timers.h>
 #include <cmdctrl.h>
-#include <pid.h>
+#include <util/pid.h>
 #include <math.h>
 #include <debug.h>
 #include <stdio.h>

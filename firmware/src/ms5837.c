@@ -18,7 +18,7 @@
 
 
 #include <ms5837.h>
-#include <i2c.h>
+#include <hardware/i2c.h>
 #include <stdint.h>
 #include <simulator.h>
 #include <calibration.h>

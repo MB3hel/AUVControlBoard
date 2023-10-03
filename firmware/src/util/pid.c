@@ -16,30 +16,25 @@
  * 
  */
 
-#include <wdt.h>
-#include <framework.h>
+#include <util/pid.h>
 
-extern IWDG_HandleTypeDef hiwdg;
 
-extern void MX_IWDG_Init(void);
+float pid_calculate(pid_controller_t *pid, float curr_err){
+    #define MIN(a, b)       ((a < b) ? a : b)
+    #define MAX(a, b)       ((a > b) ? a : b)
 
-void wdt_init(void){
-    // Init handled in CubeMX generated code
-    // LSI = 32kHz on this board
-    // Prescaler = 32  ->  1024 counts / second
-    // Reload configured to 2048 ~= 2 second timeout
-    MX_IWDG_Init();
-    
-    // Freeze watchdog when core halted
-    __HAL_DBGMCU_FREEZE_IWDG();
-}
+    // Proportional gain
+    float output = pid->kP * curr_err;
 
-void wdt_feed(void){
-    HAL_IWDG_Refresh(&hiwdg);
-}
+    // Integral gain
+    pid->integral += curr_err;
+    output += pid->kI * pid->integral;
 
-void wdt_reset_now(void){
-    // Doesn't actually use WDT on this chip, but function name kept for compatability
-    NVIC_SystemReset();
-    while(1);
+    // Derivative gain
+    output += pid->kD * (curr_err - pid->last_error);
+    pid->last_error = curr_err;
+
+    // Limit output range
+    output = MAX(pid->min, MIN(output, pid->max));
+    return (pid->invert) ? -output : output;
 }

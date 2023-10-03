@@ -20,9 +20,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <angles.h>
-#include <bno055.h>
-#include <ms5837.h>
+#include <util/angles.h>
 
 
 // Controls whether simulation mode operation

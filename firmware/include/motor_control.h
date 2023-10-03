@@ -20,7 +20,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <angles.h>
+#include <util/angles.h>
 
 
 // Inverts positive and negative on specific thrusters

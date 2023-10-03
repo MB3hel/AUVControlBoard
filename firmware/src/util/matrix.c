@@ -16,7 +16,7 @@
  * 
  */
 
-#include <matrix.h>
+#include <util/matrix.h>
 #include <stdlib.h>
 #include <math.h>
 

@@ -16,8 +16,11 @@
  * 
  */
 
-#include <wdt.h>
+#include <hardware/wdt.h>
 #include <framework.h>
+
+
+#ifdef CONTROL_BOARD_V1
 
 void wdt_init(void){
     WDT_TimeoutPeriodSet(0x8);          // Configure to timeout after 2048 cycles (1024 Hz clock) ~ 2sec
@@ -36,3 +39,35 @@ void wdt_reset_now(void){
     // while(WDT_REGS->WDT_SYNCBUSY != 0U){}
     // WDT_REGS->WDT_CLEAR = 0x00;     // Write anything but 0xA5 resets now
 }
+
+#endif // CONTROL_BOARD_V1
+
+
+#ifdef CONTROL_BOARD_V2
+
+extern IWDG_HandleTypeDef hiwdg;
+
+extern void MX_IWDG_Init(void);
+
+void wdt_init(void){
+    // Init handled in CubeMX generated code
+    // LSI = 32kHz on this board
+    // Prescaler = 32  ->  1024 counts / second
+    // Reload configured to 2048 ~= 2 second timeout
+    MX_IWDG_Init();
+    
+    // Freeze watchdog when core halted
+    __HAL_DBGMCU_FREEZE_IWDG();
+}
+
+void wdt_feed(void){
+    HAL_IWDG_Refresh(&hiwdg);
+}
+
+void wdt_reset_now(void){
+    // Doesn't actually use WDT on this chip, but function name kept for compatability
+    NVIC_SystemReset();
+    while(1);
+}
+
+#endif // CONTROL_BOARD_V2

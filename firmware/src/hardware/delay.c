@@ -16,7 +16,7 @@
  * 
  */
 
-#include <delay.h>
+#include <hardware/delay.h>
 #include <framework.h>
 
 #if defined(CONTROL_BOARD_V1) || defined(CONTROL_BOARD_V2)
@@ -44,7 +44,9 @@ void delay_ms(unsigned int ms){
     while ((DWT->CYCCNT - start) < ms);
 }
 
-#elif defined(CONTROL_BOARD_SIM_LINUX)
+#endif // CONTROL_BOARD_V1 || CONTROL_BOARD_V2
+
+#if defined(CONTROL_BOARD_SIM_LINUX)
 
 #include <unistd.h>
 
@@ -59,4 +61,4 @@ void delay_ms(unsigned int ms){
     usleep(ms * 1000);
 }
 
-#endif
+#endif // CONTROL_BOARD_SIM_LINUX

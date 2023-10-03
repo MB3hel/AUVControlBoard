@@ -16,7 +16,7 @@
  * 
  */
 
-#include <usb.h>
+#include <hardware/usb.h>
 #include <framework.h>
 #include <tusb_wrapper.h>
 #include <limits.h>

@@ -17,16 +17,15 @@
  */
 
 #include <cmdctrl.h>
-#include <led.h>
+#include <hardware/led.h>
 #include <pccomm.h>
-#include <conversions.h>
-#include <thruster.h>
+#include <util/conversions.h>
 #include <motor_control.h>
 #include <FreeRTOS.h>
 #include <semphr.h>
 #include <timers.h>
 #include <bno055.h>
-#include <wdt.h>
+#include <hardware/wdt.h>
 #include <debug.h>
 #include <simulator.h>
 #include <calibration.h>

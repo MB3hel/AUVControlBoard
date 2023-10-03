@@ -22,7 +22,7 @@
 #include <cmdctrl.h>
 #include <bno055.h>
 #include <ms5837.h>
-#include <wdt.h>
+#include <hardware/wdt.h>
 #include <simulator.h>
 
 #if defined(CONTROL_BOARD_V1) || defined(CONTROL_BOARD_V2)

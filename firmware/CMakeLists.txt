@@ -31,8 +31,6 @@ file(GLOB_RECURSE SOURCES
 )
 remove_items_containing(SOURCES "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable")
 remove_items_containing(SOURCES "${PROJECT_SOURCE_DIR}/thirdparty/TinyUSB/portable")
-remove_items_containing(SOURCES "${PROJECT_SOURCE_DIR}/src/v1")
-remove_items_containing(SOURCES "${PROJECT_SOURCE_DIR}/src/v2")
 
 # General preprocessor definitions (all targets)
 set(DEFINES  "")
@@ -61,7 +59,6 @@ if("${CBOARD_REV}" STREQUAL "v1")
 
     # Version specific sources
     file(GLOB_RECURSE EXTRA_SOURCES 
-        "${PROJECT_SOURCE_DIR}/src/v1/*.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/v1_generated/*.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/MemMang/heap_4.c"
@@ -75,7 +72,6 @@ if("${CBOARD_REV}" STREQUAL "v1")
         "${PROJECT_SOURCE_DIR}/thirdparty/v1_generated/packs/CMSIS/CMSIS/Core/Include"
         "${PROJECT_SOURCE_DIR}/thirdparty/v1_generated/packs/ATSAMD51G19A_DFP"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/GCC/ARM_CM4F"
-        "${PROJECT_SOURCE_DIR}/include/v1"
         "${PROJECT_SOURCE_DIR}/thirdparty/TinyUSB/"
     )
 
@@ -124,7 +120,6 @@ elseif("${CBOARD_REV}" STREQUAL "v2")
     
     # Version specific sources
     file(GLOB_RECURSE EXTRA_SOURCES 
-        "${PROJECT_SOURCE_DIR}/src/v2/*.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/*.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/startup_stm32f411xe.s"
         "${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/emueeprom/src/*.c"
@@ -142,7 +137,6 @@ elseif("${CBOARD_REV}" STREQUAL "v2")
         "${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/Drivers/STM32F4xx_HAL_Driver/Inc"
         "${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/emueeprom/inc"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/GCC/ARM_CM4F"
-        "${PROJECT_SOURCE_DIR}/include/v2"
         "${PROJECT_SOURCE_DIR}/thirdparty/TinyUSB/"
     )
 
@@ -191,7 +185,6 @@ elseif("${CBOARD_REV}" STREQUAL "simcb-linux")
     
     # Version specific sources
     file(GLOB_RECURSE EXTRA_SOURCES 
-        "${PROJECT_SOURCE_DIR}/src/simcb/*.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/ThirdParty/GCC/Posix/*.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/MemMang/heap_4.c"
     )
@@ -199,7 +192,6 @@ elseif("${CBOARD_REV}" STREQUAL "simcb-linux")
     # Version specific includes
     set(EXTRA_INCLUDES
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/ThirdParty/GCC/Posix/"
-        "${PROJECT_SOURCE_DIR}/include/simcb"
     )
 
     # Target specific preprocessor definitions
