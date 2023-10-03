@@ -18,7 +18,7 @@
 
 #include <usb.h>
 #include <framework.h>
-#include <tusb.h>
+#include <tusb_wrapper.h>
 #include <limits.h>
 #include <string.h>
 #include <FreeRTOS.h>
@@ -66,6 +66,8 @@ void usb_init(void){
     usb_initialized = true;
 }
 
+#if defined(CONTROL_BOARD_V1) || defined(CONTROL_BOARD_V2)
+
 void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
     (void)rts;
 
@@ -111,3 +113,5 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
         }
     }
 }
+
+#endif

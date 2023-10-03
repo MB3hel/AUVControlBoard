@@ -17,10 +17,10 @@
  */
 
 #include <pccomm.h>
-#include <tusb.h>
 #include <conversions.h>
 #include <FreeRTOS.h>
 #include <semphr.h>
+#include <tusb_wrapper.h>
 
 // Comm protocol special bytes
 #define START_BYTE          253

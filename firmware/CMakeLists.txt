@@ -22,14 +22,12 @@ endfunction(remove_items_containing)
 set(INCLUDES 
     "${PROJECT_SOURCE_DIR}/include" 
     "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/include"
-    "${PROJECT_SOURCE_DIR}/thirdparty/TinyUSB/"
 )
 
 # General sources (all targets)
 file(GLOB_RECURSE SOURCES 
     "${PROJECT_SOURCE_DIR}/src/*.c"
     "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/*.c"
-    "${PROJECT_SOURCE_DIR}/thirdparty/TinyUSB/*.c"
 )
 remove_items_containing(SOURCES "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable")
 remove_items_containing(SOURCES "${PROJECT_SOURCE_DIR}/thirdparty/TinyUSB/portable")
@@ -41,9 +39,6 @@ set(DEFINES  "")
 
 # General compile flags (all targets)
 set(CFLAGS
-    -ffunction-sections
-    -fdata-sections
-    -mlong-calls
     -Wall
     -Wextra
     -Wno-unused-parameter
@@ -51,8 +46,7 @@ set(CFLAGS
 
 # General linker flags (all targets)
 set(LDFLAGS
-    -Wl,--gc-sections
-    -Wl,--print-memory-usage
+    
 )
 
 
@@ -72,6 +66,7 @@ if("${CBOARD_REV}" STREQUAL "v1")
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/MemMang/heap_4.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/TinyUSB/portable/microchip/samd-newdfp/dcd_samd.c"
+        "${PROJECT_SOURCE_DIR}/thirdparty/TinyUSB/*.c"
     )
 
     # Version specific includes
@@ -81,6 +76,7 @@ if("${CBOARD_REV}" STREQUAL "v1")
         "${PROJECT_SOURCE_DIR}/thirdparty/v1_generated/packs/ATSAMD51G19A_DFP"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/GCC/ARM_CM4F"
         "${PROJECT_SOURCE_DIR}/include/v1"
+        "${PROJECT_SOURCE_DIR}/thirdparty/TinyUSB/"
     )
 
     # Target specific preprocessor definitions
@@ -106,11 +102,16 @@ if("${CBOARD_REV}" STREQUAL "v1")
 
     # Target specific c commpiler flags
     set(EXTRA_CFLAGS
+        -ffunction-sections
+        -fdata-sections
+        -mlong-calls
         ${EXTRA_SHAREDFLAGS}
     )
 
     # Target specific linker flags
     set(EXTRA_LDFLAGS
+        -Wl,--gc-sections
+        -Wl,--print-memory-usage
         ${EXTRA_SHAREDFLAGS}
         -T${PROJECT_SOURCE_DIR}/thirdparty/v1_generated/samd51g19a_flash.ld
     )
@@ -130,6 +131,7 @@ elseif("${CBOARD_REV}" STREQUAL "v2")
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/MemMang/heap_4.c"
         "${PROJECT_SOURCE_DIR}/thirdparty/TinyUSB/portable/synopsys/dwc2/dcd_dwc2.c"
+        "${PROJECT_SOURCE_DIR}/thirdparty/TinyUSB/*.c"
     )
 
     # Version specific includes
@@ -141,6 +143,7 @@ elseif("${CBOARD_REV}" STREQUAL "v2")
         "${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/emueeprom/inc"
         "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/GCC/ARM_CM4F"
         "${PROJECT_SOURCE_DIR}/include/v2"
+        "${PROJECT_SOURCE_DIR}/thirdparty/TinyUSB/"
     )
 
     # Target specific preprocessor definitions
@@ -166,13 +169,57 @@ elseif("${CBOARD_REV}" STREQUAL "v2")
 
     # Target specific c commpiler flags
     set(EXTRA_CFLAGS
+        -ffunction-sections
+        -fdata-sections
+        -mlong-calls
+        ${EXTRA_SHAREDFLAGS}
+    )
+
+    # Target specific linker flags
+    set(EXTRA_LDFLAGS
+        -Wl,--gc-sections
+        -Wl,--print-memory-usage
+        ${EXTRA_SHAREDFLAGS}
+        -T${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/STM32F411CEUx_FLASH.ld
+    )
+
+    ################################################################################################
+elseif("${CBOARD_REV}" STREQUAL "simcb-linux")
+    ################################################################################################
+    # SimCB on Linux
+    ################################################################################################
+    
+    # Version specific sources
+    file(GLOB_RECURSE EXTRA_SOURCES 
+        "${PROJECT_SOURCE_DIR}/src/simcb/*.c"
+        "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/ThirdParty/GCC/Posix/*.c"
+        "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/MemMang/heap_4.c"
+    )
+
+    # Version specific includes
+    set(EXTRA_INCLUDES
+        "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/ThirdParty/GCC/Posix/"
+        "${PROJECT_SOURCE_DIR}/include/simcb"
+    )
+
+    # Target specific preprocessor definitions
+    set(EXTRA_DEFINES
+        CONTROL_BOARD_SIM_LINUX
+    )
+
+    # Target specific flags (compilers and linke)
+    set(EXTRA_SHAREDFLAGS
+
+    )
+
+    # Target specific c commpiler flags
+    set(EXTRA_CFLAGS
         ${EXTRA_SHAREDFLAGS}
     )
 
     # Target specific linker flags
     set(EXTRA_LDFLAGS
         ${EXTRA_SHAREDFLAGS}
-        -T${PROJECT_SOURCE_DIR}/thirdparty/v2_generated/STM32F411CEUx_FLASH.ld
     )
 
     ################################################################################################

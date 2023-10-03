@@ -132,5 +132,6 @@ static inline __attribute__((always_inline)) void init_frameworks(void){
     }
     __HAL_RCC_CLEAR_RESET_FLAGS();
 }
-
+#else
+static inline __attribute__((always_inline)) void init_frameworks(void){}
 #endif

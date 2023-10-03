@@ -19,6 +19,7 @@
 #include <delay.h>
 #include <framework.h>
 
+#if defined(CONTROL_BOARD_V1) || defined(CONTROL_BOARD_V2)
 
 void delay_init(void){
     // Blocking delays implemented using DWT
@@ -42,3 +43,20 @@ void delay_ms(unsigned int ms){
     ms *= (SystemCoreClock / 1000);
     while ((DWT->CYCCNT - start) < ms);
 }
+
+#elif defined(CONTROL_BOARD_SIM_LINUX)
+
+#include <unistd.h>
+
+// SimCB
+void delay_init(void){}
+
+void delay_us(unsigned int us){
+    usleep(us);
+}
+
+void delay_ms(unsigned int ms){
+    usleep(ms * 1000);
+}
+
+#endif

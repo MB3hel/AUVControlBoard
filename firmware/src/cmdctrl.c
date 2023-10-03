@@ -61,6 +61,14 @@
 #define COLOR_SASSIST       0, 100, 100
 #define COLOR_DHOLD         10, 40, 0
 #define COLOR_OHOLD         140, 5, 5
+#else
+// SimCB. Colors don't show anywhere, so don't matter
+#define COLOR_RAW           0, 0, 0
+#define COLOR_LOCAL         0, 0, 0
+#define COLOR_GLOBAL        0, 0, 0
+#define COLOR_SASSIST       0, 0, 0
+#define COLOR_DHOLD         0, 0, 0
+#define COLOR_OHOLD         0, 0, 0
 #endif
 
 // Acknowledge message error codes

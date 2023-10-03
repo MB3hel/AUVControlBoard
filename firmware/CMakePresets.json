@@ -31,6 +31,18 @@
             },
             "environment": {},
             "vendor": {}
+        },
+        {
+            "name": "simcb-linux",
+            "displayName": "SimCB Linux",
+            "description": "Simualted Control Board on Linux",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build/simcb-linux",
+            "cacheVariables": {
+                "CBOARD_REV": "simcb-linux"
+            },
+            "environment": {},
+            "vendor": {}
         }
     ],
     "buildPresets": [
@@ -81,6 +93,31 @@
             "name": "v2-relwithdebinfo",
             "displayName": "RelWithDebInfo",
             "configurePreset": "v2",
+            "configuration": "RelWithDebInfo"
+        },
+
+        {
+            "name": "simcb-linux-debug",
+            "displayName": "Debug",
+            "configurePreset": "simcb-linux",
+            "configuration": "Debug"
+        },
+        {
+            "name": "simcb-linux-release",
+            "displayName": "Release",
+            "configurePreset": "simcb-linux",
+            "configuration": "Release"
+        },
+        {
+            "name": "simcb-linux-minsizerel",
+            "displayName": "MinSizeRel",
+            "configurePreset": "simcb-linux",
+            "configuration": "MinSizeRel"
+        },
+        {
+            "name": "simcb-linux-relwithdebinfo",
+            "displayName": "RelWithDebInfo",
+            "configurePreset": "simcb-linux",
             "configuration": "RelWithDebInfo"
         }
     ]
