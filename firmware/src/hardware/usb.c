@@ -22,7 +22,6 @@
 #include <limits.h>
 #include <string.h>
 #include <FreeRTOS.h>
-#include <simulator.h>
 #include <app.h>
 
 

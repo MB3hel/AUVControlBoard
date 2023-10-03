@@ -20,7 +20,7 @@
 #include <ms5837.h>
 #include <hardware/i2c.h>
 #include <stdint.h>
-#include <simulator.h>
+#include <cmdctrl.h>
 #include <calibration.h>
 
 #define MS5837_ADDR                     0x76
@@ -117,11 +117,11 @@ bool ms5837_read(ms5837_data *data){
     trans.write_count = 1;
     trans.read_count = 0;
     if(!ms5837_perform(&trans)){
-        if(sim_hijacked){
+        if(cmdctrl_sim_hijacked){
             // Ignore read failures if sim hijacked
-            data->pressure_pa = 101325.0f - (9777.23005f * sim_depth);
+            data->pressure_pa = 101325.0f - (9777.23005f * cmdctrl_sim_depth);
             data->temperature_c = 25;
-            data->depth_m = sim_depth;
+            data->depth_m = cmdctrl_sim_depth;
             return true;
         }
         return false;
@@ -133,11 +133,11 @@ bool ms5837_read(ms5837_data *data){
     trans.write_count = 1;
     trans.read_count = 3;
     if(!ms5837_perform(&trans)){
-        if(sim_hijacked){
+        if(cmdctrl_sim_hijacked){
             // Ignore read failures if sim hijacked
-            data->pressure_pa = 101325.0f - (9777.23005f * sim_depth);
+            data->pressure_pa = 101325.0f - (9777.23005f * cmdctrl_sim_depth);
             data->temperature_c = 25;
-            data->depth_m = sim_depth;
+            data->depth_m = cmdctrl_sim_depth;
             return true;
         }
         return false;
@@ -149,11 +149,11 @@ bool ms5837_read(ms5837_data *data){
     trans.write_count = 1;
     trans.read_count = 0;
     if(!ms5837_perform(&trans)){
-        if(sim_hijacked){
+        if(cmdctrl_sim_hijacked){
             // Ignore read failures if sim hijacked
-            data->pressure_pa = 101325.0f - (9777.23005f * sim_depth);
+            data->pressure_pa = 101325.0f - (9777.23005f * cmdctrl_sim_depth);
             data->temperature_c = 25;
-            data->depth_m = sim_depth;
+            data->depth_m = cmdctrl_sim_depth;
             return true;
         }
         return false;
@@ -165,11 +165,11 @@ bool ms5837_read(ms5837_data *data){
     trans.write_count = 1;
     trans.read_count = 3;
     if(!ms5837_perform(&trans)){
-        if(sim_hijacked){
+        if(cmdctrl_sim_hijacked){
             // Ignore read failures if sim hijacked
-            data->pressure_pa = 101325.0f - (9777.23005f * sim_depth);
+            data->pressure_pa = 101325.0f - (9777.23005f * cmdctrl_sim_depth);
             data->temperature_c = 25;
-            data->depth_m = sim_depth;
+            data->depth_m = cmdctrl_sim_depth;
             return true;
         }
         return false;
@@ -233,11 +233,11 @@ bool ms5837_read(ms5837_data *data){
     // P in mbar * 10
     // TEMP in celsius * 100
     // 1mbar = 100Pa -> P * 10 = Pa
-    if(sim_hijacked){
+    if(cmdctrl_sim_hijacked){
         // Use data from simulator not depth sensor
-        data->pressure_pa = 101325.0f - (9777.23005f * sim_depth);
+        data->pressure_pa = 101325.0f - (9777.23005f * cmdctrl_sim_depth);
         data->temperature_c = 25;
-        data->depth_m = sim_depth;
+        data->depth_m = cmdctrl_sim_depth;
     }else{
         data->pressure_pa = P * 10.0f;
         data->temperature_c = TEMP / 100.0f;

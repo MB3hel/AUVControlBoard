@@ -22,9 +22,9 @@
 #include <FreeRTOS.h>
 #include <task.h>
 #include <semphr.h>
-#include <simulator.h>
 #include <calibration.h>
 #include <debug.h>
+#include <cmdctrl.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// BNO055 Info Macros
@@ -594,21 +594,21 @@ bool bno055_read(bno055_data *data){
     xSemaphoreTake(trans_mutex, portMAX_DELAY);
 
     // Read Orientation Quaternion
-    // Ignore failure if sim_hijacked since real data wouldn't be used anyway
+    // Ignore failure if cmdctrl_sim_hijacked since real data wouldn't be used anyway
     trans.write_buf[0] = BNO055_QUATERNION_DATA_W_LSB_ADDR;
     trans.write_count = 1;
     trans.read_count = 8;
-    if(!bno055_perform(&trans) && !sim_hijacked){
+    if(!bno055_perform(&trans) && !cmdctrl_sim_hijacked){
         xSemaphoreGive(trans_mutex);
         return false;
     }
 
-    if(sim_hijacked){
+    if(cmdctrl_sim_hijacked){
         // When under simulation, use the data provided by simulator not the IMU
-        data->curr_quat.w = sim_quat.w;
-        data->curr_quat.x = sim_quat.x;
-        data->curr_quat.y = sim_quat.y;
-        data->curr_quat.z = sim_quat.z;
+        data->curr_quat.w = cmdctrl_sim_quat.w;
+        data->curr_quat.x = cmdctrl_sim_quat.x;
+        data->curr_quat.y = cmdctrl_sim_quat.y;
+        data->curr_quat.z = cmdctrl_sim_quat.z;
     }else{
         int16_t tmp16 = (((uint16_t)trans.read_buf[1]) << 8) | ((uint16_t)trans.read_buf[0]);
         data->curr_quat.w = tmp16 / 16384.0f;

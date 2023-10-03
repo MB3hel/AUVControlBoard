@@ -23,7 +23,7 @@
 #include <bno055.h>
 #include <ms5837.h>
 #include <hardware/wdt.h>
-#include <simulator.h>
+
 
 #if defined(CONTROL_BOARD_V1) || defined(CONTROL_BOARD_V2)
 #include <tusb.h>
@@ -61,7 +61,7 @@ void wdt_feed_timer_handler(TimerHandle_t handle){
 void sim_timer_handler(TimerHandle_t handle){
     (void)handle;
 
-    if(sim_hijacked)
+    if(cmdctrl_sim_hijacked)
         xTaskNotify(cmdctrl_task, NOTIF_SIM_STAT, eSetBits);
 }
 
@@ -160,7 +160,7 @@ void imu_task_func(void *argument){
 
     bno055_init();
     while(1){
-        if(!configured && !sim_hijacked){
+        if(!configured && !cmdctrl_sim_hijacked){
             // Configure IMU. Will succeed if IMU connected.
             configured = bno055_configure();
 
@@ -203,7 +203,7 @@ void depth_task_func(void *argument){
 
     ms5837_init();
     while(1){
-        if(!configured && !sim_hijacked){
+        if(!configured && !cmdctrl_sim_hijacked){
             // Configure sensor. Will succeed if sensor connected.
             configured = ms5837_configure();
 
@@ -283,7 +283,7 @@ void app_init(void){
 
 void app_handle_usb_disconnect(void){
     // When USB disconnects, revert to normal operation
-    if(sim_hijacked)
+    if(cmdctrl_sim_hijacked)
         xTaskNotify(cmdctrl_task, NOTIF_NO_HIJACK, eSetBits);
 }
 

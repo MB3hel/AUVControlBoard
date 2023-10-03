@@ -23,6 +23,28 @@
 #include <bno055.h>
 #include <ms5837.h>
 
+
+// Controls whether simulation mode operation
+// When in simulation mode (cmdctrl_sim_hijacked = true)
+//   - IMU and depth sensor continue to be read, but the data is unused
+//   - cmdctrl treats all sensors as connected
+//   - cmdctrl uses cmdctrl_sim_quat and cmdctrl_sim_depth instead of real sensor data
+//   - Motor control calculations (motor_control.c) are all performed (including RAW mode)
+//   - Motor control local mode results are cached in the variables below
+//   - Thruster speed sets are disabled (PWM signals will maintain zero speed signal)
+extern bool cmdctrl_sim_hijacked;
+
+// Data provided by the simulator (SIMDAT command to control board)
+extern quaternion_t cmdctrl_sim_quat;
+extern float cmdctrl_sim_depth;
+
+// Data provided to the simulator (SIMSTAT command from control board)
+extern float cmdctrl_sim_speeds[8];
+// mode is provided too, but tracked in cmdctrl
+// wdog_killed is provided too, but tracked in cmdctrl
+
+
+
 /**
  * Initialize command and control of 
  */

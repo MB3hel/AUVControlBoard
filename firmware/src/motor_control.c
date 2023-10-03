@@ -30,7 +30,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <simulator.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -198,9 +197,9 @@ static void mc_wdog_timeout(TimerHandle_t timer){
     
     xSemaphoreTake(motor_mutex, portMAX_DELAY);
     motors_killed = true;
-    if(sim_hijacked){
+    if(cmdctrl_sim_hijacked){
         for(unsigned int i = 0; i < 8; ++i){
-            sim_speeds[i] = 0.0f;
+            cmdctrl_sim_speeds[i] = 0.0f;
         }
     }else{
         thruster_set((float[]){0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
@@ -551,9 +550,9 @@ void mc_set_raw(float *speeds){
         }
 
         // Actually set thruster speeds
-        if(sim_hijacked){
+        if(cmdctrl_sim_hijacked){
             for(unsigned int i = 0; i < 8; ++i){
-                sim_speeds[i] = speeds[i];
+                cmdctrl_sim_speeds[i] = speeds[i];
             }
         }else{
             thruster_set(speeds);

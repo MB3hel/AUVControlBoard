@@ -27,7 +27,6 @@
 #include <bno055.h>
 #include <hardware/wdt.h>
 #include <debug.h>
-#include <simulator.h>
 #include <calibration.h>
 #include <metadata.h>
 
@@ -96,8 +95,14 @@
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static bool motors_enabled;
+// Used for simulator hijack of the control board
+bool cmdctrl_sim_hijacked = false;
+quaternion_t cmdctrl_sim_quat;
+float cmdctrl_sim_depth;
+float cmdctrl_sim_speeds[8];
 
+// CMDCTRL state tracking
+static bool motors_enabled;
 static unsigned int mode;
 
 // Last used raw mode target
@@ -171,11 +176,11 @@ static TimerHandle_t periodic_speed_timer;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 static inline bool __attribute__((always_inline)) bno055_ready(void){
-    return sim_hijacked ? true : _bno055_ready;
+    return cmdctrl_sim_hijacked ? true : _bno055_ready;
 }
 
 static inline bool __attribute__((always_inline)) ms5837_ready(void){
-    return sim_hijacked ? true : _ms5837_ready;
+    return cmdctrl_sim_hijacked ? true : _ms5837_ready;
 }
 
 static void send_sensor_data(TimerHandle_t timer){
@@ -1183,11 +1188,11 @@ void cmdctrl_handle_message(void){
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
         }else{
             // Parse received data
-            sim_quat.w = conversions_data_to_float(&msg[6], true);
-            sim_quat.x = conversions_data_to_float(&msg[10], true);
-            sim_quat.y = conversions_data_to_float(&msg[14], true);
-            sim_quat.z = conversions_data_to_float(&msg[18], true);
-            sim_depth = conversions_data_to_float(&msg[22], true);
+            cmdctrl_sim_quat.w = conversions_data_to_float(&msg[6], true);
+            cmdctrl_sim_quat.x = conversions_data_to_float(&msg[10], true);
+            cmdctrl_sim_quat.y = conversions_data_to_float(&msg[14], true);
+            cmdctrl_sim_quat.z = conversions_data_to_float(&msg[18], true);
+            cmdctrl_sim_depth = conversions_data_to_float(&msg[22], true);
 
             // Message handled successfully
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
@@ -1506,14 +1511,14 @@ void cmdctrl_send_simstat(void){
     simstat[4] = 'T';
     simstat[5] = 'A';
     simstat[6] = 'T';
-    conversions_float_to_data(sim_speeds[0], &simstat[7], true);
-    conversions_float_to_data(sim_speeds[1], &simstat[11], true);
-    conversions_float_to_data(sim_speeds[2], &simstat[15], true);
-    conversions_float_to_data(sim_speeds[3], &simstat[19], true);
-    conversions_float_to_data(sim_speeds[4], &simstat[23], true);
-    conversions_float_to_data(sim_speeds[5], &simstat[27], true);
-    conversions_float_to_data(sim_speeds[6], &simstat[31], true);
-    conversions_float_to_data(sim_speeds[7], &simstat[35], true);
+    conversions_float_to_data(cmdctrl_sim_speeds[0], &simstat[7], true);
+    conversions_float_to_data(cmdctrl_sim_speeds[1], &simstat[11], true);
+    conversions_float_to_data(cmdctrl_sim_speeds[2], &simstat[15], true);
+    conversions_float_to_data(cmdctrl_sim_speeds[3], &simstat[19], true);
+    conversions_float_to_data(cmdctrl_sim_speeds[4], &simstat[23], true);
+    conversions_float_to_data(cmdctrl_sim_speeds[5], &simstat[27], true);
+    conversions_float_to_data(cmdctrl_sim_speeds[6], &simstat[31], true);
+    conversions_float_to_data(cmdctrl_sim_speeds[7], &simstat[35], true);
     simstat[39] = mode & 0xFF;
     simstat[40] = motors_enabled ? 0 : 1;
     pccomm_write(simstat, 41);
@@ -1522,21 +1527,21 @@ void cmdctrl_send_simstat(void){
 void cmdctrl_simhijack(bool hijack){
     if(hijack){
         // Reset data received from simulator
-        sim_quat.w = 0.0f;
-        sim_quat.x = 0.0f;
-        sim_quat.y = 0.0f;
-        sim_quat.z = 0.0f;
-        sim_depth = 0.0f;
+        cmdctrl_sim_quat.w = 0.0f;
+        cmdctrl_sim_quat.x = 0.0f;
+        cmdctrl_sim_quat.y = 0.0f;
+        cmdctrl_sim_quat.z = 0.0f;
+        cmdctrl_sim_depth = 0.0f;
 
         // Reset data output to simulator
-        sim_speeds[0] = 0;
-        sim_speeds[1] = 0;
-        sim_speeds[2] = 0;
-        sim_speeds[3] = 0;
-        sim_speeds[4] = 0;
-        sim_speeds[5] = 0;
-        sim_speeds[6] = 0;
-        sim_speeds[7] = 0;
+        cmdctrl_sim_speeds[0] = 0;
+        cmdctrl_sim_speeds[1] = 0;
+        cmdctrl_sim_speeds[2] = 0;
+        cmdctrl_sim_speeds[3] = 0;
+        cmdctrl_sim_speeds[4] = 0;
+        cmdctrl_sim_speeds[5] = 0;
+        cmdctrl_sim_speeds[6] = 0;
+        cmdctrl_sim_speeds[7] = 0;
 
         // Revert to a stoped state
         mode = MODE_RAW;
@@ -1551,15 +1556,15 @@ void cmdctrl_simhijack(bool hijack){
         raw_target[7] = 0.0f;
         mc_set_raw(raw_target);
 
-        sim_hijacked = true;    // Do this last so set_local (above) uses real thrusters
+        cmdctrl_sim_hijacked = true;    // Do this last so set_local (above) uses real thrusters
 
-        // Reset accumulated angles (after sim_hijacked change!)
+        // Reset accumulated angles (after cmdctrl_sim_hijacked change!)
         bno055_reset_accum_euler();
 
     }else{
-        sim_hijacked = false;   // Do this first so set_local (below) uses real thrusters
+        cmdctrl_sim_hijacked = false;   // Do this first so set_local (below) uses real thrusters
 
-        // Reset accumulated angles (after sim_hijacked change!)
+        // Reset accumulated angles (after cmdctrl_sim_hijacked change!)
         bno055_reset_accum_euler();
 
         // Revert to a stoped state

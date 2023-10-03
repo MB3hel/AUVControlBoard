@@ -38,6 +38,9 @@
 #include <calibration.h>
 
 
+// These variables persist across reset (used in framework.h for chip startup)
+// Placed into section of RAM that is not zeroed on reset
+// V2 doesn't need these because it uses the RTC backup registers instead
 #if defined(CONTROL_BOARD_V1)
 __attribute__((section(".noinit"))) volatile uint32_t first_run;
 __attribute__((section(".noinit"))) volatile uint32_t reset_cause_persist;
