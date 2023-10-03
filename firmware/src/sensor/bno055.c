@@ -16,7 +16,7 @@
  * 
  */
 
-#include <bno055.h>
+#include <sensor/bno055.h>
 #include <util/angles.h>
 #include <hardware/i2c.h>
 #include <FreeRTOS.h>
@@ -254,10 +254,6 @@ static i2c_trans trans;
 static uint8_t write_buf[WRITE_BUF_SIZE];
 static uint8_t read_buf[READ_BUF_SIZE];
 
-static quaternion_t prev_quat;
-static bool prev_quat_valid;
-static float accum_pitch, accum_roll, accum_yaw;
-
 // Last applied axis configuration
 static uint8_t remap = REMAP_P1;
 static uint8_t sign = SIGN_P1;
@@ -277,12 +273,6 @@ void bno055_init(void){
     trans.address = BNO055_ADDR;
     trans.write_buf = write_buf;
     trans.read_buf = read_buf;
-
-    prev_quat_valid = false;
-    
-    accum_pitch = 0.0f;
-    accum_roll = 0.0f;
-    accum_yaw = 0.0f;
 }
 
 bool bno055_configure(void){
@@ -532,9 +522,6 @@ bool bno055_set_axis(uint8_t mode){
         break;
     }
 
-    // Reset accumulated angles when axis config changes
-    bno055_reset_accum_euler();
-
     // Put in CONFIG mode
     trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
     trans.write_buf[1] = OPMODE_CFG;
@@ -583,14 +570,9 @@ bool bno055_set_axis(uint8_t mode){
     return true;
 }
 
-void bno055_reset_accum_euler(void){
-    accum_pitch = 0.0f;
-    accum_roll = 0.0f;
-    accum_yaw = 0.0f;
-    prev_quat_valid = false;
-}
+bool bno055_read(imu_data_t *data){
+    int16_t tmp16;
 
-bool bno055_read(bno055_data *data){
     xSemaphoreTake(trans_mutex, portMAX_DELAY);
 
     // Read Orientation Quaternion
@@ -602,61 +584,44 @@ bool bno055_read(bno055_data *data){
         xSemaphoreGive(trans_mutex);
         return false;
     }
+    tmp16 = (((uint16_t)trans.read_buf[1]) << 8) | ((uint16_t)trans.read_buf[0]);
+    data->quat.w = tmp16 / 16384.0f;
+    tmp16 = (((uint16_t)trans.read_buf[3]) << 8) | ((uint16_t)trans.read_buf[2]);
+    data->quat.x = tmp16 / 16384.0f;
+    tmp16 = (((uint16_t)trans.read_buf[5]) << 8) | ((uint16_t)trans.read_buf[4]);
+    data->quat.y = tmp16 / 16384.0f;
+    tmp16 = (((uint16_t)trans.read_buf[7]) << 8) | ((uint16_t)trans.read_buf[6]);
+    data->quat.z = tmp16 / 16384.0f;
 
-    if(cmdctrl_sim_hijacked){
-        // When under simulation, use the data provided by simulator not the IMU
-        data->curr_quat.w = cmdctrl_sim_quat.w;
-        data->curr_quat.x = cmdctrl_sim_quat.x;
-        data->curr_quat.y = cmdctrl_sim_quat.y;
-        data->curr_quat.z = cmdctrl_sim_quat.z;
-    }else{
-        int16_t tmp16 = (((uint16_t)trans.read_buf[1]) << 8) | ((uint16_t)trans.read_buf[0]);
-        data->curr_quat.w = tmp16 / 16384.0f;
-        tmp16 = (((uint16_t)trans.read_buf[3]) << 8) | ((uint16_t)trans.read_buf[2]);
-        data->curr_quat.x = tmp16 / 16384.0f;
-        tmp16 = (((uint16_t)trans.read_buf[5]) << 8) | ((uint16_t)trans.read_buf[4]);
-        data->curr_quat.y = tmp16 / 16384.0f;
-        tmp16 = (((uint16_t)trans.read_buf[7]) << 8) | ((uint16_t)trans.read_buf[6]);
-        data->curr_quat.z = tmp16 / 16384.0f;
+    // Raw gyroscope data
+    trans.write_buf[0] = BNO055_GYRO_DATA_X_LSB_ADDR;
+    trans.write_count = 1;
+    trans.read_count = 6;
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
+        return false;
     }
+    tmp16 = trans.read_buf[0] | (trans.read_buf[1] << 8);
+    data->raw_gyro.x = tmp16 / 16.0f;
+    tmp16 = trans.read_buf[2] | (trans.read_buf[3] << 8);
+    data->raw_gyro.y = tmp16 / 16.0f;
+    tmp16 = trans.read_buf[4] | (trans.read_buf[5] << 8);
+    data->raw_gyro.z = tmp16 / 16.0f;
 
-
-    bool quat_same = (data->curr_quat.w == prev_quat.w) && 
-            (data->curr_quat.x == prev_quat.x) &&
-            (data->curr_quat.y == prev_quat.y) &&
-            (data->curr_quat.z == prev_quat.z);
-
-    if(prev_quat_valid && !quat_same){
-        // Accumulation math
-        // Note that floating point errors lead to a small diff even if quaternions are the same
-        // thus, don't run the math if quaternions are unchanged
-        quaternion_t diff_quat;
-        float dot_f;
-        quat_dot(&dot_f, &data->curr_quat, &prev_quat);
-        if(dot_f < 0){
-            quat_multiply_scalar(&diff_quat, &prev_quat, -1);
-        }else{
-            quat_multiply_scalar(&diff_quat, &prev_quat, 1);
-        }
-        quat_inverse(&diff_quat, &diff_quat);
-        quat_multiply(&diff_quat, &data->curr_quat, &diff_quat);
-        euler_t diff_euler;
-        quat_to_euler(&diff_euler, &diff_quat);
-        euler_rad2deg(&diff_euler, &diff_euler);
-        accum_pitch += diff_euler.pitch;
-        accum_roll += diff_euler.roll;
-        accum_yaw += diff_euler.yaw;
+    // Raw accelerometer data
+    trans.write_buf[0] = BNO055_ACCEL_DATA_X_LSB_ADDR;
+    trans.write_count = 1;
+    trans.read_count = 6;
+    if(!bno055_perform(&trans)){
+        xSemaphoreGive(trans_mutex);
+        return false;
     }
-
-    // Prev quat valid if it is not all zeros (all zeros happen when IMU fusion data not ready yet)
-    prev_quat = data->curr_quat;
-    prev_quat_valid = 
-        (prev_quat.w != 0) || (prev_quat.x != 0) || (prev_quat.y != 0) || (prev_quat.z != 0);
-
-    // Add accumulated values to sensor data object
-    data->accum_pitch = accum_pitch;
-    data->accum_roll = accum_roll;
-    data->accum_yaw = accum_yaw;
+    tmp16 = trans.read_buf[0] | (trans.read_buf[1] << 8);
+    data->raw_accel.x = tmp16 / 100.0f;
+    tmp16 = trans.read_buf[2] | (trans.read_buf[3] << 8);
+    data->raw_accel.y = tmp16 / 100.0f;
+    tmp16 = trans.read_buf[4] | (trans.read_buf[5] << 8);
+    data->raw_accel.z = tmp16 / 100.0f;
 
     // Success
     xSemaphoreGive(trans_mutex);
@@ -785,46 +750,6 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
         return false;
     }
     vTaskDelay(pdMS_TO_TICKS(35));
-
-    xSemaphoreGive(trans_mutex);
-    return true;
-}
-
-bool bno055_read_raw(bno055_raw_data *data){
-    xSemaphoreTake(trans_mutex, portMAX_DELAY);
-
-    int16_t tmp16;
-
-    // Raw gyroscope data
-    trans.write_buf[0] = BNO055_GYRO_DATA_X_LSB_ADDR;
-    trans.write_count = 1;
-    trans.read_count = 6;
-    if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
-        return false;
-    }
-    tmp16 = trans.read_buf[0] | (trans.read_buf[1] << 8);
-    data->gyro_x = tmp16 / 16.0f;
-    tmp16 = trans.read_buf[2] | (trans.read_buf[3] << 8);
-    data->gyro_y = tmp16 / 16.0f;
-    tmp16 = trans.read_buf[4] | (trans.read_buf[5] << 8);
-    data->gyro_z = tmp16 / 16.0f;
-    vTaskDelay(pdMS_TO_TICKS(10));
-
-    // Raw accelerometer data
-    trans.write_buf[0] = BNO055_ACCEL_DATA_X_LSB_ADDR;
-    trans.write_count = 1;
-    trans.read_count = 6;
-    if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
-        return false;
-    }
-    tmp16 = trans.read_buf[0] | (trans.read_buf[1] << 8);
-    data->accel_x = tmp16 / 100.0f;
-    tmp16 = trans.read_buf[2] | (trans.read_buf[3] << 8);
-    data->accel_y = tmp16 / 100.0f;
-    tmp16 = trans.read_buf[4] | (trans.read_buf[5] << 8);
-    data->accel_z = tmp16 / 100.0f;
 
     xSemaphoreGive(trans_mutex);
     return true;

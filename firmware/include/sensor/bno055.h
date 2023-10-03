@@ -20,7 +20,9 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <imu.h>
 #include <util/angles.h>
+
 
 // Axis configurations
 // Note: Px macro needs to have value x
@@ -33,15 +35,6 @@
 #define BNO055_AXIS_P6          6
 #define BNO055_AXIS_P7          7
 
-typedef struct{
-    quaternion_t curr_quat;
-    float accum_pitch, accum_roll, accum_yaw;
-} bno055_data;
-
-typedef struct{
-    float accel_x, accel_y, accel_z;
-    float gyro_x, gyro_y, gyro_z;
-} bno055_raw_data;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// BNO055 Functions
@@ -67,21 +60,21 @@ bool bno055_configure(void);
  */
 bool bno055_set_axis(uint8_t mode);
 
-/**
- * Reset accumulated euler angles
- * Typically, only internal use
- * But is used when hijacked by simulator
- */
-void bno055_reset_accum_euler(void);
 
 /**
  * Read data from IMU. Must be configured before running
  * 
- * @param data Pointer to struct to store data in (only valid if returns true)
+ * @param data imu_data struct to read data into (does not calc accum angles)
  * @return true On success; false on error
  */
-bool bno055_read(bno055_data *data);
+bool bno055_read(imu_data_t *data);
 
+/**
+ * Get calibration status value from BNO055
+ * @param status Where to store status byte
+ * @return true On read success
+ * @return false On read failure
+ */
 bool bno055_read_calibration_status(uint8_t *status);
 
 /**
@@ -93,13 +86,6 @@ bool bno055_read_calibration_status(uint8_t *status);
  */
 bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16_t *acc_offset_z, 
         int16_t *acc_radius, int16_t *gyr_offset_x, int16_t *gyr_offset_y, int16_t *gyr_offset_z);
-
-/**
- * Read raw data from BNO055
- * Used only for manual calibration / calibration verification or debugging
- * 
- */
-bool bno055_read_raw(bno055_raw_data *data);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

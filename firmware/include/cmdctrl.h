@@ -20,8 +20,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <bno055.h>
-#include <ms5837.h>
+#include <sensor/bno055.h>
+#include <sensor/ms5837.h>
 
 
 // Controls whether simulation mode operation
@@ -65,18 +65,6 @@ void cmdctrl_apply_saved_speed(void);
  * @param motors_enabled True if motors enabled, False if motors killed
  */
 void cmdctrl_mwdog_change(bool motors_enabled);
-
-/**
- * Set bno055 status
- * @param status New status (ready = true; not ready = false)
- */
-void cmdctrl_bno055_status(bool status);
-
-/**
- * Set bno055 data
- * @param data New sensor data
- */
-void cmdctrl_bno055_data(bno055_data data);
 
 /**
  * Set ms5837 status

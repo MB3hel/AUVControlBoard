@@ -24,7 +24,7 @@
 #include <FreeRTOS.h>
 #include <semphr.h>
 #include <timers.h>
-#include <bno055.h>
+#include <sensor/bno055.h>
 #include <hardware/wdt.h>
 #include <debug.h>
 #include <calibration.h>
@@ -153,7 +153,6 @@ static euler_t ohold_target_euler;
 // Current sensor data
 // Need mutex b/c don't want to read one value (eg x) then have others (y, z) changed before reading them
 static SemaphoreHandle_t sensor_data_mutex;
-static bno055_data curr_bno055_data;
 static ms5837_data curr_ms5837_data;
 
 // Sensor status flags

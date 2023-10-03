@@ -17,7 +17,7 @@
  */
 
 
-#include <ms5837.h>
+#include <sensor/ms5837.h>
 #include <hardware/i2c.h>
 #include <stdint.h>
 #include <cmdctrl.h>

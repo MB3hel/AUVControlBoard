@@ -20,8 +20,8 @@
 #include <limits.h>
 #include <pccomm.h>
 #include <cmdctrl.h>
-#include <bno055.h>
-#include <ms5837.h>
+#include <imu.h>
+#include <sensor/ms5837.h>
 #include <hardware/wdt.h>
 
 
@@ -153,37 +153,14 @@ void usb_device_task_func(void *argument){
 void imu_task_func(void *argument){
     (void)argument;
 
-    // Tracks if IMU configured currently
-    bool configured = false;
-    unsigned int read_failures = 0;
-    bno055_data data;
-
-    bno055_init();
+    imu_init();
     while(1){
-        if(!configured && !cmdctrl_sim_hijacked){
-            // Configure IMU. Will succeed if IMU connected.
-            configured = bno055_configure();
-
-            // If configure fails, wait 1 second before trying again
-            if(!configured)
-                vTaskDelay(pdMS_TO_TICKS(1000));
-            else
-                cmdctrl_bno055_status(true);
-        }else{
-            // IMU is connected and has been configured
-            // Periodically read data
-            if(bno055_read(&data)){
-                read_failures = 0;
-                cmdctrl_bno055_data(data);
-            }else{
-                // Too many failures. Assume IMU no longer connected (or has reset)
-                read_failures++;
-                if(read_failures > 5){
-                    configured = false;
-                    cmdctrl_bno055_status(false);
-                }
-            }
+        if(imu_read()){
+            // Read every 15ms
             vTaskDelay(pdMS_TO_TICKS(15));
+        }else if(imu_which == IMU_NONE){
+            // Read failed b/c no IMU connected. Delay longer before trying again.
+            vTaskDelay(pdMS_TO_TICKS(1000));
         }
     }
 }
