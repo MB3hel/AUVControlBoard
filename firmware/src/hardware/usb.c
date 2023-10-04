@@ -82,7 +82,7 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
     // Nothing is implemented here with timing. It just boots to bootloader when
     // a 1200bps connection is closed
     if (!dtr && itf == 0) {
-        app_handle_usb_disconnect();
+        app_handle_uart_closed();
 
         cdc_line_coding_t coding;
         tud_cdc_get_line_coding(&coding);

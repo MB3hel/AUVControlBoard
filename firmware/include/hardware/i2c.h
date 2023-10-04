@@ -45,11 +45,23 @@ typedef struct {
 void i2c_init(void);
 
 /**
+ * Take ownership of the I2C bus (must call before i2c_perform)
+ * May block on another thread if said thread owns the bus
+ * @return true on success. false on error (don't own the bus on error!)
+ */
+bool i2c_take(void);
+
+/**
  * Perform an i2c transaction
  * @param trans Pointer to transaction to perform
  * @return true on success, false on failure
  */
 bool i2c_perform(i2c_trans *trans);
+
+/**
+ * Release ownership of the I2C bus (must call once done with i2c transactions)
+ */
+void i2c_give(void);
 
 /**
  * Perform an i2c transactions with multiple attempts if it fails

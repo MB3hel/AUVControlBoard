@@ -23,55 +23,6 @@
 #include <semphr.h>
 #include <timers.h>
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// Notification values to tasks
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// Main Task Notifications
-#define NOTIF_PCDATA                        0x1     // Notify main thread that there is data from PC
-#define NOTIF_FEED_WDT                      0x2     // Notify main thread to feed WDT
-#define NOTIF_SIM_STAT                      0x4     // Notify main thread to send SIMSTAT message (if sim hijacked)
-#define NOTIF_UART_CLOSE                    0x8     // Notify main thread that UART is closed
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// Task configuration
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// Stack sizes
-#define TASK_USB_DEVICE_SSIZE               (192)                               // This is size used in CDC-MSC example
-#define TASK_MAIN_SSIZE                     (6*configMINIMAL_STACK_SIZE)        // May call many levels of functions
-#define TASK_IMU_SSIZE                      (6*configMINIMAL_STACK_SIZE)        // May call many levels of functions
-#define TASK_DEPTH_SSZIE                    (6*configMINIMAL_STACK_SIZE)        // May call many levels of functions
-
-// Task priorities
-#define TASK_USB_DEVICE_PRIORITY            (configMAX_PRIORITIES - 1)          // Must happen quickly for TUSB to work
-#define TASK_MAIN_PRIORITY                  (configMAX_PRIORITIES - 2)          // Less time-critical than TUSB process
-#define TASK_IMU_PRIORITY                   (configMAX_PRIORITIES - 3)          // Sensor data acquisition less critical
-#define TASK_DEPTH_PRIORITY                 (configMAX_PRIORITIES - 3)          // Sensor data acquisition less critical
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///  RTOS object handles
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// Task handles
-extern TaskHandle_t usb_device_task;
-extern TaskHandle_t main_task;
-extern TaskHandle_t imu_task;
-extern TaskHandle_t depth_task;
-
-// Timers
-extern TimerHandle_t wdt_feed_timer;
-extern TimerHandle_t sim_timer;
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///  Initialization & management functions
@@ -79,6 +30,7 @@ extern TimerHandle_t sim_timer;
 
 void app_init(void);
 
-void app_handle_usb_disconnect(void);
+// Callback function used to indicate that UART is closed
+void app_handle_uart_closed(void);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -247,9 +247,6 @@
 #define WRITE_BUF_SIZE          16
 #define READ_BUF_SIZE           16
 
-// Note: Mutex required here because during calibration processes cmdctrl thread may use the transaction
-//       instead of the BNO055 thread. This could cause issues without mutex.
-static SemaphoreHandle_t trans_mutex;
 static i2c_trans trans;
 static uint8_t write_buf[WRITE_BUF_SIZE];
 static uint8_t read_buf[READ_BUF_SIZE];
@@ -268,22 +265,18 @@ static uint8_t sign = SIGN_P1;
 #define bno055_perform(x)           i2c_perform_retries((x), 20, 5)
 
 void bno055_init(void){
-    trans_mutex = xSemaphoreCreateMutex();
-
     trans.address = BNO055_ADDR;
     trans.write_buf = write_buf;
     trans.read_buf = read_buf;
 }
 
-bool bno055_configure(void){
-    xSemaphoreTake(trans_mutex, portMAX_DELAY);
 
+static inline bool bno055_configure_internal(void){
     // Read chip ID register to make sure right device is on bus
     trans.write_buf[0] = BNO055_CHIP_ID_ADDR;
     trans.write_count = 1;
     trans.read_count = 1;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     if(trans.read_buf[0] != BNO055_ID)
@@ -295,7 +288,6 @@ bool bno055_configure(void){
     trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     vTaskDelay(pdMS_TO_TICKS(25));
@@ -306,7 +298,6 @@ bool bno055_configure(void){
     trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     
@@ -331,7 +322,6 @@ bool bno055_configure(void){
     trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     vTaskDelay(pdMS_TO_TICKS(10));
@@ -342,7 +332,6 @@ bool bno055_configure(void){
     trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
 
@@ -359,7 +348,6 @@ bool bno055_configure(void){
     trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
 
@@ -369,7 +357,6 @@ bool bno055_configure(void){
     trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
 
@@ -379,7 +366,6 @@ bool bno055_configure(void){
     trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
 
@@ -389,7 +375,6 @@ bool bno055_configure(void){
     trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     vTaskDelay(pdMS_TO_TICKS(10));
@@ -473,19 +458,30 @@ bool bno055_configure(void){
     trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     vTaskDelay(pdMS_TO_TICKS(600));
 
     // Done configuring IMU
-    xSemaphoreGive(trans_mutex);
     return true;   
 }
 
-bool bno055_set_axis(uint8_t mode){
-    xSemaphoreTake(trans_mutex, portMAX_DELAY);
+bool bno055_configure(void){
+    // Take I2C bus at beginning of each function communicating with sensor.
+    // This also ensures accesses to trans are thread safe and prevents unexpected
+    // interleaving of messages to the same sensor (if multiple threads call
+    // functions of the same sensor).
+    if(!i2c_take()){
+        return false;
+    }
+    bool ret = bno055_configure_internal();
+    i2c_give();
+    return ret;
+}
 
+
+
+static inline bool bno055_set_axis_internal(uint8_t mode){
     // Set remap and sign registers
     switch(mode){
     case BNO055_AXIS_P0:
@@ -528,7 +524,6 @@ bool bno055_set_axis(uint8_t mode){
     trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     vTaskDelay(pdMS_TO_TICKS(25));
@@ -539,7 +534,6 @@ bool bno055_set_axis(uint8_t mode){
     trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     vTaskDelay(pdMS_TO_TICKS(10));
@@ -550,7 +544,6 @@ bool bno055_set_axis(uint8_t mode){
     trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     vTaskDelay(pdMS_TO_TICKS(10));
@@ -561,19 +554,30 @@ bool bno055_set_axis(uint8_t mode){
     trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     vTaskDelay(pdMS_TO_TICKS(600));
-    xSemaphoreGive(trans_mutex);
 
     return true;
 }
 
-bool bno055_read(imu_data_t *data){
-    int16_t tmp16;
+bool bno055_set_axis(uint8_t mode){
+    // Take I2C bus at beginning of each function communicating with sensor.
+    // This also ensures accesses to trans are thread safe and prevents unexpected
+    // interleaving of messages to the same sensor (if multiple threads call
+    // functions of the same sensor).
+    if(!i2c_take()){
+        return false;
+    }
+    bool ret = bno055_set_axis_internal(mode);
+    i2c_give();
+    return ret;
+}
 
-    xSemaphoreTake(trans_mutex, portMAX_DELAY);
+
+
+static inline bool bno055_read_internal(imu_data_t *data){
+    int16_t tmp16;
 
     // Read Orientation Quaternion
     // Ignore failure if cmdctrl_sim_hijacked since real data wouldn't be used anyway
@@ -581,7 +585,6 @@ bool bno055_read(imu_data_t *data){
     trans.write_count = 1;
     trans.read_count = 8;
     if(!bno055_perform(&trans) && !cmdctrl_sim_hijacked){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     tmp16 = (((uint16_t)trans.read_buf[1]) << 8) | ((uint16_t)trans.read_buf[0]);
@@ -598,7 +601,6 @@ bool bno055_read(imu_data_t *data){
     trans.write_count = 1;
     trans.read_count = 6;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     tmp16 = trans.read_buf[0] | (trans.read_buf[1] << 8);
@@ -613,7 +615,6 @@ bool bno055_read(imu_data_t *data){
     trans.write_count = 1;
     trans.read_count = 6;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     tmp16 = trans.read_buf[0] | (trans.read_buf[1] << 8);
@@ -624,31 +625,54 @@ bool bno055_read(imu_data_t *data){
     data->raw_accel.z = tmp16 / 100.0f;
 
     // Success
-    xSemaphoreGive(trans_mutex);
     return true;
 }
 
-bool bno055_read_calibration_status(uint8_t *status){
-    xSemaphoreTake(trans_mutex, portMAX_DELAY);
+bool bno055_read(imu_data_t *data){
+    // Take I2C bus at beginning of each function communicating with sensor.
+    // This also ensures accesses to trans are thread safe and prevents unexpected
+    // interleaving of messages to the same sensor (if multiple threads call
+    // functions of the same sensor).
+    if(!i2c_take()){
+        return false;
+    }
+    bool ret = bno055_read_internal(data);
+    i2c_give();
+    return ret;
+}
 
+
+
+static inline bool bno055_read_calibration_status_internal(uint8_t *status){
     // Read CALIB_STAT
     trans.write_buf[0] = BNO055_CALIB_STAT_ADDR;
     trans.write_count = 1;
     trans.read_count = 1;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     *status = trans.read_buf[0];
     vTaskDelay(pdMS_TO_TICKS(10));
-    xSemaphoreGive(trans_mutex);
     return true;
 }
 
-bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16_t *acc_offset_z, 
-        int16_t *acc_radius, int16_t *gyr_offset_x, int16_t *gyr_offset_y, int16_t *gyr_offset_z){
-    xSemaphoreTake(trans_mutex, portMAX_DELAY);
+bool bno055_read_calibration_status(uint8_t *status){
+    // Take I2C bus at beginning of each function communicating with sensor.
+    // This also ensures accesses to trans are thread safe and prevents unexpected
+    // interleaving of messages to the same sensor (if multiple threads call
+    // functions of the same sensor).
+    if(!i2c_take()){
+        return false;
+    }
+    bool ret = bno055_read_calibration_status_internal(status);
+    i2c_give();
+    return ret;
+}
 
+
+
+static inline bool bno055_read_calibration_internal(int16_t *acc_offset_x, int16_t *acc_offset_y, int16_t *acc_offset_z, 
+        int16_t *acc_radius, int16_t *gyr_offset_x, int16_t *gyr_offset_y, int16_t *gyr_offset_z){
     //  Note: Can only read calibration status if the sensor has been fully calibrated (3 in CALIB_STAT)
     //        and the sensor is put into CONFIG mode AFTER!
     
@@ -658,7 +682,6 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     vTaskDelay(pdMS_TO_TICKS(25));
@@ -668,7 +691,6 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     trans.write_count = 1;
     trans.read_count = 2;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     *acc_offset_x = trans.read_buf[0] | (trans.read_buf[1] << 8);
@@ -679,7 +701,6 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     trans.write_count = 1;
     trans.read_count = 2;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     *acc_offset_y = trans.read_buf[0] | (trans.read_buf[1] << 8);
@@ -690,7 +711,6 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     trans.write_count = 1;
     trans.read_count = 2;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     *acc_offset_z = trans.read_buf[0] | (trans.read_buf[1] << 8);
@@ -701,7 +721,6 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     trans.write_count = 1;
     trans.read_count = 2;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     *acc_radius = trans.read_buf[0] | (trans.read_buf[1] << 8);
@@ -712,7 +731,6 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     trans.write_count = 1;
     trans.read_count = 2;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     *gyr_offset_x = trans.read_buf[0] | (trans.read_buf[1] << 8);
@@ -723,7 +741,6 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     trans.write_count = 1;
     trans.read_count = 2;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     *gyr_offset_y = trans.read_buf[0] | (trans.read_buf[1] << 8);
@@ -734,7 +751,6 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     trans.write_count = 1;
     trans.read_count = 2;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     *gyr_offset_z = trans.read_buf[0] | (trans.read_buf[1] << 8);
@@ -746,13 +762,26 @@ bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16
     trans.write_count = 2;
     trans.read_count = 0;
     if(!bno055_perform(&trans)){
-        xSemaphoreGive(trans_mutex);
         return false;
     }
     vTaskDelay(pdMS_TO_TICKS(35));
 
-    xSemaphoreGive(trans_mutex);
     return true;
+}
+
+bool bno055_read_calibration(int16_t *acc_offset_x, int16_t *acc_offset_y, int16_t *acc_offset_z, 
+        int16_t *acc_radius, int16_t *gyr_offset_x, int16_t *gyr_offset_y, int16_t *gyr_offset_z){
+    // Take I2C bus at beginning of each function communicating with sensor.
+    // This also ensures accesses to trans are thread safe and prevents unexpected
+    // interleaving of messages to the same sensor (if multiple threads call
+    // functions of the same sensor).
+    if(!i2c_take()){
+        return false;
+    }
+    bool ret = bno055_read_calibration_internal(acc_offset_x, acc_offset_y, acc_offset_z, acc_radius, gyr_offset_x, 
+            gyr_offset_y, gyr_offset_z);
+    i2c_give();
+    return ret;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

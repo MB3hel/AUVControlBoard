@@ -19,17 +19,41 @@
 
 #include <hardware/i2c.h>
 #include <framework.h>
+#include <FreeRTOS.h>
+#include <semphr.h>
+
+
+
+static SemaphoreHandle_t i2c_mutex;
+static SemaphoreHandle_t i2c_done_signal;
+
+bool i2c_take(void){
+    // I2C runs at 100kHz clock
+    // A transaction with 64 bytes read and write each would be 128*8=1024 bits
+    // 1/100kHz = 10us per bit
+    // 1024 * 10 = 10240us bit transfer time = 1.024ms
+    // Assume some clock stretching and delays with ACK up to 30us per byte
+    // 128*30 = 3.840ms
+    // Thus a "large" transaction should finish within 5ms
+    // Assume it is possible for a few to be queued up.
+    // Thus wait for at most 25ms (5 queued large transactions)
+    // If this fails, something is probably stuck and will never release the mutex
+    // This is also a small enough amount of time to not fully break most threads
+    // calling this function
+    if(xSemaphoreTake(i2c_mutex, pdMS_TO_TICKS(25)) == pdFALSE)
+        return false;
+    return true;
+}
+
+void i2c_give(void){
+    xSemaphoreGive(i2c_mutex);
+}
+
 
 
 #ifdef CONTROL_BOARD_V1
 
-#include <FreeRTOS.h>
-#include <portmacro.h>
-#include <semphr.h>
 #include <hardware/delay.h>
-
-static SemaphoreHandle_t i2c_mutex;
-static SemaphoreHandle_t i2c_done_signal;
 
 
 static void i2c_done_callback(uintptr_t contextHandle){
@@ -109,20 +133,10 @@ void i2c_init(){
 }
 
 bool i2c_perform(i2c_trans *trans){
-    // I2C runs at 100kHz clock
-    // A transaction with 64 bytes read and write each would be 128*8=1024 bits
-    // 1/100kHz = 10us per bit
-    // 1024 * 10 = 10240us bit transfer time = 1.024ms
-    // Assume some clock stretching and delays with ACK up to 30us per byte
-    // 128*30 = 3.840ms
-    // Thus a "large" transaction should finish within 5ms
-    // Assume it is possible for a few to be queued up.
-    // Thus wait for at most 25ms (5 queued large transactions)
-    // If this fails, something is probably stuck and will never release the mutex
-    // This is also a small enough amount of time to not fully break most threads
-    // calling this function
-    if(xSemaphoreTake(i2c_mutex, pdMS_TO_TICKS(25)) == pdFALSE)
+    if(xSemaphoreGetMutexHolder(i2c_mutex) != xTaskGetCurrentTaskHandle()){
+        // This task doesn't hold the mutex!
         return false;
+    }
 
     if(SERCOM2_I2C_IsBusy()){
         if ((SERCOM2_REGS->I2CM.SERCOM_STATUS & SERCOM_I2CM_STATUS_BUSSTATE_Msk) == SERCOM_I2CM_STATUS_BUSSTATE(0x03U)){
@@ -209,16 +223,13 @@ bool i2c_perform(i2c_trans *trans){
 #endif // CONTROL_BOARD_V1
 
 
+
 #ifdef CONTROL_BOARD_V2
 
-#include <FreeRTOS.h>
-#include <semphr.h>
 #include <hardware/delay.h>
 
 extern I2C_HandleTypeDef hi2c1;
 
-static SemaphoreHandle_t i2c_mutex;
-static SemaphoreHandle_t i2c_done_signal;
 static volatile bool i2c_success = false;
 
 
@@ -358,20 +369,10 @@ bool i2c_perform(i2c_trans *trans){
     #define TIMEOUT_FOR_COUNT(count)        ((((uint32_t)(count + 4)) / 5) + 5)
 
 
-    // I2C runs at 100kHz clock
-    // A transaction with 64 bytes read and write each would be 128*8=1024 bits
-    // 1/100kHz = 10us per bit
-    // 1024 * 10 = 10240us bit transfer time = 1.024ms
-    // Assume some clock stretching and delays with ACK up to 30us per byte
-    // 128*30 = 3.840ms
-    // Thus a "large" transaction should finish within 5ms
-    // Assume it is possible for a few to be queued up.
-    // Thus wait for at most 25ms (5 queued large transactions)
-    // If this fails, something is probably stuck and will never release the mutex
-    // This is also a small enough amount of time to not fully break most threads
-    // calling this function
-    if(xSemaphoreTake(i2c_mutex, pdMS_TO_TICKS(25)) == pdFALSE)
+    if(xSemaphoreGetMutexHolder(i2c_mutex) != xTaskGetCurrentTaskHandle()){
+        // This task doesn't hold the mutex!
         return false;
+    }
 
     if(HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY){
         xSemaphoreGive(i2c_mutex);
