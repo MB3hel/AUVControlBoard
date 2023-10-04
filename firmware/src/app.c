@@ -23,11 +23,7 @@
 #include <imu.h>
 #include <sensor/ms5837.h>
 #include <hardware/wdt.h>
-
-
-#if defined(CONTROL_BOARD_V1) || defined(CONTROL_BOARD_V2)
 #include <tusb.h>
-#endif
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -36,7 +32,7 @@
 
 // Task handles
 TaskHandle_t usb_device_task;
-TaskHandle_t cmdctrl_task;
+TaskHandle_t main_task;
 TaskHandle_t imu_task;
 TaskHandle_t depth_task;
 
@@ -47,44 +43,13 @@ TimerHandle_t sim_timer;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// Timer handlers
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-void wdt_feed_timer_handler(TimerHandle_t handle){
-    (void)handle;
-
-    xTaskNotify(cmdctrl_task, NOTIF_FEED_WDT, eSetBits);
-}
-
-void sim_timer_handler(TimerHandle_t handle){
-    (void)handle;
-
-    if(cmdctrl_sim_hijacked)
-        xTaskNotify(cmdctrl_task, NOTIF_SIM_STAT, eSetBits);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Thread (task) functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#if defined(CONTROL_BOARD_V1) || defined(CONTROL_BOARD_V2)
-#define has_usb_data() tud_cdc_available()
-#else
-// SimCB uses STDIO instead of TinyUSB
-// TODO
-#define has_usb_data() false
-#endif
 
-/**
- * Command and control task
- * cmdctrl (and motor_control) functions are not thread safe, thus only this thread
- * should ever call such functions
- */
-void cmdctrl_task_func(void *arg){
+void main_task_func(void *arg){
     (void)arg;
 
     uint32_t notification;
@@ -98,28 +63,31 @@ void cmdctrl_task_func(void *arg){
         // notification value is a set of 32 notification bits
         xTaskNotifyWait(pdFALSE, UINT32_MAX, &notification, portMAX_DELAY);
 
-        // Handle the notification
-        if(notification & NOTIF_CMDCTRL_PCDATA){
+        // Handle any notifications (can be multiple at a time)
+        if(notification & NOTIF_PCDATA){
             // There is data to handle from the PC
             // Read and parse the data
+            // Inform cmdctrl there is a complete message
             if(pccomm_read_and_parse()){
-                // Inform cmdctrl there is a complete message
                 cmdctrl_handle_message();
             }
 
             // If there is still data to handle, ensure flag is set again
             // This is necessary because read_and_parse may return true part way through reading data
             // Which means that usb_device_task will not notify again, but there is unhandled data
-            if(has_usb_data())
-                xTaskNotify(cmdctrl_task, NOTIF_CMDCTRL_PCDATA, eSetBits);
+            if(tud_cdc_available())
+                xTaskNotify(main_task, NOTIF_PCDATA, eSetBits);
         }
         if(notification & NOTIF_SIM_STAT){
+            // Timer indicates it is time to send simstat
             cmdctrl_send_simstat();
         }
         if(notification & NOTIF_FEED_WDT){
+            // Timer indicates it is time to feed watchdog
             wdt_feed();
         }
-        if(notification & NOTIF_NO_HIJACK){
+        if(notification & NOTIF_UART_CLOSE){
+            // UART connection closed. Revert out of simhijack
             cmdctrl_simhijack(false);
         }
     }
@@ -131,7 +99,6 @@ void cmdctrl_task_func(void *arg){
 void usb_device_task_func(void *argument){
     (void)argument;
 
-#if defined(CONTROL_BOARD_V1) || defined(CONTROL_BOARD_V2)
     tud_init(BOARD_TUD_RHPORT);
     while(1){
         // This call will block thread until there is / are event(s)
@@ -139,10 +106,9 @@ void usb_device_task_func(void *argument){
 
         // If data now available, notify the communication task
         if(tud_cdc_available()){
-            xTaskNotify(cmdctrl_task, NOTIF_CMDCTRL_PCDATA, eSetBits);
+            xTaskNotify(main_task, NOTIF_PCDATA, eSetBits);
         }
     }
-#endif
 }
 
 /**
@@ -158,7 +124,7 @@ void imu_task_func(void *argument){
         if(imu_read()){
             // Read every 15ms
             vTaskDelay(pdMS_TO_TICKS(15));
-        }else if(imu_which == IMU_NONE){
+        }else if(imu_get_sensor() == IMU_NONE){
             // Read failed b/c no IMU connected. Delay longer before trying again.
             vTaskDelay(pdMS_TO_TICKS(1000));
         }
@@ -211,6 +177,33 @@ void depth_task_func(void *argument){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Timer handlers
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void wdt_feed_timer_handler(TimerHandle_t handle){
+    (void)handle;
+
+    xTaskNotify(main_task, NOTIF_FEED_WDT, eSetBits);
+}
+
+void sim_timer_handler(TimerHandle_t handle){
+    (void)handle;
+
+    if(cmdctrl_sim_hijacked)
+        xTaskNotify(main_task, NOTIF_SIM_STAT, eSetBits);
+}
+
+// TODO: Move cmdctrl apply saved speed signal here
+
+// TODO: Move cmdctrl sensor read timer here
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// App initialization & management
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -222,7 +215,6 @@ void app_init(void){
 
 
     // Create RTOS threads
-#if defined(CONTROL_BOARD_V1) || defined(CONTROL_BOARD_V2)
     xTaskCreate(
         usb_device_task_func,
         "usbd_task",
@@ -231,14 +223,13 @@ void app_init(void){
         TASK_USB_DEVICE_PRIORITY,
         &usb_device_task
     );
-#endif
     xTaskCreate(
-        cmdctrl_task_func,
+        main_task_func,
         "cmdctrl_task",
-        TASK_CMDCTRL_SSIZE,
+        TASK_MAIN_SSIZE,
         NULL,
-        TASK_CMDCTRL_PRIORITY,
-        &cmdctrl_task
+        TASK_MAIN_PRIORITY,
+        &main_task
     );
     xTaskCreate(
         imu_task_func,
@@ -261,7 +252,7 @@ void app_init(void){
 void app_handle_usb_disconnect(void){
     // When USB disconnects, revert to normal operation
     if(cmdctrl_sim_hijacked)
-        xTaskNotify(cmdctrl_task, NOTIF_NO_HIJACK, eSetBits);
+        xTaskNotify(main_task, NOTIF_UART_CLOSE, eSetBits);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

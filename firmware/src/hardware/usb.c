@@ -18,7 +18,7 @@
 
 #include <hardware/usb.h>
 #include <framework.h>
-#include <tusb_wrapper.h>
+#include <tusb.h>
 #include <limits.h>
 #include <string.h>
 #include <FreeRTOS.h>

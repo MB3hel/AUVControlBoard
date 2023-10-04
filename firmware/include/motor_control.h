@@ -22,23 +22,46 @@
 #include <stdbool.h>
 #include <util/angles.h>
 
+typedef struct {
+    float x, y, z, xrot, yrot, zrot;
+} mc_local_target_t;
 
-// Inverts positive and negative on specific thrusters
-extern bool mc_invert[8];
+typedef struct {
+    float x, y, z, pitch_spd, roll_spd, yaw_spd;
+} mc_global_target_t;
 
-// Relative scale down factors for motions
-// Calculated from data provided in RELDOF command
-// Contains 2 groups: linear = [x, y, z] = first half of array
-//                    angular = [xrot, yrot, zrot] = second half of array
-// These are multiplied by speeds to scale DOWN faster motors as needed
-// Scaling down ensures that all speeds will be less than 1.0 if they started that way
-extern float mc_relscale[6];
+typedef struct {
+    float x, y, z, yaw_spd;
+    euler_t target_euler;
+    bool use_yaw_pid;
+} mc_ohold_target_t;
+
+typedef struct {
+    float x, y, yaw_spd;
+    euler_t target_euler;
+    float target_depth;
+    bool use_yaw_pid;
+} mc_sassist_target_t;
+
+
 
 
 /**
  * Initialize motor control
  */
 void mc_init(void);
+
+/**
+ * Set thruster inversions
+ * @param tinv Array of inversions (8 booleans)
+ */
+void mc_set_tinv(bool *tinv);
+
+/**
+ * Set relative scale for DoF speeds 
+ * @param reldof Array of DoF speeds (6 floats)
+ */
+void mc_set_relscale(float *reldof);
 
 /**
  * Set a row of the DoF matrix
@@ -108,27 +131,29 @@ void mc_set_raw(float *speeds);
 
 /**
  * Set motor speeds in LOCAL mode. Target speeds are in DoFs relative to robot, not world
- * @param x Speed in +x translation DoF (-1.0 to +1.0)
- * @param y Speed in +y translation DoF (-1.0 to +1.0)
- * @param z Speed in +z translation DoF (-1.0 to +1.0)
- * @param xrot Angular speed about x (-1.o to +1.0)
- * @param yrot Angular speed about y (-1.o to +1.0)
- * @param zrot Angular speed about z (-1.o to +1.0)
+ * @param target Local mode speed target
+ *      x Speed in +x translation DoF (-1.0 to +1.0)
+ *      y Speed in +y translation DoF (-1.0 to +1.0)
+ *      z Speed in +z translation DoF (-1.0 to +1.0)
+ *      xrot Angular speed about x (-1.o to +1.0)
+ *      yrot Angular speed about y (-1.o to +1.0)
+ *      zrot Angular speed about z (-1.o to +1.0)
  */
-void mc_set_local(float x, float y, float z, float xrot, float yrot, float zrot);
+void mc_set_local(mc_local_target_t target);
 
 /**
  * Set motor speeds in GLOBAL mode.
  * x, y, and z DoFs are pitch and roll compensated
- * @param x Speed in +x translation DoF (-1.0 to +1.0)
- * @param y Speed in +y translation DoF (-1.0 to +1.0)
- * @param z Speed in +z translation DoF (-1.0 to +1.0)
- * @param pitch_spd Rate of change of vehicle pitch (-1.o to +1.0)
- * @param roll_spd Rate of change of vehicle roll (-1.o to +1.0)
- * @param yaw_spd Rate of change of vehicle yaw (-1.o to +1.0)
+ * @param target Global mode speed target
+ *      x Speed in +x translation DoF (-1.0 to +1.0)
+ *      y Speed in +y translation DoF (-1.0 to +1.0)
+ *      z Speed in +z translation DoF (-1.0 to +1.0)
+ *      pitch_spd Rate of change of vehicle pitch (-1.o to +1.0)
+ *      roll_spd Rate of change of vehicle roll (-1.o to +1.0)
+ *      yaw_spd Rate of change of vehicle yaw (-1.o to +1.0)
  * @param curr_quat Current orientation quaternion from IMU
  */
-void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, float yaw_spd, quaternion_t curr_quat);
+void mc_set_global(mc_global_target_t target, quaternion_t curr_quat);
 
 /**
  * Set motor speeds in STABILITY_ASSIST mode. Abstracts a 2D plane in which the robot is controlled.
@@ -136,52 +161,30 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
  * Requires speeds for x and y DoFs and uses closed-loop control for depth (z), pitch, and roll. 
  * Yaw can be adjusted by speed or by using closed-loop control
  * x & y speeds are pitch and roll compensated
- * @param x Speed in +x DoF (-1.0 to +1.0)
- * @param y Speed in +y DoF (-1.0 to +1.0)
- * @param yaw_spd Rate of change of vehicle yaw (-1.0 to 1.0)
- * @param target_euler Target orientation (ZYX euler; yaw is ignored if use_yaw_pid is false)
- * @param target_depth Target vehicle depth (meters, negative is below surface)
+ * @param target SASSIST speed target
+ *      x Speed in +x DoF (-1.0 to +1.0)
+ *      y Speed in +y DoF (-1.0 to +1.0)
+ *      yaw_spd Rate of change of vehicle yaw (-1.0 to 1.0)
+ *      target_euler Target orientation (ZYX euler; yaw is ignored if use_yaw_pid is false)
+ *      target_depth Target vehicle depth (meters, negative is below surface)
+ *      use_yaw_pid If true, closed loop control is used for yaw not a speed
  * @param curr_quat Current orientation quaternion
  * @param curr_depth Current depth in meters (negative below surface)
- * @param use_yaw_pid If true, closed loop control is used for yaw not a speed
  */
-void mc_set_sassist(float x, float y, float yaw_spd, 
-        euler_t target_euler, 
-        float target_depth,
-        quaternion_t curr_quat,
-        float curr_depth,
-        bool use_yaw_pid);
+void mc_set_sassist(mc_sassist_target_t target, quaternion_t curr_quat, float curr_depth);
 
 /**
- * Set motor speeds in DEPTH_HOLD mode. Basically just GLOBAL mode, but instead of a speed
- * for the z axis, the SASSIST PID is used instead.
- * x and y DoFs are pitch and roll compensated
- * @param x Speed in +x translation DoF (-1.0 to +1.0)
- * @param y Speed in +y translation DoF (-1.0 to +1.0)
- * @param pitch_spd Rate of change of vehicle pitch (-1.0 to +1.0)
- * @param roll_spd Rate of change of vehicle roll (-1.0 to +1.0)
- * @param yaw_spd Rate of change of vehicle yaw (-1.0 to +1.0)
- * @param target_depth Desired depth in meters (negative for below surface)
- * @param curr_quat Current orientation quaternion from IMU
- * @param curr_depth Current depth in meters
- */
-void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth);
-
-
-/**
- * Set motor speeds in ORIENTATION_HOLD mode. Like SASSIST, but a speed is provided by depth
+ * Set motor speeds in ORIENTATION_HOLD (OHOLD) mode. Like SASSIST, but a speed is provided by depth
  * instead of depth being controlled by the PID.
  * Abstracts a 2D plane in which the robot is controlled.
  * Like SASSIST, has two variants (with and without yaw PID control)
- * @param x Speed in +x DoF (-1.0 to +1.0)
- * @param y Speed in +y DoF (-1.0 to +1.0)
- * @param z Speed in +z DoF (-1.0 to 1.0)
- * @param yaw_spd Rate of change of vehicle yaw (-1.0 to 1.0)
- * @param target_euler Target orientation (ZYX euler; yaw is ignored if use_yaw_pid is false)
+ * @param target OHOLD mode speed target
+ *      x Speed in +x DoF (-1.0 to +1.0)
+ *      y Speed in +y DoF (-1.0 to +1.0)
+ *      z Speed in +z DoF (-1.0 to 1.0)
+ *      yaw_spd Rate of change of vehicle yaw (-1.0 to 1.0)
+ *      target_euler Target orientation (ZYX euler; yaw is ignored if use_yaw_pid is false)
+ *      use_yaw_pid If true, closed loop control is used for yaw not a speed
  * @param curr_quat Current orientation quaternion
- * @param use_yaw_pid If true, closed loop control is used for yaw not a speed
  */
-void mc_set_ohold(float x, float y, float z, float yaw_spd, 
-        euler_t target_euler, 
-        quaternion_t curr_quat,
-        bool use_yaw_pid);
+void mc_set_ohold(mc_ohold_target_t target, quaternion_t curr_quat);

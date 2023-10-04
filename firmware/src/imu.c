@@ -23,8 +23,6 @@
 #include <semphr.h>
 
 
-static SemaphoreHandle_t imu_mutex;
-
 static uint8_t imu_which;
 static imu_data_t imu_data;
 
@@ -32,8 +30,13 @@ static imu_data_t new_data;
 static bool prev_data_valid;
 static unsigned int read_failures;
 
+SemaphoreHandle_t imu_mutex;
+
 
 static void calc_accum_angles(void){
+    // imu_data holds the old quaternion
+    // new_data holds the new quaternion
+
     // Use data->quat to calculate data->accum_euler
     bool quat_same = (imu_data.quat.w == new_data.quat.w) && 
             (imu_data.quat.x == new_data.quat.x) &&
@@ -74,7 +77,7 @@ static void imu_configure(void){
     // Reset read failure counter
     read_failures = 0;
 
-    // Try to configure each IMU until one suceeds
+    // Try to configure each IMU until one succeeds
     if(bno055_configure()){
         imu_which = IMU_BNO055;
         return;
@@ -103,6 +106,8 @@ void imu_init(void){
     imu_data.accum_angles.roll = 0;
     imu_data.accum_angles.yaw = 0;
 
+    // Reading imu_data is multiple read operations
+    // Want to ensure a write of imu_data cannot interrupt a read causing mixed data
     imu_mutex = xSemaphoreCreateRecursiveMutex();
 
     // Init code for all supported IMUs
@@ -110,8 +115,6 @@ void imu_init(void){
 }
 
 bool imu_read(void){
-    xSemaphoreTakeRecursive(imu_mutex, portMAX_DELAY);
-
     if(cmdctrl_sim_hijacked){
         // If sim hijacked, only use the sim IMU
         imu_which = IMU_SIM;
@@ -152,19 +155,35 @@ bool imu_read(void){
         break;
     }
 
-    if(success)
+    if(success){
+        // Calculate accumulated angles after data from IMU exists
         calc_accum_angles();
-    else
-        read_failures++;
 
-    xSemaphoreGiveRecursive(imu_mutex);
+        // Update imu_data while holding mutex
+        xSemaphoreTakeRecursive(imu_mutex, portMAX_DELAY);
+        imu_data = new_data;
+        xSemaphoreGiveRecursive(imu_mutex);
+
+    }else{
+        read_failures++;
+    }
 
     return success;
 }
 
 imu_data_t imu_get_data(void){
-    // Mutexed so data cannot change mid-read
+    imu_data_t ret_data;
+
+    // Read under mutex because reading a struct is multiple reads
+    // If reading from one thread and writing imu_data (via imu_read() function) on another thread
+    // imu_data could change part way through the read here.
+    xSemaphoreTakeRecursive(imu_mutex, portMAX_DELAY);
+    ret_data = imu_data;
+    xSemaphoreGiveRecursive(imu_mutex);
+
+    return ret_data;
 }
 
-uint8_t imu_get_sensor(void); 
-
+uint8_t imu_get_sensor(void){
+    return imu_which;
+}

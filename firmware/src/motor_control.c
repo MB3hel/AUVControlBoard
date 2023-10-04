@@ -54,9 +54,15 @@
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool mc_invert[8];                                      // Tracks thruster inversions
+static bool mc_invert[8];                                      // Tracks thruster inversions
 
-float mc_relscale[6];                                   // Relative DoF speeds
+// Relative scale down factors for motions
+// Calculated from data provided in RELDOF command
+// Contains 2 groups: linear = [x, y, z] = first half of array
+//                    angular = [xrot, yrot, zrot] = second half of array
+// These are multiplied by speeds to scale DOWN faster motors as needed
+// Scaling down ensures that all speeds will be less than 1.0 if they started that way
+static float mc_relscale[6];                                   // Relative DoF speeds
 
 static float dof_matrix_arr[8*6];                       // Backing array for DoF matrix
 static matrix dof_matrix;                               // DoF matrix
@@ -139,6 +145,18 @@ void mc_init(void){
     // Default to no dof scaling
     for(unsigned int i = 0; i < 6; ++i){
         mc_relscale[i] = 1.0f;
+    }
+}
+
+void mc_set_tinv(bool *tinv){
+    for(unsigned int i = 0; i < 8; ++i){
+        mc_invert[i] = tinv[i];
+    }
+}
+
+void mc_set_relscale(float *reldof){
+    for(unsigned int i = 0; i < 8; ++i){
+        mc_relscale[i] = reldof[i];
     }
 }
 
@@ -712,15 +730,6 @@ void mc_set_sassist(float x, float y, float yaw_spd,
     float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
     pid_last_depth = target_depth;
     mc_set_ohold(x, y, z, yaw_spd, target_euler, curr_quat, yaw_target);
-}
-
-void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth){
-    if(fabsf(pid_last_depth - target_depth) > 0.01){
-        PID_RESET(depth_pid);
-    }
-    float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
-    pid_last_depth = target_depth;
-    mc_set_global(x, y, z, pitch_spd, roll_spd, yaw_spd, curr_quat);
 }
 
 void mc_set_ohold(float x, float y, float z, float yaw_spd,
