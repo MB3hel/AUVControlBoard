@@ -19,14 +19,7 @@
 #pragma once
 
 #include <stdbool.h>
-
-
-
-typedef struct{
-    float depth_m;
-    float pressure_pa;
-    float temperature_c;
-} ms5837_data;
+#include <depth.h>
 
 
 
@@ -48,5 +41,5 @@ bool ms5837_configure(void);
  * @param data Pointer to struct to store data in (only valid if returns true)
  * @return true On success; false on error
  */
-bool ms5837_read(ms5837_data *data);
+bool ms5837_read(depth_data_t *data);
 

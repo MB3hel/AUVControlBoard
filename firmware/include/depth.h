@@ -23,51 +23,43 @@
 #include <stdint.h>
 
 
-#define IMU_NONE        0
-#define IMU_SIM         1
-#define IMU_BNO055      2
-
+#define DEPTH_NONE        0
+#define DEPTH_SIM         1
+#define DEPTH_MS5837      2
 
 
 typedef struct{
-    float x, y, z;
-} accel_data_t;
+    // All depth sensors provide this value.
+    float depth_m;
 
-typedef struct{
-    float x, y, z;
-} gyro_data_t;
-
-typedef struct{
-    // All IMUs provide quaternion data and accumulated euler angles
-    quaternion_t quat;
-    euler_t accum_angles;
-
-    // Raw gyro and accel data may not be provided by all IMUs (eg sim IMU doesn't provide)
-    gyro_data_t raw_gyro;
-    accel_data_t raw_accel;
-} imu_data_t;
+    // The following raw measurements may not be supported by all sensors
+    // Ex: If an acoustic depth sensor were used, pressure and temperature would
+    //     not be provided.
+    float pressure_pa;
+    float temperature_c;
+} depth_data_t;
 
 
 
 /**
- * Initialize IMU sensor(s)
+ * Initialize depth sensor(s)
  */
-void imu_init(void);
+void depth_init(void);
 
 /**
  * Get current data from IMU
  * @return true on success, false on failure
  */
-bool imu_read(void);
+bool depth_read(void);
 
 /**
- * Get the current IMU data. Thread safe.
+ * Get the current depth data. Thread safe.
  * @return the data
  */
-imu_data_t imu_get_data(void);
+depth_data_t depth_get_data(void);
 
 /**
- * Get the currently active IMU sensor. Thread safe.
- * @return uint8_t ID of the active sensor (IMU_xyz)
+ * Get the currently active depth sensor. Thread safe.
+ * @return uint8_t ID of the active sensor (DEPTH_xyz)
  */
-uint8_t imu_get_sensor(void); 
+uint8_t depth_get_sensor(void); 

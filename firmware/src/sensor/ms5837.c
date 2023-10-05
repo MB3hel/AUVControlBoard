@@ -127,7 +127,7 @@ bool ms5837_configure(void){
 
 
 
-static bool ms5837_read_internal(ms5837_data *data){
+static bool ms5837_read_internal(depth_data_t *data){
     uint32_t d1, d2;
 
     // Convert D1
@@ -269,7 +269,7 @@ static bool ms5837_read_internal(ms5837_data *data){
     return true;
 }
 
-bool ms5837_read(ms5837_data *data){
+bool ms5837_read(depth_data_t *data){
     // Take I2C bus at beginning of each function communicating with sensor.
     // This also ensures accesses to trans are thread safe and prevents unexpected
     // interleaving of messages to the same sensor (if multiple threads call

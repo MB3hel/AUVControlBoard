@@ -114,6 +114,12 @@ static void imu_configure_if_needed(void){
         read_failures = 0;
     }
 
+    // If too many read failures, assume IMU is no longer connected
+    if(read_failures >= 5){
+        imu_which = IMU_NONE;
+        read_failures = 0;
+    }
+
     // Already an active IMU (no need to configure one)
     if(imu_which != IMU_NONE){
         return;
@@ -122,11 +128,10 @@ static void imu_configure_if_needed(void){
     // Try to configure each IMU until one succeeds
     if(bno055_configure()){
         imu_which = IMU_BNO055;
-        return;
+    }else{
+        // Failed to configure all IMUs
+        imu_which = IMU_NONE;
     }
-
-    // Failed to configure all IMUs
-    imu_which = IMU_NONE;
 }
 
 bool imu_read(void){
@@ -154,7 +159,7 @@ bool imu_read(void){
         success = true;
         break;
     case IMU_BNO055:
-        success = bno055_read(&imu_data);
+        success = bno055_read(&new_data);
         break;
     }
 
