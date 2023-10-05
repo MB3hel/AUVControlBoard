@@ -73,20 +73,6 @@ static void calc_accum_angles(void){
     }
 }
 
-static void imu_configure(void){
-    // Reset read failure counter
-    read_failures = 0;
-
-    // Try to configure each IMU until one succeeds
-    if(bno055_configure()){
-        imu_which = IMU_BNO055;
-        return;
-    }
-
-    // Failed to configure each IMU
-    imu_which = IMU_NONE;
-}
-
 void imu_init(void){
     // Default / initial values
     read_failures = 0;
@@ -114,29 +100,46 @@ void imu_init(void){
     bno055_init();
 }
 
-bool imu_read(void){
+
+static void imu_configure_if_needed(void){
+    // If sim hijacked, always use sim IMU
     if(cmdctrl_sim_hijacked){
-        // If sim hijacked, only use the sim IMU
         imu_which = IMU_SIM;
         read_failures = 0;
-    }else if(imu_which == IMU_SIM){
-        // If not sim hijacked, cannot use the sim IMU
+    }
+
+    // If no longer sim hijacked, cannot use sim IMU
+    if(!cmdctrl_sim_hijacked && imu_which == IMU_SIM){
         imu_which = IMU_NONE;
         read_failures = 0;
     }
 
-    // If read fails 5 times in a row, assume IMU is no longer connected
-    if(read_failures >= 5){
-        imu_which = IMU_NONE;
-        read_failures = 0;
+    // Already an active IMU (no need to configure one)
+    if(imu_which != IMU_NONE){
+        return;
     }
+
+    // Try to configure each IMU until one succeeds
+    if(bno055_configure()){
+        imu_which = IMU_BNO055;
+        return;
+    }
+
+    // Failed to configure all IMUs
+    imu_which = IMU_NONE;
+}
+
+bool imu_read(void){
 
     // Configure IMU if needed
+    imu_configure_if_needed();
+
+    // If still no IMU, abort read
     if(imu_which == IMU_NONE){
-        imu_configure();
+        return false;
     }
 
-    // Read the active IMU.
+    // Read the active IMU
     bool success = false;
     switch(imu_which){
     case IMU_SIM:
@@ -151,7 +154,7 @@ bool imu_read(void){
         success = true;
         break;
     case IMU_BNO055:
-        bno055_read(&imu_data);
+        success = bno055_read(&imu_data);
         break;
     }
 
