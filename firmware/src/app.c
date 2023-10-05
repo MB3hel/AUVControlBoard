@@ -21,7 +21,7 @@
 #include <pccomm.h>
 #include <cmdctrl.h>
 #include <imu.h>
-#include <sensor/ms5837.h>
+#include <depth.h>
 #include <hardware/wdt.h>
 #include <tusb.h>
 #include <FreeRTOSConfig.h>
@@ -171,37 +171,14 @@ static void imu_task_func(void *argument){
 static void depth_task_func(void *argument){
     (void)argument;
 
-    // Tracks if IMU configured currently
-    bool configured = false;
-    unsigned int read_failures = 0;
-    ms5837_data data;
-
-    ms5837_init();
+    depth_init();
     while(1){
-        if(!configured && !cmdctrl_sim_hijacked){
-            // Configure sensor. Will succeed if sensor connected.
-            configured = ms5837_configure();
-
-            // If configure fails, wait 1 second before trying again
-            if(!configured)
-                vTaskDelay(pdMS_TO_TICKS(1000));
-            else
-                cmdctrl_ms5837_status(true);
-        }else{
-            // sensor is connected and has been configured
-            // Periodically read data
-            if(ms5837_read(&data)){
-                read_failures = 0;
-                cmdctrl_ms5837_data(data);
-            }else{
-                // Too many failures. Assume sensor no longer connected (or has reset)
-                read_failures++;
-                if(read_failures > 5){
-                    configured = false;
-                   cmdctrl_ms5837_status(false);
-                }
-            }
+        if(depth_read()){
+            // Read every 15ms
             vTaskDelay(pdMS_TO_TICKS(15));
+        }else if(depth_get_sensor() == IMU_NONE){
+            // Read failed b/c no IMU connected. Delay longer before trying again.
+            vTaskDelay(pdMS_TO_TICKS(1000));
         }
     }
 }
