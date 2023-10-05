@@ -55,23 +55,30 @@ int main(void){
     // -------------------------------------------------------------------------
     // System & Peripheral Initialization
     // -------------------------------------------------------------------------
+
+    // Initialize HAL & Vendor libraries & perform startup checks
     init_frameworks();
+
+    // Anything else may use conversions, so init before hardware
     conversions_init();
 
-#ifdef NDEBUG
-    // Enable watchdog if not debug build
-    wdt_init();
-#endif
-
+    // Init hardware
     delay_init();
     led_init();
     usb_init();
-    pccomm_init();
     thruster_init();
-    mc_init();
-    cmdctrl_init();
     i2c_init();
     eeprom_init();
+#ifdef NDEBUG
+    wdt_init();             // Watchdog disabled for DEBUG builds
+#endif
+
+    // Initialize communication, motor control, and cmdctrl
+    pccomm_init();
+    mc_init();
+    cmdctrl_init();
+
+    // Load calibration data before starting RTOS (must happen before sensors initalized in RTOS threads)
     calibration_load();
     // -------------------------------------------------------------------------
     
