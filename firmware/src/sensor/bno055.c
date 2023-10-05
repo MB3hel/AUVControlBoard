@@ -271,6 +271,7 @@ void bno055_init(void){
 }
 
 
+
 static inline bool bno055_configure_internal(void){
     // Read chip ID register to make sure right device is on bus
     trans.write_buf[0] = BNO055_CHIP_ID_ADDR;

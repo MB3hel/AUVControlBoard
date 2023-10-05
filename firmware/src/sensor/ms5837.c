@@ -77,13 +77,16 @@ static uint8_t crc4(uint16_t *data){
     return remainder ^ 0x00;
 }
 
+
 void ms5837_init(void){
     trans.address = MS5837_ADDR;
     trans.write_buf = write_buf;
     trans.read_buf = read_buf;
 }
 
-bool ms5837_configure(void){
+
+
+static bool ms5837_configure_internal(void){
     // Reset command
     trans.write_buf[0] = MS5837_CMD_RESET;
     trans.write_count = 1;
@@ -109,7 +112,22 @@ bool ms5837_configure(void){
     return crc_read == crc_calc;
 }
 
-bool ms5837_read(ms5837_data *data){
+bool ms5837_configure(void){
+    // Take I2C bus at beginning of each function communicating with sensor.
+    // This also ensures accesses to trans are thread safe and prevents unexpected
+    // interleaving of messages to the same sensor (if multiple threads call
+    // functions of the same sensor).
+    if(!i2c_take()){
+        return false;
+    }
+    bool ret = ms5837_configure_internal();
+    i2c_give();
+    return ret;
+}
+
+
+
+static bool ms5837_read_internal(ms5837_data *data){
     uint32_t d1, d2;
 
     // Convert D1
@@ -250,3 +268,17 @@ bool ms5837_read(ms5837_data *data){
 
     return true;
 }
+
+bool ms5837_read(ms5837_data *data){
+    // Take I2C bus at beginning of each function communicating with sensor.
+    // This also ensures accesses to trans are thread safe and prevents unexpected
+    // interleaving of messages to the same sensor (if multiple threads call
+    // functions of the same sensor).
+    if(!i2c_take()){
+        return false;
+    }
+    bool ret = ms5837_read_internal(data);
+    i2c_give();
+    return ret;
+}
+
