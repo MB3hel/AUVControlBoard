@@ -32,14 +32,6 @@ void wdt_feed(void){
     WDT_Clear();
 }
 
-void wdt_reset_now(void){
-    // Doesn't actually use WDT anymore on this chip, but function name kept for compatibility
-    NVIC_SystemReset();
-    while(1);
-    // while(WDT_REGS->WDT_SYNCBUSY != 0U){}
-    // WDT_REGS->WDT_CLEAR = 0x00;     // Write anything but 0xA5 resets now
-}
-
 #endif // CONTROL_BOARD_V1
 
 
@@ -62,12 +54,6 @@ void wdt_init(void){
 
 void wdt_feed(void){
     HAL_IWDG_Refresh(&hiwdg);
-}
-
-void wdt_reset_now(void){
-    // Doesn't actually use WDT on this chip, but function name kept for compatability
-    NVIC_SystemReset();
-    while(1);
 }
 
 #endif // CONTROL_BOARD_V2

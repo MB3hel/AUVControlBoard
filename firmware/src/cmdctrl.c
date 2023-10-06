@@ -1160,7 +1160,10 @@ void cmdctrl_handle_message(void){
     else if(message_equals(msg, len, (uint8_t[]){'R', 'E', 'S', 'E', 'T', 0x0D, 0x1E}, 7)){
         // Reset control board command
         // R, E, S, E, T, 0x0D, 0x1E
-        wdt_reset_now();
+#if defined(CONTROL_BOARD_V1) || defined(CONTROL_BOARD_V2)
+        NVIC_SystemReset();
+        while(1);
+#endif
         // Not acknowledged. Board resets!
     }else if(message_equals_str(msg, len, "RSTWHY")){
         // R, S, T, W, H, Y

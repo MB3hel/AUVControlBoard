@@ -22,5 +22,3 @@
 void wdt_init(void);
 
 void wdt_feed(void);
-
-void wdt_reset_now(void);
