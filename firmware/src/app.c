@@ -92,7 +92,7 @@ static void usb_task_func(void *argument){
 
         // If data now available, notify the communication task
         if(usb_avail()){
-            // TODO: Notify correct task
+            xTaskNotify(cmdctrl_task, NOTIF_PCDATA, eSetBits);
         }
     }
 }
@@ -196,14 +196,14 @@ static void depth_task_func(void *argument){
 static void wdt_feed_timer_handler(TimerHandle_t handle){
     (void)handle;
 
-    // TODO: Notify correct task
+    xTaskNotify(cmdctrl_task, NOTIF_FEED_WDT, eSetBits);
 }
 
 static void sim_timer_handler(TimerHandle_t handle){
     (void)handle;
 
-    // if(cmdctrl_sim_hijacked)
-        // TODO: Notify correct task
+    if(cmdctrl_sim_hijacked)
+        xTaskNotify(cmdctrl_task, NOTIF_SIM_STAT, eSetBits);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -256,9 +256,8 @@ void app_init(void){
 }
 
 void app_handle_uart_closed(void){
-    // if(cmdctrl_sim_hijacked)
-        // TODO: Notify correct task
-        // xTaskNotify(main_task, NOTIF_UART_CLOSE, eSetBits);
+    if(cmdctrl_sim_hijacked)
+        xTaskNotify(cmdctrl_task, NOTIF_UART_CLOSE, eSetBits);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
