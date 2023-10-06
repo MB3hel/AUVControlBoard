@@ -65,7 +65,7 @@ int main(void){
     // Init hardware
     delay_init();
     led_init();
-    usb_init();
+    // usb_init();   Don't init usb yet. Do that after RTOS started (b/c TinyUSB uses RTOS stuff)
     thruster_init();
     i2c_init();
     eeprom_init();

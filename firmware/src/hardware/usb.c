@@ -18,7 +18,6 @@
 
 #include <hardware/usb.h>
 #include <framework.h>
-#include <tusb.h>
 #include <limits.h>
 #include <string.h>
 #include <FreeRTOS.h>
@@ -38,6 +37,10 @@ extern RTC_HandleTypeDef hrtc;
 bool usb_initialized = false;
 
 
+#if defined(CONTROL_BOARD_V1) || defined(CONTROL_BOARD_V2)
+
+#include <tusb.h>
+
 void usb_init(void){
 #if defined(CONTROL_BOARD_V1)
     // Set interrupt to highest allowed priority
@@ -48,6 +51,9 @@ void usb_init(void){
 
     // Pins configured by generated code
     // Clock config handled by generated code
+
+    // Start TinyUSB
+    tud_init(BOARD_TUD_RHPORT);
 #elif defined(CONTROL_BOARD_V2)
     // Set interrupt to highest allowed priority
     NVIC_SetPriority(OTG_FS_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
@@ -61,11 +67,36 @@ void usb_init(void){
     USB_OTG_FS->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
     USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSBSEN;
     USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSASEN;
+
+    // Start TinyUSB
+    tud_init(BOARD_TUD_RHPORT);
 #endif
     usb_initialized = true;
 }
 
-#if defined(CONTROL_BOARD_V1) || defined(CONTROL_BOARD_V2)
+
+void usb_process(void){
+    tud_task();
+}
+
+unsigned int usb_avail(void){
+    return tud_cdc_available();
+}
+
+uint8_t usb_read(void){
+    return tud_cdc_read_char();
+}
+
+void usb_write(uint8_t b){
+    if(!tud_cdc_write_char(b)){
+        tud_cdc_write_flush();
+        tud_cdc_write_char(b);
+    }
+}
+
+void usb_flush(void){
+    tud_cdc_write_flush();
+}
 
 void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
     (void)rts;
@@ -113,4 +144,7 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
     }
 }
 
-#endif
+#endif // CONTROL_BOARD_V1 || CONTROL_BOARD_V2
+
+
+// TODO: SimCB usb stuff

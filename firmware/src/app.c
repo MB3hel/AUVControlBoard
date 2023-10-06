@@ -28,6 +28,7 @@
 #include <FreeRTOS.h>
 #include <task.h>
 #include <debug.h>
+#include <hardware/usb.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Constants / Configuration parameters
@@ -83,13 +84,14 @@ static TimerHandle_t sim_timer;
 static void usb_task_func(void *argument){
     (void)argument;
 
-    tud_init(BOARD_TUD_RHPORT);
+    usb_init();
     while(1){
         // This call will block thread until there is / are event(s)
-        tud_task();
+        // Blocks until there may be data
+        usb_process();
 
         // If data now available, notify the communication task
-        if(tud_cdc_available()){
+        if(usb_avail()){
             // TODO: Notify correct task
         }
     }
@@ -154,7 +156,7 @@ static void imu_task_func(void *argument){
     imu_init();
     while(1){
         if(imu_read()){
-            // Read every 15ms
+            // Wait 15ms between reads
             vTaskDelay(pdMS_TO_TICKS(15));
         }else if(imu_get_sensor() == IMU_NONE){
             // Read failed b/c no IMU connected. Delay longer before trying again.
@@ -174,7 +176,7 @@ static void depth_task_func(void *argument){
     depth_init();
     while(1){
         if(depth_read()){
-            // Read every 15ms
+            // Wait 15ms between reads
             vTaskDelay(pdMS_TO_TICKS(15));
         }else if(depth_get_sensor() == IMU_NONE){
             // Read failed b/c no IMU connected. Delay longer before trying again.

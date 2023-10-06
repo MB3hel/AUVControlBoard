@@ -240,7 +240,7 @@ bool mc_wdog_feed(void){
     return ret;
 }
 
-bool mc_wdog_killed(void){
+bool mc_wdog_is_killed(void){
     return motors_killed;
 }
 

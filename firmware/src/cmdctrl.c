@@ -39,6 +39,7 @@
 #define MODE_LOCAL      1
 #define MODE_GLOBAL     2
 #define MODE_SASSIST    3
+// #define MODE_DHOLD   4
 #define MODE_OHOLD      5
 
 // LED colors for different modes

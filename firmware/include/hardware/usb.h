@@ -29,3 +29,32 @@ extern bool usb_initialized;
  * Initialize communication with PC via USB
  */
 void usb_init(void);
+
+/**
+ * Process USB events. Blocks until at least one event handled
+ * When it returns, there may be data. check with usb_avail
+ * 
+ */
+void usb_process(void);
+
+/**
+ * @return Number of bytes available to read from USB
+ */
+unsigned int usb_avail(void);
+
+/**
+ * Read one byte from USB
+ * @return uint8_t next byte. Return value undefined if no data available (check with usb_avail!)
+ */
+uint8_t usb_read(void);
+
+/**
+ * Write one byte via USB
+ * @param b Byte to write
+ */
+void usb_write(uint8_t b);
+
+/**
+ * Flush USB output buffers now
+ */
+void usb_flush(void);
