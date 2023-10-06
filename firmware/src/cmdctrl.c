@@ -99,7 +99,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Used for simulator hijack of the control board
+#if defined(CONTROL_BOARD_V1) || defined(CONTROL_BOARD_V2)
 bool cmdctrl_sim_hijacked = false;
+#elif defined(CONTROL_BOARD_SIM_LINUX) || defined(CONTROL_BOARD_SIM_WINDOWS)
+const bool cmdctrl_sim_hijacked = true;
+#endif
+
 quaternion_t cmdctrl_sim_quat;
 float cmdctrl_sim_depth;
 float cmdctrl_sim_speeds[8];
@@ -1128,7 +1133,7 @@ void cmdctrl_handle_message(void){
     // -----------------------------------------------------------------------------------------------------------------
     // BNO055 Configuration Commands & Queries
     // -----------------------------------------------------------------------------------------------------------------
-    else if(MSG_STARTS_WITH(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'A'}))){
+    else if(message_starts_with_str(msg, len, "BNO055A")){
         // BNO055 Axis config command: sets axis remap for BNO055 IMU
         // B, N, O, 0, 5, 5, A, [mode]
         // [mode] is a single byte with value 0-7 for BNO055 axis config P0 to P7
@@ -1136,9 +1141,11 @@ void cmdctrl_handle_message(void){
         if(len != 8){
             // Wrong length
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else if(imu_get_sensor() != IMU_BNO055){
+            // Correct sensor not active
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
         }else{
             // Message is correct size. Handle it.
-
             if(msg[7] > 7){
                 // Invalid mode
                 cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
@@ -1148,7 +1155,7 @@ void cmdctrl_handle_message(void){
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
             }
         }
-    }else if(MSG_EQUALS(((uint8_t[]){'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'R'}))){
+    }else if(message_equals_str(msg, len, "SCBNO055R")){
         // S, C, B, N, O, 0, 5, 5, R
         // Read stored calibration constants for BNO055
         // ACK contains the following data
@@ -1168,14 +1175,15 @@ void cmdctrl_handle_message(void){
         conversions_int16_to_data(calibration_bno055.gyro_offset_y, &buf[11], true);
         conversions_int16_to_data(calibration_bno055.gyro_offset_z, &buf[13], true);
         cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, buf, 15);
-    }else if(MSG_EQUALS(((uint8_t[]){'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'E'}))){
+    }else if(message_equals_str(msg, len, "SCBNO055E")){
         // S, C, B, N, O, 0, 5, 5, E
         // Erase stored calibration constants for BNO055
         // Then reset the sensor (so it loosed the ones programmed earlier)
         calibration_erase_bno055();
-        bno055_configure();   // This will reset the sensor as a part of configuration process
+        if(imu_get_sensor() == IMU_BNO055)
+            bno055_configure();   // This will reset the sensor as a part of configuration process
         cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'S'}))){
+    }else if(message_starts_with_str(msg, len, "SCBNO055S")){
         // S, C, B, N, O, 0, 5, 5, S, [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
         // Write stored calibration constants for BNO055
         // All values are 16-bit little endian integers (calibration values)
@@ -1191,14 +1199,15 @@ void cmdctrl_handle_message(void){
             new_cal.gyro_offset_y = conversions_data_to_int16(&msg[19], true);
             new_cal.gyro_offset_z = conversions_data_to_int16(&msg[21], true);
             calibration_store_bno055(new_cal);
-            bno055_configure();     // Reconfigure bno055 will reset the sensor and apply the stored calibration
+            if(imu_get_sensor() == IMU_BNO055)
+                bno055_configure();     // Reconfigure bno055 will reset the sensor and apply the stored calibration
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
-    }else if(MSG_EQUALS(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'C', 'S'}))){
+    }else if(message_equals_str(msg, len, "BNO055CS")){
         // Get current BNO055 calibration status (from the sensor itself)
         // ACK will contain the following
         // [status] an 8-bit integer with the value of the sensor's CALIB_STAT register
-        if(!bno055_ready()){
+        if(imu_get_sensor() != IMU_BNO055){
             // Cannot read status if sensor not ready
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
         }else{
@@ -1211,13 +1220,13 @@ void cmdctrl_handle_message(void){
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, &status, 1);
             }
         }
-    }else if(MSG_EQUALS(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'C', 'V'}))){
+    }else if(message_equals_str(msg, len, "BNO055CV")){
         // Get current BNO055 calibration values (from the sensor itself)
         // ACK will contain the following
         // [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
         //All are little endian 16-bit integers (signed)
         
-        if(!bno055_ready()){
+        if(imu_get_sensor() != IMU_BNO055){
             // Cannot read status if sensor not ready
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
         }else{
@@ -1240,7 +1249,7 @@ void cmdctrl_handle_message(void){
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, buf, 14);
             }
         }
-    }else if(MSG_EQUALS(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'R', 'S', 'T'}))){
+    }else if(message_equals_str(msg, len, "BNO055RST")){
         // B, N, O, 0, 5, 5, R, S, T
         // BNO055 reset / reconfigure
         // This is typically used to clear auto generated calibration constants when
@@ -1253,12 +1262,12 @@ void cmdctrl_handle_message(void){
     // -----------------------------------------------------------------------------------------------------------------
     // MS5837 Configuration Commands & Queries
     // -----------------------------------------------------------------------------------------------------------------
-    else if(MSG_EQUALS(((uint8_t[]){'M', 'S', '5', '8', '3', '7', 'C', 'A', 'L', 'G'}))){
+    else if(message_equals_str(msg, len, "MS5837CALG")){
         // M, S, 5, 8, 3, 7, C, A, L, G
         // Read MS5837 calibration
         // ACK contains [atm_pressure], [fluid_density]
         // Each is a little endian 32-bit float
-        if(!ms5837_ready()){
+        if(depth_get_sensor() != DEPTH_MS5837){
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
         }else{
             uint8_t buf[8];
@@ -1266,14 +1275,14 @@ void cmdctrl_handle_message(void){
             conversions_float_to_data(calibration_ms5837.fluid_density, &buf[4], true);
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, buf, 8);
         }
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'M', 'S', '5', '8', '3', '7', 'C', 'A', 'L', 'S'}))){
+    }else if(message_starts_with_str(msg, len, "MS5837CALS")){
         // M, S, 5, 8, 3, 7, C, A, L, S, [atm_pressure], [fluid_density]
         // Set MS5837 calibration
         // Both values are little endian 32-bit floats
         if(len != 18){
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
         }else{
-            if(!ms5837_ready()){
+            if(depth_get_sensor() != DEPTH_MS5837){
                 cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
             }else{
                 calibration_ms5837.atm_pressure = conversions_data_to_float(&msg[10], true);
@@ -1288,16 +1297,20 @@ void cmdctrl_handle_message(void){
     // -----------------------------------------------------------------------------------------------------------------
     // Misc commands & queries
     // -----------------------------------------------------------------------------------------------------------------
-    else if(MSG_EQUALS(((uint8_t[]){'R', 'E', 'S', 'E', 'T', 0x0D, 0x1E}))){
+   
+    else if(message_equals(msg, len, (uint8_t[]){'R', 'E', 'S', 'E', 'T', 0x0D, 0x1E}, 7)){
+        // Reset control board command
+        // R, E, S, E, T, 0x0D, 0x1E
         wdt_reset_now();
-    }else if(MSG_EQUALS(((uint8_t[]){'R', 'S', 'T', 'W', 'H', 'Y'}))){
+        // Not acknowledged. Board resets!
+    }else if(message_equals_str(msg, len, "RSTWHY")){
         // R, S, T, W, H, Y
         // ACK contains a 32-bit integer (signed, little endian)
         // indicating one of the HALT_EC codes in debug.h
         uint8_t response[4];
         conversions_int32_to_data(reset_cause, response, true);
         cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response, 4);
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'I', 'M', 'H', 'I', 'J', 'A', 'C', 'K'}))){
+    }else if(message_starts_with_str(msg, len, "SIMHIJACK")){
         // S, I, M, H, I, J, A, C, K, [hijack]
         // [hijack] is an 8-bit int (unsigned) 0 = release, 1 = hijack
         if(len != 10){
@@ -1307,7 +1320,7 @@ void cmdctrl_handle_message(void){
             cmdctrl_simhijack(msg[9]);
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'I', 'M', 'D', 'A', 'T'}))){
+    }else if(message_starts_with_str(msg, len, "SIMDAT")){
         // S, I, M, D, A, T, [w], [x], [y], [z], [depth]
         // All values are little endian floats (32-bit)
         // x, y, z, w are current quaternion (BNO055 data)
@@ -1326,7 +1339,7 @@ void cmdctrl_handle_message(void){
             // Message handled successfully
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
-    }else if(MSG_EQUALS(((uint8_t[]){'C', 'B', 'V', 'E', 'R'}))){
+    }else if(message_equals_str(msg, len, "CBVER")){
         // Control board version info query
         // C, B, V, E, R
         // Responds with
@@ -1389,6 +1402,10 @@ void cmdctrl_send_simstat(void){
 }
 
 void cmdctrl_simhijack(bool hijack){
+#if defined(CONTROL_BOARD_SIM_LINUX) || defined(CONTROL_BOARD_SIM_WINDOWS)
+    hijack = true; // SIMCB only supports SIMHIJACK mode
+#endif
+
     if(hijack){
         // Reset data received from simulator
         cmdctrl_sim_quat.w = 0.0f;
@@ -1421,10 +1438,14 @@ void cmdctrl_simhijack(bool hijack){
         mc_set_raw(raw_target);
 
         // Do this last so set_local (above) uses real thrusters
+#if !(defined(CONTROL_BOARD_SIM_LINUX) || defined(CONTROL_BOARD_SIM_WINDOWS))
         cmdctrl_sim_hijacked = true;
+#endif
     }else{
+#if !(defined(CONTROL_BOARD_SIM_LINUX) || defined(CONTROL_BOARD_SIM_WINDOWS))
         // Do this first so set_local (below) uses real thrusters
-        cmdctrl_sim_hijacked = false;   
+        cmdctrl_sim_hijacked = false;
+#endif
 
         // Revert to a stoped state
         mode = MODE_RAW;
