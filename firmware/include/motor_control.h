@@ -139,7 +139,7 @@ void mc_set_raw(float *speeds);
  *      yrot Angular speed about y (-1.o to +1.0)
  *      zrot Angular speed about z (-1.o to +1.0)
  */
-void mc_set_local(mc_local_target_t target);
+void mc_set_local(const mc_local_target_t target);
 
 /**
  * Set motor speeds in GLOBAL mode.
@@ -153,7 +153,7 @@ void mc_set_local(mc_local_target_t target);
  *      yaw_spd Rate of change of vehicle yaw (-1.o to +1.0)
  * @param curr_quat Current orientation quaternion from IMU
  */
-void mc_set_global(mc_global_target_t target, quaternion_t curr_quat);
+void mc_set_global(const mc_global_target_t target, const quaternion_t curr_quat);
 
 /**
  * Set motor speeds in STABILITY_ASSIST mode. Abstracts a 2D plane in which the robot is controlled.
@@ -171,7 +171,7 @@ void mc_set_global(mc_global_target_t target, quaternion_t curr_quat);
  * @param curr_quat Current orientation quaternion
  * @param curr_depth Current depth in meters (negative below surface)
  */
-void mc_set_sassist(mc_sassist_target_t target, quaternion_t curr_quat, float curr_depth);
+void mc_set_sassist(const mc_sassist_target_t target, const quaternion_t curr_quat, const float curr_depth);
 
 /**
  * Set motor speeds in ORIENTATION_HOLD (OHOLD) mode. Like SASSIST, but a speed is provided by depth
@@ -187,4 +187,4 @@ void mc_set_sassist(mc_sassist_target_t target, quaternion_t curr_quat, float cu
  *      use_yaw_pid If true, closed loop control is used for yaw not a speed
  * @param curr_quat Current orientation quaternion
  */
-void mc_set_ohold(mc_ohold_target_t target, quaternion_t curr_quat);
+void mc_set_ohold(const mc_ohold_target_t target, const quaternion_t curr_quat);
