@@ -1014,40 +1014,121 @@ void cmdctrl_handle_message(void){
     // -----------------------------------------------------------------------------------------------------------------
     // Sensor data commands / queries
     // -----------------------------------------------------------------------------------------------------------------
-
-    // -----------------------------------------------------------------------------------------------------------------
-
-
-    // -----------------------------------------------------------------------------------------------------------------
-    // Sensor configuration & calibration commands (sensor specific)
-    // -----------------------------------------------------------------------------------------------------------------
-
-    // -----------------------------------------------------------------------------------------------------------------
-
-
-
-    // -----------------------------------------------------------------------------------------------------------------
-    // Misc commands & queries
-    // -----------------------------------------------------------------------------------------------------------------
-
-    // -----------------------------------------------------------------------------------------------------------------
-
-
-    else if(MSG_EQUALS(((uint8_t[]){'S', 'S', 'T', 'A', 'T'}))){
+    else if(message_equals_str(msg, len, "SSTAT")){
         // Sensor status query
         // S, S, T, A, T
-        // ACK contains data in the following format [sensor_status]
-        // [sensor_status] is an 8-bit int where each bit indicates if a sensor is ready
-        // bit 0 (LSB) is BNO055 status (1 = ready, 0 = not ready)
-        // bit 1 is MS5837 status (1 = ready, 0 = not ready)
+        // ACK contains data in the following format [imu_status],[depth_status]
+        // each [sensor_status] is an 8-bit int where each bit indicates if a sensor in use. 
+        // A value of 0 indicates no sensor. Any non-zero value indicates a specific IMU or depth sensor is available
 
-        uint8_t response[1];
-        response[0] = 0x00;
-        response[0] |= bno055_ready();
-        response[0] |= (ms5837_ready() << 1);
+        uint8_t response[2];
+        response[0] = imu_get_sensor();
+        response[1] = depth_get_sensor();
 
-        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response, 1);
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'A'}))){
+        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response, 2);
+    }else if(message_equals_str(msg, len, "IMUR")){
+        // One-shot read of IMU data
+        // I, M, U, R
+        // Response contains [quat_w], [quat_x], [quat_y], [quat_z], [accum_pitch], [accum_roll], [accum_yaw]
+        // where each value is a 32-bit float little endian
+
+        if(imu_get_sensor() == IMU_NONE){
+            // Sensor not ready. This command is not valid right now.
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+        }else{
+            // Store current readings
+            imu_data_t dat = imu_get_data();
+
+            // Construct response data
+            uint8_t response_data[28];
+            conversions_float_to_data(dat.quat.w, &response_data[0], true);
+            conversions_float_to_data(dat.quat.x, &response_data[4], true);
+            conversions_float_to_data(dat.quat.y, &response_data[8], true);
+            conversions_float_to_data(dat.quat.z, &response_data[12], true);
+            conversions_float_to_data(dat.accum_angles.pitch, &response_data[16], true);
+            conversions_float_to_data(dat.accum_angles.roll, &response_data[20], true);
+            conversions_float_to_data(dat.accum_angles.yaw, &response_data[24], true);
+
+            // Send ack with response data
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 28);
+        }
+    }else if(message_equals_str(msg, len, "IMUW")){
+        // Read IMU RAW data
+        // I, M, U, W
+        // Response contains [accel_x], [accel_y], [accel_z], [gyro_x], [gyro_y], [gyro_z]
+        // where each value is a 32-bit float little endian
+
+        if(imu_get_sensor() == IMU_NONE){
+            // Sensor not ready. This command is not valid right now.
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+        }else{
+            // Store current readings
+            imu_data_t data = imu_get_data();
+
+            // Construct response data
+            uint8_t response_data[24];
+            conversions_float_to_data(data.raw_accel.x, &response_data[0], true);
+            conversions_float_to_data(data.raw_accel.y, &response_data[4], true);
+            conversions_float_to_data(data.raw_accel.z, &response_data[8], true);
+            conversions_float_to_data(data.raw_gyro.x, &response_data[12], true);
+            conversions_float_to_data(data.raw_gyro.y, &response_data[16], true);
+            conversions_float_to_data(data.raw_gyro.z, &response_data[20], true);
+
+            // Send ack with response data
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 24);
+        }
+    }else if(message_starts_with_str(msg, len, "IMUP")){
+        // IMU periodic read configure
+        // I, M, U, P, [enable]
+        // [enable] is 1 or 0 (8-bit int) 1 = true (periodic read enabled). 0 = false (not enabled)
+        
+        if(len != 5){
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            periodic_imu = msg[4];
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+        }
+    }else if(message_equals_str(msg, len, "DEPTHR")){
+        // One-shot read of BNO055 data (all data)
+        // D, E, P, T, H, R
+        // Response contains [depth_m], [pressure], [temp]
+        // where each value is a 32-bit float little endian
+
+        if(depth_get_sensor() == DEPTH_NONE){
+            // Sensor not ready. This command is not valid right now.
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+        }else{
+            // Store current readings
+            depth_data_t dat = depth_get_data();
+
+            // Construct response data
+            uint8_t response_data[12];
+            conversions_float_to_data(dat.depth_m, &response_data[0], true);
+            conversions_float_to_data(dat.pressure_pa, &response_data[4], true);
+            conversions_float_to_data(dat.temperature_c, &response_data[8], true);
+
+            // Send ack with response data
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 12);
+        }
+    }else if(message_starts_with_str(msg, len, "DEPTHP")){
+        // MS5837 periodic read configure
+        // D, E, P, T, H, P, [enable]
+        // [enable] is 1 or 0 (8-bit int) 1 = true (periodic read enabled). 0 = false (not enabled)
+        
+        if(len != 7){
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            periodic_depth = msg[6];
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+        }
+    }
+    // -----------------------------------------------------------------------------------------------------------------
+
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // BNO055 Configuration Commands & Queries
+    // -----------------------------------------------------------------------------------------------------------------
+    else if(MSG_STARTS_WITH(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'A'}))){
         // BNO055 Axis config command: sets axis remap for BNO055 IMU
         // B, N, O, 0, 5, 5, A, [mode]
         // [mode] is a single byte with value 0-7 for BNO055 axis config P0 to P7
@@ -1066,148 +1147,6 @@ void cmdctrl_handle_message(void){
                 bno055_set_axis(msg[7]);
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
             }
-        }
-    }else if(MSG_EQUALS(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'R'}))){
-        // One-shot read of BNO055 data (all data)
-        // B, N, O, 0, 5, 5, R
-        // Response contains [grav_x], [grav_y], [grav_z], [euler_pitch], [euler_roll], [euler_yaw]
-        // where each value is a 32-bit float little endian
-
-        if(!bno055_ready()){
-            // Sensor not ready. This command is not valid right now.
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
-        }else{
-            // Store current readings
-            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            bno055_data dat = curr_bno055_data;
-            xSemaphoreGive(sensor_data_mutex);
-
-            // Construct response data
-            uint8_t response_data[28];
-            conversions_float_to_data(dat.curr_quat.w, &response_data[0], true);
-            conversions_float_to_data(dat.curr_quat.x, &response_data[4], true);
-            conversions_float_to_data(dat.curr_quat.y, &response_data[8], true);
-            conversions_float_to_data(dat.curr_quat.z, &response_data[12], true);
-            conversions_float_to_data(dat.accum_pitch, &response_data[16], true);
-            conversions_float_to_data(dat.accum_roll, &response_data[20], true);
-            conversions_float_to_data(dat.accum_yaw, &response_data[24], true);
-
-            // Send ack with response data
-            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 28);
-        }
-    }else if(MSG_EQUALS(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'W'}))){
-        // Read BNO055 RAW data
-        // B, N, O, 0, 5, 5, W
-        // Response contains [accel_x], [accel_y], [accel_z], [gyro_x], [gyro_y], [gyro_z]
-        // where each value is a 32-bit float little endian
-
-        if(!bno055_ready()){
-            // Sensor not ready. This command is not valid right now.
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
-        }else{
-            // Store current readings
-            bno055_raw_data data;
-            if(bno055_read_raw(&data)){
-                // Construct response data
-                uint8_t response_data[24];
-                conversions_float_to_data(data.accel_x, &response_data[0], true);
-                conversions_float_to_data(data.accel_y, &response_data[4], true);
-                conversions_float_to_data(data.accel_z, &response_data[8], true);
-                conversions_float_to_data(data.gyro_x, &response_data[12], true);
-                conversions_float_to_data(data.gyro_y, &response_data[16], true);
-                conversions_float_to_data(data.gyro_z, &response_data[20], true);
-
-                // Send ack with response data
-                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 24);
-            }else{
-                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
-            }
-        }
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'P'}))){
-        // BNO055 periodic read configure
-        // B, N, O, 0, 5, 5, P, [enable]
-        // [enable] is 1 or 0 (8-bit int) 1 = true (periodic read enabled). 0 = false (not enabled)
-        
-        if(len != 8){
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
-        }else{
-            periodic_bno055 = msg[7];
-            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
-        }
-    }else if(MSG_EQUALS(((uint8_t[]){'M', 'S', '5', '8', '3', '7', 'R'}))){
-        // One-shot read of BNO055 data (all data)
-        // M, S, 5, 8, 3, 7, R
-        // Response contains [depth_m], [pressure], [temp]
-        // where each value is a 32-bit float little endian
-
-        if(!ms5837_ready()){
-            // Sensor not ready. This command is not valid right now.
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
-        }else{
-            // Store current readings
-            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            float m_depth_m = curr_ms5837_data.depth_m;
-            float m_pressure = curr_ms5837_data.pressure_pa;
-            float m_temp = curr_ms5837_data.temperature_c;
-            xSemaphoreGive(sensor_data_mutex);
-
-            // Construct response data
-            uint8_t response_data[12];
-            conversions_float_to_data(m_depth_m, &response_data[0], true);
-            conversions_float_to_data(m_pressure, &response_data[4], true);
-            conversions_float_to_data(m_temp, &response_data[8], true);
-
-            // Send ack with response data
-            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response_data, 12);
-        }
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'M', 'S', '5', '8', '3', '7', 'P'}))){
-        // MS5837 periodic read configure
-        // M, S, 5, 8, 3, 7, P, [enable]
-        // [enable] is 1 or 0 (8-bit int) 1 = true (periodic read enabled). 0 = false (not enabled)
-        
-        if(len != 8){
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
-        }else{
-            periodic_ms5837 = msg[7];
-            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
-        }
-    }else if(MSG_EQUALS(((uint8_t[]){'R', 'E', 'S', 'E', 'T', 0x0D, 0x1E}))){
-        wdt_reset_now();
-    }else if(MSG_EQUALS(((uint8_t[]){'R', 'S', 'T', 'W', 'H', 'Y'}))){
-        // R, S, T, W, H, Y
-        // ACK contains a 32-bit integer (signed, little endian)
-        // indicating one of the HALT_EC codes in debug.h
-        uint8_t response[4];
-        conversions_int32_to_data(reset_cause, response, true);
-        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response, 4);
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'I', 'M', 'H', 'I', 'J', 'A', 'C', 'K'}))){
-        // S, I, M, H, I, J, A, C, K, [hijack]
-        // [hijack] is an 8-bit int (unsigned) 0 = release, 1 = hijack
-        if(len != 10){
-            // Message is incorrect size
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
-        }else{
-            cmdctrl_simhijack(msg[9]);
-            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
-        }
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'I', 'M', 'D', 'A', 'T'}))){
-        // S, I, M, D, A, T, [w], [x], [y], [z], [depth]
-        // All values are little endian floats (32-bit)
-        // x, y, z, w are current quaternion (BNO055 data)
-        // depth is current depth (MS5837 data)
-        if(len != 26){
-            // Message is incorrect size
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
-        }else{
-            // Parse received data
-            cmdctrl_sim_quat.w = conversions_data_to_float(&msg[6], true);
-            cmdctrl_sim_quat.x = conversions_data_to_float(&msg[10], true);
-            cmdctrl_sim_quat.y = conversions_data_to_float(&msg[14], true);
-            cmdctrl_sim_quat.z = conversions_data_to_float(&msg[18], true);
-            cmdctrl_sim_depth = conversions_data_to_float(&msg[22], true);
-
-            // Message handled successfully
-            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
     }else if(MSG_EQUALS(((uint8_t[]){'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'R'}))){
         // S, C, B, N, O, 0, 5, 5, R
@@ -1308,7 +1247,13 @@ void cmdctrl_handle_message(void){
         // no calibration is stored.
         bno055_configure();
         cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
-    }else if(MSG_EQUALS(((uint8_t[]){'M', 'S', '5', '8', '3', '7', 'C', 'A', 'L', 'G'}))){
+    }// -----------------------------------------------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------------------------------------------
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // MS5837 Configuration Commands & Queries
+    // -----------------------------------------------------------------------------------------------------------------
+    else if(MSG_EQUALS(((uint8_t[]){'M', 'S', '5', '8', '3', '7', 'C', 'A', 'L', 'G'}))){
         // M, S, 5, 8, 3, 7, C, A, L, G
         // Read MS5837 calibration
         // ACK contains [atm_pressure], [fluid_density]
@@ -1336,6 +1281,51 @@ void cmdctrl_handle_message(void){
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
             }
         }
+    }
+    // -----------------------------------------------------------------------------------------------------------------
+
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Misc commands & queries
+    // -----------------------------------------------------------------------------------------------------------------
+    else if(MSG_EQUALS(((uint8_t[]){'R', 'E', 'S', 'E', 'T', 0x0D, 0x1E}))){
+        wdt_reset_now();
+    }else if(MSG_EQUALS(((uint8_t[]){'R', 'S', 'T', 'W', 'H', 'Y'}))){
+        // R, S, T, W, H, Y
+        // ACK contains a 32-bit integer (signed, little endian)
+        // indicating one of the HALT_EC codes in debug.h
+        uint8_t response[4];
+        conversions_int32_to_data(reset_cause, response, true);
+        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response, 4);
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'I', 'M', 'H', 'I', 'J', 'A', 'C', 'K'}))){
+        // S, I, M, H, I, J, A, C, K, [hijack]
+        // [hijack] is an 8-bit int (unsigned) 0 = release, 1 = hijack
+        if(len != 10){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            cmdctrl_simhijack(msg[9]);
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+        }
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'I', 'M', 'D', 'A', 'T'}))){
+        // S, I, M, D, A, T, [w], [x], [y], [z], [depth]
+        // All values are little endian floats (32-bit)
+        // x, y, z, w are current quaternion (BNO055 data)
+        // depth is current depth (MS5837 data)
+        if(len != 26){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Parse received data
+            cmdctrl_sim_quat.w = conversions_data_to_float(&msg[6], true);
+            cmdctrl_sim_quat.x = conversions_data_to_float(&msg[10], true);
+            cmdctrl_sim_quat.y = conversions_data_to_float(&msg[14], true);
+            cmdctrl_sim_quat.z = conversions_data_to_float(&msg[18], true);
+            cmdctrl_sim_depth = conversions_data_to_float(&msg[22], true);
+
+            // Message handled successfully
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+        }
     }else if(MSG_EQUALS(((uint8_t[]){'C', 'B', 'V', 'E', 'R'}))){
         // Control board version info query
         // C, B, V, E, R
@@ -1362,7 +1352,11 @@ void cmdctrl_handle_message(void){
         response[4] = FW_VER_TYPE;
         response[5] = (FW_VER_TYPE == ' ') ? 0 : FW_VER_BUILD;
         cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response, 6);
-    }else{
+    }
+    // -----------------------------------------------------------------------------------------------------------------
+
+
+    else{
         // This is an unrecognized message
         cmdctrl_acknowledge(msg_id, ACK_ERR_UNKNOWN_MSG, NULL, 0);
     }
