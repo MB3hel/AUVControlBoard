@@ -38,12 +38,12 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     # Query sensor status
     ############################################################################
     print("Query sensor status...", end="")
-    res, bno055, ms5837 = cb.get_sensor_status()
+    res, imu, depth = cb.get_sensor_status()
     if res != ControlBoard.AckError.NONE:
         print("Fail.")
         return 1
     print("Done.")
-    print("BNO055: {}".format("Ready" if bno055 else "Not Ready"))
+    print("IMU: {}".format(imu.name))
     print()
 
     time.sleep(1)
@@ -57,7 +57,7 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     print("Accel X, Accel Y, Accel Z, Gyro X, Gyro Y, Gyro Z")
     failures = 0
     while True:
-        ack, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z = cb.read_bno055_raw()
+        ack, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z = cb.read_imu_raw()
         if ack == cb.AckError.NONE:
             failures = 0
             print("{0}, {1}, {2}, {3}, {4}, {5}".format(accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z))

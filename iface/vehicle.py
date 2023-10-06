@@ -55,6 +55,10 @@ def set_default_vehicle(name: str):
 
 class Vehicle(ABC):
     def configure(self, cb: ControlBoard) -> Tuple[ControlBoard.AckError, str]:
+        ack, imu, depth = cb.get_sensor_status()
+        if ack != ControlBoard.AckError.NONE:
+            return ack, "get_sensor_status"
+
         ack = cb.set_motor_matrix(self.motor_matrix)
         if ack != ControlBoard.AckError.NONE:
             return ack, "set_motor_matrix"
@@ -67,9 +71,11 @@ class Vehicle(ABC):
         if ack != ControlBoard.AckError.NONE:
             return ack, "set_reldof"
         
-        ack = cb.set_bno055_axis(self.bno055_axis_config)
-        if ack != ControlBoard.AckError.NONE:
-            return ack, "set_bno055_axis"
+        # Apply configuration for any sensors that are in use on the control board
+        if imu == ControlBoard.IMUSensors.BNO055:
+            ack = cb.set_bno055_axis(self.bno055_axis_config)
+            if ack != ControlBoard.AckError.NONE:
+                return ack, "set_bno055_axis"
         
         ack = cb.tune_pid_xrot(*self.xrot_pid_tuning)
         if ack != ControlBoard.AckError.NONE:

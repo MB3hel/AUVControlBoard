@@ -38,13 +38,13 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     # Query sensor status
     ############################################################################
     print("Query sensor status...", end="")
-    res, bno055, ms5837 = cb.get_sensor_status()
+    res, imu, depth = cb.get_sensor_status()
     if res != ControlBoard.AckError.NONE:
         print("Fail.")
         return 1
     print("Done.")
-    print("BNO055: {}".format("Ready" if bno055 else "Not Ready"))
-    print("MS5837: {}".format("Ready" if ms5837 else "Not Ready"))
+    print("IMU: {}".format(imu.name))
+    print("Depth: {}".format(depth.name))
     print()
 
     time.sleep(2)
@@ -53,10 +53,10 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     # Setup
     ############################################################################
     print("Enable periodic sensor data...", end="")
-    if cb.read_bno055_periodic(True) != ControlBoard.AckError.NONE:
+    if cb.read_imu_periodic(True) != ControlBoard.AckError.NONE:
         print("Fail.")
         return 1
-    if cb.read_ms5837_periodic(True) != ControlBoard.AckError.NONE:
+    if cb.read_depth_periodic(True) != ControlBoard.AckError.NONE:
         print("Fail.")
         return 1
     print("Done.")
@@ -66,8 +66,8 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     # Periodically print sensor data
     ############################################################################
     while True:
-        imu_data = cb.get_bno055_data()
-        depth_data = cb.get_ms5837_data()
+        imu_data = cb.get_imu_data()
+        depth_data = cb.get_depth_data()
         
         if platform.system() == "Windows":
             os.system("cls")
