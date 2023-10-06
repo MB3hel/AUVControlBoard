@@ -88,6 +88,9 @@
 // Restrict range to 0.0 to 1.0
 #define LIMIT_POS(v) if(v > 1.0f) v = 1.0f; if (v < 0.0f) v = 0.0f;
 
+// Get minimum of two values
+#define MIN(a, b)    (((a) < (b)) ? (a) : (b))
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -102,7 +105,6 @@ float cmdctrl_sim_depth;
 float cmdctrl_sim_speeds[8];
 
 // CMDCTRL state tracking
-static bool motors_enabled;
 static unsigned int mode;
 
 // Last used raw mode target
@@ -150,21 +152,12 @@ static float ohold_z;
 static float ohold_yaw_spd;
 static euler_t ohold_target_euler;
 
-// Current sensor data
-// Need mutex b/c don't want to read one value (eg x) then have others (y, z) changed before reading them
-static SemaphoreHandle_t sensor_data_mutex;
-static ms5837_data curr_ms5837_data;
-
-// Sensor status flags
-static bool _bno055_ready;
-static bool _ms5837_ready;
-
 // Periodic reading of sensor data timer
-static bool periodic_bno055;
-static bool periodic_ms5837;
+static bool periodic_imu;
+static bool periodic_depth;
 static TimerHandle_t sensor_read_timer;
 
-// Used to periodically re-apply speeds in modes where 
+// Used to periodically re-apply speeds in modes where necessary
 static TimerHandle_t periodic_speed_timer;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -174,67 +167,49 @@ static TimerHandle_t periodic_speed_timer;
 /// CMDCTRL functions / implementation
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-static inline bool __attribute__((always_inline)) bno055_ready(void){
-    return cmdctrl_sim_hijacked ? true : _bno055_ready;
-}
-
-static inline bool __attribute__((always_inline)) ms5837_ready(void){
-    return cmdctrl_sim_hijacked ? true : _ms5837_ready;
-}
-
 static void send_sensor_data(TimerHandle_t timer){
     (void)timer;
     
     // Send the data for sensors as needed
-    if(periodic_bno055 && bno055_ready()){
+    if(periodic_imu && (imu_get_sensor() != IMU_NONE)){
         // Store current readings
-        xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-        bno055_data dat = curr_bno055_data;
-        xSemaphoreGive(sensor_data_mutex);
+        imu_data_t dat = imu_get_data();
 
         // Construct message
-        uint8_t bno055_data[35];
-        bno055_data[0] = 'B';
-        bno055_data[1] = 'N';
-        bno055_data[2] = 'O';
-        bno055_data[3] = '0';
-        bno055_data[4] = '5';
-        bno055_data[5] = '5';
-        bno055_data[6] = 'D';
-        conversions_float_to_data(dat.curr_quat.w, &bno055_data[7], true);
-        conversions_float_to_data(dat.curr_quat.x, &bno055_data[11], true);
-        conversions_float_to_data(dat.curr_quat.y, &bno055_data[15], true);
-        conversions_float_to_data(dat.curr_quat.z, &bno055_data[19], true);
-        conversions_float_to_data(dat.accum_pitch, &bno055_data[23], true);
-        conversions_float_to_data(dat.accum_roll, &bno055_data[27], true);
-        conversions_float_to_data(dat.accum_yaw, &bno055_data[31], true);
+        uint8_t imu_data_msg[33];
+        imu_data_msg[0] = 'I';
+        imu_data_msg[1] = 'M';
+        imu_data_msg[2] = 'U';
+        imu_data_msg[3] = 'D';
+        conversions_float_to_data(dat.quat.w, &imu_data_msg[4], true);
+        conversions_float_to_data(dat.quat.x, &imu_data_msg[8], true);
+        conversions_float_to_data(dat.quat.y, &imu_data_msg[12], true);
+        conversions_float_to_data(dat.quat.z, &imu_data_msg[16], true);
+        conversions_float_to_data(dat.accum_angles.pitch, &imu_data_msg[20], true);
+        conversions_float_to_data(dat.accum_angles.roll, &imu_data_msg[24], true);
+        conversions_float_to_data(dat.accum_angles.yaw, &imu_data_msg[28], true);
 
         // Send message (status message from CB to PC)
-        pccomm_write(bno055_data, 35);
+        pccomm_write(imu_data_msg, 35);
     }
-    if(periodic_ms5837 & ms5837_ready()){
+    if(periodic_depth & (depth_get_sensor() != DEPTH_NONE)){
         // Store current readings
-        xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-        float m_depth_m = curr_ms5837_data.depth_m;
-        float m_pressure = curr_ms5837_data.pressure_pa;
-        float m_temp = curr_ms5837_data.temperature_c;
-        xSemaphoreGive(sensor_data_mutex);
+        depth_data_t dat = depth_get_data();
 
         // Construct message
-        uint8_t ms5837_data[19];
-        ms5837_data[0] = 'M';
-        ms5837_data[1] = 'S';
-        ms5837_data[2] = '5';
-        ms5837_data[3] = '8';
-        ms5837_data[4] = '3';
-        ms5837_data[5] = '7';
-        ms5837_data[6] = 'D';
-        conversions_float_to_data(m_depth_m, &ms5837_data[7], true);
-        conversions_float_to_data(m_pressure, &ms5837_data[11], true);
-        conversions_float_to_data(m_temp, &ms5837_data[15], true);
+        uint8_t depth_data[18];
+        depth_data[0] = 'D';
+        depth_data[1] = 'E';
+        depth_data[2] = 'P';
+        depth_data[3] = 'T';
+        depth_data[4] = 'H';
+        depth_data[5] = 'D';
+        conversions_float_to_data(dat.depth_m, &depth_data[6], true);
+        conversions_float_to_data(dat.pressure_pa, &depth_data[10], true);
+        conversions_float_to_data(dat.temperature_c, &depth_data[14], true);
 
         // Send message (status message from CB to PC)
-        pccomm_write(ms5837_data, 19);
+        pccomm_write(depth_data, 18);
     }
 
     // Not using auto reload so that any time taken to
@@ -242,12 +217,14 @@ static void send_sensor_data(TimerHandle_t timer){
     xTimerStart(sensor_read_timer, portMAX_DELAY);
 }
 
+static void cmdctrl_apply_speed(void);
+
 static void periodic_reapply_speed(TimerHandle_t timer){
     (void)timer;
 
     // Modes using sensor data (which may change) need to be periodically reapplied
     if(mode == MODE_GLOBAL || mode == MODE_SASSIST || mode == MODE_DHOLD || mode == MODE_OHOLD){
-        cmdctrl_apply_saved_speed();
+        cmdctrl_apply_speed();
     }
 
     // Not using auto reload so that any time taken to
@@ -310,23 +287,9 @@ void cmdctrl_init(void){
     ohold_target_euler.yaw = 0.0f;
     ohold_target_euler.is_deg = true;
 
-    // Initial sensor status
-    _bno055_ready = false;
-    _ms5837_ready = false;
-
-    // Initial sensor data
-    curr_bno055_data.curr_quat.w = 0;
-    curr_bno055_data.curr_quat.x = 0;
-    curr_bno055_data.curr_quat.y = 0;
-    curr_bno055_data.curr_quat.z = 0;
-    curr_bno055_data.accum_pitch = 0;
-    curr_bno055_data.accum_roll = 0;
-    curr_bno055_data.accum_yaw = 0;
-    sensor_data_mutex = xSemaphoreCreateMutex();
-
     // Periodic sensor data
-    periodic_bno055 = false;
-    periodic_ms5837 = false;
+    periodic_imu = false;
+    periodic_depth = false;
     sensor_read_timer = xTimerCreate(
         "sensor_read",
         pdMS_TO_TICKS(SENSOR_DATA_PERIOD),
@@ -352,47 +315,9 @@ void cmdctrl_init(void){
 }
 
 /**
- * Check if two byte arrays are identical
- * @param a First byte array
- * @param len_a Length of first array
- * @param b Second byte array
- * @param len_b Length of second array
- * @return true If arrays match
- * @return false If arrays do not match
+ * Apply speed based on current mode and stored targets
  */
-static bool data_matches(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_t len_b){
-    if(len_a != len_b)
-        return false;
-    for(uint32_t i = 0; i < len_a; ++i){
-        if(a[i] != b[i])
-            return false;
-    }
-    return true;
-}
-
-/**
- * Check if one array starts with the data in another array
- * @param a The array to search in ("full" data)
- * @param len_a Length of array a
- * @param b The array to search for ("sub" / "prefix" data)
- * @param len_b Length of array b
- * @return true If array a starts with array b
- * @return false If array a does not start with array b
- */
-static bool data_startswith(const uint8_t *a, uint32_t len_a, const uint8_t *b, uint32_t len_b){
-    if(len_a < len_b)
-        return false;
-    for(uint32_t i = 0; i < len_b; ++i){
-        if(a[i] != b[i])
-            return false;
-    }
-    return true;
-}
-
-/**
- * Apply the last saved speed for the current mode
- */
-void cmdctrl_apply_saved_speed(void){
+static void cmdctrl_apply_speed(void){
     quaternion_t m_quat;
     float m_depth;
 
@@ -517,23 +442,50 @@ static void cmdctrl_acknowledge(uint16_t msg_id, uint8_t error_code, uint8_t *re
     vPortFree(data);
 }
 
-void cmdctrl_handle_message(void){
-    // Helper macros
-    // First two bytes of message are message ID (so skip them for actual message content)
-    // Also, skip last two bytes (these are message CRC)
-    #define msg     (&pccomm_read_buf[2])
-    #define len     (pccomm_read_len - 4)
-    
-    // Compare message to byte arrays
-    #define MSG_STARTS_WITH(x)      data_startswith(msg, len, (x), sizeof((x)))
-    #define MSG_EQUALS(x)           data_matches(msg, len, (x), sizeof(x))
+/**
+ * Check if message starts with the given prefix
+ */
+static bool message_starts_with(const uint8_t *msg, const unsigned int msg_len, const uint8_t *prefix, const unsigned int prefix_len){
+    if(msg_len < prefix_len)
+        return false;
+    for(unsigned int i = 0; i < prefix_len; ++i){
+        if(msg[i] != prefix[i])
+            return false;
+    }
+    return true;
+}
 
-    #define MIN(a, b)    (((a) < (b)) ? (a) : (b))
+/**
+ * Check if message matches the given data
+ */
+static bool message_equals(const uint8_t *msg, const unsigned int msg_len, const uint8_t *match, const unsigned int match_len){
+    if(msg_len != match_len)
+        return false;
+    for(unsigned int i = 0; i < msg_len; ++i){
+        if(msg[i] != match[i])
+            return false;
+    }
+    return true;
+}
+
+#define message_starts_with_str(msg, msg_len, prefix_str)       message_starts_with(msg, msg_len, (uint8_t*)(prefix_str), (sizeof(prefix_str) - 1))
+#define message_equals_str(msg, msg_len, match_str)             message_equals(msg, msg_len, (uint8_t*)(match_str), (sizeof(match_str) - 1))
+
+
+
+void cmdctrl_handle_message(void){
+    // Skip first 2 bytes of pccomm_read_buf (these are message ID)
+    // Also skip last 2 bytes (these are CRC)
+    uint8_t *msg = &pccomm_read_buf[2];
+    unsigned int len = pccomm_read_len - 4;
 
     // msg_id is first two bytes (unsigned 16-bit int big endian)
     uint16_t msg_id = conversions_data_to_int16(pccomm_read_buf, false);
 
-    if(MSG_STARTS_WITH(((uint8_t[]){'R', 'A', 'W'}))){
+    // -----------------------------------------------------------------------------------------------------------------
+    // Motor motion commands (check these first as they are expected to be most frequently used)
+    // -----------------------------------------------------------------------------------------------------------------
+    if(message_starts_with_str(msg, len, "RAW")){
         // RAW speed set command
         // R, A, W, [speed_0], [speed_1], [speed_2], [speed_3], [speed_4], [speed_5], [speed_6], [speed_7]
         // [speed_i] is a 32-bit float (little endian)
@@ -556,8 +508,7 @@ void cmdctrl_handle_message(void){
 
             // Ensure speeds are in valid range
             for(unsigned int i = 0; i < 8; ++i){
-                if(raw_target[i] < -1.0f) raw_target[i] = -1.0f;
-                else if(raw_target[i] > 1.0f) raw_target[i] = 1.0f;
+                LIMIT(raw_target[i]);
             }
 
             // Reset time until periodic speed set
@@ -574,139 +525,12 @@ void cmdctrl_handle_message(void){
             mc_wdog_feed();
 
             // Update motor speeds
-            mc_set_raw(raw_target);
+            cmdctrl_apply_speed();
 
             // Acknowledge message w/ no error.
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'T', 'I', 'N', 'V'}))){
-        // Thruster inversion set command
-        // T, I, N, V, [inv]
-        // [inv] is an 8-bit int where MSB corresponds to thruster 8 and LSB thruster 1
-        //       1 = inverted. 0 = not inverted
-        
-        if(len != 5){
-            // Message is incorrect size
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
-        }else{
-            // Message is correct size. Handle it.
-            uint8_t inv = msg[4];
-            for(unsigned int i = 0; i < 8; ++i){
-                mc_invert[i] = inv & 1;
-                inv >>= 1;
-            }
-
-            // Reapply saved speed when inversions change
-            cmdctrl_apply_saved_speed();
-
-            // Acknowledge message w/ no error.
-            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
-        }
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'R', 'E', 'L', 'D', 'O', 'F'}))){
-        // Relative DoF speed set command
-        // R, E, L, D, O, F, [x], [y], [z], [xrot], [yrot], [zrot]
-        // Each value is a little endian float (32-bit)
-
-        if(len != 30){
-            // Message is incorrect size
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
-        }else{
-            // Message is correct size. Handle it.
-            float x = conversions_data_to_float(&msg[6], true);
-            float y = conversions_data_to_float(&msg[10], true);
-            float z = conversions_data_to_float(&msg[14], true);
-            float xrot = conversions_data_to_float(&msg[18], true);
-            float yrot = conversions_data_to_float(&msg[22], true);
-            float zrot = conversions_data_to_float(&msg[26], true);
-
-            // Restrict to 0.0 - 1.0
-            LIMIT_POS(x);
-            LIMIT_POS(y);
-            LIMIT_POS(z);
-            LIMIT_POS(xrot);
-            LIMIT_POS(yrot);
-            LIMIT_POS(zrot);
-
-            // Linear scale DOWN factors
-            //  x = min(x, y, z) / x
-            //  y = min(x, y, z) / y
-            //  z = min(x, y, z) / z
-            mc_relscale[0] = x == 0.0f ? 1.0f : MIN(x, MIN(y, z)) / x;
-            mc_relscale[1] = y == 0.0f ? 1.0f : MIN(x, MIN(y, z)) / y;
-            mc_relscale[2] = z == 0.0f ? 1.0f : MIN(x, MIN(y, z)) / z;
-
-            // Angular scale DOWN factors
-            //  xrot = min(xrot, yrot, zrot) / xrot
-            //  yrot = min(xrot, yrot, zrot) / yrot
-            //  zrot = min(xrot, yrot, zrot) / zrot
-            mc_relscale[3] = xrot == 0.0f ? 1.0f : MIN(xrot, MIN(yrot, zrot)) / xrot;
-            mc_relscale[4] = yrot == 0.0f ? 1.0f : MIN(xrot, MIN(yrot, zrot)) / yrot;
-            mc_relscale[5] = zrot == 0.0f ? 1.0f : MIN(xrot, MIN(yrot, zrot)) / zrot;
-
-            // Reapply saved speed when scale factors change
-            cmdctrl_apply_saved_speed();
-
-            // Acknowledge message w/ no error
-            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
-        }
-
-    }else if(MSG_EQUALS(((uint8_t[]){'W', 'D', 'G', 'F'}))){
-        // Feed motor watchdog command
-        // W, D, G, F
-
-        // Feed watchdog (as requested)
-        bool was_killed = mc_wdog_feed();
-
-        // Restore last set speed if previously killed
-        if(was_killed)
-            cmdctrl_apply_saved_speed();
-
-        // Acknowledge message w/ no error.
-        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'M', 'M', 'A', 'T', 'S'}))){
-        // Set Motor Matrix Row command
-        // M, M, A, T, S, [thruster_num], [data]
-        // [thruster_num] is an 8-bit int from 1-8 (inclusive on both ends)
-        // [data] is a set of 6 32-bit floats (24 bytes)
-        //        Lowest indices are lowest thruster number (little endian floats)
-
-        if(len != 30){
-            // Message is incorrect size
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
-        }else{
-            // Message is correct size
-            
-            if(msg[5] > 8 || msg[5] < 1){
-                // Invalid thruster number
-                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
-            }else{
-                // Construct data array
-                // Note: there is no validation of motor matrix data
-                float data[6];
-                data[0] = conversions_data_to_float(&msg[6], true);
-                data[1] = conversions_data_to_float(&msg[10], true);
-                data[2] = conversions_data_to_float(&msg[14], true);
-                data[3] = conversions_data_to_float(&msg[18], true);
-                data[4] = conversions_data_to_float(&msg[22], true);
-                data[5] = conversions_data_to_float(&msg[26], true);
-
-                // Set the data
-                mc_set_dof_matrix(msg[5], data);
-
-                // Acknowledge message w/ no error.
-                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
-            }
-        }
-    }else if(MSG_EQUALS(((uint8_t[]){'M', 'M', 'A', 'T', 'U'}))){
-        // Motor Matrix Update command (call after all rows written)
-        // M, M, A, T, U
-
-        // Recalc things after motor matrix is fully updated
-        mc_recalc();
-
-        // Acknowledge message w/ no error.
-        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'L', 'O', 'C', 'A', 'L'}))){
+    }else if(message_starts_with_str(msg, len, "LOCAL")){
         // LOCAL Speed Set
         // L, O, C, A, L, [x], [y], [z], [xrot], [yrot], [zrot]
         // [x], [y], [z], [xrot], [yrot], [zrot]  are 32-bit floats (little endian)
@@ -747,46 +571,12 @@ void cmdctrl_handle_message(void){
             mc_wdog_feed();
 
             // Update motor speeds
-            mc_set_local(local_x, local_y, local_z, local_xrot, local_yrot, local_zrot);
+            cmdctrl_apply_speed();
 
             // Acknowledge message w/ no error.
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
-    }else if(MSG_EQUALS(((uint8_t[]){'S', 'S', 'T', 'A', 'T'}))){
-        // Sensor status query
-        // S, S, T, A, T
-        // ACK contains data in the following format [sensor_status]
-        // [sensor_status] is an 8-bit int where each bit indicates if a sensor is ready
-        // bit 0 (LSB) is BNO055 status (1 = ready, 0 = not ready)
-        // bit 1 is MS5837 status (1 = ready, 0 = not ready)
-
-        uint8_t response[1];
-        response[0] = 0x00;
-        response[0] |= bno055_ready();
-        response[0] |= (ms5837_ready() << 1);
-
-        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response, 1);
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'A'}))){
-        // BNO055 Axis config command: sets axis remap for BNO055 IMU
-        // B, N, O, 0, 5, 5, A, [mode]
-        // [mode] is a single byte with value 0-7 for BNO055 axis config P0 to P7
-        // Modes are described in sensor's datasheet
-        if(len != 8){
-            // Wrong length
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
-        }else{
-            // Message is correct size. Handle it.
-
-            if(msg[7] > 7){
-                // Invalid mode
-                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
-            }else{
-                // Valid mode. Set it.
-                bno055_set_axis(msg[7]);
-                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
-            }
-        }
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'G', 'L', 'O', 'B', 'A', 'L'}))){
+    }else if(message_starts_with_str(msg, len, "GLOBAL")){
         // GLOBAL speed set
         // G, L, O, B, A, L, [x], [y], [z], [pitch_spd], [roll_spd], [yaw_spd]
         // [x], [y], [z], [pitch_spd], [roll_spd], [yaw_spd]  are 32-bit floats (little endian)
@@ -795,10 +585,7 @@ void cmdctrl_handle_message(void){
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
         }else{
             // Message is correct size. Handle it.
-
-            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            quaternion_t m_quat = curr_bno055_data.curr_quat;
-            xSemaphoreGive(sensor_data_mutex);
+            quaternion_t m_quat = imu_get_data().quat;
 
             if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
                 // Need BNO055 IMU data to use global mode.
@@ -835,9 +622,448 @@ void cmdctrl_handle_message(void){
                 mc_wdog_feed();
 
                 // Update motor speeds
-                mc_set_global(global_x, global_y, global_z, global_pitch_spd, global_roll_spd, global_yaw_spd, m_quat);
+                cmdctrl_apply_speed();
 
                 // Acknowledge message w/ no error.
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+            }
+        }
+    }else if(message_starts_with_str(msg, len, "SASSIST1")){
+        // STABILITY ASSIST speed set variant 1
+        // S, A, S, S, I, S, T, 1, [x], [y], [yaw_spd], [target_pitch], [target_roll], [target_depth]
+        // [x], [y], [yaw_spd], [target_pitch], [target_roll], [target_depth] are 32-bit floats (little endian)
+        if(len != 32){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Message is correct size. Handle it.
+            quaternion_t m_quat = imu_get_data().quat;
+
+            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready()){
+                // Need BNO055 IMU data to use sassist mode.
+                // Also need MS5837 data to use sassist mode
+                // If not ready, then this command is invalid at this time
+                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+            }else{
+                // Get arguments from message
+                sassist_valid = true;
+                sassist_variant = 1;
+                sassist_x = conversions_data_to_float(&msg[8], true);
+                sassist_y = conversions_data_to_float(&msg[12], true);
+                sassist_yaw_spd = conversions_data_to_float(&msg[16], true);
+                sassist_target_euler.pitch = conversions_data_to_float(&msg[20], true);
+                sassist_target_euler.roll = conversions_data_to_float(&msg[24], true);
+                sassist_depth_target = conversions_data_to_float(&msg[28], true);
+
+                // Ensure speeds are in valid range
+                LIMIT(sassist_x);
+                LIMIT(sassist_y);
+                LIMIT(sassist_yaw_spd);
+
+                // Reset time until periodic speed set
+                xTimerReset(periodic_speed_timer, portMAX_DELAY);
+
+                // Update mode variable and LED color (if needed)
+                if(mode != MODE_SASSIST){
+                    mode = MODE_SASSIST;
+                    led_set(COLOR_SASSIST);
+                }
+
+                // Feed watchdog when speeds are set
+                // Important to call before speed set function in case currently killed
+                mc_wdog_feed();
+
+                // Update motor speeds
+                cmdctrl_apply_speed();
+
+                // Acknowledge message w/ no error.
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+            }
+        }
+    }else if(message_starts_with_str(msg, len, "SASSIST2")){
+        // STABILITY ASSIST speed set variant 2
+        // S, A, S, S, I, S, T, 2, [x], [y], [target_pitch], [target_roll], [target_yaw], [target_depth]
+        // [x], [y], [target_pitch], [target_roll], [target_yaw], [target_depth] are 32-bit floats (little endian)
+        if(len != 32){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Message is correct size. Handle it.
+            quaternion_t m_quat = imu_get_data().quat;
+
+            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready()){
+                // Need BNO055 IMU data to use sassist mode.
+                // Also need MS5837 data to use sassist mode
+                // If not ready, then this command is invalid at this time
+                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+            }else{
+                // Get arguments from message
+                sassist_valid = true;
+                sassist_variant = 2;
+                sassist_x = conversions_data_to_float(&msg[8], true);
+                sassist_y = conversions_data_to_float(&msg[12], true);
+                sassist_target_euler.pitch = conversions_data_to_float(&msg[16], true);
+                sassist_target_euler.roll = conversions_data_to_float(&msg[20], true);
+                sassist_target_euler.yaw = conversions_data_to_float(&msg[24], true);
+                sassist_depth_target = conversions_data_to_float(&msg[28], true);
+
+                // Ensure speeds are in valid range
+                LIMIT(sassist_x);
+                LIMIT(sassist_y);
+                LIMIT(sassist_yaw_spd);
+
+                // Reset time until periodic speed set
+                xTimerReset(periodic_speed_timer, portMAX_DELAY);
+
+                // Update mode variable and LED color (if needed)
+                if(mode != MODE_SASSIST){
+                    mode = MODE_SASSIST;
+                    led_set(COLOR_SASSIST);
+                }
+
+                // Feed watchdog when speeds are set
+                // Important to call before speed set function in case currently killed
+                mc_wdog_feed();
+
+                // Update motor speeds
+                cmdctrl_apply_speed();
+
+                // Acknowledge message w/ no error.
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+            }
+        }
+    }else if(message_starts_with_str(msg, len, "OHOLD1")){
+        // ORIENTATION HOLD speed set variant 1
+        // O, H, O, L, D, 1 [x], [y], [z], [yaw_spd], [target_pitch], [target_roll]
+        // [x], [y], [z], [yaw_spd], [target_pitch], [target_roll] are 32-bit floats (little endian)
+        if(len != 30){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Message is correct size. Handle it.
+            quaternion_t m_quat = imu_get_data().quat;
+
+            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
+                // Need BNO055 IMU data to use ohold mode.
+                // If not ready, then this command is invalid at this time
+                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+            }else{
+                // Get arguments from message
+                ohold_valid = true;
+                ohold_variant = 1;
+                ohold_x = conversions_data_to_float(&msg[6], true);
+                ohold_y = conversions_data_to_float(&msg[10], true);
+                ohold_z = conversions_data_to_float(&msg[14], true);
+                ohold_yaw_spd = conversions_data_to_float(&msg[18], true);
+                ohold_target_euler.pitch = conversions_data_to_float(&msg[22], true);
+                ohold_target_euler.roll = conversions_data_to_float(&msg[26], true);
+
+                // Ensure speeds are in valid range
+                LIMIT(ohold_x);
+                LIMIT(ohold_y);
+                LIMIT(ohold_z);
+                LIMIT(ohold_yaw_spd);
+
+                // Reset time until periodic speed set
+                xTimerReset(periodic_speed_timer, portMAX_DELAY);
+
+                // Update mode variable and LED color (if needed)
+                if(mode != MODE_OHOLD){
+                    mode = MODE_OHOLD;
+                    led_set(COLOR_OHOLD);
+                }
+
+                // Feed watchdog when speeds are set
+                // Important to call before speed set function in case currently killed
+                mc_wdog_feed();
+
+                // Update motor speeds
+                cmdctrl_apply_speed();
+
+                // Acknowledge message w/ no error.
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+            }
+        }
+    }else if(message_starts_with_str(msg, len, "OHOLD2")){
+        // ORIENTATION HOLD speed set variant 2
+        // O, H, O, L, D, 2, [x], [y], [z], [target_pitch], [target_roll], [target_yaw]
+        // [x], [y], [z], [target_pitch], [target_roll], [target_yaw] are 32-bit floats (little endian)
+        if(len != 30){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Message is correct size. Handle it.
+            quaternion_t m_quat = imu_get_data().quat;
+
+            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
+                // Need BNO055 IMU data to use ohold mode.
+                // If not ready, then this command is invalid at this time
+                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
+            }else{
+                // Get arguments from message
+                ohold_valid = true;
+                ohold_variant = 2;
+                ohold_x = conversions_data_to_float(&msg[6], true);
+                ohold_y = conversions_data_to_float(&msg[10], true);
+                ohold_z = conversions_data_to_float(&msg[14], true);
+                ohold_target_euler.pitch = conversions_data_to_float(&msg[18], true);
+                ohold_target_euler.roll = conversions_data_to_float(&msg[22], true);
+                ohold_target_euler.yaw = conversions_data_to_float(&msg[26], true);
+
+                // Ensure speeds are in valid range
+                LIMIT(ohold_x);
+                LIMIT(ohold_y);
+                LIMIT(ohold_z);
+
+                // Reset time until periodic speed set
+                xTimerReset(periodic_speed_timer, portMAX_DELAY);
+
+                // Update mode variable and LED color (if needed)
+                if(mode != MODE_OHOLD){
+                    mode = MODE_OHOLD;
+                    led_set(COLOR_OHOLD);
+                }
+
+                // Feed watchdog when speeds are set
+                // Important to call before speed set function in case currently killed
+                mc_wdog_feed();
+
+                // Update motor speeds
+                cmdctrl_apply_speed();
+
+                // Acknowledge message w/ no error.
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+            }
+        }
+    }else if(message_equals_str(msg, len, "WDGF")){
+        // Feed motor watchdog command
+        // W, D, G, F
+
+        // Feed watchdog (as requested)
+        bool was_killed = mc_wdog_feed();
+
+        // Restore last set speed if previously killed
+        if(was_killed)
+            cmdctrl_apply_speed();
+
+        // Acknowledge message w/ no error.
+        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+    }
+    // -----------------------------------------------------------------------------------------------------------------
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Vehicle configuration commands
+    // -----------------------------------------------------------------------------------------------------------------
+    else if(message_starts_with_str(msg, len, "TINV")){
+        // Thruster inversion set command
+        // T, I, N, V, [inv]
+        // [inv] is an 8-bit int where MSB corresponds to thruster 8 and LSB thruster 1
+        //       1 = inverted. 0 = not inverted
+        
+        if(len != 5){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Message is correct size. Handle it.
+            uint8_t inv_byte = msg[4];
+            bool invert[8];
+            for(unsigned int i = 0; i < 8; ++i){
+                invert[i] = inv_byte & 1;
+                inv_byte >>= 1;
+            }
+            mc_set_tinv(invert);
+
+            // Reapply saved speed when inversions change
+            cmdctrl_apply_speed();
+
+            // Acknowledge message w/ no error.
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+        }
+    }else if(message_starts_with_str(msg, len, "RELDOF")){
+        // Relative DoF speed set command
+        // R, E, L, D, O, F, [x], [y], [z], [xrot], [yrot], [zrot]
+        // Each value is a little endian float (32-bit)
+
+        if(len != 30){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Message is correct size. Handle it.
+            float x = conversions_data_to_float(&msg[6], true);
+            float y = conversions_data_to_float(&msg[10], true);
+            float z = conversions_data_to_float(&msg[14], true);
+            float xrot = conversions_data_to_float(&msg[18], true);
+            float yrot = conversions_data_to_float(&msg[22], true);
+            float zrot = conversions_data_to_float(&msg[26], true);
+
+            // Restrict to 0.0 - 1.0
+            LIMIT_POS(x);
+            LIMIT_POS(y);
+            LIMIT_POS(z);
+            LIMIT_POS(xrot);
+            LIMIT_POS(yrot);
+            LIMIT_POS(zrot);
+
+            float mc_relscale[6];
+
+            // Linear scale DOWN factors
+            //  x = min(x, y, z) / x
+            //  y = min(x, y, z) / y
+            //  z = min(x, y, z) / z
+            mc_relscale[0] = x == 0.0f ? 1.0f : MIN(x, MIN(y, z)) / x;
+            mc_relscale[1] = y == 0.0f ? 1.0f : MIN(x, MIN(y, z)) / y;
+            mc_relscale[2] = z == 0.0f ? 1.0f : MIN(x, MIN(y, z)) / z;
+
+            // Angular scale DOWN factors
+            //  xrot = min(xrot, yrot, zrot) / xrot
+            //  yrot = min(xrot, yrot, zrot) / yrot
+            //  zrot = min(xrot, yrot, zrot) / zrot
+            mc_relscale[3] = xrot == 0.0f ? 1.0f : MIN(xrot, MIN(yrot, zrot)) / xrot;
+            mc_relscale[4] = yrot == 0.0f ? 1.0f : MIN(xrot, MIN(yrot, zrot)) / yrot;
+            mc_relscale[5] = zrot == 0.0f ? 1.0f : MIN(xrot, MIN(yrot, zrot)) / zrot;
+
+            mc_set_relscale(mc_relscale);
+
+            // Reapply saved speed when scale factors change
+            cmdctrl_apply_speed();
+
+            // Acknowledge message w/ no error
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+        }
+
+    }else if(message_starts_with_str(msg, len, "MMATS")){
+        // Set Motor Matrix Row command
+        // M, M, A, T, S, [thruster_num], [data]
+        // [thruster_num] is an 8-bit int from 1-8 (inclusive on both ends)
+        // [data] is a set of 6 32-bit floats (24 bytes)
+        //        Lowest indices are lowest thruster number (little endian floats)
+
+        if(len != 30){
+            // Message is incorrect size
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Message is correct size
+            
+            if(msg[5] > 8 || msg[5] < 1){
+                // Invalid thruster number
+                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+            }else{
+                // Construct data array
+                // Note: there is no validation of motor matrix data
+                float data[6];
+                data[0] = conversions_data_to_float(&msg[6], true);
+                data[1] = conversions_data_to_float(&msg[10], true);
+                data[2] = conversions_data_to_float(&msg[14], true);
+                data[3] = conversions_data_to_float(&msg[18], true);
+                data[4] = conversions_data_to_float(&msg[22], true);
+                data[5] = conversions_data_to_float(&msg[26], true);
+
+                // Set the data
+                mc_set_dof_matrix(msg[5], data);
+
+                // Acknowledge message w/ no error.
+                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+            }
+        }
+    }else if(message_starts_with_str(msg, len, "MMATU")){
+        // Motor Matrix Update command (call after all rows written)
+        // M, M, A, T, U
+
+        // Recalc things after motor matrix is fully updated
+        mc_recalc();
+
+        // Need to re-apply speeds if motor matrix changes
+        cmdctrl_apply_speed();
+
+        // Acknowledge message w/ no error.
+        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+    }else if(message_starts_with_str(msg, len, "PIDTN")){
+        // Tune PID
+        // P, I, D, T, N, [which], [kp], [ki], [kd], [limit], [invert]
+        // Each gain value (kp, ki, kd) is a 32-bit little endian float
+        // which = what PID to tune X (xrot), Y (yrot), Z (zrot), D (depth) (one byte, ASCII char)
+        // kp, ki, kd are gains. limit is max output of PID (magnitude, must be positive)
+        // invert == 1 negates the default PID output (single byte 1 or 0)
+        if(len != 23){
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            float kp = conversions_data_to_float(&msg[6], true);
+            float ki = conversions_data_to_float(&msg[10], true);
+            float kd = conversions_data_to_float(&msg[14], true);
+            float limit = conversions_data_to_float(&msg[18], true);
+            bool invert = msg[22];
+            switch(msg[5]){
+            case 'X':
+                mc_sassist_tune_xrot(kp, ki, kd, limit, invert);
+                break;
+            case 'Y':
+                mc_sassist_tune_yrot(kp, ki, kd, limit, invert);
+                break;
+            case 'Z':
+                mc_sassist_tune_zrot(kp, ki, kd, limit, invert);
+                break;
+            case 'D':
+                mc_sassist_tune_depth(kp, ki, kd, limit, invert);
+                break;
+            }
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+        }
+    }
+    // -----------------------------------------------------------------------------------------------------------------
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Sensor data commands / queries
+    // -----------------------------------------------------------------------------------------------------------------
+
+    // -----------------------------------------------------------------------------------------------------------------
+
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Sensor configuration & calibration commands (sensor specific)
+    // -----------------------------------------------------------------------------------------------------------------
+
+    // -----------------------------------------------------------------------------------------------------------------
+
+
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // Misc commands & queries
+    // -----------------------------------------------------------------------------------------------------------------
+
+    // -----------------------------------------------------------------------------------------------------------------
+
+
+    else if(MSG_EQUALS(((uint8_t[]){'S', 'S', 'T', 'A', 'T'}))){
+        // Sensor status query
+        // S, S, T, A, T
+        // ACK contains data in the following format [sensor_status]
+        // [sensor_status] is an 8-bit int where each bit indicates if a sensor is ready
+        // bit 0 (LSB) is BNO055 status (1 = ready, 0 = not ready)
+        // bit 1 is MS5837 status (1 = ready, 0 = not ready)
+
+        uint8_t response[1];
+        response[0] = 0x00;
+        response[0] |= bno055_ready();
+        response[0] |= (ms5837_ready() << 1);
+
+        cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, response, 1);
+    }else if(MSG_STARTS_WITH(((uint8_t[]){'B', 'N', 'O', '0', '5', '5', 'A'}))){
+        // BNO055 Axis config command: sets axis remap for BNO055 IMU
+        // B, N, O, 0, 5, 5, A, [mode]
+        // [mode] is a single byte with value 0-7 for BNO055 axis config P0 to P7
+        // Modes are described in sensor's datasheet
+        if(len != 8){
+            // Wrong length
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Message is correct size. Handle it.
+
+            if(msg[7] > 7){
+                // Invalid mode
+                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+            }else{
+                // Valid mode. Set it.
+                bno055_set_axis(msg[7]);
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
             }
         }
@@ -945,221 +1171,8 @@ void cmdctrl_handle_message(void){
             periodic_ms5837 = msg[7];
             cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
         }
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'A', 'S', 'S', 'I', 'S', 'T', 'T', 'N'}))){
-        // Tune SASSIST PID
-        // S, A, S, S, I, S, T, T, N, [which], [kp], [ki], [kd], [limit], [invert]
-        // Each value is a 32-bit little endian float
-        // which = what PID to tune X (xrot), Y (yrot), Z (zrot), D (depth)
-        // kp, ki, kd are gains. limit is max output of PID (magnitude, must be positive)
-        // invert == 1 negates the default PID output
-        if(len != 27){
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
-        }else{
-            float kp = conversions_data_to_float(&msg[10], true);
-            float ki = conversions_data_to_float(&msg[14], true);
-            float kd = conversions_data_to_float(&msg[18], true);
-            float limit = conversions_data_to_float(&msg[22], true);
-            bool invert = msg[26];
-            switch(msg[9]){
-            case 'X':
-                mc_sassist_tune_xrot(kp, ki, kd, limit, invert);
-                break;
-            case 'Y':
-                mc_sassist_tune_yrot(kp, ki, kd, limit, invert);
-                break;
-            case 'Z':
-                mc_sassist_tune_zrot(kp, ki, kd, limit, invert);
-                break;
-            case 'D':
-                mc_sassist_tune_depth(kp, ki, kd, limit, invert);
-                break;
-            }
-            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
-        }
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'A', 'S', 'S', 'I', 'S', 'T', '1'}))){
-        // STABILITY ASSIST speed set variant 1
-        // S, A, S, S, I, S, T, 1, [x], [y], [yaw_spd], [target_pitch], [target_roll], [target_depth]
-        // [x], [y], [yaw_spd], [target_pitch], [target_roll], [target_depth] are 32-bit floats (little endian)
-        if(len != 32){
-            // Message is incorrect size
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
-        }else{
-            // Message is correct size. Handle it.
-
-            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            quaternion_t m_quat = curr_bno055_data.curr_quat;
-            float m_depth = curr_ms5837_data.depth_m;
-            xSemaphoreGive(sensor_data_mutex);
-
-            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready()){
-                // Need BNO055 IMU data to use sassist mode.
-                // Also need MS5837 data to use sassist mode
-                // If not ready, then this command is invalid at this time
-                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
-            }else{
-                // Get arguments from message
-                sassist_valid = true;
-                sassist_variant = 1;
-                sassist_x = conversions_data_to_float(&msg[8], true);
-                sassist_y = conversions_data_to_float(&msg[12], true);
-                sassist_yaw_spd = conversions_data_to_float(&msg[16], true);
-                sassist_target_euler.pitch = conversions_data_to_float(&msg[20], true);
-                sassist_target_euler.roll = conversions_data_to_float(&msg[24], true);
-                sassist_depth_target = conversions_data_to_float(&msg[28], true);
-
-                // Ensure speeds are in valid range
-                LIMIT(sassist_x);
-                LIMIT(sassist_y);
-                LIMIT(sassist_yaw_spd);
-
-                // Reset time until periodic speed set
-                xTimerReset(periodic_speed_timer, portMAX_DELAY);
-
-                // Update mode variable and LED color (if needed)
-                if(mode != MODE_SASSIST){
-                    mode = MODE_SASSIST;
-                    led_set(COLOR_SASSIST);
-                }
-
-                // Feed watchdog when speeds are set
-                // Important to call before speed set function in case currently killed
-                mc_wdog_feed();
-
-                // Update motor speeds
-                mc_set_sassist(sassist_x, 
-                    sassist_y, 
-                    sassist_yaw_spd, 
-                    sassist_target_euler, 
-                    sassist_depth_target, 
-                    m_quat,
-                    m_depth,
-                    false);
-
-                // Acknowledge message w/ no error.
-                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
-            }
-        }
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'S', 'A', 'S', 'S', 'I', 'S', 'T', '2'}))){
-        // STABILITY ASSIST speed set variant 2
-        // S, A, S, S, I, S, T, 2, [x], [y], [target_pitch], [target_roll], [target_yaw], [target_depth]
-        // [x], [y], [target_pitch], [target_roll], [target_yaw], [target_depth] are 32-bit floats (little endian)
-        if(len != 32){
-            // Message is incorrect size
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
-        }else{
-            // Message is correct size. Handle it.
-
-            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            quaternion_t m_quat = curr_bno055_data.curr_quat;
-            float m_depth = curr_ms5837_data.depth_m;
-            xSemaphoreGive(sensor_data_mutex);
-
-            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready()){
-                // Need BNO055 IMU data to use sassist mode.
-                // Also need MS5837 data to use sassist mode
-                // If not ready, then this command is invalid at this time
-                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
-            }else{
-                // Get arguments from message
-                sassist_valid = true;
-                sassist_variant = 2;
-                sassist_x = conversions_data_to_float(&msg[8], true);
-                sassist_y = conversions_data_to_float(&msg[12], true);
-                sassist_target_euler.pitch = conversions_data_to_float(&msg[16], true);
-                sassist_target_euler.roll = conversions_data_to_float(&msg[20], true);
-                sassist_target_euler.yaw = conversions_data_to_float(&msg[24], true);
-                sassist_depth_target = conversions_data_to_float(&msg[28], true);
-
-                // Ensure speeds are in valid range
-                LIMIT(sassist_x);
-                LIMIT(sassist_y);
-                LIMIT(sassist_yaw_spd);
-
-                // Reset time until periodic speed set
-                xTimerReset(periodic_speed_timer, portMAX_DELAY);
-
-                // Update mode variable and LED color (if needed)
-                if(mode != MODE_SASSIST){
-                    mode = MODE_SASSIST;
-                    led_set(COLOR_SASSIST);
-                }
-
-                // Feed watchdog when speeds are set
-                // Important to call before speed set function in case currently killed
-                mc_wdog_feed();
-
-                // Update motor speeds
-                mc_set_sassist(sassist_x, 
-                    sassist_y, 
-                    0.0f,
-                    sassist_target_euler, 
-                    sassist_depth_target, 
-                    m_quat,
-                    m_depth,
-                    true);
-
-                // Acknowledge message w/ no error.
-                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
-            }
-        }
     }else if(MSG_EQUALS(((uint8_t[]){'R', 'E', 'S', 'E', 'T', 0x0D, 0x1E}))){
         wdt_reset_now();
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'D', 'H', 'O', 'L', 'D'}))){
-        // DEPTH_HOLD speed set
-        // D, H, O, L, D, [x], [y], [pitch_spd], [roll_spd], [yaw_spd], [target_depth]
-        // [x], [y], [pitch_spd], [roll_spd], [yaw_spd], [target_depth] are 32-bit floats (little endian)
-        if(len != 29){
-            // Message is incorrect size
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
-        }else{
-            // Message is correct size. Handle it.
-
-            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            quaternion_t m_quat = curr_bno055_data.curr_quat;
-            float m_depth = curr_ms5837_data.depth_m;
-            xSemaphoreGive(sensor_data_mutex);
-
-            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready()){
-                // Need BNO055 IMU data to use depth hold mode.
-                // Also need MS5837 data to use depth hold mode
-                // If not ready, then this command is invalid at this time
-                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
-            }else{
-                // Get speeds from message
-                dhold_x = conversions_data_to_float(&msg[5], true);
-                dhold_y = conversions_data_to_float(&msg[9], true);
-                dhold_pitch_spd = conversions_data_to_float(&msg[13], true);
-                dhold_roll_spd = conversions_data_to_float(&msg[17], true);
-                dhold_yaw_spd = conversions_data_to_float(&msg[21], true);
-                dhold_depth = conversions_data_to_float(&msg[25], true);
-
-                // Ensure speeds are in valid range
-                LIMIT(dhold_x);
-                LIMIT(dhold_y);
-                LIMIT(dhold_pitch_spd);
-                LIMIT(dhold_roll_spd);
-                LIMIT(dhold_yaw_spd);
-                
-                // Reset time until periodic speed set
-                xTimerReset(periodic_speed_timer, portMAX_DELAY);
-
-                // Update mode variable and LED color (if needed)
-                if(mode != MODE_DHOLD){
-                    mode = MODE_DHOLD;
-                    led_set(COLOR_DHOLD);
-                }
-
-                // Feed watchdog when speeds are set
-                // Important to call before speed set function in case currently killed
-                mc_wdog_feed();
-
-                // Update motor speeds
-                mc_set_dhold(dhold_x, dhold_y, dhold_pitch_spd, dhold_roll_spd, dhold_yaw_spd, dhold_depth, m_quat, m_depth);
-
-                // Acknowledge message w/ no error.
-                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
-            }
-        }
     }else if(MSG_EQUALS(((uint8_t[]){'R', 'S', 'T', 'W', 'H', 'Y'}))){
         // R, S, T, W, H, Y
         // ACK contains a 32-bit integer (signed, little endian)
@@ -1323,127 +1336,6 @@ void cmdctrl_handle_message(void){
                 cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
             }
         }
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'O', 'H', 'O', 'L', 'D', '1'}))){
-        // ORIENTATION HOLD speed set variant 1
-        // O, H, O, L, D, 1 [x], [y], [z], [yaw_spd], [target_pitch], [target_roll]
-        // [x], [y], [z], [yaw_spd], [target_pitch], [target_roll] are 32-bit floats (little endian)
-        if(len != 30){
-            // Message is incorrect size
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
-        }else{
-            // Message is correct size. Handle it.
-
-            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            quaternion_t m_quat = curr_bno055_data.curr_quat;
-            xSemaphoreGive(sensor_data_mutex);
-
-            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
-                // Need BNO055 IMU data to use ohold mode.
-                // If not ready, then this command is invalid at this time
-                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
-            }else{
-                // Get arguments from message
-                ohold_valid = true;
-                ohold_variant = 1;
-                ohold_x = conversions_data_to_float(&msg[6], true);
-                ohold_y = conversions_data_to_float(&msg[10], true);
-                ohold_z = conversions_data_to_float(&msg[14], true);
-                ohold_yaw_spd = conversions_data_to_float(&msg[18], true);
-                ohold_target_euler.pitch = conversions_data_to_float(&msg[22], true);
-                ohold_target_euler.roll = conversions_data_to_float(&msg[26], true);
-
-                // Ensure speeds are in valid range
-                LIMIT(ohold_x);
-                LIMIT(ohold_y);
-                LIMIT(ohold_z);
-                LIMIT(ohold_yaw_spd);
-
-                // Reset time until periodic speed set
-                xTimerReset(periodic_speed_timer, portMAX_DELAY);
-
-                // Update mode variable and LED color (if needed)
-                if(mode != MODE_OHOLD){
-                    mode = MODE_OHOLD;
-                    led_set(COLOR_OHOLD);
-                }
-
-                // Feed watchdog when speeds are set
-                // Important to call before speed set function in case currently killed
-                mc_wdog_feed();
-
-                // Update motor speeds
-                mc_set_ohold(ohold_x, 
-                    ohold_y,
-                    ohold_z, 
-                    ohold_yaw_spd, 
-                    ohold_target_euler, 
-                    m_quat,
-                    false);
-
-                // Acknowledge message w/ no error.
-                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
-            }
-        }
-    }else if(MSG_STARTS_WITH(((uint8_t[]){'O', 'H', 'O', 'L', 'D', '2'}))){
-        // ORIENTATION HOLD speed set variant 2
-        // O, H, O, L, D, 2, [x], [y], [z], [target_pitch], [target_roll], [target_yaw]
-        // [x], [y], [z], [target_pitch], [target_roll], [target_yaw] are 32-bit floats (little endian)
-        if(len != 30){
-            // Message is incorrect size
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
-        }else{
-            // Message is correct size. Handle it.
-
-            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            quaternion_t m_quat = curr_bno055_data.curr_quat;
-            xSemaphoreGive(sensor_data_mutex);
-
-            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
-                // Need BNO055 IMU data to use ohold mode.
-                // If not ready, then this command is invalid at this time
-                cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
-            }else{
-                // Get arguments from message
-                ohold_valid = true;
-                ohold_variant = 2;
-                ohold_x = conversions_data_to_float(&msg[6], true);
-                ohold_y = conversions_data_to_float(&msg[10], true);
-                ohold_z = conversions_data_to_float(&msg[14], true);
-                ohold_target_euler.pitch = conversions_data_to_float(&msg[18], true);
-                ohold_target_euler.roll = conversions_data_to_float(&msg[22], true);
-                ohold_target_euler.yaw = conversions_data_to_float(&msg[26], true);
-
-                // Ensure speeds are in valid range
-                LIMIT(ohold_x);
-                LIMIT(ohold_y);
-                LIMIT(ohold_z);
-
-                // Reset time until periodic speed set
-                xTimerReset(periodic_speed_timer, portMAX_DELAY);
-
-                // Update mode variable and LED color (if needed)
-                if(mode != MODE_OHOLD){
-                    mode = MODE_OHOLD;
-                    led_set(COLOR_OHOLD);
-                }
-
-                // Feed watchdog when speeds are set
-                // Important to call before speed set function in case currently killed
-                mc_wdog_feed();
-
-                // Update motor speeds
-                mc_set_ohold(ohold_x, 
-                    ohold_y,
-                    ohold_z, 
-                    0.0f,
-                    ohold_target_euler, 
-                    m_quat,
-                    true);
-
-                // Acknowledge message w/ no error.
-                cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
-            }
-        }
     }else if(MSG_EQUALS(((uint8_t[]){'C', 'B', 'V', 'E', 'R'}))){
         // Control board version info query
         // C, B, V, E, R
@@ -1476,29 +1368,8 @@ void cmdctrl_handle_message(void){
     }
 }
 
-void cmdctrl_mwdog_change(bool me){
-    motors_enabled = me;
+void cmdctrl_send_mwodg_status(bool me){
     pccomm_write((uint8_t[]){'W', 'D', 'G', 'S', me}, 5);
-}
-
-void cmdctrl_bno055_status(bool status){
-    _bno055_ready = status;
-}
-
-void cmdctrl_bno055_data(bno055_data data){
-    xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-    curr_bno055_data = data;
-    xSemaphoreGive(sensor_data_mutex);
-}
-
-void cmdctrl_ms5837_status(bool status){
-    _ms5837_ready = status;
-}
-
-void cmdctrl_ms5837_data(ms5837_data data){
-    xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-    curr_ms5837_data = data;
-    xSemaphoreGive(sensor_data_mutex);
 }
 
 void cmdctrl_send_simstat(void){
@@ -1519,7 +1390,7 @@ void cmdctrl_send_simstat(void){
     conversions_float_to_data(cmdctrl_sim_speeds[6], &simstat[31], true);
     conversions_float_to_data(cmdctrl_sim_speeds[7], &simstat[35], true);
     simstat[39] = mode & 0xFF;
-    simstat[40] = motors_enabled ? 0 : 1;
+    simstat[40] = mc_wdog_is_killed() ? 0 : 1;
     pccomm_write(simstat, 41);
 }
 
@@ -1555,16 +1426,11 @@ void cmdctrl_simhijack(bool hijack){
         raw_target[7] = 0.0f;
         mc_set_raw(raw_target);
 
-        cmdctrl_sim_hijacked = true;    // Do this last so set_local (above) uses real thrusters
-
-        // Reset accumulated angles (after cmdctrl_sim_hijacked change!)
-        bno055_reset_accum_euler();
-
+        // Do this last so set_local (above) uses real thrusters
+        cmdctrl_sim_hijacked = true;
     }else{
-        cmdctrl_sim_hijacked = false;   // Do this first so set_local (below) uses real thrusters
-
-        // Reset accumulated angles (after cmdctrl_sim_hijacked change!)
-        bno055_reset_accum_euler();
+        // Do this first so set_local (below) uses real thrusters
+        cmdctrl_sim_hijacked = false;   
 
         // Revert to a stoped state
         mode = MODE_RAW;

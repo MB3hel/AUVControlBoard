@@ -78,6 +78,13 @@ void mc_set_dof_matrix(unsigned int thruster_num, float *row_data);
 void mc_recalc(void);
 
 /**
+ * Check if motors are killed by watchdog
+ * @return true Motors are killed by motor watchdog
+ * @return false Motors are NOT killed by motor watchdog
+ */
+bool mc_wdog_is_killed(void);
+
+/**
  * Feed (reset) motor watchdog
  * @return Whether the motors were previously killed
  */

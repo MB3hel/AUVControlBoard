@@ -39,7 +39,7 @@ void depth_init(void){
 
     // Reading depth_data is multiple read operations
     // Want to ensure a write of depth_data cannot interrupt a read causing mixed data
-    depth_mutex = xSemaphoreCreateRecursiveMutex();
+    depth_mutex = xSemaphoreCreateMutex();
 
     // Init code for all supported depth sensors
     ms5837_init();
@@ -107,9 +107,9 @@ bool depth_read(void){
 
     if(success){
         // Update depth_data while holding mutex
-        xSemaphoreTakeRecursive(depth_mutex, portMAX_DELAY);
+        xSemaphoreTake(depth_mutex, portMAX_DELAY);
         depth_data = new_data;
-        xSemaphoreGiveRecursive(depth_mutex);
+        xSemaphoreGive(depth_mutex);
 
     }else{
         read_failures++;
@@ -124,9 +124,9 @@ depth_data_t depth_get_data(void){
     // Read under mutex because reading a struct is multiple reads
     // If reading from one thread and writing depth_data (via depth_read() function) on another thread
     // depth_data could change part way through the read here.
-    xSemaphoreTakeRecursive(depth_mutex, portMAX_DELAY);
+    xSemaphoreTake(depth_mutex, portMAX_DELAY);
     ret_data = depth_data;
-    xSemaphoreGiveRecursive(depth_mutex);
+    xSemaphoreGive(depth_mutex);
 
     return ret_data;
 }

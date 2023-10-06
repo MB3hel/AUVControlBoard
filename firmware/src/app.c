@@ -191,7 +191,6 @@ static void depth_task_func(void *argument){
 /// Timer handlers
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 static void wdt_feed_timer_handler(TimerHandle_t handle){
     (void)handle;
 
@@ -204,10 +203,6 @@ static void sim_timer_handler(TimerHandle_t handle){
     // if(cmdctrl_sim_hijacked)
         // TODO: Notify correct task
 }
-
-// TODO: Move cmdctrl apply saved speed signal here
-
-// TODO: Move cmdctrl sensor read timer here
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -222,7 +222,7 @@ static void mc_wdog_timeout(TimerHandle_t timer){
     }else{
         thruster_set((float[]){0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
     }
-    cmdctrl_mwdog_change(false);
+    cmdctrl_send_mwodg_status(false);
     xSemaphoreGive(motor_mutex);
 }
 
@@ -234,10 +234,14 @@ bool mc_wdog_feed(void){
     xTimerReset(motor_wdog_timer, portMAX_DELAY);
     ret = motors_killed;
     if(motors_killed)
-        cmdctrl_mwdog_change(true);
+        cmdctrl_send_mwodg_status(true);
     motors_killed = false;
     xSemaphoreGive(motor_mutex);
     return ret;
+}
+
+bool mc_wdog_killed(void){
+    return motors_killed;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

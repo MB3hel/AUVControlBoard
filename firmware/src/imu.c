@@ -27,7 +27,6 @@ static uint8_t imu_which;
 static imu_data_t imu_data;
 
 static imu_data_t new_data;
-static bool prev_data_valid;
 static unsigned int read_failures;
 
 SemaphoreHandle_t imu_mutex;
@@ -73,10 +72,28 @@ static void calc_accum_angles(void){
     }
 }
 
+static void reset_data(void){
+    xSemaphoreTake(imu_mutex, portMAX_DELAY);
+    imu_data.quat.w = 0;
+    imu_data.quat.x = 0;
+    imu_data.quat.y = 0;
+    imu_data.quat.z = 0;
+    imu_data.raw_gyro.x = 0;
+    imu_data.raw_gyro.y = 0;
+    imu_data.raw_gyro.z = 0;
+    imu_data.raw_accel.x = 0;
+    imu_data.raw_accel.y = 0;
+    imu_data.raw_accel.z = 0;
+    imu_data.accum_angles.is_deg = true;
+    imu_data.accum_angles.pitch = 0;
+    imu_data.accum_angles.roll = 0;
+    imu_data.accum_angles.yaw = 0;
+    xSemaphoreGive(imu_mutex);
+}
+
 void imu_init(void){
     // Default / initial values
     read_failures = 0;
-    prev_data_valid = false;
     imu_data.quat.w = 0;
     imu_data.quat.x = 0;
     imu_data.quat.y = 0;
@@ -94,30 +111,38 @@ void imu_init(void){
 
     // Reading imu_data is multiple read operations
     // Want to ensure a write of imu_data cannot interrupt a read causing mixed data
-    imu_mutex = xSemaphoreCreateRecursiveMutex();
+    imu_mutex = xSemaphoreCreateMutex();
 
     // Init code for all supported IMUs
     bno055_init();
 }
-
 
 static void imu_configure_if_needed(void){
     // If sim hijacked, always use sim IMU
     if(cmdctrl_sim_hijacked){
         imu_which = IMU_SIM;
         read_failures = 0;
+
+        // Reset IMU data whenever IMU changes (prevents angle accumulation issues)
+        reset_data();
     }
 
     // If no longer sim hijacked, cannot use sim IMU
     if(!cmdctrl_sim_hijacked && imu_which == IMU_SIM){
         imu_which = IMU_NONE;
         read_failures = 0;
+        
+        // Reset IMU data whenever IMU changes (prevents angle accumulation issues)
+        reset_data();
     }
 
     // If too many read failures, assume IMU is no longer connected
     if(read_failures >= 5){
         imu_which = IMU_NONE;
         read_failures = 0;
+
+        // Reset IMU data whenever IMU changes (prevents angle accumulation issues)
+        reset_data();
     }
 
     // Already an active IMU (no need to configure one)
@@ -132,6 +157,8 @@ static void imu_configure_if_needed(void){
         // Failed to configure all IMUs
         imu_which = IMU_NONE;
     }
+
+    // No need to reset data here. It was reset when imu_which became IMU_NONE (see if cases above)
 }
 
 bool imu_read(void){
@@ -168,9 +195,9 @@ bool imu_read(void){
         calc_accum_angles();
 
         // Update imu_data while holding mutex
-        xSemaphoreTakeRecursive(imu_mutex, portMAX_DELAY);
+        xSemaphoreTake(imu_mutex, portMAX_DELAY);
         imu_data = new_data;
-        xSemaphoreGiveRecursive(imu_mutex);
+        xSemaphoreGive(imu_mutex);
 
     }else{
         read_failures++;
@@ -185,9 +212,9 @@ imu_data_t imu_get_data(void){
     // Read under mutex because reading a struct is multiple reads
     // If reading from one thread and writing imu_data (via imu_read() function) on another thread
     // imu_data could change part way through the read here.
-    xSemaphoreTakeRecursive(imu_mutex, portMAX_DELAY);
+    xSemaphoreTake(imu_mutex, portMAX_DELAY);
     ret_data = imu_data;
-    xSemaphoreGiveRecursive(imu_mutex);
+    xSemaphoreGive(imu_mutex);
 
     return ret_data;
 }

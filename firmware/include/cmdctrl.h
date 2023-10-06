@@ -56,27 +56,10 @@ void cmdctrl_init(void);
 void cmdctrl_handle_message(void);
 
 /**
- * Reapply the last applied speed
- */
-void cmdctrl_apply_saved_speed(void);
-
-/**
- * Call when motor watchdog status changes
+ * Send motor watchdog status message
  * @param motors_enabled True if motors enabled, False if motors killed
  */
-void cmdctrl_mwdog_change(bool motors_enabled);
-
-/**
- * Set ms5837 status
- * @param status New status (ready = true; not ready = false)
- */
-void cmdctrl_ms5837_status(bool status);
-
-/**
- * Set ms5837 data
- * @param data New sensor data
- */
-void cmdctrl_ms5837_data(ms5837_data data);
+void cmdctrl_send_mwodg_status(bool motors_enabled);
 
 /**
  * Send SIMSTAT message
