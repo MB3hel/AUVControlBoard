@@ -39,7 +39,6 @@
 #define MODE_LOCAL      1
 #define MODE_GLOBAL     2
 #define MODE_SASSIST    3
-#define MODE_DHOLD      4
 #define MODE_OHOLD      5
 
 // LED colors for different modes
@@ -112,50 +111,12 @@ float cmdctrl_sim_speeds[8];
 // CMDCTRL state tracking
 static unsigned int mode;
 
-// Last used raw mode target
+// Last used target for each mode
 static float raw_target[8];
-
-// Last used local mode target
-static float local_x;
-static float local_y;
-static float local_z;
-static float local_xrot;
-static float local_yrot;
-static float local_zrot;
-
-// Last used global mode target
-static float global_x;
-static float global_y;
-static float global_z;
-static float global_pitch_spd;
-static float global_roll_spd;
-static float global_yaw_spd;
-
-// Last used sassist mode target
-static bool sassist_valid;
-static unsigned int sassist_variant;
-static float sassist_x;
-static float sassist_y;
-static float sassist_yaw_spd;
-static euler_t sassist_target_euler;
-static float sassist_depth_target;
-
-// Last used depth hold target
-static float dhold_x;
-static float dhold_y;
-static float dhold_pitch_spd;
-static float dhold_roll_spd;
-static float dhold_yaw_spd;
-static float dhold_depth;
-
-// Last used orientation hold target
-static bool ohold_valid;
-static unsigned int ohold_variant;
-static float ohold_x;
-static float ohold_y;
-static float ohold_z;
-static float ohold_yaw_spd;
-static euler_t ohold_target_euler;
+static mc_local_target_t local_target;
+static mc_global_target_t global_target;
+static mc_sassist_target_t sassist_target;
+static mc_ohold_target_t ohold_target;
 
 // Periodic reading of sensor data timer
 static bool periodic_imu;
@@ -228,7 +189,7 @@ static void periodic_reapply_speed(TimerHandle_t timer){
     (void)timer;
 
     // Modes using sensor data (which may change) need to be periodically reapplied
-    if(mode == MODE_GLOBAL || mode == MODE_SASSIST || mode == MODE_DHOLD || mode == MODE_OHOLD){
+    if(mode == MODE_GLOBAL || mode == MODE_SASSIST || mode == MODE_OHOLD){
         cmdctrl_apply_speed();
     }
 
@@ -241,62 +202,16 @@ void cmdctrl_init(void){
     // Initialize targets for all modes to result in no motion
 
     // Raw mode (zero all motor speeds)
+    // Only need to zero RAW mode since this is the mode the board starts in
+    // Other modes will have targets set in handle_message before the mode is enabled
     for(unsigned int i = 0; i < 8; ++i)
         raw_target[i] = 0.0f;
-
-    // Local mode (zero all)
-    local_x = 0.0f;
-    local_y = 0.0f;
-    local_z = 0.0f;
-    local_xrot = 0.0f;
-    local_yrot = 0.0f;
-    local_zrot = 0.0f;
-
-    // Global mode (zero all)
-    global_x = 0.0f;
-    global_y = 0.0f;
-    global_z = 0.0f;
-    global_pitch_spd = 0.0f;
-    global_roll_spd = 0.0f;
-    global_yaw_spd = 0.0f;
-
-    // Sassist mode (set valid bool to false)
-    sassist_valid = false;
-    sassist_variant = 1;
-    sassist_x = 0.0f;
-    sassist_y = 0.0f;
-    sassist_yaw_spd = 0.0f;
-    sassist_target_euler.pitch = 0.0f;
-    sassist_target_euler.roll = 0.0f;
-    sassist_target_euler.yaw = 0.0f;
-    sassist_target_euler.is_deg = true;
-    sassist_depth_target = 0.0f;
-
-    // Zero depth hold target
-    dhold_x = 0.0;
-    dhold_y = 0.0;
-    dhold_pitch_spd = 0.0;
-    dhold_roll_spd = 0.0;
-    dhold_yaw_spd = 0.0;
-    dhold_depth = 0.0;
-    
-    // Zero ohold target (set valid to false too)
-    ohold_valid = false;
-    ohold_variant = 1;
-    ohold_x = 0.0f;
-    ohold_y = 0.0f;
-    ohold_z = 0.0f;
-    ohold_yaw_spd = 0.0f;
-    ohold_target_euler.pitch = 0.0f;
-    ohold_target_euler.roll = 0.0f;
-    ohold_target_euler.yaw = 0.0f;
-    ohold_target_euler.is_deg = true;
 
     // Periodic sensor data
     periodic_imu = false;
     periodic_depth = false;
     sensor_read_timer = xTimerCreate(
-        "sensor_read",
+        "sensor_data",
         pdMS_TO_TICKS(SENSOR_DATA_PERIOD),
         pdFALSE,                                // Don't auto reload
         NULL,
@@ -321,6 +236,7 @@ void cmdctrl_init(void){
 
 /**
  * Apply speed based on current mode and stored targets
+ * @return true if successful. False if mode unknown or sensors are not valid for the selected mode
  */
 static void cmdctrl_apply_speed(void){
     quaternion_t m_quat;
@@ -331,94 +247,40 @@ static void cmdctrl_apply_speed(void){
         mc_set_raw(raw_target);
         break;
     case MODE_LOCAL:
-        mc_set_local(local_x, local_y, local_z, local_xrot, local_yrot, local_zrot);
+        mc_set_local(local_target);
         break;
     case MODE_GLOBAL:
-        xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-        m_quat = curr_bno055_data.curr_quat;
-        xSemaphoreGive(sensor_data_mutex);
-
-        // Make sure sensors still working before applying in global mode
-        if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
+        m_quat = imu_get_data().quat;
+        if((imu_get_sensor() == IMU_NONE) || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
             // Cannot apply real speed b/c sensor data not available or invalid
             // Thus, stop the thrusters
-            mc_set_local(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+            mc_set_local((mc_local_target_t){.x=0, .y=0, .z=0, .xrot=0, .yrot=0, .zrot=0});
         }else{
-            mc_set_global(global_x, global_y, global_z, global_pitch_spd, global_roll_spd, global_yaw_spd, m_quat);
+            mc_set_global(global_target, m_quat);
         }
         break;
     case MODE_SASSIST:
-        if(sassist_valid){
-            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            m_quat = curr_bno055_data.curr_quat;
-            m_depth = curr_ms5837_data.depth_m;
-            xSemaphoreGive(sensor_data_mutex);
-
-            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready()){
-                // Cannot apply real speed b/c sensor data not available or invalid
-                // Thus, stop the thrusters
-                mc_set_local(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-            }else if(sassist_variant == 1){
-                mc_set_sassist(sassist_x, 
-                    sassist_y, 
-                    sassist_yaw_spd, 
-                    sassist_target_euler, 
-                    sassist_depth_target, 
-                    m_quat,
-                    m_depth,
-                    false);
-            }else if(sassist_variant == 2){
-                mc_set_sassist(sassist_x, 
-                    sassist_y, 
-                    0.0f,
-                    sassist_target_euler, 
-                    sassist_depth_target, 
-                    m_quat,
-                    m_depth,
-                    true);
-            }
-        }
-        break;
-    case MODE_DHOLD:
-        xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-        m_quat = curr_bno055_data.curr_quat;
-        m_depth = curr_ms5837_data.depth_m;
-        xSemaphoreGive(sensor_data_mutex);
-        if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready()){
+        m_quat = imu_get_data().quat;
+        m_depth = depth_get_data().depth_m;
+        if((imu_get_sensor() == IMU_NONE) || 
+                (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || 
+                (depth_get_sensor() == DEPTH_NONE)){
             // Cannot apply real speed b/c sensor data not available or invalid
             // Thus, stop the thrusters
-            mc_set_local(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+            mc_set_local((mc_local_target_t){.x=0, .y=0, .z=0, .xrot=0, .yrot=0, .zrot=0});
         }else{
-            mc_set_dhold(dhold_x, dhold_y, dhold_pitch_spd, dhold_roll_spd, dhold_yaw_spd, dhold_depth, m_quat, m_depth);
+            mc_set_sassist(sassist_target, m_quat, m_depth);
         }
         break;
     case MODE_OHOLD:
-        if(ohold_valid){
-            xSemaphoreTake(sensor_data_mutex, portMAX_DELAY);
-            m_quat = curr_bno055_data.curr_quat;
-            xSemaphoreGive(sensor_data_mutex);
-
-            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
-                // Cannot apply real speed b/c sensor data not available or invalid
-                // Thus, stop the thrusters
-                mc_set_local(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-            }else if(ohold_variant == 1){
-                mc_set_ohold(ohold_x, 
-                    ohold_y,
-                    ohold_z, 
-                    ohold_yaw_spd, 
-                    ohold_target_euler, 
-                    m_quat,
-                    false);
-            }else if(ohold_variant == 2){
-                mc_set_ohold(ohold_x, 
-                    ohold_y,
-                    ohold_z, 
-                    0.0f,
-                    ohold_target_euler, 
-                    m_quat,
-                    true);
-            }
+        m_quat = imu_get_data().quat;
+        if((imu_get_sensor() == IMU_NONE) || 
+                (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
+            // Cannot apply real speed b/c sensor data not available or invalid
+            // Thus, stop the thrusters
+            mc_set_local((mc_local_target_t){.x=0, .y=0, .z=0, .xrot=0, .yrot=0, .zrot=0});
+        }else{
+            mc_set_ohold(ohold_target, m_quat);
         }
         break;
     }
@@ -547,20 +409,20 @@ void cmdctrl_handle_message(void){
             // Message is correct size. Handle it.
 
             // Get speeds from message
-            local_x = conversions_data_to_float(&msg[5], true);
-            local_y = conversions_data_to_float(&msg[9], true);
-            local_z = conversions_data_to_float(&msg[13], true);
-            local_xrot = conversions_data_to_float(&msg[17], true);
-            local_yrot = conversions_data_to_float(&msg[21], true);
-            local_zrot = conversions_data_to_float(&msg[25], true);
+            local_target.x = conversions_data_to_float(&msg[5], true);
+            local_target.y = conversions_data_to_float(&msg[9], true);
+            local_target.z = conversions_data_to_float(&msg[13], true);
+            local_target.xrot = conversions_data_to_float(&msg[17], true);
+            local_target.yrot = conversions_data_to_float(&msg[21], true);
+            local_target.zrot = conversions_data_to_float(&msg[25], true);
 
             // Ensure speeds are in valid range
-            LIMIT(local_x);
-            LIMIT(local_y);
-            LIMIT(local_z);
-            LIMIT(local_xrot);
-            LIMIT(local_yrot);
-            LIMIT(local_zrot);
+            LIMIT(local_target.x);
+            LIMIT(local_target.y);
+            LIMIT(local_target.z);
+            LIMIT(local_target.xrot);
+            LIMIT(local_target.yrot);
+            LIMIT(local_target.zrot);
 
             // Reset time until periodic speed set
             xTimerReset(periodic_speed_timer, portMAX_DELAY);
@@ -592,26 +454,26 @@ void cmdctrl_handle_message(void){
             // Message is correct size. Handle it.
             quaternion_t m_quat = imu_get_data().quat;
 
-            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
-                // Need BNO055 IMU data to use global mode.
+            if((imu_get_sensor() == IMU_NONE) || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
+                // Need IMU data to use global mode.
                 // If not ready, then this command is invalid at this time
                 cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
             }else{
                 // Get speeds from message
-                global_x = conversions_data_to_float(&msg[6], true);
-                global_y = conversions_data_to_float(&msg[10], true);
-                global_z = conversions_data_to_float(&msg[14], true);
-                global_pitch_spd = conversions_data_to_float(&msg[18], true);
-                global_roll_spd = conversions_data_to_float(&msg[22], true);
-                global_yaw_spd = conversions_data_to_float(&msg[26], true);
+                global_target.x = conversions_data_to_float(&msg[6], true);
+                global_target.y = conversions_data_to_float(&msg[10], true);
+                global_target.z = conversions_data_to_float(&msg[14], true);
+                global_target.pitch_spd = conversions_data_to_float(&msg[18], true);
+                global_target.roll_spd = conversions_data_to_float(&msg[22], true);
+                global_target.yaw_spd = conversions_data_to_float(&msg[26], true);
 
                 // Ensure speeds are in valid range
-                LIMIT(global_x);
-                LIMIT(global_y);
-                LIMIT(global_z);
-                LIMIT(global_pitch_spd);
-                LIMIT(global_roll_spd);
-                LIMIT(global_yaw_spd);
+                LIMIT(global_target.x);
+                LIMIT(global_target.y);
+                LIMIT(global_target.z);
+                LIMIT(global_target.pitch_spd);
+                LIMIT(global_target.roll_spd);
+                LIMIT(global_target.yaw_spd);
 
                 // Reset time until periodic speed set
                 xTimerReset(periodic_speed_timer, portMAX_DELAY);
@@ -644,26 +506,26 @@ void cmdctrl_handle_message(void){
             // Message is correct size. Handle it.
             quaternion_t m_quat = imu_get_data().quat;
 
-            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready()){
-                // Need BNO055 IMU data to use sassist mode.
-                // Also need MS5837 data to use sassist mode
+            if((imu_get_sensor() == IMU_NONE) || 
+                    (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || 
+                    (depth_get_sensor() == DEPTH_NONE)){
+                // Need both IMU and depth sensor for this mode.
                 // If not ready, then this command is invalid at this time
                 cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
             }else{
                 // Get arguments from message
-                sassist_valid = true;
-                sassist_variant = 1;
-                sassist_x = conversions_data_to_float(&msg[8], true);
-                sassist_y = conversions_data_to_float(&msg[12], true);
-                sassist_yaw_spd = conversions_data_to_float(&msg[16], true);
-                sassist_target_euler.pitch = conversions_data_to_float(&msg[20], true);
-                sassist_target_euler.roll = conversions_data_to_float(&msg[24], true);
-                sassist_depth_target = conversions_data_to_float(&msg[28], true);
+                sassist_target.x = conversions_data_to_float(&msg[8], true);
+                sassist_target.y = conversions_data_to_float(&msg[12], true);
+                sassist_target.yaw_spd = conversions_data_to_float(&msg[16], true);
+                sassist_target.target_euler.pitch = conversions_data_to_float(&msg[20], true);
+                sassist_target.target_euler.roll = conversions_data_to_float(&msg[24], true);
+                sassist_target.target_depth = conversions_data_to_float(&msg[28], true);
+                sassist_target.use_yaw_pid = false;
 
                 // Ensure speeds are in valid range
-                LIMIT(sassist_x);
-                LIMIT(sassist_y);
-                LIMIT(sassist_yaw_spd);
+                LIMIT(sassist_target.x);
+                LIMIT(sassist_target.y);
+                LIMIT(sassist_target.yaw_spd);
 
                 // Reset time until periodic speed set
                 xTimerReset(periodic_speed_timer, portMAX_DELAY);
@@ -696,26 +558,26 @@ void cmdctrl_handle_message(void){
             // Message is correct size. Handle it.
             quaternion_t m_quat = imu_get_data().quat;
 
-            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || !ms5837_ready()){
-                // Need BNO055 IMU data to use sassist mode.
-                // Also need MS5837 data to use sassist mode
+            if((imu_get_sensor() == IMU_NONE) || 
+                    (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0) || 
+                    (depth_get_sensor() == DEPTH_NONE)){
+                // Need depth and IMU for this mode
                 // If not ready, then this command is invalid at this time
                 cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
             }else{
                 // Get arguments from message
-                sassist_valid = true;
-                sassist_variant = 2;
-                sassist_x = conversions_data_to_float(&msg[8], true);
-                sassist_y = conversions_data_to_float(&msg[12], true);
-                sassist_target_euler.pitch = conversions_data_to_float(&msg[16], true);
-                sassist_target_euler.roll = conversions_data_to_float(&msg[20], true);
-                sassist_target_euler.yaw = conversions_data_to_float(&msg[24], true);
-                sassist_depth_target = conversions_data_to_float(&msg[28], true);
+                sassist_target.x = conversions_data_to_float(&msg[8], true);
+                sassist_target.y = conversions_data_to_float(&msg[12], true);
+                sassist_target.target_euler.pitch = conversions_data_to_float(&msg[16], true);
+                sassist_target.target_euler.roll = conversions_data_to_float(&msg[20], true);
+                sassist_target.target_euler.yaw = conversions_data_to_float(&msg[24], true);
+                sassist_target.target_depth = conversions_data_to_float(&msg[28], true);
+                sassist_target.use_yaw_pid = true;
 
                 // Ensure speeds are in valid range
-                LIMIT(sassist_x);
-                LIMIT(sassist_y);
-                LIMIT(sassist_yaw_spd);
+                LIMIT(sassist_target.x);
+                LIMIT(sassist_target.y);
+                LIMIT(sassist_target.yaw_spd);
 
                 // Reset time until periodic speed set
                 xTimerReset(periodic_speed_timer, portMAX_DELAY);
@@ -748,26 +610,25 @@ void cmdctrl_handle_message(void){
             // Message is correct size. Handle it.
             quaternion_t m_quat = imu_get_data().quat;
 
-            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
-                // Need BNO055 IMU data to use ohold mode.
+            if((imu_get_sensor() == IMU_NONE) || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
+                // Need IMU data to use ohold mode.
                 // If not ready, then this command is invalid at this time
                 cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
             }else{
                 // Get arguments from message
-                ohold_valid = true;
-                ohold_variant = 1;
-                ohold_x = conversions_data_to_float(&msg[6], true);
-                ohold_y = conversions_data_to_float(&msg[10], true);
-                ohold_z = conversions_data_to_float(&msg[14], true);
-                ohold_yaw_spd = conversions_data_to_float(&msg[18], true);
-                ohold_target_euler.pitch = conversions_data_to_float(&msg[22], true);
-                ohold_target_euler.roll = conversions_data_to_float(&msg[26], true);
+                ohold_target.x = conversions_data_to_float(&msg[6], true);
+                ohold_target.y = conversions_data_to_float(&msg[10], true);
+                ohold_target.z = conversions_data_to_float(&msg[14], true);
+                ohold_target.yaw_spd = conversions_data_to_float(&msg[18], true);
+                ohold_target.target_euler.pitch = conversions_data_to_float(&msg[22], true);
+                ohold_target.target_euler.roll = conversions_data_to_float(&msg[26], true);
+                ohold_target.use_yaw_pid = false;
 
                 // Ensure speeds are in valid range
-                LIMIT(ohold_x);
-                LIMIT(ohold_y);
-                LIMIT(ohold_z);
-                LIMIT(ohold_yaw_spd);
+                LIMIT(ohold_target.x);
+                LIMIT(ohold_target.y);
+                LIMIT(ohold_target.z);
+                LIMIT(ohold_target.yaw_spd);
 
                 // Reset time until periodic speed set
                 xTimerReset(periodic_speed_timer, portMAX_DELAY);
@@ -800,25 +661,23 @@ void cmdctrl_handle_message(void){
             // Message is correct size. Handle it.
             quaternion_t m_quat = imu_get_data().quat;
 
-            if(!bno055_ready() || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
-                // Need BNO055 IMU data to use ohold mode.
+            if((imu_get_sensor() == IMU_NONE) || (m_quat.w == 0 && m_quat.x == 0 && m_quat.y == 0 && m_quat.z == 0)){
+                // Need IMU data to use ohold mode.
                 // If not ready, then this command is invalid at this time
                 cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
             }else{
                 // Get arguments from message
-                ohold_valid = true;
-                ohold_variant = 2;
-                ohold_x = conversions_data_to_float(&msg[6], true);
-                ohold_y = conversions_data_to_float(&msg[10], true);
-                ohold_z = conversions_data_to_float(&msg[14], true);
-                ohold_target_euler.pitch = conversions_data_to_float(&msg[18], true);
-                ohold_target_euler.roll = conversions_data_to_float(&msg[22], true);
-                ohold_target_euler.yaw = conversions_data_to_float(&msg[26], true);
+                ohold_target.x = conversions_data_to_float(&msg[6], true);
+                ohold_target.y = conversions_data_to_float(&msg[10], true);
+                ohold_target.z = conversions_data_to_float(&msg[14], true);
+                ohold_target.target_euler.pitch = conversions_data_to_float(&msg[18], true);
+                ohold_target.target_euler.roll = conversions_data_to_float(&msg[22], true);
+                ohold_target.target_euler.yaw = conversions_data_to_float(&msg[26], true);
 
                 // Ensure speeds are in valid range
-                LIMIT(ohold_x);
-                LIMIT(ohold_y);
-                LIMIT(ohold_z);
+                LIMIT(ohold_target.x);
+                LIMIT(ohold_target.y);
+                LIMIT(ohold_target.z);
 
                 // Reset time until periodic speed set
                 xTimerReset(periodic_speed_timer, portMAX_DELAY);
@@ -1297,7 +1156,6 @@ void cmdctrl_handle_message(void){
     // -----------------------------------------------------------------------------------------------------------------
     // Misc commands & queries
     // -----------------------------------------------------------------------------------------------------------------
-   
     else if(message_equals(msg, len, (uint8_t[]){'R', 'E', 'S', 'E', 'T', 0x0D, 0x1E}, 7)){
         // Reset control board command
         // R, E, S, E, T, 0x0D, 0x1E
