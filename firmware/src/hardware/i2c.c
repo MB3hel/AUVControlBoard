@@ -153,8 +153,6 @@ bool i2c_perform(i2c_trans *trans){
             i2c_fix_sda_low();
             // SERCOM2_I2C_Initialize();    // Already called by i2c_fix_sda_low
         }
-
-        xSemaphoreGive(i2c_mutex);
         return false;
     }
 
@@ -164,24 +162,20 @@ bool i2c_perform(i2c_trans *trans){
     if(trans->write_count > 0 && trans->read_count > 0){
         // Both write and read
         if(!SERCOM2_I2C_WriteRead(trans->address, trans->write_buf, trans->write_count, trans->read_buf, trans->read_count)){
-            xSemaphoreGive(i2c_mutex);
             return false;
         }
     }else if(trans->write_count == 0 && trans->read_count > 0){
         // Read only
         if(!SERCOM2_I2C_Read(trans->address, trans->read_buf, trans->read_count)){
-            xSemaphoreGive(i2c_mutex);
             return false;
         }
     }else if(trans->write_count > 0 && trans->read_count == 0){
         // Write only
         if(!SERCOM2_I2C_Write(trans->address, trans->write_buf, trans->write_count)){
-            xSemaphoreGive(i2c_mutex);
             return false;
         }
     }else{
         // Empty transaction
-        xSemaphoreGive(i2c_mutex);
         return true;
     }
 
@@ -201,7 +195,6 @@ bool i2c_perform(i2c_trans *trans){
         // Timed out while waiting for transfer done signal
         SERCOM2_I2C_TransferAbort();                            // Interrupt won't occur after this is done running
         while(xSemaphoreTake(i2c_done_signal, 0) == pdTRUE);    // Zero the semaphore (may have been given before abort)
-        xSemaphoreGive(i2c_mutex);
         return false;
     }
 
@@ -215,8 +208,6 @@ bool i2c_perform(i2c_trans *trans){
         i2c_fix_sda_low();
         // SERCOM2_I2C_Initialize();
     }
-
-    xSemaphoreGive(i2c_mutex);
     return result == SERCOM_I2C_ERROR_NONE;
 }
 
@@ -375,7 +366,6 @@ bool i2c_perform(i2c_trans *trans){
     }
 
     if(HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY){
-        xSemaphoreGive(i2c_mutex);
         return false;
     }
 
@@ -408,8 +398,6 @@ bool i2c_perform(i2c_trans *trans){
                 i2c_fix_sda_low();
                 i2c_reinit();
             }
-
-            xSemaphoreGive(i2c_mutex);
             return false;
         }
 
@@ -417,7 +405,6 @@ bool i2c_perform(i2c_trans *trans){
         if(xSemaphoreTake(i2c_done_signal, pdMS_TO_TICKS(TIMEOUT_FOR_COUNT(trans->write_count))) == pdFALSE){
             HAL_I2C_Master_Abort_IT(&hi2c1, trans->address << 1);   // Aborts transfer. Calls callback directly
             while(xSemaphoreTake(i2c_done_signal, 0) == pdTRUE);    // Zero semaphore (may have been given before abort)
-            xSemaphoreGive(i2c_mutex);
             return false;
         }
         
@@ -427,7 +414,6 @@ bool i2c_perform(i2c_trans *trans){
             // Otherwise it is possible it would be modified again
             // before return actually happens
             bool ret = i2c_success;
-            xSemaphoreGive(i2c_mutex);
             return ret;
         }
 
@@ -450,8 +436,6 @@ bool i2c_perform(i2c_trans *trans){
                 i2c_fix_sda_low();
                 i2c_reinit();
             }
-
-            xSemaphoreGive(i2c_mutex);
             return false;
         }
 
@@ -459,7 +443,6 @@ bool i2c_perform(i2c_trans *trans){
         if(xSemaphoreTake(i2c_done_signal, pdMS_TO_TICKS(TIMEOUT_FOR_COUNT(trans->read_count))) == pdFALSE){
             HAL_I2C_Master_Abort_IT(&hi2c1, trans->address << 1);   // Aborts transfer. Calls callback directly
             while(xSemaphoreTake(i2c_done_signal, 0) == pdTRUE);    // Zero semaphore (may have been given before abort)
-            xSemaphoreGive(i2c_mutex);
             return false;
         }
 
@@ -467,7 +450,6 @@ bool i2c_perform(i2c_trans *trans){
         // Otherwise it is possible it would be modified again
         // before return actually happens
         bool ret = i2c_success;
-        xSemaphoreGive(i2c_mutex);
         return ret;
     }else if(trans->read_count > 0){
         // Perform read only.
@@ -488,8 +470,6 @@ bool i2c_perform(i2c_trans *trans){
                 i2c_fix_sda_low();
                 i2c_reinit();
             }
-
-            xSemaphoreGive(i2c_mutex);
             return false;
         }
 
@@ -497,7 +477,6 @@ bool i2c_perform(i2c_trans *trans){
         if(xSemaphoreTake(i2c_done_signal, pdMS_TO_TICKS(TIMEOUT_FOR_COUNT(trans->read_count))) == pdFALSE){
             HAL_I2C_Master_Abort_IT(&hi2c1, trans->address << 1);   // Aborts transfer. Calls callback directly
             while(xSemaphoreTake(i2c_done_signal, 0) == pdTRUE);    // Zero semaphore (may have been given before abort)
-            xSemaphoreGive(i2c_mutex);
             return false;
         }
 
@@ -505,7 +484,6 @@ bool i2c_perform(i2c_trans *trans){
         // Otherwise it is possible it would be modified again
         // before return actually happens
         bool ret = i2c_success;
-        xSemaphoreGive(i2c_mutex);
         return ret;
     }else if(trans->write_count > 0){
         // Perform write only
@@ -526,8 +504,6 @@ bool i2c_perform(i2c_trans *trans){
                 i2c_fix_sda_low();
                 i2c_reinit();
             }
-
-            xSemaphoreGive(i2c_mutex);
             return false;
         }
 
@@ -535,7 +511,6 @@ bool i2c_perform(i2c_trans *trans){
         if(xSemaphoreTake(i2c_done_signal, pdMS_TO_TICKS(TIMEOUT_FOR_COUNT(trans->write_count))) == pdFALSE){
             HAL_I2C_Master_Abort_IT(&hi2c1, trans->address << 1);   // Aborts transfer. Calls callback directly
             while(xSemaphoreTake(i2c_done_signal, 0) == pdTRUE);    // Zero semaphore (may have been given before abort)
-            xSemaphoreGive(i2c_mutex);
             return false;
         }
 
@@ -543,12 +518,10 @@ bool i2c_perform(i2c_trans *trans){
         // Otherwise it is possible it would be modified again
         // before return actually happens
         bool ret = i2c_success;
-        xSemaphoreGive(i2c_mutex);
         return ret;
     }
 
     // Only gets here if empty transaction
-    xSemaphoreGive(i2c_mutex);
     return true;
 }
 
