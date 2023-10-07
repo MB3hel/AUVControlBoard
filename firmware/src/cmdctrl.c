@@ -1001,9 +1001,6 @@ void cmdctrl_handle_message(void){
         if(len != 8){
             // Wrong length
             cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
-        }else if(imu_get_sensor() != IMU_BNO055){
-            // Correct sensor not active
-            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_CMD, NULL, 0);
         }else{
             // Message is correct size. Handle it.
             if(msg[7] > 7){

@@ -71,11 +71,9 @@ class Vehicle(ABC):
         if ack != ControlBoard.AckError.NONE:
             return ack, "set_reldof"
         
-        # Apply configuration for any sensors that are in use on the control board
-        if imu == ControlBoard.IMUSensors.BNO055:
-            ack = cb.set_bno055_axis(self.bno055_axis_config)
-            if ack != ControlBoard.AckError.NONE:
-                return ack, "set_bno055_axis"
+        ack = cb.set_bno055_axis(self.bno055_axis_config)
+        if ack != ControlBoard.AckError.NONE:
+            return ack, "set_bno055_axis"
         
         ack = cb.tune_pid_xrot(*self.xrot_pid_tuning)
         if ack != ControlBoard.AckError.NONE:

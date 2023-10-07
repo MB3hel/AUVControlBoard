@@ -523,6 +523,10 @@ static inline bool bno055_set_axis_internal(uint8_t mode){
         break;
     }
 
+    // Only actually apply this now if the BNO055 is the active IMU
+    if(imu_get_sensor() != IMU_BNO055)
+        return false;
+
     // Put in CONFIG mode
     trans.write_buf[0] = BNO055_OPR_MODE_ADDR;
     trans.write_buf[1] = OPMODE_CFG;
