@@ -45,7 +45,7 @@ END_BYTE = b'\xfe'
 ESCAPE_BYTE = b'\xff'
 
 
-default_timeout_uart = 10.0
+default_timeout_uart = 0.1
 default_timeout_sim = 0.25
 
 
@@ -256,10 +256,10 @@ class ControlBoard:
                     print("Watchdog killed motors.")
         elif msg.startswith(b'IMUD'):
             if len(msg) == 35:
-                self.__imu_parse(msg[7:])
+                self.__imu_parse(msg[4:])
         elif msg.startswith(b'DEPTHD'):
-            if len(msg) == 19:
-                self.__depth_parse(msg[7:])
+            if len(msg) == 18:
+                self.__depth_parse(msg[6:])
         elif msg.startswith(b'DEBUG') and self.__cboard_debug:
             print("CBOARD_DEBUG: {}".format(msg[5:].decode('ascii')))
         elif msg.startswith(b'DBGDAT') and self.__cboard_debug:
