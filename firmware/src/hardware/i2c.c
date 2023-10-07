@@ -27,30 +27,6 @@
 static SemaphoreHandle_t i2c_mutex;
 static SemaphoreHandle_t i2c_done_signal;
 
-bool i2c_take(void){
-    // I2C runs at 100kHz clock
-    // A transaction with 64 bytes read and write each would be 128*8=1024 bits
-    // 1/100kHz = 10us per bit
-    // 1024 * 10 = 10240us bit transfer time = 1.024ms
-    // Assume some clock stretching and delays with ACK up to 30us per byte
-    // 128*30 = 3.840ms
-    // Thus a "large" transaction should finish within 5ms
-    // Assume it is possible for a few to be queued up.
-    // Thus wait for at most 25ms (5 queued large transactions)
-    // If this fails, something is probably stuck and will never release the mutex
-    // This is also a small enough amount of time to not fully break most threads
-    // calling this function
-    if(xSemaphoreTake(i2c_mutex, pdMS_TO_TICKS(25)) == pdFALSE)
-        return false;
-    return true;
-}
-
-void i2c_give(void){
-    xSemaphoreGive(i2c_mutex);
-}
-
-
-
 #ifdef CONTROL_BOARD_V1
 
 #include <hardware/delay.h>
@@ -133,10 +109,20 @@ void i2c_init(){
 }
 
 bool i2c_perform(i2c_trans *trans){
-    if(xSemaphoreGetMutexHolder(i2c_mutex) != xTaskGetCurrentTaskHandle()){
-        // This task doesn't hold the mutex!
+    // I2C runs at 100kHz clock
+    // A transaction with 64 bytes read and write each would be 128*8=1024 bits
+    // 1/100kHz = 10us per bit
+    // 1024 * 10 = 10240us bit transfer time = 1.024ms
+    // Assume some clock stretching and delays with ACK up to 30us per byte
+    // 128*30 = 3.840ms
+    // Thus a "large" transaction should finish within 5ms
+    // Assume it is possible for a few to be queued up.
+    // Thus wait for at most 25ms (5 queued large transactions)
+    // If this fails, something is probably stuck and will never release the mutex
+    // This is also a small enough amount of time to not fully break most threads
+    // calling this function
+    if(xSemaphoreTake(i2c_mutex, pdMS_TO_TICKS(25)) == pdFALSE)
         return false;
-    }
 
     if(SERCOM2_I2C_IsBusy()){
         if ((SERCOM2_REGS->I2CM.SERCOM_STATUS & SERCOM_I2CM_STATUS_BUSSTATE_Msk) == SERCOM_I2CM_STATUS_BUSSTATE(0x03U)){
@@ -153,6 +139,8 @@ bool i2c_perform(i2c_trans *trans){
             i2c_fix_sda_low();
             // SERCOM2_I2C_Initialize();    // Already called by i2c_fix_sda_low
         }
+
+        xSemaphoreGive(i2c_mutex);
         return false;
     }
 
@@ -162,20 +150,24 @@ bool i2c_perform(i2c_trans *trans){
     if(trans->write_count > 0 && trans->read_count > 0){
         // Both write and read
         if(!SERCOM2_I2C_WriteRead(trans->address, trans->write_buf, trans->write_count, trans->read_buf, trans->read_count)){
+            xSemaphoreGive(i2c_mutex);
             return false;
         }
     }else if(trans->write_count == 0 && trans->read_count > 0){
         // Read only
         if(!SERCOM2_I2C_Read(trans->address, trans->read_buf, trans->read_count)){
+            xSemaphoreGive(i2c_mutex);
             return false;
         }
     }else if(trans->write_count > 0 && trans->read_count == 0){
         // Write only
         if(!SERCOM2_I2C_Write(trans->address, trans->write_buf, trans->write_count)){
+            xSemaphoreGive(i2c_mutex);
             return false;
         }
     }else{
         // Empty transaction
+        xSemaphoreGive(i2c_mutex);
         return true;
     }
 
@@ -195,6 +187,7 @@ bool i2c_perform(i2c_trans *trans){
         // Timed out while waiting for transfer done signal
         SERCOM2_I2C_TransferAbort();                            // Interrupt won't occur after this is done running
         while(xSemaphoreTake(i2c_done_signal, 0) == pdTRUE);    // Zero the semaphore (may have been given before abort)
+        xSemaphoreGive(i2c_mutex);
         return false;
     }
 
@@ -208,6 +201,8 @@ bool i2c_perform(i2c_trans *trans){
         i2c_fix_sda_low();
         // SERCOM2_I2C_Initialize();
     }
+
+    xSemaphoreGive(i2c_mutex);
     return result == SERCOM_I2C_ERROR_NONE;
 }
 
@@ -360,12 +355,24 @@ bool i2c_perform(i2c_trans *trans){
     #define TIMEOUT_FOR_COUNT(count)        ((((uint32_t)(count + 4)) / 5) + 5)
 
 
-    if(xSemaphoreGetMutexHolder(i2c_mutex) != xTaskGetCurrentTaskHandle()){
-        // This task doesn't hold the mutex!
+    // I2C runs at 100kHz clock
+    // A transaction with 64 bytes read and write each would be 128*8=1024 bits
+    // 1/100kHz = 10us per bit
+    // 1024 * 10 = 10240us bit transfer time = 1.024ms
+    // Assume some clock stretching and delays with ACK up to 30us per byte
+    // 128*30 = 3.840ms
+    // Thus a "large" transaction should finish within 5ms
+    // Assume it is possible for a few to be queued up.
+    // Thus wait for at most 25ms (5 queued large transactions)
+    // If this fails, something is probably stuck and will never release the mutex
+    // This is also a small enough amount of time to not fully break most threads
+    // calling this function
+    if(xSemaphoreTake(i2c_mutex, pdMS_TO_TICKS(25)) == pdFALSE)
         return false;
-    }
+
 
     if(HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY){
+        xSemaphoreGive(i2c_mutex);
         return false;
     }
 
@@ -398,6 +405,8 @@ bool i2c_perform(i2c_trans *trans){
                 i2c_fix_sda_low();
                 i2c_reinit();
             }
+
+            xSemaphoreGive(i2c_mutex);
             return false;
         }
 
@@ -405,6 +414,7 @@ bool i2c_perform(i2c_trans *trans){
         if(xSemaphoreTake(i2c_done_signal, pdMS_TO_TICKS(TIMEOUT_FOR_COUNT(trans->write_count))) == pdFALSE){
             HAL_I2C_Master_Abort_IT(&hi2c1, trans->address << 1);   // Aborts transfer. Calls callback directly
             while(xSemaphoreTake(i2c_done_signal, 0) == pdTRUE);    // Zero semaphore (may have been given before abort)
+            xSemaphoreGive(i2c_mutex);
             return false;
         }
         
@@ -414,6 +424,7 @@ bool i2c_perform(i2c_trans *trans){
             // Otherwise it is possible it would be modified again
             // before return actually happens
             bool ret = i2c_success;
+            xSemaphoreGive(i2c_mutex);
             return ret;
         }
 
@@ -436,6 +447,8 @@ bool i2c_perform(i2c_trans *trans){
                 i2c_fix_sda_low();
                 i2c_reinit();
             }
+
+            xSemaphoreGive(i2c_mutex);
             return false;
         }
 
@@ -443,6 +456,7 @@ bool i2c_perform(i2c_trans *trans){
         if(xSemaphoreTake(i2c_done_signal, pdMS_TO_TICKS(TIMEOUT_FOR_COUNT(trans->read_count))) == pdFALSE){
             HAL_I2C_Master_Abort_IT(&hi2c1, trans->address << 1);   // Aborts transfer. Calls callback directly
             while(xSemaphoreTake(i2c_done_signal, 0) == pdTRUE);    // Zero semaphore (may have been given before abort)
+            xSemaphoreGive(i2c_mutex);
             return false;
         }
 
@@ -450,6 +464,7 @@ bool i2c_perform(i2c_trans *trans){
         // Otherwise it is possible it would be modified again
         // before return actually happens
         bool ret = i2c_success;
+        xSemaphoreGive(i2c_mutex);
         return ret;
     }else if(trans->read_count > 0){
         // Perform read only.
@@ -470,6 +485,8 @@ bool i2c_perform(i2c_trans *trans){
                 i2c_fix_sda_low();
                 i2c_reinit();
             }
+
+            xSemaphoreGive(i2c_mutex);
             return false;
         }
 
@@ -477,6 +494,7 @@ bool i2c_perform(i2c_trans *trans){
         if(xSemaphoreTake(i2c_done_signal, pdMS_TO_TICKS(TIMEOUT_FOR_COUNT(trans->read_count))) == pdFALSE){
             HAL_I2C_Master_Abort_IT(&hi2c1, trans->address << 1);   // Aborts transfer. Calls callback directly
             while(xSemaphoreTake(i2c_done_signal, 0) == pdTRUE);    // Zero semaphore (may have been given before abort)
+            xSemaphoreGive(i2c_mutex);
             return false;
         }
 
@@ -484,6 +502,7 @@ bool i2c_perform(i2c_trans *trans){
         // Otherwise it is possible it would be modified again
         // before return actually happens
         bool ret = i2c_success;
+        xSemaphoreGive(i2c_mutex);
         return ret;
     }else if(trans->write_count > 0){
         // Perform write only
@@ -504,6 +523,8 @@ bool i2c_perform(i2c_trans *trans){
                 i2c_fix_sda_low();
                 i2c_reinit();
             }
+
+            xSemaphoreGive(i2c_mutex);
             return false;
         }
 
@@ -511,6 +532,7 @@ bool i2c_perform(i2c_trans *trans){
         if(xSemaphoreTake(i2c_done_signal, pdMS_TO_TICKS(TIMEOUT_FOR_COUNT(trans->write_count))) == pdFALSE){
             HAL_I2C_Master_Abort_IT(&hi2c1, trans->address << 1);   // Aborts transfer. Calls callback directly
             while(xSemaphoreTake(i2c_done_signal, 0) == pdTRUE);    // Zero semaphore (may have been given before abort)
+            xSemaphoreGive(i2c_mutex);
             return false;
         }
 
@@ -518,10 +540,12 @@ bool i2c_perform(i2c_trans *trans){
         // Otherwise it is possible it would be modified again
         // before return actually happens
         bool ret = i2c_success;
+        xSemaphoreGive(i2c_mutex);
         return ret;
     }
 
     // Only gets here if empty transaction
+    xSemaphoreGive(i2c_mutex);
     return true;
 }
 

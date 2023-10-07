@@ -22,6 +22,8 @@
 #include <stdint.h>
 #include <cmdctrl.h>
 #include <calibration.h>
+#include <FreeRTOS.h>
+#include <semphr.h>
 
 #define MS5837_ADDR                     0x76
 #define MS5837_30BA_VER                 0x1A   // Sensor version ID for 30BA
@@ -45,8 +47,9 @@
 #define WRITE_BUF_SIZE          16
 #define READ_BUF_SIZE           16
 
-// Note: No transaction mutex needed here because this does not need to be thread safe
-//       All I2C comm with MS5837 occurs on MS5837 thread. Cmdctrl never touches it
+// Need to ensure only one thread perfoming I2C comms with this sensor at a time
+static SemaphoreHandle_t trans_mutex;
+
 static i2c_trans trans;
 static uint8_t write_buf[WRITE_BUF_SIZE];
 static uint8_t read_buf[READ_BUF_SIZE];
@@ -79,6 +82,7 @@ static uint8_t crc4(uint16_t *data){
 
 
 void ms5837_init(void){
+    trans_mutex = xSemaphoreCreateMutex();
     trans.address = MS5837_ADDR;
     trans.write_buf = write_buf;
     trans.read_buf = read_buf;
@@ -117,11 +121,11 @@ bool ms5837_configure(void){
     // This also ensures accesses to trans are thread safe and prevents unexpected
     // interleaving of messages to the same sensor (if multiple threads call
     // functions of the same sensor).
-    if(!i2c_take()){
+    if(xSemaphoreTake(trans_mutex, portMAX_DELAY) == pdFALSE){
         return false;
     }
     bool ret = ms5837_configure_internal();
-    i2c_give();
+    xSemaphoreGive(trans_mutex);
     return ret;
 }
 
@@ -274,11 +278,11 @@ bool ms5837_read(depth_data_t *data){
     // This also ensures accesses to trans are thread safe and prevents unexpected
     // interleaving of messages to the same sensor (if multiple threads call
     // functions of the same sensor).
-    if(!i2c_take()){
+    if(xSemaphoreTake(trans_mutex, portMAX_DELAY) == pdFALSE){
         return false;
     }
     bool ret = ms5837_read_internal(data);
-    i2c_give();
+    xSemaphoreGive(trans_mutex);
     return ret;
 }
 

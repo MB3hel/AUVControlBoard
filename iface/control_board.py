@@ -45,7 +45,7 @@ END_BYTE = b'\xfe'
 ESCAPE_BYTE = b'\xff'
 
 
-default_timeout_uart = 0.1
+default_timeout_uart = 10.0
 default_timeout_sim = 0.25
 
 
