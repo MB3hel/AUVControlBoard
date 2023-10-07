@@ -130,6 +130,16 @@ def guided_calibration(cb: ControlBoard, s: Simulator) -> int:
     if ack != cb.AckError.NONE:
         print("Communication failed while resetting BNO055.")
         return 1
+    
+    res, imu, depth = cb.get_sensor_status()
+    if res != ControlBoard.AckError.NONE:
+        print("Failed to check sensors.")
+        return 1
+    
+    if imu != cb.IMUSensors.BNO055:
+        print("IMU is not BNO055! Current IMU is {}".format(imu.name))
+        print("This script can only run if the BNO055 is active!")
+        return 1
 
     # Periodically show calibration status
     failures = 0

@@ -47,14 +47,15 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     ############################################################################
     # Query sensor status
     ############################################################################
-    print("Query sensor status...", end="")
-    res, bno055, ms5837 = cb.get_sensor_status()
+    res, imu, depth = cb.get_sensor_status()
     if res != ControlBoard.AckError.NONE:
-        print("Fail.")
+        print("Failed to check sensors.")
         return 1
-    print("Done.")
-    print("MS5837: {}".format("Ready" if ms5837 else "Not Ready"))
-    print()
+    
+    if depth != cb.DepthSensors.MS5837:
+        print("Depth sensor is not MS5837! Current depth sensor is {}".format(depth.name))
+        print("This script can only run if the MS5837 is active!")
+        return 1
 
     time.sleep(1)
 
