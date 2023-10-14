@@ -73,15 +73,16 @@ def run(cb: ControlBoard, s: Simulator) -> int:
     print("Atmospheric pressure will be determined by averaging 5 seconds of data.")
     input("Press enter to being sampling data...")
     print("Reading pressure data for 5 seconds...")
-    ack = cb.read_ms5837_periodic(True)
+    ack = cb.read_depth_periodic(True)
     if ack != cb.AckError.NONE:
         print("Sensor communication failed.")
         return 1
+    cb.read_depth_once()
     pressure_sum = 0
     pressure_samples = 0
     start_time = time.time()
     while time.time() - start_time < 5.0:
-        pressure_sum += cb.get_ms5837_data().pressure
+        pressure_sum += cb.get_depth_data().pressure
         pressure_samples += 1
         time.sleep(0.1)
     pressure_avg = pressure_sum / pressure_samples
