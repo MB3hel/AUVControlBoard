@@ -496,6 +496,22 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
+    ## Set thruster PWM parameters (necessary before setting speeds will work)
+    #  @param pwm_period Period for pulse in us (defines update rate / PWM frequency)
+    #  @param pwm_zero Zero pulse width (us)
+    #  @param pwm_range Pulse range above / below zero (us)
+    def set_tpwm(self, pwm_period: int, pwm_zero: int, pwm_range: int, timeout = -1.0) -> AckError:
+        # Construct message
+        data = bytearray(b'TPWM')
+        data.extend(struct.pack("<H", pwm_period))
+        data.extend(struct.pack("<H", pwm_zero))
+        data.extend(struct.pack("<H", pwm_range))
+
+        # Send the message and wait for acknowledgment
+        msg_id = self.__write_msg(bytes(data), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+
     ## Set thruster inversions (impacts all control modes)
     #  @param inversions List of 8 booleans indicating if thruster is inverted. 
     #                    True = inverted. False = not inverted.

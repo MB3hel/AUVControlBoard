@@ -63,6 +63,10 @@ class Vehicle(ABC):
         if ack != ControlBoard.AckError.NONE:
             return ack, "set_motor_matrix"
 
+        ack = cb.set_tpwm(self.thruster_pwm_config)
+        if ack != ControlBoard.AckError.NONE:
+            return ack, "set_tpwm"
+
         ack = cb.set_tinv(self.tinv)
         if ack != ControlBoard.AckError.NONE:
             return ack, "set_tinv"
@@ -98,6 +102,11 @@ class Vehicle(ABC):
     @property
     @abstractmethod
     def motor_matrix(self) -> ControlBoard.MotorMatrix:
+        pass
+
+    @property
+    @abstractmethod
+    def thruster_pwm_config(self) -> Tuple[int, int, int]:
         pass
 
     @property
@@ -160,6 +169,11 @@ class SW8(Vehicle):
         mat.set_row(7,    [  0,     0,    -1,    -1,     -1,      0   ])
         mat.set_row(8,    [  0,     0,    -1,    -1,     +1,      0   ])
         return mat
+
+    @property
+    def thruster_pwm_config(self) -> Tuple[int, int, int]:
+        # Settings for BlueRobotics Basic ESCs
+        return 2500, 1500, 400
 
     @property
     def tinv(self) -> List[bool]:
