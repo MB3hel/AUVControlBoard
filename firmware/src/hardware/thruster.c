@@ -20,26 +20,46 @@
 #include <framework.h>
 
 
+
+static thr_params_t params = {.pwm_period = 0, .pwm_zero = 0, .pwm_range = 0};
+
+#define PULSE_WIDTH_US(speed)       ((int)(params.pwm_range * speed) + params.pwm_zero)
+
+
 #ifdef CONTROL_BOARD_V1
 
 void thruster_init(void){
-    float *zero_speeds = (float[]){0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    thruster_set(zero_speeds);
     TCC0_PWMStart();
     TCC1_PWMStart();
+
+    // Zero duty cycle for all thruster PWMs
+    while(!TCC0_PWM24bitDutySet(TCC0_CHANNEL2, 0));
+    while(!TCC0_PWM24bitDutySet(TCC0_CHANNEL3, 0));
+    while(!TCC0_PWM24bitDutySet(TCC0_CHANNEL1, 0));
+    while(!TCC0_PWM24bitDutySet(TCC0_CHANNEL0, 0));
+    while(!TCC1_PWM24bitDutySet(TCC1_CHANNEL3, 0));
+    while(!TCC1_PWM24bitDutySet(TCC1_CHANNEL2, 0));
+    while(!TCC1_PWM24bitDutySet(TCC1_CHANNEL1, 0));
+    while(!TCC1_PWM24bitDutySet(TCC1_CHANNEL0, 0));
+}
+
+void thruster_config(thr_params_t p){
+    params = p;
+
+    while(!TCC0_PWM24bitPeriodSet(params.pwm_period));
+    while(!TCC1_PWM24bitPeriodSet(params.pwm_period));
 }
 
 void thruster_set(float *speeds){
+    // Ignore speed sets if thruster params not set
+    if(params.pwm_period == 0)
+        return;
+
     // PWM configured on TCC0 and TCC1 for thrusters
     // PWM setup and clocks configured in generated code
     // Timer count rate = 3MHz = 3 counts / us
-    // PWM frequency = 3MHz / 6000 (period reg) = 500Hz
-    // Supported ESCs use pulses from 1100us to 1900us
-    // 1500us pulse = 0% speed
-    // 1100us pulse = -100% speed
-    // 1900us pulse = 100% speed
     #define COUNT_PER_US                3
-    #define PULSE_WIDTH_US(speed)       ((int)(400 * speed) + 1500)
+    
     
     // THR1 = TCC0[2]
     while(!TCC0_PWM24bitDutySet(TCC0_CHANNEL2, PULSE_WIDTH_US(speeds[0]) * COUNT_PER_US));
@@ -76,9 +96,6 @@ extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim5;
 
 void thruster_init(void){
-    float *zero_speeds = (float[]){0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    thruster_set(zero_speeds);
-
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
@@ -87,19 +104,35 @@ void thruster_init(void){
     HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_2);
     HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_3);
     HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);
+
+    // Zero duty cycle for all thruster PWMs
+    TIM3->CCR4 = 0;
+    TIM3->CCR3 = 0;
+    TIM3->CCR2 = 0;
+    TIM3->CCR1 = 0;
+    TIM5->CCR4 = 0;
+    TIM5->CCR3 = 0;
+    TIM5->CCR2 = 0;
+    TIM5->CCR1 = 0;
+}
+
+void thruster_config(thr_params_t p){
+    params = p;
+
+    TIM3->ARR = params.pwm_period;
+    TIM5->ARR = params.pwm_period;
 }
 
 void thruster_set(float *speeds){
+    // Ignore speed sets if thruster params not set
+    if(params.pwm_period == 0)
+        return;
+
     // PWM configured on TIM3 and TIM5 for thrusters
     // PWM setup and clocks configured in generated code
     // Timer count rate = 3MHz = 3 counts / us
-    // PWM frequency = 3MHz / 6000 (period in auto reload reg) = 500Hz
-    // Supported ESCs use pulses from 1100us to 1900us
-    // 1500us pulse = 0% speed
-    // 1100us pulse = -100% speed
-    // 1900us pulse = 100% speed
     #define COUNT_PER_US                3
-    #define PULSE_WIDTH_US(speed)       ((int)(400 * speed) + 1500)
+    #define PULSE_WIDTH_US(speed)       ((int)(params.pwm_range * speed) + params.pwm_zero)
 
     // THR1 = TIM3[4]
     TIM3->CCR4 = PULSE_WIDTH_US(speeds[0]) * COUNT_PER_US;
