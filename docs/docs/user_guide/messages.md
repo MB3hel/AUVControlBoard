@@ -44,6 +44,14 @@ Motor matrix update command is used to inform the control board the motor matrix
 ```
 This message will be acknowledged. The acknowledge message will contain no result data.
 
+**Thruster PWM Parameter Config**  
+Configure PWM settings for thrusters.  
+```none
+'T', 'P', 'W', 'M', [pwm_period], [pwm_zero], [pwm_range]
+```  
+Each value is an unsigned 16-bit integer (little endian). `pwm_period` is the PWM signal period in microseconds (determines PWM frequency / update rate for ESCs). `pwm_zero` is the pulse width for zero speed in microseconds (typically 1500). `pwm_range` is the deviation from zero to achieve max speed (when added) or min speed (when subtracted) such that the pulse width `pwm_zero + pwm_range` microseconds is full forward speed and the pulse width `pwm_zero - pwm_range` microseconds is full reverse speed.  
+This message will be acknowledged. The acknowledge message will contain no result data.
+
 **Thruster Inversion Set**  
 Thruster inversion set command is used to invert the positive and negative direction of thrusters. It has the following format  
 ```none
