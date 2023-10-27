@@ -63,7 +63,7 @@ class Vehicle(ABC):
         if ack != ControlBoard.AckError.NONE:
             return ack, "set_motor_matrix"
 
-        ack = cb.set_tpwm(self.thruster_pwm_config)
+        ack = cb.set_tpwm(*self.thruster_pwm_config)
         if ack != ControlBoard.AckError.NONE:
             return ack, "set_tpwm"
 

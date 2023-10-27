@@ -560,7 +560,8 @@ void mc_sassist_tune_depth(float kp, float ki, float kd, float limit, bool inver
 /// Motor control
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void mc_set_raw(float *speeds){
+void mc_set_raw(float *speeds_noinv){
+    float speeds[8];
     xSemaphoreTake(motor_mutex, portMAX_DELAY);   
 
     // Don't allow speed set while motors are killed
@@ -568,7 +569,9 @@ void mc_set_raw(float *speeds){
         // Apply thruster inversions
         for(unsigned int i = 0; i < 8; ++i){
             if(mc_invert[i])
-                speeds[i] *= -1;
+                speeds[i] = -1 * speeds_noinv[i];
+            else
+                speeds[i] = speeds_noinv[i];
         }
 
         // Actually set thruster speeds
