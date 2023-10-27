@@ -26,6 +26,7 @@
 #include <timers.h>
 #include <sensor/bno055.h>
 #include <hardware/wdt.h>
+#include <hardware/thruster.h>
 #include <debug.h>
 #include <calibration.h>
 #include <metadata.h>
@@ -719,7 +720,32 @@ void cmdctrl_handle_message(void){
     // -----------------------------------------------------------------------------------------------------------------
     // Vehicle configuration commands
     // -----------------------------------------------------------------------------------------------------------------
-    else if(message_starts_with_str(msg, len, "TINV")){
+    else if(message_starts_with_str(msg, len, "TPWM")){
+        // Thruster PWM parameter set command
+        // T, P, W, M, [pwm_period], [pwm_zero], [pwm_range]
+        // All 3 values are 16-bit integers (unsigned, little endian)
+
+        if(len != 10){
+            // Incorrect size.
+            cmdctrl_acknowledge(msg_id, ACK_ERR_INVALID_ARGS, NULL, 0);
+        }else{
+            // Correct size. Handle it.
+            thr_params_t p;
+            p.pwm_period = conversions_data_to_int16(&msg[4], true);
+            p.pwm_zero = conversions_data_to_int16(&msg[6], true);
+            p.pwm_range = conversions_data_to_int16(&msg[8], true);
+
+            // Apply settings
+            thruster_config(p);
+
+            // Apply saved speed properly for newly configured ESCs
+            // Note that this is not a speed set, thus does not feed watchdog
+            cmdctrl_apply_speed();
+
+            // No error
+            cmdctrl_acknowledge(msg_id, ACK_ERR_NONE, NULL, 0);
+        }
+    }else if(message_starts_with_str(msg, len, "TINV")){
         // Thruster inversion set command
         // T, I, N, V, [inv]
         // [inv] is an 8-bit int where MSB corresponds to thruster 8 and LSB thruster 1

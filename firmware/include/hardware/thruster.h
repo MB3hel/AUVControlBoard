@@ -49,7 +49,7 @@ void thruster_init(void);
  * Set parameters for thrusters. These must be set before thruster PWM will actually
  * be generated.
  */
-void thrusters_config(thr_params_t p);
+void thruster_config(thr_params_t p);
 
 /**
  * Set thruster speeds
