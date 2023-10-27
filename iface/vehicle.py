@@ -28,7 +28,7 @@
 from collections import OrderedDict
 from control_board import ControlBoard
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Any
 import time
 
 # Collection of all vehicles
@@ -71,9 +71,11 @@ class Vehicle(ABC):
         if ack != ControlBoard.AckError.NONE:
             return ack, "set_reldof"
         
-        ack = cb.set_bno055_axis(self.bno055_axis_config)
-        if ack != ControlBoard.AckError.NONE:
-            return ack, "set_bno055_axis"
+        imu, imu_cfg = self.imu_config
+        if imu == ControlBoard.IMUSensors.BNO055:
+            ack = cb.set_bno055_axis(imu_cfg)
+            if ack != ControlBoard.AckError.NONE:
+                return ack, "set_bno055_axis"
         
         ack = cb.tune_pid_xrot(*self.xrot_pid_tuning)
         if ack != ControlBoard.AckError.NONE:
@@ -110,7 +112,7 @@ class Vehicle(ABC):
 
     @property
     @abstractmethod
-    def bno055_axis_config(self) -> ControlBoard.BNO055Axis:
+    def imu_config(self) -> Tuple[ControlBoard.IMUSensors, Any]:
         pass
 
     @property
@@ -186,8 +188,8 @@ class SW8(Vehicle):
         return reldof
 
     @property
-    def bno055_axis_config(self) -> ControlBoard.BNO055Axis:
-        return ControlBoard.BNO055Axis.P6
+    def imu_config(self) -> Tuple[ControlBoard.IMUSensors, Any]:
+        return ControlBoard.IMUSensors.BNO055, ControlBoard.BNO055Axis.P6
 
     @property
     def xrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
