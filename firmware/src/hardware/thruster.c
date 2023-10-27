@@ -46,8 +46,9 @@ void thruster_init(void){
 void thruster_config(thr_params_t p){
     params = p;
 
-    while(!TCC0_PWM24bitPeriodSet(params.pwm_period));
-    while(!TCC1_PWM24bitPeriodSet(params.pwm_period));
+    // Period in us but clock 3Mhz so times 3
+    while(!TCC0_PWM24bitPeriodSet(params.pwm_period * 3));
+    while(!TCC1_PWM24bitPeriodSet(params.pwm_period * 3));
 }
 
 void thruster_set(float *speeds){
@@ -119,8 +120,9 @@ void thruster_init(void){
 void thruster_config(thr_params_t p){
     params = p;
 
-    TIM3->ARR = params.pwm_period;
-    TIM5->ARR = params.pwm_period;
+    // Period in us but clock 3Mhz so times 3
+    TIM3->ARR = params.pwm_period * 3;
+    TIM5->ARR = params.pwm_period * 3;
 }
 
 void thruster_set(float *speeds){
