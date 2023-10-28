@@ -57,11 +57,11 @@ def run(cb: ControlBoard, s: Simulator) -> int:
 
     print("Enabling sensor data")
     # Force valid data now (when these functions return without error, cb has valid data for each sensor)
-    cb.read_bno055_once()
-    cb.read_ms5837_once()
+    cb.read_imu_once()
+    cb.read_depth_once()
     # Then enable periodic reads for future data
-    cb.read_bno055_periodic(True)
-    cb.read_ms5837_periodic(True)
+    cb.read_imu_periodic(True)
+    cb.read_depth_periodic(True)
 
     print("")
     print("********************************************************************************")
@@ -113,7 +113,7 @@ def run(cb: ControlBoard, s: Simulator) -> int:
             if z == 0.0:
                 # No z speed from dpad, hold current depth (SASSIST mode)
                 if was_ohold:
-                    depth_target = cb.get_ms5837_data().depth
+                    depth_target = cb.get_depth_data().depth
                 cb.set_sassist1(x, y, yaw, pitch_target, roll_target, depth_target)
             else:
                 # Use OHOLD mode to maintain orientation, but change depth based on dpad

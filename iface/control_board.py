@@ -46,7 +46,7 @@ ESCAPE_BYTE = b'\xff'
 
 
 default_timeout_uart = 0.1
-default_timeout_sim = 0.25
+default_timeout_sim = 0.25 * 1000
 
 
 class ControlBoard:

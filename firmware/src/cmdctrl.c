@@ -1282,7 +1282,7 @@ void cmdctrl_send_simstat(void){
     conversions_float_to_data(cmdctrl_sim_speeds[6], &simstat[31], true);
     conversions_float_to_data(cmdctrl_sim_speeds[7], &simstat[35], true);
     simstat[39] = mode & 0xFF;
-    simstat[40] = mc_wdog_is_killed() ? 0 : 1;
+    simstat[40] = mc_wdog_is_killed() ? 1 : 0;
     pccomm_write(simstat, 41);
 }
 

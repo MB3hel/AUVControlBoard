@@ -155,7 +155,7 @@ void mc_set_tinv(bool *tinv){
 }
 
 void mc_set_relscale(float *reldof){
-    for(unsigned int i = 0; i < 8; ++i){
+    for(unsigned int i = 0; i < 6; ++i){
         mc_relscale[i] = reldof[i];
     }
 }
@@ -590,12 +590,12 @@ void mc_set_raw(float *speeds_noinv){
 void mc_set_local(const mc_local_target_t target){
 
     // Shorthand names (will be optimized out by compiler)
-    const float x = target.x;
-    const float y = target.y;
-    const float z = target.z;
-    const float xrot = target.xrot;
-    const float yrot = target.yrot;
-    const float zrot = target.zrot;
+    float x = target.x;
+    float y = target.y;
+    float z = target.z;
+    float xrot = target.xrot;
+    float yrot = target.yrot;
+    float zrot = target.zrot;
 
     float target_arr[6];
     matrix target_mat;
