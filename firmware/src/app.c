@@ -23,7 +23,6 @@
 #include <imu.h>
 #include <depth.h>
 #include <hardware/wdt.h>
-#include <tusb.h>
 #include <FreeRTOSConfig.h>
 #include <FreeRTOS.h>
 #include <task.h>

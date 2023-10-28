@@ -147,4 +147,94 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
 #endif // CONTROL_BOARD_V1 || CONTROL_BOARD_V2
 
 
-// TODO: SimCB usb stuff
+#if defined(CONTROL_BOARD_SIM)
+
+#include <stdio.h>
+#include <stdint.h>
+#include <util/circular_buffer.h>
+
+#define USB_WB_SIZE 256
+#define USB_RB_SIZE 512
+#define STDIN_BLOCK_SIZE 32
+
+// Uses stdio to send data that would have been sent over USB by physical board
+// Data is buffered here because IO at OS level can be expensive (depends on OS)
+// Also, for reading data, need to be able to get num available bytes, which is
+// generally not possible directly using stdio
+// Write buffer is linear b/c it is always written out to stdio fully
+// However read buffer is circular b/c usb_read reads one at a time
+static uint8_t write_buf[USB_WB_SIZE];
+static size_t write_buf_pos;
+static uint8_t read_cb_arr[USB_RB_SIZE];
+static circular_buffer read_cb;
+
+// Directly read into this buffer before copy to CB
+static uint8_t stdin_block[STDIN_BLOCK_SIZE];
+
+// USB read and process occur on different threads
+// Both can result in circular buffer's size changing, so protect with mutex
+static SemaphoreHandle_t read_buf_mutex;
+
+// Write buffer size may change from write and flush, which can (but typically are not)
+// called from different threads
+static SemaphoreHandle_t write_buf_mutex;
+
+void usb_init(void){
+    write_buf_pos = 0;
+    cb_init(&read_cb, read_cb_arr, USB_RB_SIZE);
+
+    read_buf_mutex = xSemaphoreCreateMutex();
+    write_buf_mutex = xSemaphoreCreateMutex();
+}
+
+void usb_process(void){
+    // fread waits for the input file (stdin) to not be empty
+    // Then it reads count bytes (USB_PRB_SIZE in this case)
+    // If the stream has fewer, it reaches EOF and return will be less
+    size_t count = fread(stdin_block, sizeof(uint8_t), STDIN_BLOCK_SIZE, stdin);
+    
+    // Copy to actual read buffer
+    xSemaphoreTake(read_buf_mutex, portMAX_DELAY);
+    for(size_t i = 0; i < count; ++i){
+        // Note that write will return false if buffer is full
+        // But we just ignore that here (data discarded if buffer full)
+        cb_write(&read_cb, stdin_block[i]);
+    }
+    xSemaphoreGive(read_buf_mutex);
+}
+
+unsigned int usb_avail(void){
+    // Don't care about race when reading count, so no mutex
+    return CB_AVAIL_READ(&read_cb);
+}
+
+uint8_t usb_read(void){
+    uint8_t res = 0;
+    // cb_read returns false and doesn't change res if buffer is empty
+    cb_read(&read_cb, &res);
+    return res;
+}
+
+void usb_write(uint8_t b){
+    xSemaphoreTake(write_buf_mutex, portMAX_DELAY);
+    write_buf[write_buf_pos] = b;
+    write_buf_pos++;
+
+    // If buffer is full, flush now
+    if(write_buf_pos == USB_WB_SIZE){
+        xSemaphoreGive(write_buf_mutex);
+        usb_flush();
+    }else{
+        xSemaphoreGive(write_buf_mutex);
+    }
+}
+
+void usb_flush(void){
+    // Write whatever is currently in output buffer now
+    xSemaphoreTake(write_buf_mutex, portMAX_DELAY);
+    fwrite(write_buf, sizeof(uint8_t), write_buf_pos, stdout);
+    write_buf_pos = 0;
+    xSemaphoreGive(write_buf_mutex);
+}
+
+#endif // CONTROL_BOARD_SIM
