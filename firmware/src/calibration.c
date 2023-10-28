@@ -48,7 +48,7 @@ void calibration_load(void){
 }
 
 void calibration_load_bno055(void){
-    uint16_t sig;
+    uint16_t sig = 0;
     eeprom_read(BNO055_SIG_IDX, &sig);
     calibration_bno055.valid = (sig == SIG_VALID);
     if(calibration_bno055.valid){

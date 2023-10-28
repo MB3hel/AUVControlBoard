@@ -23,13 +23,14 @@
 #include <semphr.h>
 
 
+#ifdef CONTROL_BOARD_V1
+
+#include <hardware/delay.h>
+
 
 static SemaphoreHandle_t i2c_mutex;
 static SemaphoreHandle_t i2c_done_signal;
 
-#ifdef CONTROL_BOARD_V1
-
-#include <hardware/delay.h>
 
 
 static void i2c_done_callback(uintptr_t contextHandle){
@@ -217,6 +218,11 @@ bool i2c_perform(i2c_trans *trans){
 extern I2C_HandleTypeDef hi2c1;
 
 static volatile bool i2c_success = false;
+
+
+static SemaphoreHandle_t i2c_mutex;
+static SemaphoreHandle_t i2c_done_signal;
+
 
 
 void HAL_I2C_MasterTxCpltCallback (I2C_HandleTypeDef * hi2c){
@@ -551,6 +557,20 @@ bool i2c_perform(i2c_trans *trans){
 
 #endif // CONTROL_BOARD_V2
 
+
+#ifdef CONTROL_BOARD_SIM
+
+// Dummy implementation that always fails.
+
+void i2c_init(void){
+    // Nothing here
+}
+
+bool i2c_perform(i2c_trans *trans){
+    return false;
+}
+
+#endif // CONTROL_BOARD_SIM
 
 bool i2c_perform_retries(i2c_trans *trans, unsigned int delay_ms, unsigned int max_retires){
     for(unsigned int i = 0; i < max_retires; ++i){

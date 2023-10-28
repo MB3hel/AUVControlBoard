@@ -157,3 +157,24 @@ bool eeprom_read(uint16_t address, uint16_t *data){
 }
 
 #endif // CONTROL_BOARD_V2
+
+
+#ifdef CONTROL_BOARD_SIM
+
+// Eeprom not supported for simcb, so just implement dummy functions that always fail
+
+void eeprom_init(void){
+    // Nothing needed here
+}
+
+bool eeprom_write(uint16_t address, uint16_t data){
+    // Not implemented in simcb
+    return false;
+}
+
+bool eeprom_read(uint16_t address, uint16_t *data){
+    // Not implemented in simcb
+    return false;
+}
+
+#endif // CONTROL_BOARD_SIM

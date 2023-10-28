@@ -57,3 +57,14 @@ void wdt_feed(void){
 }
 
 #endif // CONTROL_BOARD_V2
+
+
+#ifdef CONTROL_BOARD_SIM
+
+// Dummy implementation
+
+void wdt_init(void){}
+
+void wdt_feed(void){}
+
+#endif // CONTROL_BOARD_SIM

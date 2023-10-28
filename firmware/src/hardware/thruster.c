@@ -21,12 +21,17 @@
 
 
 
+#ifdef CONTROL_BOARD_V1
+
 static thr_params_t params = {.pwm_period = 0, .pwm_zero = 0, .pwm_range = 0};
 
 #define PULSE_WIDTH_US(speed)       ((int)(params.pwm_range * speed) + params.pwm_zero)
 
+// PWM configured on TCC0 and TCC1 for thrusters
+// PWM setup and clocks configured in generated code
+// Timer count rate = 3MHz = 3 counts / us
+#define COUNT_PER_US                3
 
-#ifdef CONTROL_BOARD_V1
 
 void thruster_init(void){
     TCC0_PWMStart();
@@ -55,11 +60,6 @@ void thruster_set(float *speeds){
     // Ignore speed sets if thruster params not set
     if(params.pwm_period == 0)
         return;
-
-    // PWM configured on TCC0 and TCC1 for thrusters
-    // PWM setup and clocks configured in generated code
-    // Timer count rate = 3MHz = 3 counts / us
-    #define COUNT_PER_US                3
     
     
     // THR1 = TCC0[2]
@@ -91,6 +91,17 @@ void thruster_set(float *speeds){
 
 
 #ifdef CONTROL_BOARD_V2
+
+
+static thr_params_t params = {.pwm_period = 0, .pwm_zero = 0, .pwm_range = 0};
+
+#define PULSE_WIDTH_US(speed)       ((int)(params.pwm_range * speed) + params.pwm_zero)
+
+// PWM configured on TIM3 and TIM5 for thrusters
+// PWM setup and clocks configured in generated code
+// Timer count rate = 3MHz = 3 counts / us
+#define COUNT_PER_US                3
+
 
 // From stm32cubemx_main
 extern TIM_HandleTypeDef htim3;
@@ -130,12 +141,6 @@ void thruster_set(float *speeds){
     if(params.pwm_period == 0)
         return;
 
-    // PWM configured on TIM3 and TIM5 for thrusters
-    // PWM setup and clocks configured in generated code
-    // Timer count rate = 3MHz = 3 counts / us
-    #define COUNT_PER_US                3
-    #define PULSE_WIDTH_US(speed)       ((int)(params.pwm_range * speed) + params.pwm_zero)
-
     // THR1 = TIM3[4]
     TIM3->CCR4 = PULSE_WIDTH_US(speeds[0]) * COUNT_PER_US;
 
@@ -162,3 +167,16 @@ void thruster_set(float *speeds){
 }
 
 #endif // CONTROL_BOARD_V2
+
+
+#ifdef CONTROL_BOARD_SIM
+
+// Dummy implementation
+
+void thruster_init(void){}
+
+void thruster_config(thr_params_t p){}
+
+void thruster_set(float *speeds){}
+
+#endif // CONTROL_BOARD_SIM

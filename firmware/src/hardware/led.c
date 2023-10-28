@@ -94,3 +94,18 @@ void led_set(uint8_t r, uint8_t g, uint8_t b){
 }
 
 #endif // CONTROL_BOARD_V2
+
+
+
+#ifdef CONTROL_BOARD_SIM
+
+void led_init(void){
+    // Nothing needed here
+}
+
+void led_set(uint8_t r, uint8_t g, uint8_t b){
+    // No actual LED on SimCB, so do nothing.
+    // Dummy implementation
+}
+
+#endif // CONTROL_BOARD_SIM
