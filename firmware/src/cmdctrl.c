@@ -521,6 +521,7 @@ void cmdctrl_handle_message(void){
                 sassist_target.yaw_spd = conversions_data_to_float(&msg[16], true);
                 sassist_target.target_euler.pitch = conversions_data_to_float(&msg[20], true);
                 sassist_target.target_euler.roll = conversions_data_to_float(&msg[24], true);
+                sassist_target.target_euler.is_deg = true;
                 sassist_target.target_depth = conversions_data_to_float(&msg[28], true);
                 sassist_target.use_yaw_pid = false;
 
@@ -573,6 +574,7 @@ void cmdctrl_handle_message(void){
                 sassist_target.target_euler.pitch = conversions_data_to_float(&msg[16], true);
                 sassist_target.target_euler.roll = conversions_data_to_float(&msg[20], true);
                 sassist_target.target_euler.yaw = conversions_data_to_float(&msg[24], true);
+                sassist_target.target_euler.is_deg = true;
                 sassist_target.target_depth = conversions_data_to_float(&msg[28], true);
                 sassist_target.use_yaw_pid = true;
 
@@ -624,6 +626,7 @@ void cmdctrl_handle_message(void){
                 ohold_target.yaw_spd = conversions_data_to_float(&msg[18], true);
                 ohold_target.target_euler.pitch = conversions_data_to_float(&msg[22], true);
                 ohold_target.target_euler.roll = conversions_data_to_float(&msg[26], true);
+                ohold_target.target_euler.is_deg = true;
                 ohold_target.use_yaw_pid = false;
 
                 // Ensure speeds are in valid range
@@ -675,6 +678,8 @@ void cmdctrl_handle_message(void){
                 ohold_target.target_euler.pitch = conversions_data_to_float(&msg[18], true);
                 ohold_target.target_euler.roll = conversions_data_to_float(&msg[22], true);
                 ohold_target.target_euler.yaw = conversions_data_to_float(&msg[26], true);
+                ohold_target.target_euler.is_deg = true;
+                ohold_target.use_yaw_pid = true;
 
                 // Ensure speeds are in valid range
                 LIMIT(ohold_target.x);
