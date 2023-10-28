@@ -1242,6 +1242,8 @@ void cmdctrl_handle_message(void){
             response[0] = 1;
         #elif defined(CONTROL_BOARD_V2)
             response[0] = 2;
+        #elif defined(CONTROL_BOARD_SIM)
+            response[0] = 0;
         #else
             response[0] = 255;
         #endif
