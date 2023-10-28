@@ -3,3 +3,4 @@ scripts/test*.py
 scripts/*
 !scripts/template.py
 user_vehicles.py
+.vscode/
