@@ -233,13 +233,22 @@ target_compile_definitions(ControlBoard PUBLIC ${DEFINES} ${EXTRA_DEFINES})
 target_compile_options(ControlBoard PUBLIC ${CFLAGS} ${EXTRA_CFLAGS})
 target_link_options(ControlBoard PUBLIC ${LDFLAGS} ${EXTRA_LDFLAGS})
 target_link_libraries(ControlBoard m)
-add_custom_command(TARGET ControlBoard POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} ARGS -O ihex "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.elf" "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.hex"
-)
-add_custom_command(TARGET ControlBoard POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} ARGS -O binary "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.elf" "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.bin"
-)
-if("${CBOARD_REV}" STREQUAL "v2")
+
+if("${CBOARD_REV}" STREQUAL "v1")
+    add_custom_command(TARGET ControlBoard POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} ARGS -O ihex "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.elf" "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.hex"
+    )
+    add_custom_command(TARGET ControlBoard POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} ARGS -O binary "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.elf" "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.bin"
+    )
+elseif("${CBOARD_REV}" STREQUAL "v2")
+    add_custom_command(TARGET ControlBoard POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} ARGS -O ihex "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.elf" "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.hex"
+    )
+    add_custom_command(TARGET ControlBoard POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} ARGS -O binary "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.elf" "$<OUTPUT_CONFIG:$<CONFIG>>/ControlBoard.bin"
+    )
+
     # Different because of eeprom emulation using flash (breaks up flash space on this device)
 
     # Stuff that goes in sector 0 of flash (BOOT segment of address space in linker)
