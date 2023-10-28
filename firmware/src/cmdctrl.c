@@ -100,11 +100,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Used for simulator hijack of the control board
-#if defined(CONTROL_BOARD_V1) || defined(CONTROL_BOARD_V2)
 bool cmdctrl_sim_hijacked = false;
-#elif defined(CONTROL_BOARD_SIM_LINUX) || defined(CONTROL_BOARD_SIM_WINDOWS)
-const bool cmdctrl_sim_hijacked = true;
-#endif
 
 quaternion_t cmdctrl_sim_quat;
 float cmdctrl_sim_depth;
@@ -1292,9 +1288,7 @@ void cmdctrl_send_simstat(void){
 }
 
 void cmdctrl_simhijack(bool hijack){
-#if defined(CONTROL_BOARD_SIM_LINUX) || defined(CONTROL_BOARD_SIM_WINDOWS)
     hijack = true; // SIMCB only supports SIMHIJACK mode
-#endif
 
     if(hijack){
         // Reset data received from simulator
@@ -1328,14 +1322,10 @@ void cmdctrl_simhijack(bool hijack){
         mc_set_raw(raw_target);
 
         // Do this last so set_local (above) uses real thrusters
-#if !(defined(CONTROL_BOARD_SIM_LINUX) || defined(CONTROL_BOARD_SIM_WINDOWS))
         cmdctrl_sim_hijacked = true;
-#endif
     }else{
-#if !(defined(CONTROL_BOARD_SIM_LINUX) || defined(CONTROL_BOARD_SIM_WINDOWS))
         // Do this first so set_local (below) uses real thrusters
         cmdctrl_sim_hijacked = false;
-#endif
 
         // Revert to a stoped state
         mode = MODE_RAW;

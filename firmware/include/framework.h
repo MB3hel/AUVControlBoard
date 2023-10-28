@@ -138,6 +138,6 @@ static inline __attribute__((always_inline)) void init_frameworks(void){
 #endif // CONTROL_BOARD_V2
 
 
-#ifdef CONTROL_BOARD_SIM_LINUX
+#ifdef CONTROL_BOARD_SIM
 static inline __attribute__((always_inline)) void init_frameworks(void){}
-#endif // CONTROL_BOARD_SIM_LINUX
+#endif // CONTROL_BOARD_SIM

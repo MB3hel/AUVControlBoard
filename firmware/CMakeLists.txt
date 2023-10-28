@@ -197,6 +197,7 @@ elseif("${CBOARD_REV}" STREQUAL "simcb-linux")
     # Target specific preprocessor definitions
     set(EXTRA_DEFINES
         CONTROL_BOARD_SIM_LINUX
+        CONTROL_BOARD_SIM
     )
 
     # Target specific flags (compilers and linke)
