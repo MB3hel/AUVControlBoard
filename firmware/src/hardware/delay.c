@@ -48,17 +48,53 @@ void delay_ms(unsigned int ms){
 
 #if defined(CONTROL_BOARD_SIM_LINUX)
 
-#include <unistd.h>
+#include <time.h>
 
 // SimCB
 void delay_init(void){}
 
 void delay_us(unsigned int us){
-    usleep(us);
+    // ONLY use nanosleep (due to how threading works in Posix port of FreeRTOS)
+    struct timespec t = {.tv_nsec = 0, .tv_sec = 0};
+    struct timespec r = {.tv_nsec = 0, .tv_sec = 0};
+    while(us >= 1000000){
+        t.tv_sec++;
+        us -= 1000000;
+    }
+    t.tv_nsec = us * 1000;
+
+    while(1){
+        if(nanosleep(&t, &r) == 0){
+            // Success
+            break;
+        }else{
+            // Interrupted. New time to sleep is remaining
+            // Loop to continue sleep
+            t = r;
+        }
+    }
 }
 
 void delay_ms(unsigned int ms){
-    usleep(ms * 1000);
+    // ONLY use nanosleep (due to how threading works in Posix port of FreeRTOS)
+    struct timespec t = {.tv_nsec = 0, .tv_sec = 0};
+    struct timespec r = {.tv_nsec = 0, .tv_sec = 0};
+    while(ms >= 1000){
+        t.tv_sec++;
+        ms -= 1000;
+    }
+    t.tv_nsec = ms * 1000000;
+
+    while(1){
+        if(nanosleep(&t, &r) == 0){
+            // Success
+            break;
+        }else{
+            // Interrupted. New time to sleep is remaining
+            // Loop to continue sleep
+            t = r;
+        }
+    }
 }
 
 #endif // CONTROL_BOARD_SIM_LINUX
