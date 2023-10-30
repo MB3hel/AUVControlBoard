@@ -163,17 +163,13 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
 #define USB_WB_SIZE 128
 #define USB_RB_SIZE 128
 
-static uint8_t write_buf[USB_WB_SIZE];
-static unsigned int write_buf_pos = 0;
+// TODO: Buffers
 
-static uint8_t read_buff_arr[USB_RB_SIZE];
-static circular_buffer read_buf;
+// Mutexes to ensure usb_write and usb_read are thread safe
+// Only used by RTOS threads
+SemaphoreHandle_t write_mutex, read_mutex;
 
-// Both buffers must be mutex protected as different threads may both change
-// the count / position variables
-static SemaphoreHandle_t write_mutex;
-static SemaphoreHandle_t read_mutex;
-
+// Socket & thread stuff
 static int server_fd;
 static int client_fd = -1;
 static struct sockaddr_in client_addr;
@@ -199,20 +195,32 @@ bool usb_setup(int port){
         fprintf(stderr, "Failed to listen on socket. Error code: %d\n", errno);
         return false;
     }
-
     client_fd = -1;
+
+    // Parallel threads are used for read / write from / to socket
+    // This prevents unexpected blocking behavior with RTOS threads
+    // Things go poorly when RTOS threads invoke syscalls (blocks entire program)
+    // So generally, keep syscalls to parallel threads
+    // These parallel threads need signals masked though to prevent issues with RTOS function
+    // See: https://www.freertos.org/Documentation/api-ref/POSIX/index.html
+    // Since pthread_create makes a child inheriting the parent's sigmask, mask all here before creation
+    // This is a portable way of ensuring that created thread's sigmask is correct at creation
+    // Then, after creation, restore mask here so this still works as expected by RTOS port.
+    // TODO
 
     // Success
     return true;
 }
 
 void usb_init(void){
-    write_buf_pos = 0;
-    cb_init(&read_buf, read_buff_arr, USB_RB_SIZE);
-
-    // Mutexes are created ready to be taken
     write_mutex = xSemaphoreCreateMutex();
     read_mutex = xSemaphoreCreateMutex();
+
+    // TODO: Initialize RTOS stuff, socket stuff, and threads (in that order)
+    // Note that usb_setup must be combined into here
+    // necessary so that RTOS semaphores can be ready before threads are running
+    // Use of RTOS semaphores (NOT MUTEXES!!!) in BG threads must use FromISR
+    // functions and not actually yield
 
     usb_initialized = true;
 }
@@ -272,75 +280,42 @@ void usb_process(void){
 }
 
 unsigned int usb_avail(void){
-    if(client_fd < 0)
-        return 0;
-    size_t n = 0;
-    ioctl(client_fd, FIONREAD, &n);
-    return (unsigned int)n;
+    return CB_AVAIL_READ(&read_buf);
 }
 
 uint8_t usb_read(void){
-    uint8_t b = 0;
-    if(client_fd < 0)
-        return b;
-    if(usb_avail() == 0)
-        return b;
-    xSemaphoreTake(read_mutex, portMAX_DELAY);
-    // read blocks while actually reading, so need to mask signals
-    // See: https://www.freertos.org/FreeRTOS-simulator-for-Linux.html
-    sigset_t fullset, origset;
-    sigfillset(&fullset);
-    pthread_sigmask(SIG_SETMASK, &fullset, &origset);
-    if(read(client_fd, &b, 1) == -1){
-        // Read error. Assume connection closed
-        close(client_fd);
-        client_fd = -1;
-        // Note that if this occurs a garbage byte is returned from USB read
-        // but that's ok because the parse will eventually discard it.
-        // Same thing (essentially) as UART comm drop + noise on last byte before drop
+    if(client_fd == -1){
+        // No connection. Ignore IO.
+        return 0;
     }
-    pthread_sigmask(SIG_SETMASK, &origset, NULL);
+
+    xSemaphoreTake(read_mutex, portMAX_DELAY);
+    // TODO: Take semaphore zero timeout
+    // If timeout, no data return garbage
+    // Else get element from buffer and return it
+    // Similar idea to what is described for indices for usb_write
     xSemaphoreGive(read_mutex);
-    return b;
 }
 
 void usb_write(uint8_t b){
-    if(client_fd < 0)
+    if(client_fd == -1){
+        // No connection. Ignore IO.
         return;
+    }
 
     xSemaphoreTake(write_mutex, portMAX_DELAY);
-    write_buf[write_buf_pos] = b;
-    write_buf_pos++;
-    if(write_buf_pos == USB_WB_SIZE){
-        xSemaphoreGive(write_mutex);
-        usb_flush();
-    }else{
-        xSemaphoreGive(write_mutex);
-    }
+    // TODO: Put data in buffer
+    // TODO: Give semaphore
+    // TODO: This must be circular buffer. RTOS threads read from write buffer so use ridx
+    // TODO: Background threads write into buffer, so use widx.
+    // TODO: Only shared thing is counting semaphore which both can use b/c supports FromISR
+    xSemaphoreGive(write_mutex);
 }
 
 void usb_flush(void){
-    if(client_fd < 0)
-        return;
-    
-    // Writing to STDOUT will block, but not for long enough that it matters
-    // Not really any longer than writing out over USB would take on real hardware
-    xSemaphoreTake(write_mutex, portMAX_DELAY);
-    if(write_buf_pos > 0){
-        // read blocks while actually writing, so need to mask signals
-        // See: https://www.freertos.org/FreeRTOS-simulator-for-Linux.html
-        sigset_t fullset, origset;
-        sigfillset(&fullset);
-        pthread_sigmask(SIG_SETMASK, &fullset, &origset);
-        if(write(client_fd, write_buf, write_buf_pos) == -1){
-            // Write failed. Assume client has disconnected.
-            close(client_fd);
-            client_fd = -1;
-        }
-        pthread_sigmask(SIG_SETMASK, &origset, NULL);
-        write_buf_pos = 0;
-    }
-    xSemaphoreGive(write_mutex);
+    // Data is written realtime
+    // No control over flushing in this implementation
+    return;
 }
 
 #endif // CONTROL_BOARD_SIM
