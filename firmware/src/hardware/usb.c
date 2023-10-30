@@ -152,125 +152,91 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
 #include <stdio.h>
 #include <stdint.h>
 #include <util/circular_buffer.h>
-#include <hardware/delay.h>
-
-#ifdef CONTROL_BOARD_SIM_LINUX
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <errno.h>
 #include <signal.h>
-#include <pthread.h>
-#endif
 
-#define USB_WB_SIZE 64
-#define USB_RB_SIZE 128
+#define USB_WB_SIZE 128
 
-// Write buffer
-// No need for circular buffer b/c always written out in whole
 static uint8_t write_buf[USB_WB_SIZE];
-static unsigned int write_buf_pos;
-
-// Read buffer
-static uint8_t read_cb_arr[USB_RB_SIZE];
-static circular_buffer read_cb;
-
-// This RTOS semaphore is given by STDIN thread and taken by usb_process
-// Can use binary semaphore in STDIN thread b/c the FromISR functions support
-// binary semaphore
-static SemaphoreHandle_t read_ready_sem;
+static unsigned int write_buf_pos = 0;
 
 // Both buffers must be mutex protected as different threads may both change
 // the count / position variables
 static SemaphoreHandle_t write_mutex;
+static SemaphoreHandle_t read_mutex;
 
-// Read mutex is taken by non-RTOS thread, so using pthread mutex
-// RTOS thread can't context switch when it's blocking on this
-// But that's OK in this context. Similar to what an ISR would end
-// up causing.
-pthread_mutex_t read_mutex; 
+static int server_fd;
+static int client_fd = -1;
 
-static void *stdin_handler(void *arg){
-    // STDIN thread
-    // This is a non-RTOS thread that runs in parallel to RTOS threads
-    // Handles STDIN and "simulates interrupts" for USB data handling
-    // To then give mutex
-
-    uint8_t b;
-    size_t count;
-    while(true){
-        // This function blocks until there is some data to read
-        count = fread(&b, sizeof(uint8_t), 1, stdin);
-        if(count != 0){
-            // Copy the data into the read buffer
-            pthread_mutex_lock(&read_mutex);
-            // Note that if read_cb is full cb_write function will
-            // not overwrite array but return false
-            // If buffer full, data is discarded
-            if(!cb_write(&read_cb, b))
-                break;
-            pthread_mutex_unlock(&read_mutex);
-        }
-
-
-        // Give the semaphore signaling that there is data in the buffer
-        BaseType_t xHigherPriorityTaskWoken;
-        xSemaphoreGiveFromISR(read_ready_sem, &xHigherPriorityTaskWoken);
-        // Do NOT actually portYIELD_FROM_ISR here! This is not a real ISR
-        // nor is it running in memory context of an RTOS thread!
+bool usb_setup_socket(int port){
+    // Setup socket
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if(server_fd == -1){
+        fprintf(stderr, "Failed to create socket. Error code: %d\n", errno);
+        return false;
     }
-    return NULL;
+    struct sockaddr_in a;
+    a.sin_family = AF_INET;
+    a.sin_addr.s_addr = INADDR_LOOPBACK;
+    a.sin_port = htons(port);
+    if(bind(server_fd, (struct sockaddr *)&a, sizeof(a)) == -1){
+        fprintf(stderr, "Failed to bind socket. Error code: %d\n", errno);
+        return false;
+    }
+    if(listen(server_fd, 1) == -1){
+        fprintf(stderr, "Failed to listen on socket. Error code: %d\n", errno);
+        return false;
+    }
+
+    client_fd = -1;
+
+    // Success
+    return true;
 }
 
 void usb_init(void){
     write_buf_pos = 0;
-    cb_init(&read_cb, read_cb_arr, USB_RB_SIZE);
-
-    // Semaphore count is initially 0 on creation (must give before take)
-    read_ready_sem = xSemaphoreCreateBinary();
 
     // Mutexes are created ready to be taken
     write_mutex = xSemaphoreCreateMutex();
-    pthread_mutex_init(&read_mutex, NULL);
-
-    // Create STDIN thread
-    // Reading STDIN blocks and blocking on an RTOS thread can hang entire process
-    // Thus use a parallel thread "simulating interrupts"
-    // This thread has signals masked b/c the RTOS port uses signals to context
-    // switch and this is not a thread involved in context switching.
-    // Note that to ensure correct operation, must mask all signals when the thread
-    // is created. GNU extension allows doing this with pthread_attr_t and
-    // pthread_attr_setsigmask_np, but this is not portable to other systems
-    // So, instead, mask all signals here before create because the crated
-    // thread inherits a copy of the creating thead's signal mask
-    // After creation, the original mask is restored for this thread
-    sigset_t fullset, origset;
-    sigfillset(&fullset);
-    pthread_sigmask(SIG_SETMASK, &fullset, &origset);
-    pthread_t tid;
-    pthread_create(&tid, NULL, stdin_handler, NULL);
-    pthread_sigmask(SIG_SETMASK, &origset, NULL);
+    read_mutex = xSemaphoreCreateMutex();
 
     usb_initialized = true;
 }
 
 void usb_process(void){
-    while(xSemaphoreTake(read_ready_sem, portMAX_DELAY) == pdFALSE);
-    // Will return once there's data in the read buffer (which is once signaled)
+    // Wait until connection if none
+    // Wait on data if there is one
+    // Make sure to handle connection loss properly and not just assume read return means data
 }
 
 unsigned int usb_avail(void){
-    // No mutex needed here b/c only reading the count, not modifying it
-    return CB_AVAIL_READ(&read_cb);
+    if(client_fd < 0)
+        return 0;
+    size_t n;
+    ioctl(client_fd, FIONREAD, &n);
+    return (unsigned int)n;
 }
 
 uint8_t usb_read(void){
-    uint8_t b;
-    pthread_mutex_lock(&read_mutex);
-    // cb_read handles empty buffer (returns false)
-    // In this case, b will never be assigned, but no memory issues
-    cb_read(&read_cb, &b);
-    pthread_mutex_unlock(&read_mutex);
+    uint8_t b = 0;
+    if(client_fd < 0)
+        return b;
+    if(usb_avail() == 0)
+        return b;
+    xSemaphoreTake(read_mutex, portMAX_DELAY);
+    // TODO: Read one
+    xSemaphoreGive(read_mutex);
     return b;
 }
 
 void usb_write(uint8_t b){
+    if(client_fd < 0)
+        return;
+
     xSemaphoreTake(write_mutex, portMAX_DELAY);
     write_buf[write_buf_pos] = b;
     write_buf_pos++;
@@ -283,6 +249,9 @@ void usb_write(uint8_t b){
 }
 
 void usb_flush(void){
+    if(client_fd < 0)
+        return;
+    
     // Writing to STDOUT will block, but not for long enough that it matters
     // Not really any longer than writing out over USB would take on real hardware
     xSemaphoreTake(write_mutex, portMAX_DELAY);
@@ -293,8 +262,7 @@ void usb_flush(void){
         sigset_t fullset, origset;
         sigfillset(&fullset);
         pthread_sigmask(SIG_SETMASK, &fullset, &origset);
-        fwrite(write_buf, sizeof(uint8_t), write_buf_pos, stdout);
-        fflush(stdout);
+        // TODO: Actually write
         pthread_sigmask(SIG_SETMASK, &origset, NULL);
         write_buf_pos = 0;
     }

@@ -26,6 +26,10 @@
 #include <stdlib.h>
 #include <framework.h>
 
+#ifdef CONTROL_BOARD_SIM
+#include <stdio.h>
+#endif
+
 
 int reset_cause;
 
@@ -60,6 +64,10 @@ void debug_log(const char *msg){
     if(xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED)
         return;
     
+#ifdef CONTROL_BOARD_SIM
+    printf("DEBUG: %s\n", msg);
+#endif
+
     // Only enable logging for debug builds
     uint8_t buf[PCCOMM_MAX_MSG_LEN];
     buf[0] = 'D';

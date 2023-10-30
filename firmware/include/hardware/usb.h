@@ -58,3 +58,7 @@ void usb_write(uint8_t b);
  * Flush USB output buffers now
  */
 void usb_flush(void);
+
+#ifdef CONTROL_BOARD_SIM
+bool usb_setup_socket(int port);
+#endif

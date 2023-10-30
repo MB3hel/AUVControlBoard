@@ -38,6 +38,14 @@
 #include <calibration.h>
 
 
+#ifdef CONTROL_BOARD_SIM
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+#endif
+
+
 // These variables persist across reset (used in framework.h for chip startup)
 // Placed into section of RAM that is not zeroed on reset
 // V2 doesn't need these because it uses the RTC backup registers instead
@@ -51,7 +59,29 @@ __attribute__((section(".noinit"))) volatile uint32_t reset_cause_persist;
 /// Program Entry point / startup
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+#ifdef CONTROL_BOARD_SIM
+int main(int argc, char** argv){
+#else
 int main(void){
+#endif
+
+#if defined(CONTROL_BOARD_SIM)
+    if(argc != 2){
+        fprintf(stderr, "Usage: %s [port]\n", argv[0]);
+        return 1;
+    }
+    for(size_t i = 0; i < strlen(argv[1]); ++i){
+        if(!isdigit(argv[1][i])){
+            fprintf(stderr, "Invalid port number.\n");
+            return 1;
+        }
+    }
+    int port = atoi(argv[1]);
+    if(!usb_setup_socket(port)){
+        return 1;
+    }
+#endif
     // -------------------------------------------------------------------------
     // System & Peripheral Initialization
     // -------------------------------------------------------------------------
