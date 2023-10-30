@@ -157,11 +157,17 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
 #include <netinet/in.h>
 #include <errno.h>
 #include <signal.h>
+#include <unistd.h>
+#include <sys/poll.h>
 
 #define USB_WB_SIZE 128
+#define USB_RB_SIZE 128
 
 static uint8_t write_buf[USB_WB_SIZE];
 static unsigned int write_buf_pos = 0;
+
+static uint8_t read_buff_arr[USB_RB_SIZE];
+static circular_buffer read_buf;
 
 // Both buffers must be mutex protected as different threads may both change
 // the count / position variables
@@ -170,8 +176,10 @@ static SemaphoreHandle_t read_mutex;
 
 static int server_fd;
 static int client_fd = -1;
+static struct sockaddr_in client_addr;
+static socklen_t client_addr_len;
 
-bool usb_setup_socket(int port){
+bool usb_setup(int port){
     // Setup socket
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if(server_fd == -1){
@@ -179,8 +187,9 @@ bool usb_setup_socket(int port){
         return false;
     }
     struct sockaddr_in a;
+    memset(&a, '0', sizeof(a));
     a.sin_family = AF_INET;
-    a.sin_addr.s_addr = INADDR_LOOPBACK;
+    a.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     a.sin_port = htons(port);
     if(bind(server_fd, (struct sockaddr *)&a, sizeof(a)) == -1){
         fprintf(stderr, "Failed to bind socket. Error code: %d\n", errno);
@@ -199,6 +208,7 @@ bool usb_setup_socket(int port){
 
 void usb_init(void){
     write_buf_pos = 0;
+    cb_init(&read_buf, read_buff_arr, USB_RB_SIZE);
 
     // Mutexes are created ready to be taken
     write_mutex = xSemaphoreCreateMutex();
@@ -208,15 +218,63 @@ void usb_init(void){
 }
 
 void usb_process(void){
-    // Wait until connection if none
-    // Wait on data if there is one
-    // Make sure to handle connection loss properly and not just assume read return means data
+    // Potentially need to repeat the wait for connection / read sequence
+    while(1){
+
+        // Wait until connection if none
+        while(client_fd < 0){
+            // accept blocks so need to mask signals 
+            // See: https://www.freertos.org/FreeRTOS-simulator-for-Linux.html
+            sigset_t fullset, origset;
+            sigfillset(&fullset);
+            pthread_sigmask(SIG_SETMASK, &fullset, &origset);
+            client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_addr_len);
+            pthread_sigmask(SIG_SETMASK, &origset, NULL);
+        }
+        
+        // Block until socket has data
+        // Don't want to read data here. Just want to return from this function
+        // Indicating to the caller that there is data ready to read using usb_read
+        // Thus using the socket's buffering to hold the data
+        // As such, poll is used
+        struct pollfd pfd;
+        pfd.fd = client_fd;
+        pfd.events = POLLIN;
+
+        // poll blocks so need to mask signals 
+        // See: https://www.freertos.org/FreeRTOS-simulator-for-Linux.html
+        sigset_t fullset, origset;
+        sigfillset(&fullset);
+        pthread_sigmask(SIG_SETMASK, &fullset, &origset);
+        int res = poll(&pfd, 1, -1);
+        pthread_sigmask(SIG_SETMASK, &origset, NULL);
+
+        if(res < 0){
+            // Poll error
+            // Probably no recovery from this...
+            fprintf(stderr, "CRITICAL ERROR CALLING POLL ON SOCKET!!!\n");
+        }else if(res == 0){
+            // Timeout. Just let the outer loop repeat
+        }else{
+            // Got an event for the client socket. Handle the event(s)
+            if(pfd.revents == POLLIN){
+                // Ready to read data
+                // Return from this function now b/c there is data available for read.
+                return;
+            }else{
+                // Some error on the FD. Probably client closed connection
+                close(client_fd);
+                client_fd = -1;
+                // Loop repeats back to top waiting for new connection now.
+            }
+        }
+    }
 }
 
 unsigned int usb_avail(void){
     if(client_fd < 0)
         return 0;
-    size_t n;
+    size_t n = 0;
     ioctl(client_fd, FIONREAD, &n);
     return (unsigned int)n;
 }
@@ -228,7 +286,20 @@ uint8_t usb_read(void){
     if(usb_avail() == 0)
         return b;
     xSemaphoreTake(read_mutex, portMAX_DELAY);
-    // TODO: Read one
+    // read blocks while actually reading, so need to mask signals
+    // See: https://www.freertos.org/FreeRTOS-simulator-for-Linux.html
+    sigset_t fullset, origset;
+    sigfillset(&fullset);
+    pthread_sigmask(SIG_SETMASK, &fullset, &origset);
+    if(read(client_fd, &b, 1) == -1){
+        // Read error. Assume connection closed
+        close(client_fd);
+        client_fd = -1;
+        // Note that if this occurs a garbage byte is returned from USB read
+        // but that's ok because the parse will eventually discard it.
+        // Same thing (essentially) as UART comm drop + noise on last byte before drop
+    }
+    pthread_sigmask(SIG_SETMASK, &origset, NULL);
     xSemaphoreGive(read_mutex);
     return b;
 }
@@ -256,13 +327,16 @@ void usb_flush(void){
     // Not really any longer than writing out over USB would take on real hardware
     xSemaphoreTake(write_mutex, portMAX_DELAY);
     if(write_buf_pos > 0){
-        // It is recommended in the docs for the POSIX port to 
-        // mask signals before these sort of calls (blocking OS calls like fwrite)
-        // https://www.freertos.org/FreeRTOS-simulator-for-Linux.html
+        // read blocks while actually writing, so need to mask signals
+        // See: https://www.freertos.org/FreeRTOS-simulator-for-Linux.html
         sigset_t fullset, origset;
         sigfillset(&fullset);
         pthread_sigmask(SIG_SETMASK, &fullset, &origset);
-        // TODO: Actually write
+        if(write(client_fd, write_buf, write_buf_pos) == -1){
+            // Write failed. Assume client has disconnected.
+            close(client_fd);
+            client_fd = -1;
+        }
         pthread_sigmask(SIG_SETMASK, &origset, NULL);
         write_buf_pos = 0;
     }
