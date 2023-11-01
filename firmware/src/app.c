@@ -87,7 +87,6 @@ static void usb_task_func(void *argument){
     (void)argument;
 
     usb_init();
-    debug_log("USB_INIT");
     while(1){
         // This call will block thread until there is / are event(s)
         // Blocks until there may be data
@@ -108,8 +107,6 @@ static void cmdctrl_task_func(void *argument){
     (void)argument;
 
     uint32_t notification;
-
-    debug_log("CMDCTRL_INIT");
 
     xTimerStart(wdt_feed_timer, portMAX_DELAY);
     xTimerStart(sim_timer, portMAX_DELAY);
