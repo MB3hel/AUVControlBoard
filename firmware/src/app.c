@@ -114,7 +114,6 @@ static void cmdctrl_task_func(void *argument){
     xTimerStart(wdt_feed_timer, portMAX_DELAY);
     xTimerStart(sim_timer, portMAX_DELAY);
 
-
     while(1){
         // Wait until a notification is received (blocks this thread)
         // notification value is a set of 32 notification bits

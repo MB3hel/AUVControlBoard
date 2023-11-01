@@ -203,10 +203,17 @@ void *socket_thread(void *arg){
             if((pfd.revents & POLLIN) != 0){
                 // Have data
                 socket_has_data = true;
+                
+                // Clear this event
+                pfd.revents &= ~POLLIN;
             }
-            // Ignore other events.
-            // Other events values occur when connection closed by usb_flush()
-            // This results in client_fd == -1 so loop exits here
+
+            if(pfd.revents != 0){
+                // Any other events would be errors
+                socket_has_data = false;
+                close(client_fd);
+                client_fd = -1;
+            }
         }
     }
     return NULL;
@@ -419,10 +426,17 @@ DWORD WINAPI socket_thread(void *arg){
             if((pfd.revents & POLLIN) != 0){
                 // Have data
                 socket_has_data = true;
+                
+                // Clear this event
+                pfd.revents &= ~POLLIN;
             }
-            // Ignore other events.
-            // Other events when connection closed by usb_flush()
-            // This results in client_sock == INVALID_SOCKET so loop exits here
+
+            if(pfd.revents != 0){
+                // Any other events would be errors
+                socket_has_data = false;
+                closesocket(client_sock);
+                client_sock = INVALID_SOCKET;
+            }
         }
     }
     return 0;
