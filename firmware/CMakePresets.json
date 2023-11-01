@@ -35,7 +35,7 @@
         {
             "name": "simcb-linux",
             "displayName": "SimCB Linux",
-            "description": "Simualted Control Board on Linux",
+            "description": "Simulated Control Board on Linux",
             "generator": "Ninja Multi-Config",
             "binaryDir": "${sourceDir}/build/simcb-linux",
             "cacheVariables": {
@@ -47,11 +47,26 @@
         {
             "name": "simcb-macos",
             "displayName": "SimCB macOS",
-            "description": "Simualted Control Board on macOS",
+            "description": "Simulated Control Board on macOS",
             "generator": "Ninja Multi-Config",
             "binaryDir": "${sourceDir}/build/simcb-macos",
             "cacheVariables": {
                 "CBOARD_REV": "simcb-macos"
+            },
+            "environment": {},
+            "vendor": {}
+        },
+        {
+            "name": "simcb-win",
+            "displayName": "SimCB Windows",
+            "description": "Simulated Control Board on Windows",
+            "generator": "Visual Studio 17 2022",
+            "architecture": {
+                "value": "x64"
+            },
+            "binaryDir": "${sourceDir}/build/simcb-win",
+            "cacheVariables": {
+                "CBOARD_REV": "simcb-win"
             },
             "environment": {},
             "vendor": {}
@@ -155,6 +170,31 @@
             "name": "simcb-macos-relwithdebinfo",
             "displayName": "RelWithDebInfo",
             "configurePreset": "simcb-macos",
+            "configuration": "RelWithDebInfo"
+        },
+
+        {
+            "name": "simcb-win-debug",
+            "displayName": "Debug",
+            "configurePreset": "simcb-win",
+            "configuration": "Debug"
+        },
+        {
+            "name": "simcb-win-release",
+            "displayName": "Release",
+            "configurePreset": "simcb-win",
+            "configuration": "Release"
+        },
+        {
+            "name": "simcb-win-minsizerel",
+            "displayName": "MinSizeRel",
+            "configurePreset": "simcb-win",
+            "configuration": "MinSizeRel"
+        },
+        {
+            "name": "simcb-win-relwithdebinfo",
+            "displayName": "RelWithDebInfo",
+            "configurePreset": "simcb-win",
             "configuration": "RelWithDebInfo"
         }
     ]

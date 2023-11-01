@@ -139,5 +139,5 @@ static inline __attribute__((always_inline)) void init_frameworks(void){
 
 
 #ifdef CONTROL_BOARD_SIM
-static inline __attribute__((always_inline)) void init_frameworks(void){}
+static inline void init_frameworks(void){}
 #endif // CONTROL_BOARD_SIM

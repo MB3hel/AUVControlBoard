@@ -35,17 +35,29 @@ remove_items_containing(SOURCES "${PROJECT_SOURCE_DIR}/thirdparty/TinyUSB/portab
 # General preprocessor definitions (all targets)
 set(DEFINES  "")
 
-# General compile flags (all targets)
-set(CFLAGS
-    -Wall
-    -Wextra
-    -Wno-unused-parameter
-)
+if(${MSVC})
+    # General compile flags (all targets)
+    set(CFLAGS
+        
+    )
 
-# General linker flags (all targets)
-set(LDFLAGS
-    
-)
+    # General linker flags (all targets)
+    set(LDFLAGS
+        
+    )
+else()
+    # General compile flags (all targets)
+    set(CFLAGS
+        -Wall
+        -Wextra
+        -Wno-unused-parameter
+    )
+
+    # General linker flags (all targets)
+    set(LDFLAGS
+        
+    )
+endif()
 
 
 ####################################################################################################
@@ -235,6 +247,44 @@ elseif("${CBOARD_REV}" STREQUAL "simcb-macos")
     # Target specific preprocessor definitions
     set(EXTRA_DEFINES
         CONTROL_BOARD_SIM_MACOS
+        CONTROL_BOARD_SIM
+    )
+
+    # Target specific flags (compilers and linke)
+    set(EXTRA_SHAREDFLAGS
+
+    )
+
+    # Target specific c commpiler flags
+    set(EXTRA_CFLAGS
+        ${EXTRA_SHAREDFLAGS}
+    )
+
+    # Target specific linker flags
+    set(EXTRA_LDFLAGS
+        ${EXTRA_SHAREDFLAGS}
+    )
+
+    ################################################################################################
+elseif("${CBOARD_REV}" STREQUAL "simcb-win")
+    ################################################################################################
+    # SimCB on Windows
+    ################################################################################################
+    
+    # Version specific sources
+    file(GLOB_RECURSE EXTRA_SOURCES 
+        "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/MSVC-MingW/*.c"
+        "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/MemMang/heap_4.c"
+    )
+
+    # Version specific includes
+    set(EXTRA_INCLUDES
+        "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/MSVC-MingW/"
+    )
+
+    # Target specific preprocessor definitions
+    set(EXTRA_DEFINES
+        CONTROL_BOARD_SIM_WIN
         CONTROL_BOARD_SIM
     )
 

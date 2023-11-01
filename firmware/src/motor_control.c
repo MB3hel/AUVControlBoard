@@ -25,7 +25,10 @@
 #include <timers.h>
 #include <cmdctrl.h>
 #include <util/pid.h>
+
+#define _USE_MATH_DEFINES   // Enables things like M_PI on windows
 #include <math.h>
+
 #include <debug.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,4 +1,6 @@
 #include <util/angles.h>
+
+#define _USE_MATH_DEFINES   // Enables things like M_PI on windows
 #include <math.h>
 
 
