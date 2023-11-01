@@ -71,6 +71,7 @@ static TaskHandle_t depth_task;
 // Timers
 static TimerHandle_t wdt_feed_timer;
 static TimerHandle_t sim_timer;
+static TimerHandle_t tcp_timer;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -87,6 +88,9 @@ static void usb_task_func(void *argument){
     (void)argument;
 
     usb_init();
+#ifdef CONTROL_BOARD_SIM
+    xTimerStart(tcp_timer, portMAX_DELAY);
+#endif
     while(1){
         // This call will block thread until there is / are event(s)
         // Blocks until there may be data
@@ -208,6 +212,19 @@ static void sim_timer_handler(TimerHandle_t handle){
         xTaskNotify(cmdctrl_task, NOTIF_SIM_STAT, eSetBits);
 }
 
+#ifdef CONTROL_BOARD_SIM
+// When built for SIM, USB is simulated using TCP
+// Detecting TCP disconnects though is necessary to accept new connections
+// Detecting disconnects requires a write
+// Thus, make sure something is written every second
+static void tcp_timer_handler(TimerHandle_t handle){
+    // Write at pccomm layer b/c pccomm write is thread safe, but USB is not.
+    uint8_t msg[] = {'H', 'E', 'A', 'R', 'T', 'B', 'E', 'A', 'T'};
+    if(usb_initialized)
+        pccomm_write(msg, sizeof(msg));
+}
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -220,7 +237,10 @@ void app_init(void){
     // Create RTOS objects
     wdt_feed_timer = xTimerCreate("wdt_feed_timer", pdMS_TO_TICKS(350), pdTRUE, NULL, wdt_feed_timer_handler);
     sim_timer = xTimerCreate("sim_timer", pdMS_TO_TICKS(20), pdTRUE, NULL, sim_timer_handler);
-
+#ifdef CONTROL_BOARD_SIM
+    // See comments above tcp_timer_handler for purpose
+    tcp_timer = xTimerCreate("tcp_timer", pdMS_TO_TICKS(1000), pdTRUE, NULL, tcp_timer_handler);
+#endif
 
     // Create RTOS threads
     xTaskCreate(

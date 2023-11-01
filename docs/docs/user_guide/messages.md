@@ -424,3 +424,9 @@ Used only during development. These will not occur on release builds of the firm
 'D', 'B', 'G', 'D', 'A', 'T', [msg]
 ```  
 `msg` is arbitrary data.
+
+**Heartbeat Status Messages**  
+Used only by SimCB binaries (not ever used on real firmware on a real control board). Ignore this message. It is unlikely end-users will ever receive it. It is used by the firmware to detect TCP connection loss. Format follows.  
+```none  
+'H', 'E', 'A', 'R', 'T', 'B', 'E', 'A', 'T'
+```
