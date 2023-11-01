@@ -197,20 +197,12 @@ void *socket_thread(void *arg){
             pfd.fd = client_fd;
             pfd.events = POLLIN;
             int res = poll(&pfd, 1, -1);
-            if(res < 0){
-                // Poll error. Probably a critical program bug.
-                fprintf(stderr, "CRITICAL ERROR WHEN POLLING SOCKET!!!\n");
-            }else if(res == 0){
-                // Timeout. Just let loop repeat
-            }else if(res == POLLIN){
+            if(res == POLLIN){
                 // Have data
                 socket_has_data = true;
-            }else{
-                // Some other flag is set. Since only event was POLLIN, this is an error.
-                // Assume client disconnect
-                client_fd = -1;
-                socket_has_data = false;
             }
+            // Other return values occur when connection closed by usb_flush()
+            // This results in client_fd == -1 so loop exits here
         }
     }
     return NULL;
@@ -325,10 +317,51 @@ void usb_write(uint8_t b){
         usb_flush();
 }
 
+static void do_write(int, uint8_t*, ssize_t);
+
 void usb_flush(void){
-    // Ignore errors. Disconnect will be detected by socket thread.
-    write(client_fd, write_buf, write_buf_pos);
+    do_write(client_fd, write_buf, write_buf_pos);
     write_buf_pos = 0;
+}
+
+static void do_write(int fd, uint8_t *buf, ssize_t count){
+    if(client_fd == -1)
+        return;
+    
+    // Have to mask SIGPIPE to prevent program termination when client disconnects
+    // The (more recent) POSIX standard way to do this is MSG_NOSIGPIPE in send syscall
+    // But macOS / *BSD seem to not support this (yet?). They use a sockoption, but that
+    // doesn't work for write call only send?
+    // And windows doesn't have SIGPIPE at all (one of the few cases windows is sane!)
+    // So instead of trying to prevent SIGPIPE with sigaction (Liunx specific), signal 
+    // (undefined behavior on Linux with multiple threads), etc just use pthreads masking
+    sigset_t set_mask_pipe;
+    sigemptyset(&set_mask_pipe);
+    sigaddset(&set_mask_pipe, SIGPIPE);
+    sigset_t old_set;
+    pthread_sigmask(SIG_BLOCK, &set_mask_pipe, &old_set);
+    
+    // Ignore errors. Disconnect will be detected by socket thread.
+    ssize_t res = write(fd, buf, count);
+    if(res == -1 && errno == EPIPE){
+        // Other side disconnected
+        socket_has_data = false;
+        close(client_fd);
+        client_fd = -1;
+    }
+
+    // After write call, have to handle the SIGPIPE if it is pending, otherwise it will be
+    // Sent elsewhere later
+    sigset_t set_pending;
+    sigpending(&set_pending);
+    if(sigismember(&set_pending, SIGPIPE)){
+        // Got a SIGPIPE. Must handle it before unmasking!
+        int res;
+        sigwait(&set_mask_pipe, &res);
+    }
+
+    // Unmask
+    pthread_sigmask(SIG_SETMASK, &old_set, NULL);
 }
 
 #endif // CONTROL_BOARD_SIM
