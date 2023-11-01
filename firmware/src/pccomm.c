@@ -69,6 +69,9 @@ uint16_t crc16_ccitt_false_partial(uint8_t *data, unsigned int len, uint16_t ini
 }
 
 bool pccomm_read_and_parse(void){
+    if(!usb_initialized)
+        return false;
+
     // Messages can be read & parsed over multiple calls
     // Thus, need to keep  track of current state and current message
     static bool parse_started = false;
@@ -147,6 +150,8 @@ bool pccomm_read_and_parse(void){
 }
 
 void pccomm_write(uint8_t *msg, unsigned int len){
+    if(!usb_initialized)
+        return;
 
     // This function could be called from multiple threads
     // Thus, it is necessary to prevent message interleaving

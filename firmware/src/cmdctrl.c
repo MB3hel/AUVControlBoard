@@ -1289,6 +1289,11 @@ void cmdctrl_send_simstat(void){
     pccomm_write(simstat, 41);
 }
 
+void cmdctrl_send_heartbeat(void){
+    uint8_t msg[] = {'H', 'E', 'A', 'R', 'T', 'B', 'E', 'A', 'T'};
+    pccomm_write(msg, sizeof(msg));
+}
+
 void cmdctrl_simhijack(bool hijack){
     hijack = true; // SIMCB only supports SIMHIJACK mode
 

@@ -41,6 +41,7 @@
 #define NOTIF_FEED_WDT                      0x2     // Notify to feed WDT
 #define NOTIF_SIM_STAT                      0x4     // Notify to send SIMSTAT message (if sim hijacked)
 #define NOTIF_UART_CLOSE                    0x8     // Notify thread that UART is closed
+#define NOTIF_SEND_HEARTBEAT                0x10    // Notify thread to send HEARTBEAT message
 
 // Stack sizes
 #define TASK_USB_SSIZE                      192
@@ -88,9 +89,7 @@ static void usb_task_func(void *argument){
     (void)argument;
 
     usb_init();
-#ifdef CONTROL_BOARD_SIM
     xTimerStart(tcp_timer, portMAX_DELAY);
-#endif
     while(1){
         // This call will block thread until there is / are event(s)
         // Blocks until there may be data
@@ -146,6 +145,16 @@ static void cmdctrl_task_func(void *argument){
         if(notification & NOTIF_UART_CLOSE){
             // UART connection closed. Revert out of simhijack
             cmdctrl_simhijack(false);
+        }
+        if(notification & NOTIF_SEND_HEARTBEAT){
+            // Heartbeat serves two purposes
+            //   1. Ensures USB traffic periodically. This is important for SimCB where usb is
+            //      actually TCP. TCP disconnect detected by writes, so this ensures disconnects
+            //      are detectable.
+            //   2. End users could use this to check that the control board is communicating
+            //      properly even with a real board. Not likely useful since WDT resets board
+            //      on deadlocks, but maybe useful to detect strange UART drops?
+            cmdctrl_send_heartbeat();
         }
         // ---------------------------------------------------------------------
     }
@@ -212,18 +221,9 @@ static void sim_timer_handler(TimerHandle_t handle){
         xTaskNotify(cmdctrl_task, NOTIF_SIM_STAT, eSetBits);
 }
 
-#ifdef CONTROL_BOARD_SIM
-// When built for SIM, USB is simulated using TCP
-// Detecting TCP disconnects though is necessary to accept new connections
-// Detecting disconnects requires a write
-// Thus, make sure something is written every second
 static void tcp_timer_handler(TimerHandle_t handle){
-    // Write at pccomm layer b/c pccomm write is thread safe, but USB is not.
-    uint8_t msg[] = {'H', 'E', 'A', 'R', 'T', 'B', 'E', 'A', 'T'};
-    if(usb_initialized)
-        pccomm_write(msg, sizeof(msg));
+    xTaskNotify(cmdctrl_task, NOTIF_SEND_HEARTBEAT, eSetBits);
 }
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -237,10 +237,7 @@ void app_init(void){
     // Create RTOS objects
     wdt_feed_timer = xTimerCreate("wdt_feed_timer", pdMS_TO_TICKS(350), pdTRUE, NULL, wdt_feed_timer_handler);
     sim_timer = xTimerCreate("sim_timer", pdMS_TO_TICKS(20), pdTRUE, NULL, sim_timer_handler);
-#ifdef CONTROL_BOARD_SIM
-    // See comments above tcp_timer_handler for purpose
     tcp_timer = xTimerCreate("tcp_timer", pdMS_TO_TICKS(1000), pdTRUE, NULL, tcp_timer_handler);
-#endif
 
     // Create RTOS threads
     xTaskCreate(

@@ -426,6 +426,6 @@ Used only during development. These will not occur on release builds of the firm
 `msg` is arbitrary data.
 
 **Heartbeat Status Messages**  
-Available for use by SimCB or the simulator to ensure TCP connection is still active. If received it should be ignored. This will never be received from a physical control board over UART.  
+Sent from control board periodically to indicate that it still exists and is operating as expected. This is generally ignored by end users. It is mostly intended to ensure communication occurs periodically in SimCB so connection drops are detectable.   
 'H', 'E', 'A', 'R', 'T', 'B', 'E', 'A', 'T'
 ```

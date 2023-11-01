@@ -71,3 +71,8 @@ void cmdctrl_send_simstat(void);
  * Generally, this is only called internally (but USB disconnect may trigger)
  */
 void cmdctrl_simhijack(bool hijack);
+
+/**
+ * Send heartbeat message
+ */
+void cmdctrl_send_heartbeat(void);
