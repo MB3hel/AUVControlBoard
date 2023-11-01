@@ -196,11 +196,16 @@ void *socket_thread(void *arg){
             pfd.fd = client_fd;
             pfd.events = POLLIN;
             int res = poll(&pfd, 1, -1);
-            if(res == POLLIN){
+            if(res == 0){
+                // Timeout. Shouldn't happen here
+                continue;
+            }
+            if((pfd.revents & POLLIN) != 0){
                 // Have data
                 socket_has_data = true;
             }
-            // Other return values occur when connection closed by usb_flush()
+            // Ignore other events.
+            // Other events values occur when connection closed by usb_flush()
             // This results in client_fd == -1 so loop exits here
         }
     }
@@ -391,15 +396,14 @@ static SemaphoreHandle_t avail_to_read_sem;
 static WSADATA wsa;
 static SOCKET server_sock;
 static SOCKET client_sock;
-struct sockaddr_in client_addr;
-int client_addr_len;
 static bool socket_has_data;
+static HANDLE sock_thread_handle;
 
-void *socket_thread(void *arg){
+DWORD WINAPI socket_thread(void *arg){
     while(1){
         while(client_sock == INVALID_SOCKET){
             // Wait for a connection
-            client_sock = accept(server_sock, (struct sockaddr*)&client_addr, &client_addr_len);
+            client_sock = accept(server_sock, NULL, NULL);
         }
 
         while(client_sock != INVALID_SOCKET){
@@ -408,15 +412,20 @@ void *socket_thread(void *arg){
             pfd.fd = client_sock;
             pfd.events = POLLIN;
             int res = WSAPoll(&pfd, 1, -1);
-            if(res == POLLIN){
+            if(res == 0){
+                // Timeout. Shouldn't happen here
+                continue;
+            }
+            if((pfd.revents & POLLIN) != 0){
                 // Have data
                 socket_has_data = true;
             }
-            // Other return values occur when connection closed by usb_flush()
+            // Ignore other events.
+            // Other events when connection closed by usb_flush()
             // This results in client_sock == INVALID_SOCKET so loop exits here
         }
     }
-    return NULL;
+    return 0;
 }
 
 static void usb_socket_cleanup(void){
@@ -455,7 +464,7 @@ bool usb_setup_socket(int port){
         fprintf(stderr, "Failed to listen on socket. Error code: %d\n", WSAGetLastError());
         return false;
     }
-    server_sock = INVALID_SOCKET;
+    client_sock = INVALID_SOCKET;
     socket_has_data = false;
 
     // Success
@@ -498,7 +507,8 @@ void usb_init(void){
     cb_init(&read_buf, read_buf_arr, USB_RB_SIZE);
     avail_to_read_sem = xSemaphoreCreateBinary();
 
-    // TODO: Create thread for socket!
+    // Create thread for socket!
+    sock_thread_handle = CreateThread(NULL, 0, socket_thread, NULL, 0, NULL);
 
     usb_initialized = true;
 }

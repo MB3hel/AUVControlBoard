@@ -85,5 +85,16 @@
                 }
             ]
         },
+        {
+            "name": "SimCB on Windows via VSDBG",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/simcb-win/Debug/SimCB.exe",
+            "args": ["5014"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "integratedTerminal"
+        },
     ]
 }
