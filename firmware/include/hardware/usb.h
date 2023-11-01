@@ -21,6 +21,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+// Note that usb is not thread-safe by design
+// Thread safety when writing is handled at the pccomm layer
+// Thread safety when reading is unnecessary (only one thread will read)
+
 
 extern bool usb_initialized;
 
@@ -60,5 +64,6 @@ void usb_write(uint8_t b);
 void usb_flush(void);
 
 #ifdef CONTROL_BOARD_SIM
-bool usb_setup(int port);
+bool usb_setup_socket(int port);
+void usb_sim_interrupts(void);
 #endif

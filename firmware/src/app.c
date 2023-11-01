@@ -295,6 +295,14 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName){
     debug_halt(HALT_EC_SOVERFLOW);
 }
 
+#ifdef CONTROL_BOARD_SIM
+void vApplicationTickHook(void){
+    // Interrupts are simulated from this hook
+    // Anything called from this hook must be treated as if it is running in an ISR
+    usb_sim_interrupts();
+}
+#endif
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 

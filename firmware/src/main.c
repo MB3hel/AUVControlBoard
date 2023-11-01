@@ -78,7 +78,7 @@ int main(void){
         }
     }
     int port = atoi(argv[1]);
-    if(!usb_setup(port)){
+    if(!usb_setup_socket(port)){
         return 1;
     }
 #endif
