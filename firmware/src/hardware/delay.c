@@ -97,4 +97,31 @@ void delay_ms(unsigned int ms){
     }
 }
 
-#endif // CONTROL_BOARD_SIM_LINUX
+#endif // CONTROL_BOARD_SIM_LINUX || CONTROL_BOARD_SIM_MACOS
+
+#if defined(CONTROL_BOARD_SIM_WIN)
+
+#include <windows.h>
+
+// SimCB
+void delay_init(void){}
+
+void delay_us(unsigned int us){
+    // From https://stackoverflow.com/questions/5801813/c-usleep-is-obsolete-workarounds-for-windows-mingw/11470617
+    // Not good for longer wait times
+    HANDLE timer; 
+    LARGE_INTEGER ft; 
+
+    ft.QuadPart = -(10*us); // Convert to 100 nanosecond interval, negative value indicates relative time
+
+    timer = CreateWaitableTimer(NULL, TRUE, NULL); 
+    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0); 
+    WaitForSingleObject(timer, INFINITE); 
+    CloseHandle(timer); 
+}
+
+void delay_ms(unsigned int ms){
+    Sleep((DWORD)ms);
+}
+
+#endif // CONTROL_BOARD_SIM_WIN
