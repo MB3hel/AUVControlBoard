@@ -315,11 +315,6 @@ unsigned int usb_avail(void){
 uint8_t usb_read(void){
     uint8_t b;
     cb_read(&read_buf, &b);
-
-    // TODO: Remove this! Just for debug!
-    usb_write(b);
-    usb_flush();
-
     return b;
 }
 
