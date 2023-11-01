@@ -290,18 +290,6 @@ static inline void rotate_vector_inv(float *dx, float *dy, float *dz, float sx, 
     *dz = qr.z;
 }
 
-// Minimum rotation from a to b (as quaternion)
-static inline void quat_diff(quaternion_t *dest, quaternion_t *a, quaternion_t *b){
-    float dot;
-    quat_dot(&dot, a, b);
-    quaternion_t b_inv;
-    quat_inverse(&b_inv, b);
-    if(dot < 0.0){
-        quat_multiply_scalar(&b_inv, &b_inv, -1.0f);
-    }
-    quat_multiply(dest, a, &b_inv);
-}
-
 // Quaternion rotation from vector a to vector b
 static inline void quat_between(quaternion_t *dest, float ax, float ay, float az, float bx, float by, float bz){
     float dot = ax*bx + ay*by + az*bz;
@@ -426,7 +414,7 @@ static inline void mc_downscale_reldof(float *dx, float *dy, float *dz, float sx
     if(fabsf(sy) < 1e-4){
         scale_y = 0.0f;
     }
-    if(fabsf(sz) == 1e-4){
+    if(fabsf(sz) < 1e-4){
         scale_z = 0.0f;
     }
 

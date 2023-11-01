@@ -46,7 +46,7 @@ void delay_ms(unsigned int ms){
 
 #endif // CONTROL_BOARD_V1 || CONTROL_BOARD_V2
 
-#if defined(CONTROL_BOARD_SIM_LINUX)
+#if defined(CONTROL_BOARD_SIM_LINUX) || defined(CONTROL_BOARD_SIM_MACOS)
 
 #include <time.h>
 

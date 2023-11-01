@@ -154,7 +154,7 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
 #include <stdlib.h>
 #include <util/circular_buffer.h>
 
-#if defined(CONTROL_BOARD_SIM_LINUX)
+#if defined(CONTROL_BOARD_SIM_LINUX) || defined(CONTROL_BOARD_SIM_MACOS)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <errno.h>

@@ -216,6 +216,44 @@ elseif("${CBOARD_REV}" STREQUAL "simcb-linux")
     )
 
     ################################################################################################
+elseif("${CBOARD_REV}" STREQUAL "simcb-macos")
+    ################################################################################################
+    # SimCB on macOS
+    ################################################################################################
+    
+    # Version specific sources
+    file(GLOB_RECURSE EXTRA_SOURCES 
+        "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/ThirdParty/GCC/Posix/*.c"
+        "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/MemMang/heap_4.c"
+    )
+
+    # Version specific includes
+    set(EXTRA_INCLUDES
+        "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS/portable/ThirdParty/GCC/Posix/"
+    )
+
+    # Target specific preprocessor definitions
+    set(EXTRA_DEFINES
+        CONTROL_BOARD_SIM_MACOS
+        CONTROL_BOARD_SIM
+    )
+
+    # Target specific flags (compilers and linke)
+    set(EXTRA_SHAREDFLAGS
+
+    )
+
+    # Target specific c commpiler flags
+    set(EXTRA_CFLAGS
+        ${EXTRA_SHAREDFLAGS}
+    )
+
+    # Target specific linker flags
+    set(EXTRA_LDFLAGS
+        ${EXTRA_SHAREDFLAGS}
+    )
+
+    ################################################################################################
 else()
     message(FATAL_ERROR "Invalid value specified for CBOARD_REV.")
 endif()
@@ -234,7 +272,7 @@ target_compile_options(ControlBoard PUBLIC ${CFLAGS} ${EXTRA_CFLAGS})
 target_link_options(ControlBoard PUBLIC ${LDFLAGS} ${EXTRA_LDFLAGS})
 target_link_libraries(ControlBoard m)
 
-if("${CBOARD_REV}" STREQUAL "simcb-linux")
+if("${CBOARD_REV}" MATCHES "simcb-*")
     set_target_properties(ControlBoard PROPERTIES OUTPUT_NAME SimCB)
 endif()
 

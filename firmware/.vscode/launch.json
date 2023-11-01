@@ -56,5 +56,24 @@
                 }
             ]
         },
+        {
+            "name": "SimCB macOS via LLDB",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/simcb-macos/Debug/SimCB",
+            "args": ["5014"],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "setupCommands": [
+                {
+                    "description": "FreeRTOS stuff",
+                    "text": "handle SIGUSR1 nostop noprint pass",
+                    "ignoreFailures": false
+                }
+            ]
+        },
     ]
 }

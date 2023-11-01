@@ -246,7 +246,7 @@ extern void vAssertCalled(const char *file, unsigned int line);
 #endif // CONTROL_BOARD_V2
 
 
-#ifdef CONTROL_BOARD_SIM_LINUX
+#if defined(CONTROL_BOARD_SIM_LINUX) || defined(CONTROL_BOARD_SIM_MACOS)
 
 #include <stdint.h>
 
