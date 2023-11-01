@@ -286,6 +286,7 @@ elseif("${CBOARD_REV}" STREQUAL "simcb-win")
     set(EXTRA_DEFINES
         CONTROL_BOARD_SIM_WIN
         CONTROL_BOARD_SIM
+        WIN32_LEAN_AND_MEAN
     )
 
     # Target specific flags (compilers and linke)
@@ -320,7 +321,12 @@ target_include_directories(ControlBoard PUBLIC ${INCLUDES} ${EXTRA_INCLUDES})
 target_compile_definitions(ControlBoard PUBLIC ${DEFINES} ${EXTRA_DEFINES})
 target_compile_options(ControlBoard PUBLIC ${CFLAGS} ${EXTRA_CFLAGS})
 target_link_options(ControlBoard PUBLIC ${LDFLAGS} ${EXTRA_LDFLAGS})
-target_link_libraries(ControlBoard m)
+
+if("${CBOARD_REV}" MATCHES "simcb-win")
+    target_link_libraries(ControlBoard Ws2_32)
+else()
+    target_link_libraries(ControlBoard m)
+endif()
 
 if("${CBOARD_REV}" MATCHES "simcb-*")
     set_target_properties(ControlBoard PROPERTIES OUTPUT_NAME SimCB)

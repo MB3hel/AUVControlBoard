@@ -147,14 +147,13 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
 #endif // CONTROL_BOARD_V1 || CONTROL_BOARD_V2
 
 
-#if defined(CONTROL_BOARD_SIM)
+#if defined(CONTROL_BOARD_SIM_LINUX) || defined(CONTROL_BOARD_SIM_MACOS)
 
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <util/circular_buffer.h>
 
-#if defined(CONTROL_BOARD_SIM_LINUX) || defined(CONTROL_BOARD_SIM_MACOS)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <errno.h>
@@ -163,7 +162,7 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
 #include <sys/poll.h>
 #include <pthread.h>
 #include <sys/ioctl.h>
-#endif
+
 
 // Buffers
 // Write buffer is linear (it is always emptied in full)
@@ -209,6 +208,7 @@ void *socket_thread(void *arg){
 }
 
 static void usb_socket_cleanup(void){
+    close(client_fd);
     close(server_fd);
 }
 
@@ -317,14 +317,14 @@ void usb_write(uint8_t b){
         usb_flush();
 }
 
-static void do_write(int, uint8_t*, ssize_t);
+static void do_write(int, uint8_t*, unsigned int);
 
 void usb_flush(void){
     do_write(client_fd, write_buf, write_buf_pos);
     write_buf_pos = 0;
 }
 
-static void do_write(int fd, uint8_t *buf, ssize_t count){
+static void do_write(int fd, uint8_t *buf, unsigned int count){
     if(client_fd == -1)
         return;
     
@@ -341,7 +341,6 @@ static void do_write(int fd, uint8_t *buf, ssize_t count){
     sigset_t old_set;
     pthread_sigmask(SIG_BLOCK, &set_mask_pipe, &old_set);
     
-    // Ignore errors. Disconnect will be detected by socket thread.
     ssize_t res = write(fd, buf, count);
     if(res == -1 && errno == EPIPE){
         // Other side disconnected
@@ -364,4 +363,184 @@ static void do_write(int fd, uint8_t *buf, ssize_t count){
     pthread_sigmask(SIG_SETMASK, &old_set, NULL);
 }
 
-#endif // CONTROL_BOARD_SIM
+#endif // CONTROL_BOARD_SIM_LINUX || CONTROL_BOARD_SIM_MACOS
+
+
+#if defined(CONTROL_BOARD_SIM_WIN)
+
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <util/circular_buffer.h>
+
+#include <WinSock2.h>
+#include <Windows.h>
+
+// Buffers
+// Write buffer is linear (it is always emptied in full)
+// Read buffer is circular (ring) buffer
+#define USB_WB_SIZE 128
+#define USB_RB_SIZE 128
+static uint8_t write_buf[USB_WB_SIZE];
+static unsigned int write_buf_pos;
+static uint8_t read_buf_arr[USB_RB_SIZE];
+static circular_buffer read_buf;
+static SemaphoreHandle_t avail_to_read_sem;
+
+// Socket & thread stuff
+static WSADATA wsa;
+static SOCKET server_sock;
+static SOCKET client_sock;
+struct sockaddr_in client_addr;
+int client_addr_len;
+static bool socket_has_data;
+
+void *socket_thread(void *arg){
+    while(1){
+        while(client_sock == INVALID_SOCKET){
+            // Wait for a connection
+            client_sock = accept(server_sock, (struct sockaddr*)&client_addr, &client_addr_len);
+        }
+
+        while(client_sock != INVALID_SOCKET){
+            // Wait until there is data ready to be read
+            WSAPOLLFD pfd = {0};
+            pfd.fd = client_sock;
+            pfd.events = POLLIN;
+            int res = WSAPoll(&pfd, 1, -1);
+            if(res == POLLIN){
+                // Have data
+                socket_has_data = true;
+            }
+            // Other return values occur when connection closed by usb_flush()
+            // This results in client_sock == INVALID_SOCKET so loop exits here
+        }
+    }
+    return NULL;
+}
+
+static void usb_socket_cleanup(void){
+    closesocket(client_sock);
+    closesocket(server_sock);
+    WSACleanup();
+}
+
+bool usb_setup_socket(int port){
+    // Ensure proper cleanup
+    atexit(usb_socket_cleanup);
+
+    // Initialize winsock2
+    int err = WSAStartup(MAKEWORD(2,2), &wsa);
+    if (err != 0){
+        fprintf(stderr, "Failed to initialize winsock2! Error code: %d\n", err);
+        return false;
+    }
+
+    // Setup socket
+    server_sock = socket(AF_INET, SOCK_STREAM, 0);
+    if(server_sock == INVALID_SOCKET){
+        fprintf(stderr, "Failed to create socket. Error code: %d\n", WSAGetLastError());
+        return false;
+    }
+    struct sockaddr_in a;
+    memset(&a, '0', sizeof(a));
+    a.sin_family = AF_INET;
+    a.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    a.sin_port = htons(port);
+    if(bind(server_sock, (struct sockaddr *)&a, sizeof(a)) == SOCKET_ERROR){
+        fprintf(stderr, "Failed to bind socket. Error code: %d\n", WSAGetLastError());
+        return false;
+    }
+    if(listen(server_sock, 1) == SOCKET_ERROR){
+        fprintf(stderr, "Failed to listen on socket. Error code: %d\n", WSAGetLastError());
+        return false;
+    }
+    server_sock = INVALID_SOCKET;
+    socket_has_data = false;
+
+    // Success
+    return true;
+}
+
+void usb_sim_interrupts(void){
+    if(socket_has_data){
+        socket_has_data = false;
+
+        u_long avail;
+        if(ioctlsocket(client_sock, FIONREAD, &avail) == SOCKET_ERROR){
+            // Assume connection loss
+            return;
+        }
+        if(avail == 0)
+            return; // Shouldn't happen, but just in case
+
+        uint8_t b;
+        for(u_long i = 0; i < avail; ++i){
+            if(recv(client_sock, &b, 1, 0) == SOCKET_ERROR){
+                // Assume connection loss
+                return;
+            }
+            // Write data into the read buffer
+            if(!cb_write(&read_buf, b))
+                break;
+        }
+
+        // Give the semaphore b/c there's now data in the read buffer
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xSemaphoreGiveFromISR(avail_to_read_sem, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+}
+
+void usb_init(void){
+    // Buffers setup
+    write_buf_pos = 0;
+    cb_init(&read_buf, read_buf_arr, USB_RB_SIZE);
+    avail_to_read_sem = xSemaphoreCreateBinary();
+
+    // TODO: Create thread for socket!
+
+    usb_initialized = true;
+}
+
+void usb_process(void){
+    xSemaphoreTake(avail_to_read_sem, portMAX_DELAY);
+}
+
+unsigned int usb_avail(void){
+    return CB_AVAIL_READ(&read_buf);
+}
+
+uint8_t usb_read(void){
+    uint8_t b;
+    cb_read(&read_buf, &b);
+    return b;
+}
+
+void usb_write(uint8_t b){
+    write_buf[write_buf_pos] = b;
+    write_buf_pos++;
+    if(write_buf_pos == USB_WB_SIZE)
+        usb_flush();
+}
+
+static void do_write(int, uint8_t*, unsigned int);
+
+void usb_flush(void){
+    do_write(client_sock, write_buf, write_buf_pos);
+    write_buf_pos = 0;
+}
+
+static void do_write(int fd, uint8_t *buf, unsigned int count){
+    if(client_sock == INVALID_SOCKET)
+        return;
+    
+    if(send(fd, buf, count, 0) == SOCKET_ERROR){
+        // Other side disconnected
+        socket_has_data = false;
+        closesocket(client_sock);
+        client_sock = INVALID_SOCKET;
+    }
+}
+
+#endif // CONTROL_BOARD_SIM_WIN

@@ -26,6 +26,10 @@
 #include <stdlib.h>
 #include <framework.h>
 
+#if CONTROL_BOARD_SIM_WIN
+#include <intrin.h>
+#endif
+
 #ifdef CONTROL_BOARD_SIM
 #include <stdio.h>
 #endif
@@ -53,7 +57,11 @@ void debug_halt(int error_code){
         // If Debug build, WDT is disabled and can pause execution here using debugger
         // Else, WDT will trigger a system reset. Error code can be read from last_error
         // on next power on. See RSTWHY command.
+#if CONTROL_BOARD_SIM_WIN
+        __nop();
+#else
         asm("nop");
+#endif
     }
 }
 

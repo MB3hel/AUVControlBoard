@@ -340,7 +340,6 @@ extern void vAssertCalled(const char *file, unsigned int line);
 #if defined(CONTROL_BOARD_SIM_WIN)
 
 #include <stdint.h>
-#include <windows.h>
 
 extern void vAssertCalled(const char *file, unsigned int line);
 

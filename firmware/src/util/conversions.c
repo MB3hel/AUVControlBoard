@@ -121,11 +121,15 @@ float conversions_data_to_float(uint8_t *data, bool littleEndian){
         dataRaw[3] = data[3];
     }
 
+    #ifdef __GNUC__
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+    #endif
 
     // Dereference pointer to start of dataRaw interpreted as float
     return *((float*)(dataRaw));
 
+    #ifdef __GNUC__
     #pragma GCC diagnostic pop
+    #endif
 }
