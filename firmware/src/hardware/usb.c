@@ -151,6 +151,8 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <util/circular_buffer.h>
 
 #if defined(CONTROL_BOARD_SIM_LINUX)
 #include <sys/socket.h>
@@ -160,11 +162,19 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts){
 #include <unistd.h>
 #include <sys/poll.h>
 #include <pthread.h>
+#include <sys/ioctl.h>
 #endif
 
 // Buffers
+// Write buffer is linear (it is always emptied in full)
+// Read buffer is circular (ring) buffer
 #define USB_WB_SIZE 128
 #define USB_RB_SIZE 128
+static uint8_t write_buf[USB_WB_SIZE];
+static unsigned int write_buf_pos;
+static uint8_t read_buf_arr[USB_RB_SIZE];
+static circular_buffer read_buf;
+static SemaphoreHandle_t avail_to_read_sem;
 
 // Socket & thread stuff
 static int server_fd;
@@ -182,15 +192,38 @@ void *socket_thread(void *arg){
         }
 
         while(client_fd != -1){
-            // TODO: Wait until there is data ready to be read
-            // TODO: Set flag to be handled by RTOS tick handler
-            // TODO: Handle disconnects and set client_fd and socket_has_data correctly
+            // Wait until there is data ready to be read
+            struct pollfd pfd;
+            pfd.fd = client_fd;
+            pfd.events = POLLIN;
+            int res = poll(&pfd, 1, -1);
+            if(res < 0){
+                // Poll error. Probably a critical program bug.
+                fprintf(stderr, "CRITICAL ERROR WHEN POLLING SOCKET!!!\n");
+            }else if(res == 0){
+                // Timeout. Just let loop repeat
+            }else if(res == POLLIN){
+                // Have data
+                socket_has_data = true;
+            }else{
+                // Some other flag is set. Since only event was POLLIN, this is an error.
+                // Assume client disconnect
+                client_fd = -1;
+                socket_has_data = false;
+            }
         }
     }
     return NULL;
 }
 
+static void usb_socket_cleanup(void){
+    close(server_fd);
+}
+
 bool usb_setup_socket(int port){
+    // Ensure proper cleanup
+    atexit(usb_socket_cleanup);
+
     // Setup socket
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if(server_fd == -1){
@@ -219,13 +252,39 @@ bool usb_setup_socket(int port){
 
 void usb_sim_interrupts(void){
     if(socket_has_data){
-        // TODO: Actually read data into buffer
-        // Use ioctl and read calls
+        socket_has_data = false;
+
+        unsigned int avail;
+        if(ioctl(client_fd, FIONREAD, &avail) == -1){
+            // Assume connection loss
+            return;
+        }
+        if(avail == 0)
+            return; // Shouldn't happen, but just in case
+
+        uint8_t b;
+        for(unsigned int i = 0; i < avail; ++i){
+            if(read(client_fd, &b, 1) == -1){
+                // Assume connection loss
+                return;
+            }
+            // Write data into the read buffer
+            if(!cb_write(&read_buf, b))
+                break;
+        }
+
+        // Give the semaphore b/c there's now data in the read buffer
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xSemaphoreGiveFromISR(avail_to_read_sem, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
 }
 
 void usb_init(void){
-    // TODO: Buffers
+    // Buffers setup
+    write_buf_pos = 0;
+    cb_init(&read_buf, read_buf_arr, USB_RB_SIZE);
+    avail_to_read_sem = xSemaphoreCreateBinary();
 
     // Parallel threads are used for read / write from / to socket
     // This prevents unexpected blocking behavior with RTOS threads
@@ -246,26 +305,35 @@ void usb_init(void){
 }
 
 void usb_process(void){
-    // TODO: Wait on some semaphore
+    xSemaphoreTake(avail_to_read_sem, portMAX_DELAY);
 }
 
 unsigned int usb_avail(void){
-    // TODO: Implement
-    return 0;
+    return CB_AVAIL_READ(&read_buf);
 }
 
 uint8_t usb_read(void){
-    // TODO: Implement
-    return 0;
+    uint8_t b;
+    cb_read(&read_buf, &b);
+
+    // TODO: Remove this! Just for debug!
+    usb_write(b);
+    usb_flush();
+
+    return b;
 }
 
 void usb_write(uint8_t b){
-    // TODO: Put data into buffer
+    write_buf[write_buf_pos] = b;
+    write_buf_pos++;
+    if(write_buf_pos == USB_WB_SIZE)
+        usb_flush();
 }
 
 void usb_flush(void){
-    // TODO: call write() to output it
-    return;
+    // Ignore errors. Disconnect will be detected by socket thread.
+    write(client_fd, write_buf, write_buf_pos);
+    write_buf_pos = 0;
 }
 
 #endif // CONTROL_BOARD_SIM
