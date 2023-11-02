@@ -5,7 +5,9 @@
 Building and flashing the firmware should follow the same process described [here](./build.md).
 
 
-## Debugging
+## Debugging on Physical System
+
+This section discusses debugging of the firmware running on actual hardware (Control Board v1 or v2).
 
 OpenOCD config files exist in `tools/debug`. The following configurations exist
 
@@ -73,10 +75,14 @@ After running the generator (as described above) the generated code must be impo
 
 Install the `C/C++` and `CMake Tools` extensions, then open this folder in VSCode. Choose one of the configure presets on the bottom bar. Then, choose a build preset. Finally, click build.
 
-To debug, install the `Cortex-Debug` extension in VSCode. Copy `tools/debug/launch.json` to `.vscode`. *MAKE SURE TO BUILD DEBUG CONFIG BEFORE LAUNCHING DEBUG SESSION. IT WILL NOT BUILD AUTOMATICALLY.*
+To debug, install the `Cortex-Debug` extension in VSCode. A `launch.json` file is included which defines debug configurations both for firmware running on physical hardware and for the supported SimCB configurations.
+
+*Note: Launching a debug session from VSCode will not build the firmware. Make sure to build the "Debug" configuration before launching!*
 
 
 ## Development using the Simulator
+
+TODO: Some of this is outdated and some should be moved to simulation section!
 
 The [simulator](https://github.com/MB3hel/GodotAUVSim) can be very helpful for developing or debugging firmware. The simulator is capable of connecting to a real control board, thus the firmware can be tested in simulation. Note that the simulator also offers a simulated control board (simcb), but this is not what we want in this case. The simulated control board does not use a real control board / firmware. Testing with the simulator can also be done while the control board firmware is running with a debugger attached.
 
