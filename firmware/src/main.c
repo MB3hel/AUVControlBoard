@@ -78,6 +78,9 @@ int main(void){
         }
     }
     int port = atoi(argv[1]);
+    if(port > 65535 || port < 0){
+        fprintf(stderr, "Invalid port number.\n");
+    }
     if(!usb_setup_socket(port)){
         return 1;
     }
