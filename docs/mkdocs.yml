@@ -28,9 +28,9 @@ nav:
     - Version 2: hardware/v2.md
     - Off-Board Sensors: hardware/sensors.md
   - Developers:
-    - Overview: firmware/overview.md
-    - Implementation Details: firmware/details.md
-    - Build and Flash: firmware/build.md
-    - Math: firmware/math.md
-    - Firmware Development: firmware/developing.md
-    - Simulation Support: firmware/simhijack.md
+    - Firmware Overview: devs/overview.md
+    - Firmware Details: devs/details.md
+    - Build and Flash Firmware: devs/build.md
+    - Firmware Development: devs/developing.md
+    - Math: devs/math.md
+    - Simulation: devs/simulation.md

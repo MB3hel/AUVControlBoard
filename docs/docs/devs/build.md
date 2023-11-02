@@ -12,14 +12,12 @@ Install the Required Tools:
 
 *Make sure `cmake`, `ninja`, and `arm-none-eabi-gcc` are in your `PATH`.*
 
-Build the firmware using the commands below. Replace `[preset]` with `v1` or `v2`. Replace `[config]` with `debug`, `release`, `minsizerel`, or `relwithdebinfo`.
+Build the firmware using the commands below. Replace`[preset]` with `v1` or `v2` (depending on which version you are building firmware for). Replace `[config]` with `debug`, `release`, `minsizerel`, or `relwithdebinfo`.
 
 ```sh
 cmake --preset=[preset]
 cmake --build --preset=[preset]-[config]
 ```
-
-
 
 
 ## Flashing
