@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Exit if any command errors
 set -e
 trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
@@ -8,7 +10,7 @@ DIR=$(realpath $(dirname "$0"))
 cd "$DIR"
 
 # Base directory structure
-rm -rf pack/firmware
+rm -rf pack/firmware/
 mkdir pack/firmware/
 mkdir pack/firmware/tools/
 mkdir pack/firmware/build/

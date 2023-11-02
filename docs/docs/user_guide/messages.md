@@ -426,6 +426,7 @@ Used only during development. These will not occur on release builds of the firm
 `msg` is arbitrary data.
 
 **Heartbeat Status Messages**  
-Sent from control board periodically to indicate that it still exists and is operating as expected. This is generally ignored by end users. It is mostly intended to ensure communication occurs periodically in SimCB so connection drops are detectable.   
+Sent from control board periodically to indicate that it still exists and is operating as expected. This is generally ignored by end users. It is mostly intended to ensure communication occurs periodically in SimCB so connection drops are detectable.  
+```none
 'H', 'E', 'A', 'R', 'T', 'B', 'E', 'A', 'T'
 ```
