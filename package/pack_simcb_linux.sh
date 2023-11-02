@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-#!/usr/bin/env bash
-
 # Exit if any command errors
 set -e
 trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG

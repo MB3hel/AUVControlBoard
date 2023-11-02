@@ -3,7 +3,7 @@ set -e
 DIR=`dirname "$0"`
 has_port=0
 while [ $has_port -eq 0 ]; do
-read -p "TCP Port for SimCB: " port
+    read -p "TCP Port for SimCB: " port
     case $port in
         ''|*[!0-9]*) echo "Invalid port. Must be a (positive) number!"; continue ;;
     esac
