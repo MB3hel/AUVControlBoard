@@ -20,9 +20,11 @@ TODO: Why? Allow a simulated environment to use a control board to actually cont
 TODO: By combining with SimCB (which can also be simhijacked), motion can be tested without in-water time and without a real control board.
 
 
-## Simulator Implementation
+## Simulator Implementation & Development
 
 TODO: Implementation details / tech docs
+
+TODO: Docs on adding vehicles, etc
 
 
 ## Control Board Setups

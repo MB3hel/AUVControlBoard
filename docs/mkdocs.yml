@@ -18,8 +18,9 @@ nav:
   - Home: index.md
   - User Guide:
     - Preparing a Control Board: user_guide/preparing_board.md
-    - Using Control board: user_guide/general_use.md
-    - Using the Simulator: user_guide/simulator.md
+    - Using Control Board: user_guide/general_use.md
+    - Using the Python Interface: user_guide/pythoniface.md
+    - Using SimCB and Simulator: user_guide/simcb_simulator.md
     - Sensor Calibration: user_guide/calibration.md
     - Communication Protocol: user_guide/comm_protocol.md
     - Messages: user_guide/messages.md
