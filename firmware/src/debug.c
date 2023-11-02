@@ -52,6 +52,16 @@ void debug_halt(int error_code){
     HAL_RTCEx_BKUPWrite(&hrtc, BKUP_REG_RESETCAUSE, error_code);
     HAL_PWR_DisableBkUpAccess();
 #endif
+
+#ifdef CONTROL_BOARD_SIM
+    // For SimCB, don't infinite loop. There's no WDT to reset it.
+    // Just print an exit code and kill the program
+    fprintf(stderr, "Control board halted with error code %d\n", error_code);
+    fprintf(stderr, "SimCB CRASHED!!!");
+    exit(1);
+#endif
+
+
     while(1){
         // Note: nop is here for debugger
         // If Debug build, WDT is disabled and can pause execution here using debugger
