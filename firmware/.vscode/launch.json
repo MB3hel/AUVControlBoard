@@ -3,28 +3,28 @@
     "configurations": [
         {
             "name": "CBv1 via CMSIS-DAP",
-            "cwd": "${workspaceFolder}",
-            "svdFile": "./thirdparty/v1_generated/ATSAMD51G19A.svd",
-            "executable": "./build/v1/Debug/ControlBoard.elf",
+            "cwd": "${workspaceFolder}/build/v1/Debug/",
+            "svdFile": "${workspaceFolder}/thirdparty/v1_generated/ATSAMD51G19A.svd",
+            "executable": "${workspaceFolder}/build/v1/Debug/ControlBoard.elf",
             "request": "launch",
             "type": "cortex-debug",
             "runToEntryPoint": "main",
             "servertype": "openocd",
             "configFiles": [
-                "tools/debug/cb_v1_via_cmsisdap.cfg"
+                "${workspaceFolder}/tools/debug/cb_v1_via_cmsisdap.cfg"
             ]
         },
         {
             "name": "CBv2 via ST-LINK-v2",
-            "cwd": "${workspaceFolder}",
-            "svdFile": "./thirdparty/v2_generated/STM32F411.svd",
-            "executable": "./build/v2/Debug/ControlBoard.elf",
+            "cwd": "${workspaceFolder}/build/v2/Debug/",
+            "svdFile": "${workspaceFolder}/thirdparty/v2_generated/STM32F411.svd",
+            "executable": "${workspaceFolder}/build/v2/Debug/ControlBoard.elf",
             "request": "launch",
             "type": "cortex-debug",
             "runToEntryPoint": "main",
             "servertype": "openocd",
             "configFiles": [
-                "tools/debug/cb_v2_via_stlink2.cfg"
+                "${workspaceFolder}/tools/debug/cb_v2_via_stlink2.cfg"
             ]
         },
         {
@@ -34,7 +34,7 @@
             "program": "${workspaceFolder}/build/simcb-linux/Debug/SimCB",
             "args": ["5014"],
             "stopAtEntry": true,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/build/simcb-linux/Debug/",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
@@ -68,7 +68,7 @@
             "program": "${workspaceFolder}/build/simcb-macos/Debug/SimCB",
             "args": ["5014"],
             "stopAtEntry": true,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/build/simcb-macos/Debug/",
             "environment": [],
             "externalConsole": false,
             "MIMode": "lldb",
@@ -92,7 +92,7 @@
             "program": "${workspaceFolder}/build/simcb-win/Debug/SimCB.exe",
             "args": ["5014"],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/build/simcb-win/Debug/",
             "environment": [],
             "console": "integratedTerminal"
         },
