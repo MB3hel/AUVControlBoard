@@ -30,7 +30,9 @@ nav:
   - Developers:
     - Firmware Overview: devs/overview.md
     - Firmware Details: devs/details.md
+    - Simulation Support: devs/simulation.md
     - Build and Flash Firmware: devs/build.md
-    - Firmware Development: devs/developing.md
+    - Build and Run SimCB: devs/buildsimcb.md
+    - Interface Scripts: devs/pythoniface.md
+    - Development Workflows: devs/developing.md
     - Math: devs/math.md
-    - Simulation: devs/simulation.md

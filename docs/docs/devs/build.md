@@ -1,4 +1,4 @@
-# Build and Flash
+# Build and Flash Firmware
 
 *Note: Run all commands shown in the `firmware` folder of the repo.*
 
