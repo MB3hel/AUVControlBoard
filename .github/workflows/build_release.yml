@@ -6,7 +6,6 @@ on:
 jobs:
   BasePackage:
     runs-on: ubuntu-latest
-    name: base
     steps:
       - uses: actions/checkout@v4
       - run: sudo apt-get install -y ninja-build cmake build-essential gcc-arm-none-eabi
@@ -29,7 +28,6 @@ jobs:
           retention-days: 1
   SimCBLinux:
     runs-on: ubuntu-latest
-    name: simcb-linux
     steps:
       - uses: actions/checkout@v4
       - working-directory: ./package
@@ -41,7 +39,6 @@ jobs:
           retention-days: 1
   SimCBMacOS:
     runs-on: macos-latest
-    name: simcb-macos
     steps:
       - uses: actions/checkout@v4
       - run: brew install cmake ninja
@@ -54,7 +51,6 @@ jobs:
           retention-days: 1
   SimCBWindows:
     runs-on: windows-latest
-    name: simcb-win
     steps:
       - uses: actions/checkout@v4
       - run: choco install cmake ninja
@@ -67,8 +63,7 @@ jobs:
           retention-days: 1
   CombinePackage:
     runs-on: ubuntu-latest
-    needs: [simcb-win, simcb-macos, simcb-linux, base]
-    name: combine-package
+    needs: [SimCBWindows, SimCBMacOS, SimCBLinux, BasePackage]
     steps:
       - uses: actions/download-artifact@v3
         with:
