@@ -22,5 +22,3 @@ popd
 
 # Copy firmware files
 cp -r ../firmware/build/simcb-macos/Release/SimCB pack/simcb/macos-intel/
-cp ./simcb-macos-launch.command pack/simcb/macos-intel/SimCB.command
-chmod +x pack/simcb/macos-intel/SimCB.command
