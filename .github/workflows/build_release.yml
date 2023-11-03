@@ -9,6 +9,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sudo apt-get install -y ninja-build cmake build-essential gcc-arm-none-eabi
+      - working-directory: ./docs
+        run: python3 -m pip install -r requirements.txt
       - working-directory: ./package
         run: ./pack_clean.sh
       - working-directory: ./package
