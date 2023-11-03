@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 set -e
 DIR=`dirname "$0"`
-"$DIR"/_SimCB "$@"
+"$DIR"/SimCB "$@"

@@ -25,6 +25,5 @@ popd
 
 # Copy firmware files
 cp -r ../firmware/build/simcb-linux/Release/SimCB pack/simcb/linux-amd64/
-cp ./simcb-linux-launch.sh pack/simcb/linux-amd64/SimCB.sh
-mv pack/simcb/linux-amd64/SimCB pack/simcb/linux-amd64/_SimCB
-chmod +x pack/simcb/linux-amd64/SimCB.sh
+cp ./simcb-linux-launch.sh pack/simcb/linux-amd64/SimCB.run
+chmod +x pack/simcb/linux-amd64/SimCB.run
