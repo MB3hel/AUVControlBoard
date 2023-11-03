@@ -86,7 +86,7 @@ jobs:
       - run: chmod +x pack/simcb/linux-amd64/SimCB.run
       - run: chmod +x pack/simcb/macos-intel/SimCB
       - working-directory: pack
-        run: zip ../pack.zip ./*
+        run: zip -r ../pack.zip ./*
       - uses: actions/upload-artifact@v3
         with:
           name: full-package
