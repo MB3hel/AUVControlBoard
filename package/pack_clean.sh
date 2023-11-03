@@ -6,3 +6,6 @@ cd "$DIR"
 
 # Remove pack directory
 rm -rf pack/
+
+# Remove tmp direcotry
+rm -rf tmp/

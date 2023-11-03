@@ -325,7 +325,7 @@ target_link_options(ControlBoard PUBLIC ${LDFLAGS} ${EXTRA_LDFLAGS})
 if("${CBOARD_REV}" MATCHES "simcb-win")
     target_link_libraries(ControlBoard Ws2_32)
 else()
-    target_link_libraries(ControlBoard m)
+    target_link_libraries(ControlBoard m pthread)
 endif()
 
 if("${CBOARD_REV}" MATCHES "simcb-*")
