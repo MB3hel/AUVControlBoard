@@ -10,9 +10,13 @@ jobs:
       - uses: actions/checkout@v4
       - working-directory: ./package
         run: ./pack_clean.sh
+      - working-directory: ./package
         run: ./pack_setup.sh
+      - working-directory: ./package
         run: ./pack_firmware.sh
+      - working-directory: ./package
         run: ./pack_iface.sh
+      - working-directory: ./package
         run: ./pack_docs.sh
       - uses: actions/upload-artifact@v3
         with:
