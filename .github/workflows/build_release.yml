@@ -1,0 +1,92 @@
+name: Build Release Package
+on:
+  workflow_dispatch
+jobs:
+  BasePackage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get install -y ninja-build cmake build-essential gcc-arm-none-eabi
+      - working-directory: ./docs
+        run: python3 -m pip install -r requirements.txt
+      - working-directory: ./package
+        run: ./pack_clean.sh
+      - working-directory: ./package
+        run: ./pack_setup.sh
+      - working-directory: ./package
+        run: ./pack_firmware.sh
+      - working-directory: ./package
+        run: ./pack_iface.sh
+      - working-directory: ./package
+        run: ./pack_docs.sh
+      - uses: actions/upload-artifact@v3
+        with:
+          name: base
+          path: ./package/pack/*
+          retention-days: 1
+  SimCBLinux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - working-directory: ./package
+        run: ./pack_simcb_linux.sh
+      - uses: actions/upload-artifact@v3
+        with:
+          name: simcb-linux
+          path: ./package/pack/*
+          retention-days: 1
+  SimCBMacOS:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install cmake ninja
+      - working-directory: ./package
+        run: ./pack_simcb_macos.sh
+      - uses: actions/upload-artifact@v3
+        with:
+          name: simcb-macos
+          path: ./package/pack/*
+          retention-days: 1
+  SimCBWindows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: choco install cmake ninja
+      - working-directory: ./package
+        run: ./pack_simcb_win.cmd
+      - uses: actions/upload-artifact@v3
+        with:
+          name: simcb-windows
+          path: ./package/pack/*
+          retention-days: 1
+  CombinePackage:
+    runs-on: ubuntu-latest
+    needs: [SimCBWindows, SimCBMacOS, SimCBLinux, BasePackage]
+    steps:
+      - run: mkdir pack
+      - uses: actions/download-artifact@v3
+        with:
+          name: base
+          path: pack/
+      - uses: actions/download-artifact@v3
+        with:
+          name: simcb-linux
+          path: pack/
+      - uses: actions/download-artifact@v3
+        with:
+          name: simcb-macos
+          path: pack/
+      - uses: actions/download-artifact@v3
+        with:
+          name: simcb-windows
+          path: pack/
+      - run: chmod +x pack/simcb/linux-amd64/SimCB
+      - run: chmod +x pack/simcb/linux-amd64/SimCB.run
+      - run: chmod +x pack/simcb/macos-intel/SimCB
+      - working-directory: pack
+        run: zip -r ../pack.zip ./*
+      - uses: actions/upload-artifact@v3
+        with:
+          name: full-package
+          path: pack.zip
+          retention-days: 1
