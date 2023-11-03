@@ -66,6 +66,7 @@ jobs:
           path: ./package/pack/*
           retention-days: 1
   CombinePackage:
+    runs-on: ubuntu-latest
     needs: [simcb-win, simcb-macos, simcb-linux, base]
     name: combine-package
     steps:
