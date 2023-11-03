@@ -65,23 +65,23 @@ jobs:
     runs-on: ubuntu-latest
     needs: [SimCBWindows, SimCBMacOS, SimCBLinux, BasePackage]
     steps:
+      - run: mkdir pack
       - uses: actions/download-artifact@v3
         with:
           name: base
+          path: pack/
       - uses: actions/download-artifact@v3
         with:
           name: simcb-linux
+          path: pack/
       - uses: actions/download-artifact@v3
         with:
           name: simcb-macos
+          path: pack/
       - uses: actions/download-artifact@v3
         with:
           name: simcb-windows
-      - run: mkdir pack
-      - run: unzip base.zip -d pack/
-      - run: unzip simcb-linux.zip -d pack/
-      - run: unzip simcb-macos.zip -d pack/
-      - run: unzip simcb-windows.zip -d pack/
+          path: pack/
       - run: chmod +x pack/simcb/linux-amd64/SimCB
       - run: chmod +x pack/simcb/linux-amd64/SimCB.run
       - run: chmod +x pack/simcb/macos-intel/SimCB
