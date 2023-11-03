@@ -9,6 +9,6 @@ WORKDIR /src
 RUN mkdir firmware
 COPY tmp/firmware ./firmware
 WORKDIR /src/firmware
-RUN rm -r build/
+RUN rm -rf build/
 RUN cmake --preset simcb-linux
 RUN cmake --build --preset simcb-linux-release
