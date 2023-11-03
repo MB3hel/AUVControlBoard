@@ -118,7 +118,7 @@ int main(void){
         // This is considered "interactive" mode for SimCB
         simcb_interactive = true;
         while(1){
-            printf("Enter TCP Port for SimCB: ");
+            printf("Enter TCP Port for SimCB (recommended 5014 if unsure): ");
             fgets(portstr, sizeof(portstr), stdin);
             // Remove \r and \n at end if present
             int len = strlen(portstr);
