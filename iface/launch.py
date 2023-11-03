@@ -104,12 +104,28 @@ def main():
     if args.sim:
         # -s means connect to the simulator instead of a real control board
         # -p is ignored using this argument
-        # TODO: Support -t argument
+        if args.simport == "":
+            args.simport = "5011,5012"
+        cmd_port = 0
+        cboard_port = 0
+        try:
+            str_split = args.simport.split(",")
+            if len(str_split) != 2:
+                print("Invalid TCP ports specified with -t!")
+                return 1
+            cmd_port = int(str_split[0])
+            cboard_port = int(str_split[1])
+        except:
+            print("Invalid TCP ports specified with -t!")
+            return 1
+        if cmd_port > 65535 or cmd_port < 0 or cboard_port > 65535 or cboard_port < 0:
+            print("Invalid TCP ports specified with -t!")
+            return 1
         try:
             print("Connecting to simulator...", end="")
-            s = Simulator(5011)
+            s = Simulator(cmd_port)
             print("Done.")
-            cb = SimCboard(5012, args.debug, args.quiet)
+            cb = SimCboard(cboard_port, args.debug, args.quiet)
             if not configure_vehicle(cb, args.vehicle, True):
                 return 1
             vehicle_tuple = all_vehicles[args.vehicle]
