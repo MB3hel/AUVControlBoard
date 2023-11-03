@@ -59,7 +59,7 @@ void wdt_feed(void){
 #endif // CONTROL_BOARD_V2
 
 
-#if defined(CONTROL_BOARD_SIM_LINUX) || defined(CONTROL_BOARD_SIM_MAC)
+#if defined(CONTROL_BOARD_SIM_LINUX) || defined(CONTROL_BOARD_SIM_MACOS)
 
 #include <pthread.h>
 #include <signal.h>
