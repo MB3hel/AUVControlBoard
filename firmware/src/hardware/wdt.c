@@ -73,10 +73,10 @@ void wdt_feed(void){
 #define WDT_PRECISION   250         // ms
 
 
-static unsigned long feed_time;
+static unsigned long long feed_time;
 static pthread_t wdt_tid;
 
-unsigned long millis(){
+unsigned long long millis(){
     struct timespec t;
     clock_gettime(CLOCK_REALTIME, &t);
     return (t.tv_nsec / 1000000) + (t.tv_sec * 1000);
@@ -117,3 +117,48 @@ void wdt_feed(void){
 }
 
 #endif // CONTROL_BOARD_SIM_LINUX || CONTROL_BOARD_SIM_MACOS
+
+#ifdef CONTROL_BOARD_SIM_WIN
+
+#include <windows.h>
+#include <sysinfoapi.h>
+#include <synchapi.h>
+#include <debug.h>
+
+// Simulated WDT. Allows detection of deadlocks that would trigger WDT in hardware using SimCB
+// Implemented by comparing current time to last feed time periodically
+
+#define WDT_TIMEOUT     2000        // ms
+#define WDT_PRECISION   250         // ms
+
+
+static unsigned long long feed_time;
+static HANDLE wdt_thread_handle;
+
+unsigned long long millis(){
+    return GetTickCount64();
+}
+
+static DWORD WINAPI wdt_thread(void *arg){
+    // Assume last fed when this thread starts so timeout occurs WDT_TIMEOUT
+    // after thread is running at the earliest
+    feed_time = millis();
+    while(1){
+        Sleep(WDT_PRECISION);
+        if(millis() - feed_time > WDT_TIMEOUT){
+            // Watchdog timeout occurred!!!
+            debug_halt(HALT_EC_WDOG);
+        }
+    }
+    return 0;
+}
+
+void wdt_init(void){
+    wdt_thread_handle = CreateThread(NULL, 0, wdt_thread, NULL, 0, NULL);
+}
+
+void wdt_feed(void){
+    feed_time = millis();
+}
+
+#endif // CONTROL_BOARD_SIM_WIN

@@ -183,7 +183,7 @@ static socklen_t client_addr_len;
 static pthread_t tid_socket;
 static bool socket_has_data;
 
-void *socket_thread(void *arg){
+static void *socket_thread(void *arg){
     while(1){
         while(client_fd == -1){
             // Wait for a connection
@@ -406,7 +406,7 @@ static SOCKET client_sock;
 static bool socket_has_data;
 static HANDLE sock_thread_handle;
 
-DWORD WINAPI socket_thread(void *arg){
+static DWORD WINAPI socket_thread(void *arg){
     while(1){
         while(client_sock == INVALID_SOCKET){
             // Wait for a connection
