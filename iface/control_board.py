@@ -1237,13 +1237,19 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
-# Used to interface with simulator. Do not instantiate directly
-# Use the Simulator class instead
+# Used to interface with SimCB binaries (or simulator's cboard port)
 class SimCboard(ControlBoard):
-    def __init__(self, s: socket.socket, debug = False, suppress_dbg_msg = False):
-        self.__socket = s
+    def __init__(self, port: int, debug = False, suppress_dbg_msg = False):
+        self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.__socket.connect(("127.0.0.1", port))
         super().__init__("", debug, suppress_dbg_msg)
     
+    def __del__(self):
+        try:
+            self.__socket.close()
+        except:
+            pass
+
     ## Write one byte via tcp
     #  @param b Single byte to write
     def _write_one(self, b: bytes):
@@ -1264,30 +1270,15 @@ class SimCboard(ControlBoard):
 
 # Used to interface with GodotAUVSim
 class Simulator:
-    def __init__(self, cb_debug: bool = False, cb_suppress_debug_msg = False):
+    def __init__(self, port: int):
         self.__cmd_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.__cboard_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.__cmd_client.connect(("127.0.0.1", port))
 
-        # Connect
-        self.__cmd_client.connect(("127.0.0.1", 5011))
-        self.__cboard_client.connect(("127.0.0.1", 5012))
-
-        # Instantiate control board
-        self.__cb = SimCboard(self.__cboard_client, cb_debug, cb_suppress_debug_msg)
-    
     def __del__(self):
         try:
             self.__cmd_client.close()
         except:
             pass
-        try:
-            self.__cboard_client.close()
-        except:
-            pass
-
-    @property
-    def control_board(self) -> ControlBoard:
-        return self.__cb
     
     def __read_until_newline(self, s: socket.socket) -> bytes:
         b = bytearray()

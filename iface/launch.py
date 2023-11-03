@@ -28,7 +28,7 @@
 import argparse
 import sys
 import os
-from control_board import ControlBoard, Simulator
+from control_board import ControlBoard, Simulator, SimCboard
 import importlib
 from serial import SerialException
 import control_board
@@ -73,12 +73,13 @@ def main():
 
     # Parse arguments
     parser = argparse.ArgumentParser(description="Interface script launcher")
-    parser.add_argument("-s", dest="sim", action="store_true", help="Run via simulator")
-    parser.add_argument("-p", dest="port", type=str, default="", help="Serial port to use (ignored with -s). Defaults to /dev/ttyACM0.")
-    parser.add_argument("-d", dest="debug", action="store_true", help="Enable debug messages")
-    parser.add_argument("-q", dest="quiet", action="store_true", help="Suppress debug log from control board.")
     parser.add_argument("-v", dest="vehicle", metavar="vehicle", type=str, default=default_vehicle, choices=vehicles, 
                         help="Choose a vehicle configuration to apply. Choices: {0}. Default: {1}.".format(vehicles, default_vehicle))
+    parser.add_argument("-p", dest="port", type=str, default="", help="Serial port to use to connect to physical control board. Defaults to /dev/ttyACM0. To connect to SimCB binary, use tcp:port eg tcp:5014. This is ignored if -s is specified.")
+    parser.add_argument("-s", dest="sim", action="store_true", help="Connect to simulator instead of directly to a control board.")
+    parser.add_argument("-t", dest="simport", type=str, default="5011,5012", help="Specify ports used to connect to simulator. Format cmd_port,cboard_port. Default = 5011,5012. Ignored unless -s is specified.")
+    parser.add_argument("-d", dest="debug", action="store_true", help="Enable debug messages")
+    parser.add_argument("-q", dest="quiet", action="store_true", help="Suppress debug log from control board.")
     parser.add_argument("script", type=str, help="Name of script to run. Must be a .py script in the same directory as launch.py or a subdirectory (relative paths only).")
     args = parser.parse_args()
 
@@ -101,11 +102,14 @@ def main():
 
     # Create connection to the control board or simulator
     if args.sim:
+        # -s means connect to the simulator instead of a real control board
+        # -p is ignored using this argument
+        # TODO: Support -t argument
         try:
             print("Connecting to simulator...", end="")
-            s = Simulator(args.debug, args.quiet)
+            s = Simulator(5011)
             print("Done.")
-            cb = s.control_board
+            cb = SimCboard(5012, args.debug, args.quiet)
             if not configure_vehicle(cb, args.vehicle, True):
                 return 1
             vehicle_tuple = all_vehicles[args.vehicle]
@@ -133,9 +137,23 @@ def main():
     else:
         if args.port == "":
             args.port = "/dev/ttyACM0"
+        is_simcb = args.port.startswith("tcp:")
+        if is_simcb:
+            try:
+                args.port = args.port[4:]
+                args.port = int(args.port)
+            except:
+                print("Invalid TCP port specified using -p!")
+                return 1
+            if args.port < 0 or args.port > 65535:
+                print("Invalid TCP port specified using -p!")
+                return 1
         try:
             print("Connecting to {0}...".format(args.port), end="")
-            cb = ControlBoard(args.port, args.debug, args.quiet)
+            if is_simcb:
+                cb = SimCboard(args.port, args.debug, args.quiet)
+            else:
+                cb = ControlBoard(args.port, args.debug, args.quiet)
             print("Done.")
             if not configure_vehicle(cb, args.vehicle, False):
                 return 1
