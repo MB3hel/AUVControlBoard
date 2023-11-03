@@ -8,6 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: apt-get install ninja cmake build-essential gcc-arm-none-eabi
       - working-directory: ./package
         run: ./pack_clean.sh
       - working-directory: ./package
