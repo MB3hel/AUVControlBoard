@@ -37,15 +37,27 @@ jobs:
   #         name: simcb-linux
   #         path: ./package/pack/*
   #         retention-days: 1
-  SimCBMacOS:
-    runs-on: macos-latest
+  # SimCBMacOS:
+  #   runs-on: macos-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - run: brew install cmake ninja
+  #     - working-directory: ./package
+  #       run: ./pack_simcb_macos.sh
+  #     - uses: actions/upload-artifact@v3
+  #       with:
+  #         name: simcb-macos
+  #         path: ./package/pack/*
+  #         retention-days: 1
+  SimCBWindows:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - run: brew install cmake ninja
+      - run: choco install cmake ninja
       - working-directory: ./package
-        run: ./pack_simcb_macos.sh
+        run: ./pack_simcb_win.cmd
       - uses: actions/upload-artifact@v3
         with:
-          name: simcb-macos
+          name: simcb-windows
           path: ./package/pack/*
           retention-days: 1
