@@ -224,14 +224,14 @@ static void usb_socket_cleanup(void){
     close(server_fd);
 }
 
-bool usb_setup_socket(int port){
+bool usb_setup_socket(FILE *f, int port){
     // Ensure proper cleanup
     atexit(usb_socket_cleanup);
 
     // Setup socket
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if(server_fd == -1){
-        fprintf(stderr, "Failed to create socket. Error code: %d\n", errno);
+        fprintf(f, "Failed to create socket. Error code: %d\n", errno);
         return false;
     }
     struct sockaddr_in a;
@@ -240,11 +240,11 @@ bool usb_setup_socket(int port){
     a.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     a.sin_port = htons(port);
     if(bind(server_fd, (struct sockaddr *)&a, sizeof(a)) == -1){
-        fprintf(stderr, "Failed to bind socket. Error code: %d\n", errno);
+        fprintf(f, "Failed to bind socket. Error code: %d\n", errno);
         return false;
     }
     if(listen(server_fd, 1) == -1){
-        fprintf(stderr, "Failed to listen on socket. Error code: %d\n", errno);
+        fprintf(f, "Failed to listen on socket. Error code: %d\n", errno);
         return false;
     }
     client_fd = -1;

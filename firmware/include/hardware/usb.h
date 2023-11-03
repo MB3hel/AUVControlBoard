@@ -64,6 +64,7 @@ void usb_write(uint8_t b);
 void usb_flush(void);
 
 #ifdef CONTROL_BOARD_SIM
-bool usb_setup_socket(int port);
+#include <stdio.h>
+bool usb_setup_socket(FILE *f, int port);
 void usb_sim_interrupts(void);
 #endif
