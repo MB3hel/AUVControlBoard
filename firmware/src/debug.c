@@ -37,6 +37,11 @@
 
 int reset_cause;
 
+#ifdef CONTROL_BOARD_SIM
+// Defined in main
+extern bool simcb_interactive;
+#endif
+
 void debug_halt(int error_code){
     (void)error_code;
 
@@ -57,8 +62,15 @@ void debug_halt(int error_code){
     // For SimCB, don't infinite loop. There's no WDT to reset it.
     // Just print an exit code and kill the program
     fprintf(stderr, "Control board halted with error code %d\n", error_code);
-    fprintf(stderr, "SimCB CRASHED!!!");
-    exit(1);
+    fprintf(stderr, "SimCB CRASHED!!!\n");
+    if(simcb_interactive){
+        fprintf(stderr, "Press enter to exit...");
+        fflush(stdin);
+        getc(stdin);
+        exit(1);
+    }else{
+        exit(1);
+    }
 #endif
 
 

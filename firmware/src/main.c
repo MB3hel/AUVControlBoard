@@ -139,6 +139,7 @@ int main(void){
         }
     }
     printf("Started SimCB using TCP port %d\n", port);
+    debug_halt(HALT_EC_STARTUP);
 #endif
     // -------------------------------------------------------------------------
     // System & Peripheral Initialization
