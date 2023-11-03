@@ -448,21 +448,21 @@ static void usb_socket_cleanup(void){
     WSACleanup();
 }
 
-bool usb_setup_socket(int port){
+bool usb_setup_socket(FILE *f, int port){
     // Ensure proper cleanup
     atexit(usb_socket_cleanup);
 
     // Initialize winsock2
     int err = WSAStartup(MAKEWORD(2,2), &wsa);
     if (err != 0){
-        fprintf(stderr, "Failed to initialize winsock2! Error code: %d\n", err);
+        fprintf(f, "Failed to initialize winsock2! Error code: %d\n", err);
         return false;
     }
 
     // Setup socket
     server_sock = socket(AF_INET, SOCK_STREAM, 0);
     if(server_sock == INVALID_SOCKET){
-        fprintf(stderr, "Failed to create socket. Error code: %d\n", WSAGetLastError());
+        fprintf(f, "Failed to create socket. Error code: %d\n", WSAGetLastError());
         return false;
     }
     struct sockaddr_in a;
@@ -471,11 +471,11 @@ bool usb_setup_socket(int port){
     a.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     a.sin_port = htons(port);
     if(bind(server_sock, (struct sockaddr *)&a, sizeof(a)) == SOCKET_ERROR){
-        fprintf(stderr, "Failed to bind socket. Error code: %d\n", WSAGetLastError());
+        fprintf(f, "Failed to bind socket. Error code: %d\n", WSAGetLastError());
         return false;
     }
     if(listen(server_sock, 1) == SOCKET_ERROR){
-        fprintf(stderr, "Failed to listen on socket. Error code: %d\n", WSAGetLastError());
+        fprintf(f, "Failed to listen on socket. Error code: %d\n", WSAGetLastError());
         return false;
     }
     client_sock = INVALID_SOCKET;
