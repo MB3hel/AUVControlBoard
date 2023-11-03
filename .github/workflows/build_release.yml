@@ -1,8 +1,6 @@
 name: Build Release Package
 on:
-  push:
-    branches:
-      - 'feature/simcb'
+  workflow_dispatch
 jobs:
   BasePackage:
     runs-on: ubuntu-latest
