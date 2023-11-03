@@ -6,7 +6,7 @@ trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
 trap 'echo "\"${last_command}\" command filed with exit code $?."' ERR
 
 # Work in same directory as this script
-DIR=$(realpath $(dirname "$0"))
+DIR=$(dirname "$0")
 cd "$DIR"
 
 # Base directory structure
