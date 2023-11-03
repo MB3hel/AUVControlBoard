@@ -16,4 +16,4 @@ cmake --build --preset simcb-win-release
 cd ..\package\
 
 :: Copy firmware files
-cp -r ..\firmware\build\simcb-win\Release\SimCB.exe pack\simcb\win-x64\
+copy ..\firmware\build\simcb-win\Release\SimCB.exe pack\simcb\win-x64\
