@@ -1,0 +1,72 @@
+name: Build Release Package
+on: 
+  workflow_dispatch
+jobs:
+  BasePackage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - working-directory: ./package
+        run: ./pack_clean.sh
+        run: ./pack_setup.sh
+        run: ./pack_firmware.sh
+        run: ./pack_iface.sh
+        run: ./pack_docs.sh
+      - uses: actions/upload-artifact@v3
+        with:
+          name: base
+          path: ./package/pack/*
+          retention-days: 1
+  # SimCBLinux:
+  #   runs-on: macos-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: actions/setup-python@v3
+  #       with:
+  #         python-version: '3.10'
+  #         architecture: 'x64'
+  #     - run: python -m pip install setuptools wheel
+  #     - run: python -m pip install -U -r requirements.txt
+  #     - working-directory: ./packaging
+  #       run: ./macos.sh --python python
+  #     - uses: actions/upload-artifact@v2
+  #       with:
+  #         name: dist-macos
+  #         path: ./packaging/dist/*
+  #         retention-days: 1
+  # SimCBMacos:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: actions/setup-python@v3
+  #       with:
+  #         python-version: '3.10'
+  #         architecture: 'x64'
+  #     - run: python -m pip install requests
+  #     - run: python -m pip install setuptools wheel
+  #     - run: python -m pip install -U -r requirements.txt
+  #     - working-directory: ./packaging
+  #       run: ./linux_source.sh --tar no --deb yes --run yes --python python
+  #     - uses: actions/upload-artifact@v2
+  #       with:
+  #         name: dist-linux
+  #         path: ./packaging/dist/*
+  #         retention-days: 1
+  # SimCBLinux:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: actions/setup-python@v3
+  #       with:
+  #         python-version: '3.10'
+  #         architecture: 'x64'
+  #     - run: python -m pip install requests
+  #     - run: python -m pip install setuptools wheel
+  #     - run: python -m pip install -U -r requirements.txt
+  #     - working-directory: ./packaging
+  #       run: ./linux_source.sh --tar no --deb yes --run yes --python python
+  #     - uses: actions/upload-artifact@v2
+  #       with:
+  #         name: dist-linux
+  #         path: ./packaging/dist/*
+  #         retention-days: 1
