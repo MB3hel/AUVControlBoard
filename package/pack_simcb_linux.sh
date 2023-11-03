@@ -11,10 +11,7 @@ cd "$DIR"
 
 # Base directory structure
 rm -rf pack/simcb/linux-amd64/
-if [ ! -d pack/simcb ]; then
-    mkdir pack/simcb/
-fi
-mkdir pack/simcb/linux-amd64/
+mkdir -p pack/simcb/linux-amd64/
 
 # Build firmware
 pushd ../firmware > /dev/null

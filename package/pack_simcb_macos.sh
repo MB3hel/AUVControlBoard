@@ -11,10 +11,7 @@ cd "$DIR"
 
 # Base directory structure
 rm -rf pack/simcb/macos-intel/
-if [ ! -d pack/simcb ]; then
-    mkdir pack/simcb/
-fi
-mkdir pack/simcb/macos-intel/
+mkdir -p pack/simcb/macos-intel/
 
 # Build firmware
 pushd ../firmware > /dev/null
