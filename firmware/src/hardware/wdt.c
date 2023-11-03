@@ -59,12 +59,61 @@ void wdt_feed(void){
 #endif // CONTROL_BOARD_V2
 
 
-#ifdef CONTROL_BOARD_SIM
+#if defined(CONTROL_BOARD_SIM_LINUX) || defined(CONTROL_BOARD_SIM_MAC)
 
-// Dummy implementation
+#include <pthread.h>
+#include <signal.h>
+#include <time.h>
+#include <debug.h>
 
-void wdt_init(void){}
+// Simulated WDT. Allows detection of deadlocks that would trigger WDT in hardware using SimCB
+// Implemented by comparing current time to last feed time periodically
 
-void wdt_feed(void){}
+#define WDT_TIMEOUT     2000        // ms
+#define WDT_PRECISION   250         // ms
 
-#endif // CONTROL_BOARD_SIM
+
+static unsigned long feed_time;
+static pthread_t wdt_tid;
+
+unsigned long millis(){
+    struct timespec t;
+    clock_gettime(CLOCK_REALTIME, &t);
+    return (t.tv_nsec / 1000000) + (t.tv_sec * 1000);
+}
+
+static void *wdt_thread(void *arg){
+    // Assume last fed when this thread starts so timeout occurs WDT_TIMEOUT
+    // after thread is running at the earliest
+    feed_time = millis();
+    while(1){
+        struct timespec t;
+        t.tv_nsec = (WDT_PRECISION % 1000) * 1000000;
+        t.tv_sec = WDT_PRECISION / 1000;
+        nanosleep(&t, NULL);
+        if(millis() - feed_time > WDT_TIMEOUT){
+            // Watchdog timeout occurred!!!
+            debug_halt(HALT_EC_WDOG);
+        }
+    }
+    return NULL;
+}
+
+void wdt_init(void){
+    // Mask all signals on creating thread
+    // Created thread will inherit signal mask
+    // And non-RTOS threads must mask all signals
+    // This is a portable way to ensure all signals are masked
+    // upon creation of the child thread
+    sigset_t fullset, origset;
+    sigfillset(&fullset);
+    pthread_sigmask(SIG_SETMASK, &fullset, &origset);
+    pthread_create(&wdt_tid, NULL, wdt_thread, NULL);
+    pthread_sigmask(SIG_SETMASK, &origset, NULL);
+}
+
+void wdt_feed(void){
+    feed_time = millis();
+}
+
+#endif // CONTROL_BOARD_SIM_LINUX || CONTROL_BOARD_SIM_MACOS
