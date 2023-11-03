@@ -41,6 +41,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - run: brew install cmake ninja
       - working-directory: ./package
         run: ./pack_simcb_macos.sh
       - uses: actions/upload-artifact@v3
