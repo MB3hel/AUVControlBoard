@@ -534,7 +534,21 @@ For each quaternion read from the IMU:
 - Add the pitch, roll, and yaw from the shortest euler angles to accumulated pitch, roll, and yaw variables
 - Note that if the IMU axis config changes, the accumulated data should be zeroed and the previously read quaternion discarded.
 
+This makes the assumption that the smallest rotation between two quaternions is the most probable path the robot took to change its orientation. This is an approximation, however it is a fairly good one as long as sample rate of data is sufficiently high. The specifics of the path are lost, however, if the sample rate is high enough, the length of the path is sufficiently small that and this is a good approximation.
 
+The second issue with this approximation has to do with rotations exceeding 180 degrees. The method for determining shortest path between two quaternions will be incorrect if the vehicle rotates more than 180 degrees in any axis (because the shortest path would have involved rotating the other direction). To guarantee rotations between two samples never exceed 180 degrees, the max measured rotation rate of the IMU is considered. For the BNO055 this is 2000 degrees per second. Thus, with a sample period of $l$ milliseconds, the largest angle change between samples is
+
+$\frac{2000 \textrm{ deg}}{1 \textrm{ sec}} \cdot \frac{1 \textrm{ sec}}{1000 \textrm{ ms}} \cdot \frac{l \textrm{ ms}}{1 \textrm{ sample}} = 2l \textrm{ deg / sample}$  
+
+To ensure that changes of more than 180 degrees do not occur, the following must be satisfied
+
+$2l < 180 \rightarrow l < 90 \textrm{ milliseconds}$
+
+However, it is possible for some samples from the IMU to be delayed (ie I2C bus busy with another sensor) or lost (I2C failure). Thus, it is necessary to choose a value for $l$ that allows for at least one sample to be lost. When a sample is lost, this doubles the effective time between samples. Thus, it is necessary to half $l$
+
+$l < 45 \textrm{ milliseconds}$
+
+By further reducing $l$ it is possible to allow for larger delays or more lost samples. The current firmware samples IMU data every 15ms (the max rate supported by the BNO055 in fusion mode is 100Hz = 10ms period). Using $l=15 \textrm{ ms}$ it is possible for 5 consecutive samples to be lost while still guaranteeing that no more than 90ms passes between valid samples (thus still ensuring no more than 180 degree change between samples).
 
 ## Other Derivations
 
