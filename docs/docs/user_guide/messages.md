@@ -61,7 +61,7 @@ Thruster inversion set command is used to invert the positive and negative direc
 This message will be acknowledged. The acknowledge message will contain no result data.
 
 **Relative DoF Speed Set**  
-Used to set relative speeds of motion in each DoF. There are two groups: linear (x, y, z) and angular (xrot, yrot, zrot). Within each group, use 1.0 for the fastest DoF. Other DoFs in the group are percentages of the fastest speed (from -1.0 to 1.0). This message has the following format  
+Used to set relative speeds of motion in each DoF. There are two groups: linear (x, y, z) and angular (xrot, yrot, zrot). Within each group, use 1.0 for the fastest DoF. Other DoFs in the group are percentages of the fastest speed (from 0.0 to 1.0). This message has the following format  
 ```none
 'R', 'E', 'L', 'D', 'O', 'F', [x], [y], [z], [xrot], [yrot], [zrot]
 ```  
@@ -76,10 +76,10 @@ Used to configure the BNO055 IMU's axis orientation. *Note: This will also reset
 `[config]`: A single byte. The value of this byte is between 0 and 7 (inclusive) representing on of the BNO055 axis configs (P0 to P7) as described in the BNO055 datasheet. *Note: Changing the axis config changes IMU mode. Thus, there will be a brief time afterwards where the IMU may report zeros for all data.*  
 This message will be acknowledged. The acknowledge message will contain no result data.
 
-**Stability Assist Mode PID Tune Command**  
-Used to tune stability assist mode PID controllers. Note that the rotation PIDs (xrot, yrot, and zrot) are also used in OHOLD mode. Likewise, the depth PID is also used in DHOLD mode. The command has the following format  
+**PID Tune Command**  
+Used to tune PID controllers. The command has the following format  
 ```none  
-'S', 'A', 'S', 'S', 'I', 'S', 'T', 'T', 'N', [which], [kp], [ki], [kd], [limit], [invert]
+'P', 'I', 'D', 'T', 'N', [which], [kp], [ki], [kd], [limit], [invert]
 ```  
 `[which]` indicates which PID to tune ('X' = xrot, 'Y' = yrot, 'Z' = zrot, 'D' = depth hold).  
 `[kp]`, `[ki]`, `[kd]` are proportional, integral, derivative, and feed-forward gains (32-bit float little endian).  
