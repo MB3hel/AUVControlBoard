@@ -21,13 +21,26 @@
 #include <string.h>
 #include <FreeRTOS.h>
 #include <task.h>
-#include <led.h>
-#include <usb.h>
+#include <hardware/led.h>
+#include <hardware/usb.h>
 #include <stdlib.h>
 #include <framework.h>
 
+#if CONTROL_BOARD_SIM_WIN
+#include <intrin.h>
+#endif
+
+#ifdef CONTROL_BOARD_SIM
+#include <stdio.h>
+#endif
+
 
 int reset_cause;
+
+#ifdef CONTROL_BOARD_SIM
+// Defined in main
+extern bool simcb_interactive;
+#endif
 
 void debug_halt(int error_code){
     (void)error_code;
@@ -44,22 +57,45 @@ void debug_halt(int error_code){
     HAL_RTCEx_BKUPWrite(&hrtc, BKUP_REG_RESETCAUSE, error_code);
     HAL_PWR_DisableBkUpAccess();
 #endif
+
+#ifdef CONTROL_BOARD_SIM
+    // For SimCB, don't infinite loop. There's no WDT to reset it.
+    // Just print an exit code and kill the program
+    fprintf(stderr, "Control board halted with error code %d\n", error_code);
+    fprintf(stderr, "SimCB CRASHED!!!\n");
+    if(simcb_interactive){
+        fprintf(stderr, "Press enter to exit...");
+        fflush(stdin);
+        getc(stdin);
+        exit(1);
+    }else{
+        exit(1);
+    }
+#endif
+
+
     while(1){
         // Note: nop is here for debugger
         // If Debug build, WDT is disabled and can pause execution here using debugger
         // Else, WDT will trigger a system reset. Error code can be read from last_error
         // on next power on. See RSTWHY command.
+#if CONTROL_BOARD_SIM_WIN
+        __nop();
+#else
         asm("nop");
+#endif
     }
 }
 
 void debug_log(const char *msg){
 #ifndef NDEBUG
-    if(!usb_initialized)
-        return;
     if(xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED)
         return;
     
+#ifdef CONTROL_BOARD_SIM
+    printf("DEBUG: %s\n", msg);
+#endif
+
     // Only enable logging for debug builds
     uint8_t buf[PCCOMM_MAX_MSG_LEN];
     buf[0] = 'D';
@@ -80,8 +116,6 @@ void debug_log(const char *msg){
 
 void debug_log_data(uint8_t *msg, unsigned int len){
 #ifndef NDEBUG
-    if(!usb_initialized)
-        return;
     if(xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED)
         return;
     

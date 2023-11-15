@@ -1,0 +1,14 @@
+FROM debian:buster
+WORKDIR /
+RUN apt-get update
+RUN apt-get install -y build-essential wget ninja-build
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.28.0-rc3/cmake-3.28.0-rc3-linux-x86_64.sh
+RUN chmod +x ./cmake-3.28.0-rc3-linux-x86_64.sh
+RUN ./cmake-3.28.0-rc3-linux-x86_64.sh --skip-license
+WORKDIR /src
+RUN mkdir firmware
+COPY tmp/firmware ./firmware
+WORKDIR /src/firmware
+RUN rm -rf build/
+RUN cmake --preset simcb-linux
+RUN cmake --build --preset simcb-linux-release

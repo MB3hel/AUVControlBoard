@@ -18,19 +18,21 @@
 
 #include <motor_control.h>
 #include <app.h>
-#include <matrix.h>
-#include <thruster.h>
+#include <util/matrix.h>
+#include <hardware/thruster.h>
 #include <FreeRTOS.h>
 #include <semphr.h>
 #include <timers.h>
 #include <cmdctrl.h>
-#include <pid.h>
+#include <util/pid.h>
+
+#define _USE_MATH_DEFINES   // Enables things like M_PI on windows
 #include <math.h>
+
 #include <debug.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <simulator.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -55,9 +57,15 @@
 /// Globals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool mc_invert[8];                                      // Tracks thruster inversions
+static bool mc_invert[8];                                      // Tracks thruster inversions
 
-float mc_relscale[6];                                   // Relative DoF speeds
+// Relative scale down factors for motions
+// Calculated from data provided in RELDOF command
+// Contains 2 groups: linear = [x, y, z] = first half of array
+//                    angular = [xrot, yrot, zrot] = second half of array
+// These are multiplied by speeds to scale DOWN faster motors as needed
+// Scaling down ensures that all speeds will be less than 1.0 if they started that way
+static float mc_relscale[6];                                   // Relative DoF speeds
 
 static float dof_matrix_arr[8*6];                       // Backing array for DoF matrix
 static matrix dof_matrix;                               // DoF matrix
@@ -143,6 +151,18 @@ void mc_init(void){
     }
 }
 
+void mc_set_tinv(bool *tinv){
+    for(unsigned int i = 0; i < 8; ++i){
+        mc_invert[i] = tinv[i];
+    }
+}
+
+void mc_set_relscale(float *reldof){
+    for(unsigned int i = 0; i < 6; ++i){
+        mc_relscale[i] = reldof[i];
+    }
+}
+
 void mc_set_dof_matrix(unsigned int thruster_num, float *row_data){
     matrix_set_row(&dof_matrix, thruster_num - 1, row_data);
 }
@@ -198,14 +218,14 @@ static void mc_wdog_timeout(TimerHandle_t timer){
     
     xSemaphoreTake(motor_mutex, portMAX_DELAY);
     motors_killed = true;
-    if(sim_hijacked){
+    if(cmdctrl_sim_hijacked){
         for(unsigned int i = 0; i < 8; ++i){
-            sim_speeds[i] = 0.0f;
+            cmdctrl_sim_speeds[i] = 0.0f;
         }
     }else{
         thruster_set((float[]){0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
     }
-    cmdctrl_mwdog_change(false);
+    cmdctrl_send_mwodg_status(false);
     xSemaphoreGive(motor_mutex);
 }
 
@@ -217,10 +237,14 @@ bool mc_wdog_feed(void){
     xTimerReset(motor_wdog_timer, portMAX_DELAY);
     ret = motors_killed;
     if(motors_killed)
-        cmdctrl_mwdog_change(true);
+        cmdctrl_send_mwodg_status(true);
     motors_killed = false;
     xSemaphoreGive(motor_mutex);
     return ret;
+}
+
+bool mc_wdog_is_killed(void){
+    return motors_killed;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -269,18 +293,6 @@ static inline void rotate_vector_inv(float *dx, float *dy, float *dz, float sx, 
     *dz = qr.z;
 }
 
-// Minimum rotation from a to b (as quaternion)
-static inline void quat_diff(quaternion_t *dest, quaternion_t *a, quaternion_t *b){
-    float dot;
-    quat_dot(&dot, a, b);
-    quaternion_t b_inv;
-    quat_inverse(&b_inv, b);
-    if(dot < 0.0){
-        quat_multiply_scalar(&b_inv, &b_inv, -1.0f);
-    }
-    quat_multiply(dest, a, &b_inv);
-}
-
 // Quaternion rotation from vector a to vector b
 static inline void quat_between(quaternion_t *dest, float ax, float ay, float az, float bx, float by, float bz){
     float dot = ax*bx + ay*by + az*bz;
@@ -308,7 +320,7 @@ static inline void quat_between(quaternion_t *dest, float ax, float ay, float az
 // Twist part of swing-twist decomposition
 // calculates twist of q around axis described by vector d = <d_x, d_y, d_z>
 // Note that d must be normalized!!!
-static inline void quat_twist(quaternion_t *twist, quaternion_t *q, float d_x, float d_y, float d_z){
+static inline void quat_twist(quaternion_t *twist, const quaternion_t *q, const float d_x, const float d_y, const float d_z){
     // r = axis of rotation = <q.x, q.y, q.z>
     float r_x = q->x;
     float r_y = q->y;
@@ -405,7 +417,7 @@ static inline void mc_downscale_reldof(float *dx, float *dy, float *dz, float sx
     if(fabsf(sy) < 1e-4){
         scale_y = 0.0f;
     }
-    if(fabsf(sz) == 1e-4){
+    if(fabsf(sz) < 1e-4){
         scale_z = 0.0f;
     }
 
@@ -456,7 +468,7 @@ static inline void mc_downscale_if_needed(float *dx, float *dy, float *dz, float
 // Given the vehicle's current orientation, construct a gravity vector
 // Then, get the angle between the gravity vector and "base" gravity vector
 // Return the angle from the base gravity vector to the current one
-static inline void mc_grav_rot(quaternion_t *qrot, quaternion_t *qcurr){
+static inline void mc_grav_rot(quaternion_t *qrot, const quaternion_t *qcurr){
     // Gravity vector component equations come from applying rotation matrix form to <0, 0, -1>
     float grav_x = 2.0f * (-qcurr->x*qcurr->z + qcurr->w*qcurr->y);
     float grav_y = 2.0f * (-qcurr->w*qcurr->x - qcurr->y*qcurr->z);
@@ -475,7 +487,7 @@ static inline void mc_grav_rot(quaternion_t *qrot, quaternion_t *qcurr){
 // Convert the given quaternion to euler angles
 // Construct the alternate euler representation (improper)
 // Return the euler angle with minimal roll component
-static inline void mc_baseline_euler(euler_t *ebase, quaternion_t *qcurr){
+static inline void mc_baseline_euler(euler_t *ebase, const quaternion_t *qcurr){
     euler_t e_orig, e_alt;
     quat_to_euler(&e_orig, qcurr);
     euler_alt(&e_alt, &e_orig);
@@ -539,7 +551,8 @@ void mc_sassist_tune_depth(float kp, float ki, float kd, float limit, bool inver
 /// Motor control
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void mc_set_raw(float *speeds){
+void mc_set_raw(float *speeds_noinv){
+    float speeds[8];
     xSemaphoreTake(motor_mutex, portMAX_DELAY);   
 
     // Don't allow speed set while motors are killed
@@ -547,13 +560,15 @@ void mc_set_raw(float *speeds){
         // Apply thruster inversions
         for(unsigned int i = 0; i < 8; ++i){
             if(mc_invert[i])
-                speeds[i] *= -1;
+                speeds[i] = -1 * speeds_noinv[i];
+            else
+                speeds[i] = speeds_noinv[i];
         }
 
         // Actually set thruster speeds
-        if(sim_hijacked){
+        if(cmdctrl_sim_hijacked){
             for(unsigned int i = 0; i < 8; ++i){
-                sim_speeds[i] = speeds[i];
+                cmdctrl_sim_speeds[i] = speeds[i];
             }
         }else{
             thruster_set(speeds);
@@ -563,11 +578,20 @@ void mc_set_raw(float *speeds){
     xSemaphoreGive(motor_mutex);
 }
 
-void mc_set_local(float x, float y, float z, float xrot, float yrot, float zrot){
+void mc_set_local(const mc_local_target_t target){
+
+    // Shorthand names (will be optimized out by compiler)
+    float x = target.x;
+    float y = target.y;
+    float z = target.z;
+    float xrot = target.xrot;
+    float yrot = target.yrot;
+    float zrot = target.zrot;
+
     float target_arr[6];
-    matrix target;
-    matrix_init_static(&target, target_arr, 6, 1);
-    matrix_set_col(&target, 0, (float[]){x, y, z, xrot, yrot, zrot});
+    matrix target_mat;
+    matrix_init_static(&target_mat, target_arr, 6, 1);
+    matrix_set_col(&target_mat, 0, (float[]){x, y, z, xrot, yrot, zrot});
 
     // Limit input speeds to correct range
     for(size_t i = 0; i < 6; ++i){
@@ -582,7 +606,7 @@ void mc_set_local(float x, float y, float z, float xrot, float yrot, float zrot)
     matrix_init_static(&speed_vec, speed_arr, 8, 1);
 
     // Base speed calculation
-    matrix_mul(&speed_vec, &dof_matrix, &target);
+    matrix_mul(&speed_vec, &dof_matrix, &target_mat);
 
     // Scale motor speeds down as needed
     while(true){
@@ -607,7 +631,16 @@ void mc_set_local(float x, float y, float z, float xrot, float yrot, float zrot)
     mc_set_raw(speed_arr);
 }
 
-void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, float yaw_spd, quaternion_t curr_quat){
+void mc_set_global(const mc_global_target_t target, const quaternion_t curr_quat){
+
+    // Shorthand names (will be optimized out by compiler)
+    const float x = target.x;
+    const float y = target.y;
+    const float z = target.z;
+    const float pitch_spd = target.pitch_spd;
+    const float roll_spd = target.roll_spd;
+    const float yaw_spd = target.yaw_spd;
+
     // -----------------------------------------------------------------------------------------------------------------
     // Translation
     // -----------------------------------------------------------------------------------------------------------------
@@ -695,39 +728,49 @@ void mc_set_global(float x, float y, float z, float pitch_spd, float roll_spd, f
     // -----------------------------------------------------------------------------------------------------------------
 
     // Set speeds
-    mc_set_local(lx, ly, lz, xrot, yrot, zrot);
+    const mc_local_target_t local_target = {
+        .x = lx,
+        .y = ly,
+        .z = lz,
+        .xrot = xrot,
+        .yrot = yrot,
+        .zrot = zrot
+    };
+    mc_set_local(local_target);
 }
 
-void mc_set_sassist(float x, float y, float yaw_spd,
-        euler_t target_euler,
-        float target_depth,
-        quaternion_t curr_quat,
-        float curr_depth,
-        bool yaw_target){
+void mc_set_sassist(const mc_sassist_target_t target, const quaternion_t curr_quat, const float curr_depth){
+    
 
     // Reset PID controllers when targets change significantlly
-    if(fabsf(pid_last_depth - target_depth) > 0.01){
+    if(fabsf(pid_last_depth - target.target_depth) > 0.01){
         PID_RESET(depth_pid);
     }
     
-    float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
-    pid_last_depth = target_depth;
-    mc_set_ohold(x, y, z, yaw_spd, target_euler, curr_quat, yaw_target);
+    float z = -pid_calculate(&depth_pid, curr_depth - target.target_depth);
+    pid_last_depth = target.target_depth;
+
+    const mc_ohold_target_t ohold_target = {
+        .x = target.x,
+        .y = target.y,
+        .z = z,
+        .yaw_spd = target.yaw_spd,
+        .target_euler = target.target_euler,
+        .use_yaw_pid = target.use_yaw_pid
+    };
+
+    mc_set_ohold(ohold_target, curr_quat);
 }
 
-void mc_set_dhold(float x, float y, float pitch_spd, float roll_spd, float yaw_spd, float target_depth, quaternion_t curr_quat, float curr_depth){
-    if(fabsf(pid_last_depth - target_depth) > 0.01){
-        PID_RESET(depth_pid);
-    }
-    float z = -pid_calculate(&depth_pid, curr_depth - target_depth);
-    pid_last_depth = target_depth;
-    mc_set_global(x, y, z, pitch_spd, roll_spd, yaw_spd, curr_quat);
-}
+void mc_set_ohold(const mc_ohold_target_t target, const quaternion_t curr_quat){
 
-void mc_set_ohold(float x, float y, float z, float yaw_spd,
-        euler_t target_euler,
-        quaternion_t curr_quat,
-        bool yaw_target){
+    // Shorthand names (will be optimized out by compiler)
+    const float x = target.x;
+    const float y = target.y;
+    const float z = target.z;
+    const float yaw_spd = target.yaw_spd;
+    euler_t target_euler = target.target_euler;
+    const bool use_yaw_pid = target.use_yaw_pid;
 
     // Baseline angular motion due to yaw speed (if yaw target not in use)
     float base_xrot = 0.0f;
@@ -742,7 +785,7 @@ void mc_set_ohold(float x, float y, float z, float yaw_spd,
     // -----------------------------------------------------------------------------------------------------------------
     // Handle Open-Loop Yaw control (no yaw PID / yaw target, but instead a yaw speed)
     // -----------------------------------------------------------------------------------------------------------------
-    if(!yaw_target){
+    if(!use_yaw_pid){
         // Get twist part of current quaternion about z axis
         quaternion_t curr_twist;
         quat_twist(&curr_twist, &curr_quat, 0, 0, 1);
@@ -814,12 +857,12 @@ void mc_set_ohold(float x, float y, float z, float yaw_spd,
     do_reset = 
             (
                 // Reset when changing from SASSIST1 to SASSIST2
-                yaw_target != pid_last_yaw_target
+                use_yaw_pid != pid_last_yaw_target
             ) 
             ||
             (
                 // SASSIST2: reset if any target angle is changed
-                yaw_target && 
+                use_yaw_pid && 
                 (fabsf(target_euler.pitch - pid_last_target.pitch) > 1e-2 ||
                 fabsf(target_euler.roll - pid_last_target.roll) > 1e-2 ||
                 fabsf(target_euler.yaw - pid_last_target.yaw) > 1e-2)
@@ -827,7 +870,7 @@ void mc_set_ohold(float x, float y, float z, float yaw_spd,
             ||
             (   
                 // SASSIST1: reset if pitch or roll target angle is changed
-                !yaw_target &&
+                !use_yaw_pid &&
                 (fabsf(target_euler.pitch - pid_last_target.pitch) > 1e-2 ||
                 fabsf(target_euler.roll - pid_last_target.roll) > 1e-2)
             );
@@ -844,7 +887,7 @@ void mc_set_ohold(float x, float y, float z, float yaw_spd,
 
     // Store old targets (used to determine when to reset PIDs)
     pid_last_target = target_euler;
-    pid_last_yaw_target = yaw_target;
+    pid_last_yaw_target = use_yaw_pid;
 
     // Need to add PID outputs to base speeds of vehicle
     // Base speeds came from rotation of yaw speed onto vehicle basis
@@ -892,7 +935,15 @@ void mc_set_ohold(float x, float y, float z, float yaw_spd,
 
 
     // Target motion now relative to the robot's axes
-    mc_set_local(lx, ly, lz, xrot, yrot, zrot);
+    const mc_local_target_t local_target = {
+        .x = lx,
+        .y = ly,
+        .z = lz,
+        .xrot = xrot,
+        .yrot = yrot,
+        .zrot = zrot
+    };
+    mc_set_local(local_target);
 }
 
 

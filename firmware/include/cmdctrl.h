@@ -20,8 +20,30 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <bno055.h>
-#include <ms5837.h>
+#include <sensor/bno055.h>
+#include <sensor/ms5837.h>
+
+
+// Controls whether simulation mode operation
+// When in simulation mode (cmdctrl_sim_hijacked = true)
+//   - IMU and depth sensor continue to be read, but the data is unused
+//   - cmdctrl treats all sensors as connected
+//   - cmdctrl uses cmdctrl_sim_quat and cmdctrl_sim_depth instead of real sensor data
+//   - Motor control calculations (motor_control.c) are all performed (including RAW mode)
+//   - Motor control local mode results are cached in the variables below
+//   - Thruster speed sets are disabled (PWM signals will maintain zero speed signal)
+extern bool cmdctrl_sim_hijacked;
+
+// Data provided by the simulator (SIMDAT command to control board)
+extern quaternion_t cmdctrl_sim_quat;
+extern float cmdctrl_sim_depth;
+
+// Data provided to the simulator (SIMSTAT command from control board)
+extern float cmdctrl_sim_speeds[8];
+// mode is provided too, but tracked in cmdctrl
+// wdog_killed is provided too, but tracked in cmdctrl
+
+
 
 /**
  * Initialize command and control of 
@@ -34,39 +56,10 @@ void cmdctrl_init(void);
 void cmdctrl_handle_message(void);
 
 /**
- * Reapply the last applied speed
- */
-void cmdctrl_apply_saved_speed(void);
-
-/**
- * Call when motor watchdog status changes
+ * Send motor watchdog status message
  * @param motors_enabled True if motors enabled, False if motors killed
  */
-void cmdctrl_mwdog_change(bool motors_enabled);
-
-/**
- * Set bno055 status
- * @param status New status (ready = true; not ready = false)
- */
-void cmdctrl_bno055_status(bool status);
-
-/**
- * Set bno055 data
- * @param data New sensor data
- */
-void cmdctrl_bno055_data(bno055_data data);
-
-/**
- * Set ms5837 status
- * @param status New status (ready = true; not ready = false)
- */
-void cmdctrl_ms5837_status(bool status);
-
-/**
- * Set ms5837 data
- * @param data New sensor data
- */
-void cmdctrl_ms5837_data(ms5837_data data);
+void cmdctrl_send_mwodg_status(bool motors_enabled);
 
 /**
  * Send SIMSTAT message
@@ -78,3 +71,8 @@ void cmdctrl_send_simstat(void);
  * Generally, this is only called internally (but USB disconnect may trigger)
  */
 void cmdctrl_simhijack(bool hijack);
+
+/**
+ * Send heartbeat message
+ */
+void cmdctrl_send_heartbeat(void);

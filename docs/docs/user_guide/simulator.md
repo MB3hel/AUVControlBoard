@@ -1,3 +1,0 @@
-# Using the Simulator
-
-TODO

@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <debug.h>
 
-#if defined(CONTROL_BOARD_V1)
+#ifdef CONTROL_BOARD_V1
 
 extern uint32_t SystemCoreClock;
 
@@ -63,7 +63,10 @@ static inline __attribute__((always_inline)) void init_frameworks(void){
     }
 }
 
-#elif defined(CONTROL_BOARD_V2)
+#endif // CONTROL_BOARD_V1
+
+
+#ifdef CONTROL_BOARD_V2
 
 #include <stm32f4xx.h>
 #include <stm32f4xx_hal.h>
@@ -132,5 +135,9 @@ static inline __attribute__((always_inline)) void init_frameworks(void){
     }
     __HAL_RCC_CLEAR_RESET_FLAGS();
 }
+#endif // CONTROL_BOARD_V2
 
-#endif
+
+#ifdef CONTROL_BOARD_SIM
+static inline void init_frameworks(void){}
+#endif // CONTROL_BOARD_SIM

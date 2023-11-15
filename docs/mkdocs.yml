@@ -18,8 +18,9 @@ nav:
   - Home: index.md
   - User Guide:
     - Preparing a Control Board: user_guide/preparing_board.md
-    - Using Control board: user_guide/general_use.md
-    - Using the Simulator: user_guide/simulator.md
+    - Using Control Board: user_guide/general_use.md
+    - Using the Python Interface: user_guide/pythoniface.md
+    - Using SimCB and Simulator: user_guide/simcb_simulator.md
     - Sensor Calibration: user_guide/calibration.md
     - Communication Protocol: user_guide/comm_protocol.md
     - Messages: user_guide/messages.md
@@ -28,9 +29,11 @@ nav:
     - Version 2: hardware/v2.md
     - Off-Board Sensors: hardware/sensors.md
   - Developers:
-    - Overview: firmware/overview.md
-    - Implementation Details: firmware/details.md
-    - Build and Flash: firmware/build.md
-    - Math: firmware/math.md
-    - Firmware Development: firmware/developing.md
-    - Simulation Support: firmware/simhijack.md
+    - Firmware Overview: devs/overview.md
+    - Firmware Details: devs/details.md
+    - Simulation Support: devs/simulation.md
+    - Build and Flash Firmware: devs/build.md
+    - Build and Run SimCB: devs/buildsimcb.md
+    - Interface Scripts: devs/pythoniface.md
+    - Development Workflows: devs/developing.md
+    - Math: devs/math.md

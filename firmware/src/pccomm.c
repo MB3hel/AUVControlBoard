@@ -17,8 +17,8 @@
  */
 
 #include <pccomm.h>
-#include <tusb.h>
-#include <conversions.h>
+#include <hardware/usb.h>
+#include <util/conversions.h>
 #include <FreeRTOS.h>
 #include <semphr.h>
 
@@ -68,8 +68,10 @@ uint16_t crc16_ccitt_false_partial(uint8_t *data, unsigned int len, uint16_t ini
     return crc;
 }
 
-
 bool pccomm_read_and_parse(void){
+    if(!usb_initialized)
+        return false;
+
     // Messages can be read & parsed over multiple calls
     // Thus, need to keep  track of current state and current message
     static bool parse_started = false;
@@ -77,9 +79,9 @@ bool pccomm_read_and_parse(void){
 
     // Read available bytes one at a time and parse them
     uint8_t byte;
-    while(tud_cdc_available()){        
+    while(usb_avail()){        
         // Read the next available character
-        byte = tud_cdc_read_char();
+        byte = usb_read();
 
         // If message queue is full, discard bytes
         // Allow normal code to run for start byte because it will zero len
@@ -147,15 +149,9 @@ bool pccomm_read_and_parse(void){
     return false;
 }
 
-static inline void pccomm_write_one(uint8_t b){
-    // Write one byte. If it fails, flush and try again
-    if(!tud_cdc_write_char(b)){
-        tud_cdc_write_flush();
-        tud_cdc_write_char(b);
-    }
-}
-
 void pccomm_write(uint8_t *msg, unsigned int len){
+    if(!usb_initialized)
+        return;
 
     // This function could be called from multiple threads
     // Thus, it is necessary to prevent message interleaving
@@ -163,7 +159,7 @@ void pccomm_write(uint8_t *msg, unsigned int len){
     xSemaphoreTake(msg_write_mutex, portMAX_DELAY);
 
     // Write start byte
-    pccomm_write_one(START_BYTE);
+    usb_write(START_BYTE);
     
     // Write message id (big endian). Escape it as needed.
     uint16_t msg_id = curr_msg_id;
@@ -171,17 +167,17 @@ void pccomm_write(uint8_t *msg, unsigned int len){
     uint8_t id_buf[2];
     conversions_int16_to_data(msg_id, id_buf, false);
     if(id_buf[0] == START_BYTE || id_buf[0] == END_BYTE || id_buf[0] == ESCAPE_BYTE)
-        pccomm_write_one(ESCAPE_BYTE);
-    pccomm_write_one(id_buf[0]);
+        usb_write(ESCAPE_BYTE);
+    usb_write(id_buf[0]);
     if(id_buf[1] == START_BYTE || id_buf[1] == END_BYTE || id_buf[1] == ESCAPE_BYTE)
-        pccomm_write_one(ESCAPE_BYTE);
-    pccomm_write_one(id_buf[1]);
+        usb_write(ESCAPE_BYTE);
+    usb_write(id_buf[1]);
 
     // Write each byte of msg (escaping it if necessary)
     for(unsigned int i = 0; i < len; ++i){
         if(msg[i] == START_BYTE || msg[i] == END_BYTE || msg[i] == ESCAPE_BYTE)
-            pccomm_write_one(ESCAPE_BYTE);
-        pccomm_write_one(msg[i]);
+            usb_write(ESCAPE_BYTE);
+        usb_write(msg[i]);
     }
 
     // Calculate CRC and write it. CRC INCLUDES MESSAGE ID BYTES!!!
@@ -191,17 +187,17 @@ void pccomm_write(uint8_t *msg, unsigned int len){
     uint8_t high_byte = (crc >> 8) & 0xFF;
     uint8_t low_byte = crc & 0xFF;
     if(high_byte == START_BYTE || high_byte == END_BYTE || high_byte == ESCAPE_BYTE)
-        pccomm_write_one(ESCAPE_BYTE);
-    pccomm_write_one(high_byte);
+        usb_write(ESCAPE_BYTE);
+    usb_write(high_byte);
     if(low_byte == START_BYTE || low_byte == END_BYTE || low_byte == ESCAPE_BYTE)
-        pccomm_write_one(ESCAPE_BYTE);
-    pccomm_write_one(low_byte);
+        usb_write(ESCAPE_BYTE);
+    usb_write(low_byte);
 
     // Write end byte
-    pccomm_write_one(END_BYTE);
+    usb_write(END_BYTE);
 
     // Write the message now
-    tud_cdc_write_flush();
+    usb_flush();
 
     xSemaphoreGive(msg_write_mutex);
 }

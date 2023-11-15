@@ -31,6 +31,45 @@
             },
             "environment": {},
             "vendor": {}
+        },
+        {
+            "name": "simcb-linux",
+            "displayName": "SimCB Linux",
+            "description": "Simulated Control Board on Linux",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build/simcb-linux",
+            "cacheVariables": {
+                "CBOARD_REV": "simcb-linux"
+            },
+            "environment": {},
+            "vendor": {}
+        },
+        {
+            "name": "simcb-macos",
+            "displayName": "SimCB macOS",
+            "description": "Simulated Control Board on macOS",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build/simcb-macos",
+            "cacheVariables": {
+                "CBOARD_REV": "simcb-macos"
+            },
+            "environment": {},
+            "vendor": {}
+        },
+        {
+            "name": "simcb-win",
+            "displayName": "SimCB Windows",
+            "description": "Simulated Control Board on Windows",
+            "generator": "Visual Studio 17 2022",
+            "architecture": {
+                "value": "x64"
+            },
+            "binaryDir": "${sourceDir}/build/simcb-win",
+            "cacheVariables": {
+                "CBOARD_REV": "simcb-win"
+            },
+            "environment": {},
+            "vendor": {}
         }
     ],
     "buildPresets": [
@@ -81,6 +120,81 @@
             "name": "v2-relwithdebinfo",
             "displayName": "RelWithDebInfo",
             "configurePreset": "v2",
+            "configuration": "RelWithDebInfo"
+        },
+
+        {
+            "name": "simcb-linux-debug",
+            "displayName": "Debug",
+            "configurePreset": "simcb-linux",
+            "configuration": "Debug"
+        },
+        {
+            "name": "simcb-linux-release",
+            "displayName": "Release",
+            "configurePreset": "simcb-linux",
+            "configuration": "Release"
+        },
+        {
+            "name": "simcb-linux-minsizerel",
+            "displayName": "MinSizeRel",
+            "configurePreset": "simcb-linux",
+            "configuration": "MinSizeRel"
+        },
+        {
+            "name": "simcb-linux-relwithdebinfo",
+            "displayName": "RelWithDebInfo",
+            "configurePreset": "simcb-linux",
+            "configuration": "RelWithDebInfo"
+        },
+
+        {
+            "name": "simcb-macos-debug",
+            "displayName": "Debug",
+            "configurePreset": "simcb-macos",
+            "configuration": "Debug"
+        },
+        {
+            "name": "simcb-macos-release",
+            "displayName": "Release",
+            "configurePreset": "simcb-macos",
+            "configuration": "Release"
+        },
+        {
+            "name": "simcb-macos-minsizerel",
+            "displayName": "MinSizeRel",
+            "configurePreset": "simcb-macos",
+            "configuration": "MinSizeRel"
+        },
+        {
+            "name": "simcb-macos-relwithdebinfo",
+            "displayName": "RelWithDebInfo",
+            "configurePreset": "simcb-macos",
+            "configuration": "RelWithDebInfo"
+        },
+
+        {
+            "name": "simcb-win-debug",
+            "displayName": "Debug",
+            "configurePreset": "simcb-win",
+            "configuration": "Debug"
+        },
+        {
+            "name": "simcb-win-release",
+            "displayName": "Release",
+            "configurePreset": "simcb-win",
+            "configuration": "Release"
+        },
+        {
+            "name": "simcb-win-minsizerel",
+            "displayName": "MinSizeRel",
+            "configurePreset": "simcb-win",
+            "configuration": "MinSizeRel"
+        },
+        {
+            "name": "simcb-win-relwithdebinfo",
+            "displayName": "RelWithDebInfo",
+            "configurePreset": "simcb-win",
             "configuration": "RelWithDebInfo"
         }
     ]

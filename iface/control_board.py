@@ -37,7 +37,7 @@ from typing import List, Dict, Tuple
 
 # Version of interface scripts (automatically updated by package.sh)
 # DO NOT MODIFY MANUALLY!!!
-VER_STR = "1.0.3"
+VER_STR = "1.1.0-b1"
 
 
 START_BYTE = b'\xfd'
@@ -68,7 +68,17 @@ class ControlBoard:
         P6 = 6
         P7 = 7
     
-    class BNO055Data:
+    class IMUSensors(IntEnum):
+        NONE = 0
+        SIM = 1
+        BNO055 = 2
+    
+    class DepthSensors(IntEnum):
+        NONE = 0
+        SIM = 1
+        MS5837 = 2
+
+    class IMUData:
         def __init__(self):
             self.quat_w: float = 0.0
             self.quat_x: float = 0.0
@@ -81,7 +91,7 @@ class ControlBoard:
             self.accum_roll: float = 0.0
             self.accum_yaw: float = 0.0
     
-    class MS5837Data:
+    class DepthData:
         def __init__(self):
             self.depth: float = 0.0
             self.pressure: float = 0.0
@@ -138,8 +148,8 @@ class ControlBoard:
     #  @param debug Debug messages for interface code
     #  @param suppress_dbg_msg Suppress debug messages from control board itself
     def __init__(self, port: str, debug = False, suppress_dbg_msg = False):
-        self.__bno055_data = self.BNO055Data()
-        self.__ms5837_data = self.MS5837Data()
+        self.__imu_data = self.IMUData()
+        self.__depth_data = self.DepthData()
         self.__last_wdog_feed = 0
         self.__read_thread = None
         self.__id_mutex = threading.Lock()
@@ -244,14 +254,12 @@ class ControlBoard:
                     print("Motors (re)enabled.")
                 else:
                     print("Watchdog killed motors.")
-        elif msg.startswith(b'BNO055D'):
-            # BNO055 data status message
+        elif msg.startswith(b'IMUD'):
             if len(msg) == 35:
-                self.__bno055_parse(msg[7:])
-        elif msg.startswith(b'MS5837D'):
-            # MS5837 data status message
-            if len(msg) == 19:
-                self.__ms5837_parse(msg[7:])
+                self.__imu_parse(msg[4:])
+        elif msg.startswith(b'DEPTHD'):
+            if len(msg) == 18:
+                self.__depth_parse(msg[6:])
         elif msg.startswith(b'DEBUG') and self.__cboard_debug:
             print("CBOARD_DEBUG: {}".format(msg[5:].decode('ascii')))
         elif msg.startswith(b'DBGDAT') and self.__cboard_debug:
@@ -488,6 +496,22 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
+    ## Set thruster PWM parameters (necessary before setting speeds will work)
+    #  @param pwm_period Period for pulse in us (defines update rate / PWM frequency)
+    #  @param pwm_zero Zero pulse width (us)
+    #  @param pwm_range Pulse range above / below zero (us)
+    def set_tpwm(self, pwm_period: int, pwm_zero: int, pwm_range: int, timeout = -1.0) -> AckError:
+        # Construct message
+        data = bytearray(b'TPWM')
+        data.extend(struct.pack("<H", pwm_period))
+        data.extend(struct.pack("<H", pwm_zero))
+        data.extend(struct.pack("<H", pwm_range))
+
+        # Send the message and wait for acknowledgment
+        msg_id = self.__write_msg(bytes(data), True)
+        ack, _ = self.__wait_for_ack(msg_id, timeout)
+        return ack
+
     ## Set thruster inversions (impacts all control modes)
     #  @param inversions List of 8 booleans indicating if thruster is inverted. 
     #                    True = inverted. False = not inverted.
@@ -558,20 +582,20 @@ class ControlBoard:
 
 
     ## Get sensor status (all sensors)
-    #  @return Tuple[AckError, bool, bool]  error, bno055_ready, ms5837_ready
-    def get_sensor_status(self, timeout: float = -1.0) -> Tuple[AckError, bool, bool]:
+    #  @return Tuple[AckError, IMUSensors, DepthSensors]  error, imu_which, depth_which
+    def get_sensor_status(self, timeout: float = -1.0) -> Tuple[AckError, IMUSensors, DepthSensors]:
         # Send the message and wait for acknowledgement
         msg_id = self.__write_msg(b'SSTAT', True)
         ack, res = self.__wait_for_ack(msg_id, timeout)
         if ack != self.AckError.NONE:
             return ack, False, False
-        bno055_ready = (res[0] & 0b00000001) != 0
-        ms5837_ready = (res[0] & 0b00000010) != 0
-        return ack, bno055_ready, ms5837_ready
+        imu_which = res[0]
+        depth_which = res[1]
+        return ack, ControlBoard.IMUSensors(imu_which), ControlBoard.DepthSensors(depth_which)
 
-    ## Parse byte data from BNO055 readings into the data class object
-    def __bno055_parse(self, data: bytes):
-        new_data = self.BNO055Data()
+    ## Parse byte data from IMU readings into the data class object
+    def __imu_parse(self, data: bytes):
+        new_data = self.IMUData()
         
         # Parse data
         new_data.quat_w = struct.unpack("<f", data[0:4])[0]
@@ -603,36 +627,36 @@ class ControlBoard:
             yaw_denom = 1.0 - 2.0 * (new_data.quat_x*new_data.quat_x + new_data.quat_z*new_data.quat_z)
             new_data.yaw = 180.0 * math.atan2(yaw_numer, yaw_denom) / math.pi
 
-        self.__bno055_data = new_data
+        self.__imu_data = new_data
 
-    ## Read current BNO055 data. This is a single read. Does not start periodic reads
-    #  Use get_bno055_data to get the last read data (either from this or a periodic read)
+    ## Read current IMU data. This is a single read. Does not start periodic reads
+    #  Use get_imu_data to get the last read data (either from this or a periodic read)
     #  @return AckError
-    def read_bno055_once(self, timeout: float = -1.0) -> AckError:
-        msg_id = self.__write_msg(b'BNO055R', True)
+    def read_imu_once(self, timeout: float = -1.0) -> AckError:
+        msg_id = self.__write_msg(b'IMUR', True)
         ack, res = self.__wait_for_ack(msg_id, timeout)
         if ack != self.AckError.NONE:
             return ack
-        self.__bno055_parse(res)
+        self.__imu_parse(res)
         return ack
 
-    ## Enable / disable periodic status messages with BNO055 data. The periodically
-    #  received data will be stored and is retrievable with get_bno055_data
+    ## Enable / disable periodic status messages with IMU data. The periodically
+    #  received data will be stored and is retrievable with get_imu_data
     #  @param enable True to enable periodic reads. False to disable.
     #  @return AckError indicating success of processing this command.
-    def read_bno055_periodic(self, enable: bool, timeout: float = -1.0) -> AckError:
+    def read_imu_periodic(self, enable: bool, timeout: float = -1.0) -> AckError:
         msg = bytearray()
-        msg.extend(b'BNO055P')
+        msg.extend(b'IMUP')
         msg.append(1 if enable else 0)
         msg_id = self.__write_msg(bytes(msg), True)
         ack, res = self.__wait_for_ack(msg_id, timeout)
         return ack
 
-    ## Read RAW data from BNO055
+    ## Read RAW data from IMU
     #  Typically only useful for debug use
     #  @return AckError, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z
-    def read_bno055_raw(self, timeout: float = -1.0) -> Tuple[AckError, float, float, float, float, float, float]:
-        msg_id = self.__write_msg(b'BNO055W', True)
+    def read_imu_raw(self, timeout: float = -1.0) -> Tuple[AckError, float, float, float, float, float, float]:
+        msg_id = self.__write_msg(b'IMUW', True)
         ack, res = self.__wait_for_ack(msg_id, timeout)
         if ack != self.AckError.NONE:
             return ack, 0, 0, 0, 0, 0, 0
@@ -644,52 +668,52 @@ class ControlBoard:
         gyro_z = struct.unpack_from("<f", res, 20)[0]
         return ack, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z
 
-    ## Get current BNO055 data. Current data is latest of either periodically received
+    ## Get current IMU data. Current data is latest of either periodically received
     #  status messages or data received from a read_bno055_once call.
-    #  @return BNO055Data object containing latest data
-    def get_bno055_data(self) -> BNO055Data:
-        return copy.copy(self.__bno055_data)
+    #  @return IMUData object containing latest data
+    def get_imu_data(self) -> IMUData:
+        return copy.copy(self.__imu_data)
 
     ## Parse byte data from BNO055 readings into the data class object
-    def __ms5837_parse(self, data: bytes):
-        new_data = self.MS5837Data()
+    def __depth_parse(self, data: bytes):
+        new_data = self.DepthData()
         new_data.depth = struct.unpack("<f", data[0:4])[0]
         new_data.pressure = struct.unpack("<f", data[4:8])[0]
         new_data.temperature = struct.unpack("<f", data[8:12])[0]
-        self.__ms5837_data = new_data
+        self.__depth_data = new_data
 
-    ## Read current MS5837 data. This is a single read. Does not start periodic reads
-    #  Use get_ms5837_data to get the last read data (either from this or a periodic read)
+    ## Read current depth data. This is a single read. Does not start periodic reads
+    #  Use get_depth_data to get the last read data (either from this or a periodic read)
     #  @return AckError
-    def read_ms5837_once(self, timeout: float = -1.0) -> AckError:
-        msg_id = self.__write_msg(b'MS5837R', True)
+    def read_depth_once(self, timeout: float = -1.0) -> AckError:
+        msg_id = self.__write_msg(b'DEPTHR', True)
         ack, res = self.__wait_for_ack(msg_id, timeout)
         if ack != self.AckError.NONE:
             return ack
-        self.__ms5837_parse(res)
+        self.__depth_parse(res)
         return ack
 
-    ## Enable / disable periodic status messages with MS5837 data. The periodically
-    #  received data will be stored and is retrievable with get_ms5837_data
+    ## Enable / disable periodic status messages with depth data. The periodically
+    #  received data will be stored and is retrievable with get_depth_data
     #  @param enable True to enable periodic reads. False to disable.
     #  @return AckError indicating success of processing this command.
-    def read_ms5837_periodic(self, enable: bool, timeout: float = -1.0) -> AckError:
+    def read_depth_periodic(self, enable: bool, timeout: float = -1.0) -> AckError:
         msg = bytearray()
-        msg.extend(b'MS5837P')
+        msg.extend(b'DEPTHP')
         msg.append(1 if enable else 0)
         msg_id = self.__write_msg(bytes(msg), True)
         ack, res = self.__wait_for_ack(msg_id, timeout)
         return ack
 
-    ## Get current MS5837 data. Current data is latest of either periodically received
-    #  status messages or data received from a read_ms5837_once call.
-    #  @return MS5837Data object containing latest data
-    def get_ms5837_data(self) -> MS5837Data:
-        return copy.copy(self.__ms5837_data)
+    ## Get current depth data. Current data is latest of either periodically received
+    #  status messages or data received from a read_depth_once call.
+    #  @return DepthData object containing latest data
+    def get_depth_data(self) -> DepthData:
+        return copy.copy(self.__depth_data)
 
 
 
-    ## Tune STABILITY_ASSIST xrot PID
+    ## Tune xrot PID
     #  @param kp Proportional gain
     #  @param ki Integral gain
     #  @param kd Derivative gain
@@ -702,7 +726,7 @@ class ControlBoard:
         limit = abs(limit)
         if limit > 1.0:
             limit = 1.0
-        msg.extend(b'SASSISTTNX')
+        msg.extend(b'PIDTNX')
         msg.extend(struct.pack("<f", kp))
         msg.extend(struct.pack("<f", ki))
         msg.extend(struct.pack("<f", kd))
@@ -712,7 +736,7 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
-    ## Tune STABILITY_ASSIST yrot PID
+    ## Tune yrot PID
     #  @param kp Proportional gain
     #  @param ki Integral gain
     #  @param kd Derivative gain
@@ -725,7 +749,7 @@ class ControlBoard:
         limit = abs(limit)
         if limit > 1.0:
             limit = 1.0
-        msg.extend(b'SASSISTTNY')
+        msg.extend(b'PIDTNY')
         msg.extend(struct.pack("<f", kp))
         msg.extend(struct.pack("<f", ki))
         msg.extend(struct.pack("<f", kd))
@@ -735,7 +759,7 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
-    ## Tune STABILITY_ASSIST zrot PID
+    ## Tune zrot PID
     #  @param kp Proportional gain
     #  @param ki Integral gain
     #  @param kd Derivative gain
@@ -748,7 +772,7 @@ class ControlBoard:
         limit = abs(limit)
         if limit > 1.0:
             limit = 1.0
-        msg.extend(b'SASSISTTNZ')
+        msg.extend(b'PIDTNZ')
         msg.extend(struct.pack("<f", kp))
         msg.extend(struct.pack("<f", ki))
         msg.extend(struct.pack("<f", kd))
@@ -758,7 +782,7 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
-    ## Tune STABILITY_ASSIST depth PID
+    ## Tune depth PID
     #  @param kp Proportional gain
     #  @param ki Integral gain
     #  @param kd Derivative gain
@@ -771,7 +795,7 @@ class ControlBoard:
         limit = abs(limit)
         if limit > 1.0:
             limit = 1.0
-        msg.extend(b'SASSISTTND')
+        msg.extend(b'PIDTND')
         msg.extend(struct.pack("<f", kp))
         msg.extend(struct.pack("<f", ki))
         msg.extend(struct.pack("<f", kd))
@@ -1213,13 +1237,19 @@ class ControlBoard:
         ack, _ = self.__wait_for_ack(msg_id, timeout)
         return ack
 
-# Used to interface with simulator. Do not instantiate directly
-# Use the Simulator class instead
+# Used to interface with SimCB binaries (or simulator's cboard port)
 class SimCboard(ControlBoard):
-    def __init__(self, s: socket.socket, debug = False, suppress_dbg_msg = False):
-        self.__socket = s
+    def __init__(self, port: int, debug = False, suppress_dbg_msg = False):
+        self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.__socket.connect(("127.0.0.1", port))
         super().__init__("", debug, suppress_dbg_msg)
     
+    def __del__(self):
+        try:
+            self.__socket.close()
+        except:
+            pass
+
     ## Write one byte via tcp
     #  @param b Single byte to write
     def _write_one(self, b: bytes):
@@ -1240,30 +1270,15 @@ class SimCboard(ControlBoard):
 
 # Used to interface with GodotAUVSim
 class Simulator:
-    def __init__(self, cb_debug: bool = False, cb_suppress_debug_msg = False):
+    def __init__(self, port: int):
         self.__cmd_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.__cboard_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.__cmd_client.connect(("127.0.0.1", port))
 
-        # Connect
-        self.__cmd_client.connect(("127.0.0.1", 5011))
-        self.__cboard_client.connect(("127.0.0.1", 5012))
-
-        # Instantiate control board
-        self.__cb = SimCboard(self.__cboard_client, cb_debug, cb_suppress_debug_msg)
-    
     def __del__(self):
         try:
             self.__cmd_client.close()
         except:
             pass
-        try:
-            self.__cboard_client.close()
-        except:
-            pass
-
-    @property
-    def control_board(self) -> ControlBoard:
-        return self.__cb
     
     def __read_until_newline(self, s: socket.socket) -> bytes:
         b = bytearray()

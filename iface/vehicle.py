@@ -28,7 +28,7 @@
 from collections import OrderedDict
 from control_board import ControlBoard
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Any
 import time
 
 # Collection of all vehicles
@@ -55,9 +55,17 @@ def set_default_vehicle(name: str):
 
 class Vehicle(ABC):
     def configure(self, cb: ControlBoard) -> Tuple[ControlBoard.AckError, str]:
+        ack, imu, depth = cb.get_sensor_status()
+        if ack != ControlBoard.AckError.NONE:
+            return ack, "get_sensor_status"
+
         ack = cb.set_motor_matrix(self.motor_matrix)
         if ack != ControlBoard.AckError.NONE:
             return ack, "set_motor_matrix"
+
+        ack = cb.set_tpwm(*self.thruster_pwm_config)
+        if ack != ControlBoard.AckError.NONE:
+            return ack, "set_tpwm"
 
         ack = cb.set_tinv(self.tinv)
         if ack != ControlBoard.AckError.NONE:
@@ -67,9 +75,11 @@ class Vehicle(ABC):
         if ack != ControlBoard.AckError.NONE:
             return ack, "set_reldof"
         
-        ack = cb.set_bno055_axis(self.bno055_axis_config)
-        if ack != ControlBoard.AckError.NONE:
-            return ack, "set_bno055_axis"
+        imu, imu_cfg = self.imu_config
+        if imu == ControlBoard.IMUSensors.BNO055:
+            ack = cb.set_bno055_axis(imu_cfg)
+            if ack != ControlBoard.AckError.NONE:
+                return ack, "set_bno055_axis"
         
         ack = cb.tune_pid_xrot(*self.xrot_pid_tuning)
         if ack != ControlBoard.AckError.NONE:
@@ -96,6 +106,11 @@ class Vehicle(ABC):
 
     @property
     @abstractmethod
+    def thruster_pwm_config(self) -> Tuple[int, int, int]:
+        pass
+
+    @property
+    @abstractmethod
     def tinv(self) -> List[bool]:
         pass
 
@@ -106,7 +121,7 @@ class Vehicle(ABC):
 
     @property
     @abstractmethod
-    def bno055_axis_config(self) -> ControlBoard.BNO055Axis:
+    def imu_config(self) -> Tuple[ControlBoard.IMUSensors, Any]:
         pass
 
     @property
@@ -156,6 +171,11 @@ class SW8(Vehicle):
         return mat
 
     @property
+    def thruster_pwm_config(self) -> Tuple[int, int, int]:
+        # Settings for BlueRobotics Basic ESCs
+        return 2500, 1500, 400
+
+    @property
     def tinv(self) -> List[bool]:
         tinv = [
             True,           # Thruster 1
@@ -182,8 +202,8 @@ class SW8(Vehicle):
         return reldof
 
     @property
-    def bno055_axis_config(self) -> ControlBoard.BNO055Axis:
-        return ControlBoard.BNO055Axis.P6
+    def imu_config(self) -> Tuple[ControlBoard.IMUSensors, Any]:
+        return ControlBoard.IMUSensors.BNO055, ControlBoard.BNO055Axis.P6
 
     @property
     def xrot_pid_tuning(self) -> Tuple[float, float, float, float, bool]:
