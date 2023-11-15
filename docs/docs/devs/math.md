@@ -552,10 +552,23 @@ By further reducing $l$ it is possible to allow for larger delays or more lost s
 
 ## Other Derivations
 
-TODO: Euler / Quaternion conversion
+###  Euler / Quaternion Conversion
 
-TODO: Gravity vector calculation
+TODO: 
 
-TODO: Angle between vectors
+### Gravity Vector from Quaternion
 
-TODO: Min diff quat between two quats
+TODO
+
+### Gravity Vector for Pitch / Roll Compensation
+
+TODO
+
+### Angle Between Two Vectors
+
+TODO
+
+
+### Minimum Difference Between Two Quaternions
+
+TODO
