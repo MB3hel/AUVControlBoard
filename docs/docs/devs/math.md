@@ -502,7 +502,7 @@ Then $w = w + w_{yaw}$. This is then downscaled as described for OHOLD2.
 
 ### Stability Assist (SASSIST) Mode
 
-Stability assist mode (SASSIST) is simply OHOLD mode, with the addition of closed-loop control for vehicle depth. Thus, instead of providing a `z` speed (for motion along the gz-axis), a PID controller is used to acheive the target depth.
+Stability assist mode (SASSIST) is simply OHOLD mode, with the addition of closed-loop control for vehicle depth. Thus, instead of providing a `z` speed (for motion along the gz-axis), a PID controller is used to achieve the target depth.
 
 Inputs to this mode are the same as OHOLD mode, however instead of `z`, `d_t` is provided.
 
@@ -513,9 +513,27 @@ The PID used to maintain vehicle depth is referred to as the Depth PID. This PID
 All other inputs from SASSIST are passed through to OHOLD mode as provided. Thus, there are two variants of SASSIST mode (variant 1 and variant 2) built ontop of the corresponding variants of OHOLD mode.
 
 
-## Sensor Processing
+## Accumulated Euler Angles
 
-TODO: Euler angle accumulation
+***WARNING:*** *Make sure you understand what these are and are* ***not*** *before using them. These are* ***not*** *normal euler angles. They are intended to allow high level software using the control board to a measurement of orientation about an individual axis that accumulates similar to a gyroscope. Generally, use of these is discouraged. They are provided as a "compatibility bridge" for code developed for a gyroscope system.*
+
+***WARNING:*** *Accumulated euler angles are* ***not*** *the current orientation of the vehicle as an euler angle!*
+
+The euler and quaternion values provided by the IMU are not directly useful for tracking multiple rotations of the vehicle. Unlike simply integrating gyroscope data, euler angles (pitch, roll, yaw) and quaternions do not track the number of times the vehicle has rotated about a particular axis. They only track the vehicle's orientation in space.
+
+While integrating raw gyro data would provide an accumulating measurement, such a solution would be rotations about the robot's axes. Generally, it is more useful to track the number of times the vehicle has "pitched", "rolled" or "yawed".
+
+Note that an accumulated gyro z angle of 500 does not necessarily mean the robot has yawed 500 degrees; the robot could have been oriented at a pitch of 90. Instead, we want to measure how many degrees the vehicle has rotated through.
+
+This can be done by tracking changes between subsequent quaternions from the IMU. The idea is to compare each quaternion read from the IMU with the previous quaternion received from the IMU (note that quaternions of all zeros are ignored to avoid issues with invalid IMU data samples after first configuring the sensor).
+
+For each quaternion read from the IMU:
+
+- Calculate the shortest set of rotations from the previous to the current quaternion
+- Convert the shortest angle to euler angles
+- Add the pitch, roll, and yaw from the shortest euler angles to accumulated pitch, roll, and yaw variables
+- Note that if the IMU axis config changes, the accumulated data should be zeroed and the previously read quaternion discarded.
+
 
 
 ## Other Derivations
