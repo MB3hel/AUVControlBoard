@@ -72,7 +72,7 @@ static void calc_accum_angles(void){
     }
 }
 
-static void reset_data(void){
+void imu_reset_data(void){
     xSemaphoreTake(imu_mutex, portMAX_DELAY);
     imu_data.quat.w = 0;
     imu_data.quat.x = 0;
@@ -124,7 +124,7 @@ static void imu_configure_if_needed(void){
         read_failures = 0;
 
         // Reset IMU data whenever IMU changes (prevents angle accumulation issues)
-        reset_data();
+        imu_reset_data();
     }
 
     // If no longer sim hijacked, cannot use sim IMU
@@ -133,7 +133,7 @@ static void imu_configure_if_needed(void){
         read_failures = 0;
         
         // Reset IMU data whenever IMU changes (prevents angle accumulation issues)
-        reset_data();
+        imu_reset_data();
     }
 
     // If too many read failures, assume IMU is no longer connected
@@ -142,7 +142,7 @@ static void imu_configure_if_needed(void){
         read_failures = 0;
 
         // Reset IMU data whenever IMU changes (prevents angle accumulation issues)
-        reset_data();
+        imu_reset_data();
     }
 
     // Already an active IMU (no need to configure one)

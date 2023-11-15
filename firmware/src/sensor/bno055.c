@@ -523,6 +523,9 @@ static inline bool bno055_set_axis_internal(uint8_t mode){
         break;
     }
 
+    // Accumulated angles are invalid b/c definition of axes has changed
+    imu_reset_data();
+
     // Only actually apply this now if the BNO055 is the active IMU
     if(imu_get_sensor() != IMU_BNO055)
         return false;
