@@ -67,6 +67,12 @@ bool imu_read(void);
 imu_data_t imu_get_data(void);
 
 /**
+ * Reset old IMU data (really only matters for accumulated angles)
+ * Should be called by IMU drivers when the sensor's definition of axes changes.
+ */
+void imu_reset_data(void);
+
+/**
  * Get the currently active IMU sensor. Thread safe.
  * @return uint8_t ID of the active sensor (IMU_xyz)
  */
