@@ -37,7 +37,7 @@ from typing import List, Dict, Tuple
 
 # Version of interface scripts (automatically updated by package.sh)
 # DO NOT MODIFY MANUALLY!!!
-VER_STR = "1.1.0-b0"
+VER_STR = "1.1.0-b1"
 
 
 START_BYTE = b'\xfd'
