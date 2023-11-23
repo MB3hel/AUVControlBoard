@@ -552,9 +552,101 @@ By further reducing $l$ it is possible to allow for larger delays or more lost s
 
 ## Other Derivations
 
-###  Euler / Quaternion Conversion
+###  Euler to Quaternion Conversion
 
-TODO: 
+The euler angle convention used for the control board is an intrinsic set `z-x'-y''` (rotate about z, then about new x, then about new y to compose an angle). Using the definitions of front/right/top for this coordinate system, this means that roll is about y, pitch is about x, and yaw is  about z.
+
+A rotation quaternion, $Q$, can be composed using three rotations, each being one of the rotations used to construct the euler angle representation (in order).
+
+$Q = Q_z Q_x Q_y$
+
+Quaternion multiplication is associative.
+
+Recall that right-multiplied quaternions are applied in the vehicle frame during composition. Thus, when viewed left to right: 
+
+- First, apply $Q_z$ in vehicle frame (also equal to world frame since this is the first rotation)
+- Then, apply $Q_x$ in the vehicle frame
+- Finally, apply $Q_y$ in the vehicle frame
+
+However, recall that left-multiplied quaternions are applied in the world frame during composition. Thus, when viewed right to left
+
+- First, apply $Q_y$ in the world frame
+- Then, apply $Q_x$ in the world frame
+- Finally, apply $Q_z$ in the world frame
+
+In other words, the following are equivalent
+
+- Yaw about `z`, then pitch about `x'`, then roll about `y''`
+- Roll about `y`, then pitch about `x`, the yaw about `z`
+
+These use the **same pitch, roll, and yaw angles**, but the latter applies them about **world axes**, which have known and trivial direction vectors. Thus, each of pitch, roll, and yaw are a rotation about a known axis (x, y, or z respectively). Converting these from axis-angle from, the quaternions are represented as follows
+
+$Q_y = \left\{ cos(\frac{roll}{2}), sin(\frac{roll}{2}) \begin{pmatrix} 0 \\ 1 \\ 0 \end{pmatrix} \right\}$
+
+$Q_x = \left\{ cos(\frac{pitch}{2}), sin(\frac{pitch}{2}) \begin{pmatrix} 1 \\ 0 \\ 0 \end{pmatrix} \right\}$
+
+$Q_z = \left\{ cos(\frac{yaw}{2}), sin(\frac{yaw}{2}) \begin{pmatrix} 0 \\ 0 \\ 1 \end{pmatrix} \right\}$
+
+By multiplying these, Q can be obtained. This is relatively simple to do because each of the vectors defining the quaternion is a trivial vector (this is because of using world axes!)
+
+$Q = \left\{w, \begin{pmatrix}x \\ y \\ z\end{pmatrix}\right\} = Q_z Q_x Q_y$
+
+let $cp = cos(\frac{pitch}{2})$, $sp = sin(\frac{pitch}{2})$
+
+let $cr = cos(\frac{roll}{2})$, $sr = sin(\frac{roll}{2})$
+
+let $cy = cos(\frac{yaw}{2})$, $sr = sin(\frac{yaw}{2})$
+
+$w = cy \cdot cp \cdot cr - sy \cdot sp \cdot sr$
+
+$x = cy \cdot sp \cdot cr - sy \cdot cp \cdot sr$
+
+$y = sy \cdot sp \cdot cr + cy \cdot cp \cdot sr$
+
+$z = sy \cdot cp \cdot cr + cy \cdot sp \cdot sr$
+
+This provides a set of equations which can be used to convert from an euler angle representation to a quaternion.
+
+### Quaternion to Euler Conversion
+
+Converting from quaternion to euler uses the rotation matrix representation as a go-between.
+
+For the intrinsic set of euler angles `z-x'-y''`, a rotation matrix can be composed as follows (recall that right multiply applies about vehicle axis).
+
+$R = R_z(yaw) R_x(pitch) R_y(roll)$
+
+Similar to the quaternion case described above, note that matrix multiplication is associative. Thus, this can instead be interpreted as rotations about world axes in the opposite order. Thus, each of $R_x$, $R_y$, and $R_z$ are rotations about world x, y, and z axes. Such matrices have known forms. When  multiplied out, the following representation of R is obtained.
+
+let $cp = cos(pitch)$, $sp = sin(pitch)$
+
+let $cr = cos(roll)$, $sr = sin(roll)$
+
+let $cy = cos(yaw)$, $sy = sin(yaw)$
+
+
+$R = \begin{pmatrix}
+    cy \cdot cr - sr \cdot sy \cdot sp & -sy \cdot cp & cy \cdot sr + sy \cdot sp \cdot cr \\
+    sy \cdot cr + sr \cdot sp \cdot cy & cy \cdot cp & sy \cdot sr - cr \cdot sp \cdot cy \\
+    -cp \cdot sr & sp & cp \cdot cr
+\end{pmatrix}$
+
+Using entries of this matrix, the following relations can be constructed
+
+$R_{32} = sin(pitch) \rightarrow pitch = sin^{-1}(R_{32})$
+
+$\frac{R_{31}}{R_{33}} = \frac{-sin(roll)cos(pitch)}{cos(roll)cos(pitch)} = tan(roll) \rightarrow roll = tan^{-1}(\frac{-R_{31}}{R_{33}})$
+
+$\frac{R_{12}}{R_{22}} = \frac{sin(yaw)cos(pitch)}{cos(yaw)cos(pitch)} = tan(yaw) \rightarrow yaw = tan^{-1}(\frac{R_{12}}{R_{22}})$
+
+A quaternion can also be converted to a rotation matrix with a known form. Using cells from this quaternion-backed rotation matrix yields the following relations
+
+$pitch = sin^{-1}(2(yz+wx))$
+
+$roll = tan^{-1}(\frac{2(wy-xz)}{1-2(x^2+y^2)})$
+
+$yaw = tan^{-1}(\frac{2(xy-wz)}{1-2(x^2 + z^2)})$
+
+*Note that arctangent should be implemented in code using the quadrant aware `atan2` to account for quadrants properly and avoid divide by zero issues.*
 
 ### Gravity Vector from Quaternion
 
