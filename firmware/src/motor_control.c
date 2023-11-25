@@ -609,7 +609,21 @@ void mc_set_local(const mc_local_target_t target){
     matrix_mul(&speed_vec, &dof_matrix, &target_mat);
 
     // Scale motor speeds down as needed
+    // Note: If "bad" values get passed into mc_set_local (eg nan) due to some math or user input
+    //       error / bug, then this may become an infinite loop and deadlock the device
+    //       To avoid this, the max number of iterations is limited.
+    //       This should be done after no more than 8 iterations (scaling down each thruster individually if no overlap)
+    //       (actually 6, but 8 is close enough; 6 because only 6DoFs so if 8 thrusters at least 2 overlap)
+    //       If this loop exceeds 8 iterations, then an input was invalid. Thus, speed should not be passed
+    //       to raw mode.
+    //       This iteration counter break out of loop is not intended to ever be used. Values should be checked
+    //       before passing to this function ideally, but a deadlock bug is a severe issue. Thus, make sure it
+    //       can't be triggered by other (probably more minor) bugs.
+    unsigned int iteration_count = 0;
     while(true){
+        iteration_count++;
+        if(iteration_count == 9)
+            break;
         size_t idxrow, idxcol;
         float mval;
         matrix_absmax(&mval, &idxrow, &idxcol, &speed_vec);
@@ -624,7 +638,9 @@ void mc_set_local(const mc_local_target_t target){
                 matrix_set_item(&speed_vec, i, 0, cval);
             }
         }
-    }    
+    }
+    if(iteration_count == 9)
+        return;
 
     // Speed array already contains motor speeds in order
     // Because dof matrix rows are in order
