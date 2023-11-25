@@ -86,10 +86,28 @@
 
 
 // Restrict to range -1.0 to 1.0
-#define LIMIT(v) if(v > 1.0f) v = 1.0f; if (v < -1.0f) v = -1.0f; if(isnanf(v)) v = 0.0f;
+#define LIMIT(v) if(v > 1.0f) v = 1.0f; \
+    if (v < -1.0f) v = -1.0f;     \
+    switch(fpclassify(v)){  \
+    case FP_INFINITE:   \
+        v = 0;  \
+        break;  \
+    case FP_NAN:    \
+        v = 0;  \
+        break;  \
+    }
 
 // Restrict range to 0.0 to 1.0
-#define LIMIT_POS(v) if(v > 1.0f) v = 1.0f; if (v < 0.0f) v = 0.0f; if(isnanf(v)) v = 0.0f;
+#define LIMIT_POS(v) if(v > 1.0f) v = 1.0f; \
+    if (v < 0.0f) v = 0.0f; \
+    switch(fpclassify(v)){  \
+    case FP_INFINITE:   \
+        v = 0;  \
+        break;  \
+    case FP_NAN:    \
+        v = 0;  \
+        break;  \
+    }
 
 // Get minimum of two values
 #define MIN(a, b)    (((a) < (b)) ? (a) : (b))
