@@ -647,20 +647,3 @@ $roll = tan^{-1}(\frac{2(wy-xz)}{1-2(x^2+y^2)})$
 $yaw = tan^{-1}(\frac{2(xy-wz)}{1-2(x^2 + z^2)})$
 
 *Note that arctangent should be implemented in code using the quadrant aware `atan2` to account for quadrants properly and avoid divide by zero issues.*
-
-### Gravity Vector from Quaternion
-
-TODO
-
-### Gravity Vector for Pitch / Roll Compensation
-
-TODO
-
-### Angle Between Two Vectors
-
-TODO
-
-
-### Minimum Difference Between Two Quaternions
-
-TODO
