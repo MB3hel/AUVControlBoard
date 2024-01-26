@@ -502,7 +502,7 @@ Then $w = w + w_{yaw}$. This is then downscaled as described for OHOLD2.
 
 ### Stability Assist (SASSIST) Mode
 
-Stability assist mode (SASSIST) is simply OHOLD mode, with the addition of closed-loop control for vehicle depth. Thus, instead of providing a `z` speed (for motion along the gz-axis), a PID controller is used to acheive the target depth.
+Stability assist mode (SASSIST) is simply OHOLD mode, with the addition of closed-loop control for vehicle depth. Thus, instead of providing a `z` speed (for motion along the gz-axis), a PID controller is used to achieve the target depth.
 
 Inputs to this mode are the same as OHOLD mode, however instead of `z`, `d_t` is provided.
 
@@ -513,17 +513,137 @@ The PID used to maintain vehicle depth is referred to as the Depth PID. This PID
 All other inputs from SASSIST are passed through to OHOLD mode as provided. Thus, there are two variants of SASSIST mode (variant 1 and variant 2) built ontop of the corresponding variants of OHOLD mode.
 
 
-## Sensor Processing
+## Accumulated Euler Angles
 
-TODO: Euler angle accumulation
+***WARNING:*** *Make sure you understand what these are and are* ***not*** *before using them. These are* ***not*** *normal euler angles. They are intended to allow high level software using the control board to a measurement of orientation about an individual axis that accumulates similar to a gyroscope. Generally, use of these is discouraged. They are provided as a "compatibility bridge" for code developed for a gyroscope system.*
 
+***WARNING:*** *Accumulated euler angles are* ***not*** *the current orientation of the vehicle as an euler angle!*
+
+The euler and quaternion values provided by the IMU are not directly useful for tracking multiple rotations of the vehicle. Unlike simply integrating gyroscope data, euler angles (pitch, roll, yaw) and quaternions do not track the number of times the vehicle has rotated about a particular axis. They only track the vehicle's orientation in space.
+
+While integrating raw gyro data would provide an accumulating measurement, such a solution would be rotations about the robot's axes. Generally, it is more useful to track the number of times the vehicle has "pitched", "rolled" or "yawed".
+
+Note that an accumulated gyro z angle of 500 does not necessarily mean the robot has yawed 500 degrees; the robot could have been oriented at a pitch of 90. Instead, we want to measure how many degrees the vehicle has rotated through.
+
+This can be done by tracking changes between subsequent quaternions from the IMU. The idea is to compare each quaternion read from the IMU with the previous quaternion received from the IMU (note that quaternions of all zeros are ignored to avoid issues with invalid IMU data samples after first configuring the sensor).
+
+For each quaternion read from the IMU:
+
+- Calculate the shortest set of rotations from the previous to the current quaternion
+- Convert the shortest angle to euler angles
+- Add the pitch, roll, and yaw from the shortest euler angles to accumulated pitch, roll, and yaw variables
+- Note that if the IMU axis config changes, the accumulated data should be zeroed and the previously read quaternion discarded.
+
+This makes the assumption that the smallest rotation between two quaternions is the most probable path the robot took to change its orientation. This is an approximation, however it is a fairly good one as long as sample rate of data is sufficiently high. The specifics of the path are lost, however, if the sample rate is high enough, the length of the path is sufficiently small that and this is a good approximation.
+
+The second issue with this approximation has to do with rotations exceeding 180 degrees. The method for determining shortest path between two quaternions will be incorrect if the vehicle rotates more than 180 degrees in any axis (because the shortest path would have involved rotating the other direction). To guarantee rotations between two samples never exceed 180 degrees, the max measured rotation rate of the IMU is considered. For the BNO055 this is 2000 degrees per second. Thus, with a sample period of $l$ milliseconds, the largest angle change between samples is
+
+$\frac{2000 \textrm{ deg}}{1 \textrm{ sec}} \cdot \frac{1 \textrm{ sec}}{1000 \textrm{ ms}} \cdot \frac{l \textrm{ ms}}{1 \textrm{ sample}} = 2l \textrm{ deg / sample}$  
+
+To ensure that changes of more than 180 degrees do not occur, the following must be satisfied
+
+$2l < 180 \rightarrow l < 90 \textrm{ milliseconds}$
+
+However, it is possible for some samples from the IMU to be delayed (ie I2C bus busy with another sensor) or lost (I2C failure). Thus, it is necessary to choose a value for $l$ that allows for at least one sample to be lost. When a sample is lost, this doubles the effective time between samples. Thus, it is necessary to half $l$
+
+$l < 45 \textrm{ milliseconds}$
+
+By further reducing $l$ it is possible to allow for larger delays or more lost samples. The current firmware samples IMU data every 15ms (the max rate supported by the BNO055 in fusion mode is 100Hz = 10ms period). Using $l=15 \textrm{ ms}$ it is possible for 5 consecutive samples to be lost while still guaranteeing that no more than 90ms passes between valid samples (thus still ensuring no more than 180 degree change between samples).
 
 ## Other Derivations
 
-TODO: Euler / Quaternion conversion
+###  Euler to Quaternion Conversion
 
-TODO: Gravity vector calculation
+The euler angle convention used for the control board is an intrinsic set `z-x'-y''` (rotate about z, then about new x, then about new y to compose an angle). Using the definitions of front/right/top for this coordinate system, this means that roll is about y, pitch is about x, and yaw is  about z.
 
-TODO: Angle between vectors
+A rotation quaternion, $Q$, can be composed using three rotations, each being one of the rotations used to construct the euler angle representation (in order).
 
-TODO: Min diff quat between two quats
+$Q = Q_z Q_x Q_y$
+
+Quaternion multiplication is associative.
+
+Recall that right-multiplied quaternions are applied in the vehicle frame during composition. Thus, when viewed left to right: 
+
+- First, apply $Q_z$ in vehicle frame (also equal to world frame since this is the first rotation)
+- Then, apply $Q_x$ in the vehicle frame
+- Finally, apply $Q_y$ in the vehicle frame
+
+However, recall that left-multiplied quaternions are applied in the world frame during composition. Thus, when viewed right to left
+
+- First, apply $Q_y$ in the world frame
+- Then, apply $Q_x$ in the world frame
+- Finally, apply $Q_z$ in the world frame
+
+In other words, the following are equivalent
+
+- Yaw about `z`, then pitch about `x'`, then roll about `y''`
+- Roll about `y`, then pitch about `x`, the yaw about `z`
+
+These use the **same pitch, roll, and yaw angles**, but the latter applies them about **world axes**, which have known and trivial direction vectors. Thus, each of pitch, roll, and yaw are a rotation about a known axis (x, y, or z respectively). Converting these from axis-angle from, the quaternions are represented as follows
+
+$Q_y = \left\{ cos(\frac{roll}{2}), sin(\frac{roll}{2}) \begin{pmatrix} 0 \\ 1 \\ 0 \end{pmatrix} \right\}$
+
+$Q_x = \left\{ cos(\frac{pitch}{2}), sin(\frac{pitch}{2}) \begin{pmatrix} 1 \\ 0 \\ 0 \end{pmatrix} \right\}$
+
+$Q_z = \left\{ cos(\frac{yaw}{2}), sin(\frac{yaw}{2}) \begin{pmatrix} 0 \\ 0 \\ 1 \end{pmatrix} \right\}$
+
+By multiplying these, Q can be obtained. This is relatively simple to do because each of the vectors defining the quaternion is a trivial vector (this is because of using world axes!)
+
+$Q = \left\{w, \begin{pmatrix}x \\ y \\ z\end{pmatrix}\right\} = Q_z Q_x Q_y$
+
+let $cp = cos(\frac{pitch}{2})$, $sp = sin(\frac{pitch}{2})$
+
+let $cr = cos(\frac{roll}{2})$, $sr = sin(\frac{roll}{2})$
+
+let $cy = cos(\frac{yaw}{2})$, $sr = sin(\frac{yaw}{2})$
+
+$w = cy \cdot cp \cdot cr - sy \cdot sp \cdot sr$
+
+$x = cy \cdot sp \cdot cr - sy \cdot cp \cdot sr$
+
+$y = sy \cdot sp \cdot cr + cy \cdot cp \cdot sr$
+
+$z = sy \cdot cp \cdot cr + cy \cdot sp \cdot sr$
+
+This provides a set of equations which can be used to convert from an euler angle representation to a quaternion.
+
+### Quaternion to Euler Conversion
+
+Converting from quaternion to euler uses the rotation matrix representation as a go-between.
+
+For the intrinsic set of euler angles `z-x'-y''`, a rotation matrix can be composed as follows (recall that right multiply applies about vehicle axis).
+
+$R = R_z(yaw) R_x(pitch) R_y(roll)$
+
+Similar to the quaternion case described above, note that matrix multiplication is associative. Thus, this can instead be interpreted as rotations about world axes in the opposite order. Thus, each of $R_x$, $R_y$, and $R_z$ are rotations about world x, y, and z axes. Such matrices have known forms. When  multiplied out, the following representation of R is obtained.
+
+let $cp = cos(pitch)$, $sp = sin(pitch)$
+
+let $cr = cos(roll)$, $sr = sin(roll)$
+
+let $cy = cos(yaw)$, $sy = sin(yaw)$
+
+
+$R = \begin{pmatrix}
+    cy \cdot cr - sr \cdot sy \cdot sp & -sy \cdot cp & cy \cdot sr + sy \cdot sp \cdot cr \\
+    sy \cdot cr + sr \cdot sp \cdot cy & cy \cdot cp & sy \cdot sr - cr \cdot sp \cdot cy \\
+    -cp \cdot sr & sp & cp \cdot cr
+\end{pmatrix}$
+
+Using entries of this matrix, the following relations can be constructed
+
+$R_{32} = sin(pitch) \rightarrow pitch = sin^{-1}(R_{32})$
+
+$\frac{R_{31}}{R_{33}} = \frac{-sin(roll)cos(pitch)}{cos(roll)cos(pitch)} = tan(roll) \rightarrow roll = tan^{-1}(\frac{-R_{31}}{R_{33}})$
+
+$\frac{R_{12}}{R_{22}} = \frac{sin(yaw)cos(pitch)}{cos(yaw)cos(pitch)} = tan(yaw) \rightarrow yaw = tan^{-1}(\frac{R_{12}}{R_{22}})$
+
+A quaternion can also be converted to a rotation matrix with a known form. Using cells from this quaternion-backed rotation matrix yields the following relations
+
+$pitch = sin^{-1}(2(yz+wx))$
+
+$roll = tan^{-1}(\frac{2(wy-xz)}{1-2(x^2+y^2)})$
+
+$yaw = tan^{-1}(\frac{2(xy-wz)}{1-2(x^2 + z^2)})$
+
+*Note that arctangent should be implemented in code using the quadrant aware `atan2` to account for quadrants properly and avoid divide by zero issues.*
