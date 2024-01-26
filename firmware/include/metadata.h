@@ -28,4 +28,4 @@
 #define FW_VER_MINOR 1
 #define FW_VER_REVISION 0
 #define FW_VER_TYPE 'b'
-#define FW_VER_BUILD 1
+#define FW_VER_BUILD 2
