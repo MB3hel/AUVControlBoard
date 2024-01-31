@@ -219,6 +219,13 @@ This command is used by the simulator to hijack a real control board. This allow
 `[hijack]` is an 8-bit integer (unsigned) with a value of 1 or 0. If 1, the control board is put into simulator hijack mode. If 0, it is removed from simulator hijack mode.  
 This message will be acknowledged. The acknowledge message will contain no result data.
 
+**Simulator Data Command**  
+This command is used by the simulator to send simulated sensor data to a hijacked control board.  
+```none
+'S', 'I', 'M', 'D', 'A', 'T', [w], [x], [y], [z], [depth]
+```  
+All values are little endian floats (32-bit). `x`, `y`, `z`, `w` are current quaternion (IMU data) `depth` is current depth (depth sensor data).
+
 **Save BNO055 Stored Calibration Command**  
 This command is used to store a set of calibration constants for the BNO055 to the control board. This will write the "stored calibration constants". This command will also cause the IMU to be reconfigured (this can take some time, so acknowledgements for this command may take longer than most). The command has the following format  
 ```none
@@ -430,3 +437,19 @@ Sent from control board periodically to indicate that it still exists and is ope
 ```none
 'H', 'E', 'A', 'R', 'T', 'B', 'E', 'A', 'T'
 ```
+
+**Simulator Status Message**  
+Sent from a simulator hijacked control board periodically to provide simulator with state and motor speed information.  
+```none
+'S', 'I', 'M', 'S', 'T', 'A', 'T', [t1], [t2], [t3], [t4], [t5], [t6], [t7], [t8], [mode], [wdog_killed]
+```  
+Each value `t1` to `t8` is a 32-bit little endian float representing thruster speeds 1 - 8 respectively.  
+`mode` is an unsigned 8-bit integer indicating the control board's current operating mode from one of the following
+
+- Raw = 0
+- Local = 1
+- Global = 2
+- Sassist = 3
+- Ohold = 5
+
+`wdog_killed` is an unsigned 8-bit integer indicating if the control board's motors are killed due to motor watchdog timeout. 1 indicates that motors are killed. 0 indicates not killed.
