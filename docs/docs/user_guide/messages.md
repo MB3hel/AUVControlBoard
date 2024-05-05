@@ -249,7 +249,7 @@ Used to configure the BNO055 IMU's axis orientation. *Note: This will also reset
 'B', 'N', 'O', '0', '5', '5', 'A', [config]
 ```
 `[config]`: A single byte. The value of this byte is between 0 and 7 (inclusive) representing on of the BNO055 axis configs (P0 to P7) as described in the BNO055 datasheet. *Note: Changing the axis config changes IMU mode. Thus, there will be a brief time afterwards where the IMU may report zeros for all data.*  
-This message will be acknowledged. The acknowledge message will contain no result data.
+This message will be acknowledged. The acknowledge message will contain no result data. Note that if the BNO055 is not the active IMU (see sensor status query), this will be acknowledged using the INVALID_CMD error code.
 
 **Save BNO055 Stored Calibration Command**  
 This command is used to store a set of calibration constants for the BNO055 to the control board. This will write the "stored calibration constants". This command will also cause the IMU to be reconfigured (this can take some time, so acknowledgements for this command may take longer than most). The command has the following format  
@@ -257,21 +257,21 @@ This command is used to store a set of calibration constants for the BNO055 to t
 'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'S', [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
 ```  
 Each value is a signed 16-bit integer. The meaning of each value is described in the BNO055 datasheet.  
-This message will be acknowledged. The acknowledge message will contain no result data.
+This message will be acknowledged. The acknowledge message will contain no result data. Note that if the BNO055 is not the active IMU (see sensor status query), this will be acknowledged using the INVALID_CMD error code.
 
 **Erase BNO055 Stored Calibration Command**  
 This command is used to erase calibration constants for the BNO055 from the control board. This will erase the "stored calibration constants". This command will also cause the IMU to be reconfigured (this can take some time, so acknowledgements for this command may take longer than most). The command has the following format  
 ```none
 'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'E'
 ```  
-This message will be acknowledged. The acknowledge message will contain no result data.
+This message will be acknowledged. The acknowledge message will contain no result data. Note that if the BNO055 is not the active IMU (see sensor status query), this will be acknowledged using the INVALID_CMD error code.
 
 **Reset BNO055 Command**  
 This command is used to reset / reconfigure the BNO055. This is typically used to clear any auto generated calibration constants. The command has the following format  
 ```none
 'B', 'N', 'O', '0', '5', '5', 'R', 'S', 'T'
 ```  
-This message will be acknowledged. The acknowledge message will contain no result data.
+This message will be acknowledged. The acknowledge message will contain no result data. Note that if the BNO055 is not the active IMU (see sensor status query), this will be acknowledged using the INVALID_CMD error code.
 
 **Read BNO055 Stored Calibration Query**  
 This command is used to read a set of calibration constants for the BNO055 from the control board. This will read the "stored calibration constants". The command has the following format  
@@ -294,7 +294,7 @@ This message will be acknowledged. Note that if the IMU is not working properly,
 ```none
 [status]
 ```  
-`status` is an 8-bit integer. The value of `status` is the value of the BNO055's `CALIB_STAT` register. The meaning of this number is described in the BNO055 datasheet.
+`status` is an 8-bit integer. The value of `status` is the value of the BNO055's `CALIB_STAT` register. The meaning of this number is described in the BNO055 datasheet. Note that if the BNO055 is not the active IMU (see sensor status query), this will be acknowledged using the INVALID_CMD error code.
 
 
 **Read BNO055 Live Calibration Values Query**  
@@ -306,7 +306,7 @@ This message will be acknowledged. Note that if the IMU is not working properly,
 ```none
 [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
 ```  
-All  values in the acknowledge data are signed 16-bit integers. The meaning of these integers is described in the BNO055 datasheet.
+All  values in the acknowledge data are signed 16-bit integers. The meaning of these integers is described in the BNO055 datasheet. Note that if the BNO055 is not the active IMU (see sensor status query), this will be acknowledged using the INVALID_CMD error code.
 
 
 ### MS5837 Depth Sensor Configuration
