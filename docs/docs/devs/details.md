@@ -24,7 +24,8 @@ TODO: Generator use and import process details
 
 
 
-TODO: Calibration of BNO055
+TODO: Calibration of BNO055 (described from code perspective - see calibration page for user facing docs)
+
 - EEPROM calibration status signature for valid check
 - Erase only invalidates signature (potentially fewer writes)
 - If calibration constants are valid, they are applied during bno055 configuration. Applying constants will prevent BNO055 from running calibration routine in bg. Applied calibration is assumed to be good by the sensor (CALIB_STAT has no relevance).

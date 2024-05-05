@@ -2,6 +2,8 @@
 
 TODO: Project Structure and Build System
 
+TODO: Hardware abstraction (not really proper abstraction, just multiple implementatiuons of the same external API defined in `include/hardware` headers; each target has implementation in `src/hardware` files using include guards to choose which implementation)
+
 TODO: Generator projects
 
 <!--

@@ -1,6 +1,6 @@
 # Using Control Board
 
-TODO
+TODO: This page is an outline. Update with details / actual contents.
 
 - General Procedure
     - Connecting to Control Board
@@ -12,8 +12,8 @@ TODO
     - Reading Sensor data
     - Example program using python interface script
 - LED Indicator Info
-- Why calibrate sensors? Link to that page.
-- Custom interface code instead of python iface?
+- [Calibrate Sensors](./calibration.md)
+- Custom interface code instead of python iface
     - Many users will want to build their own interface.
     - Python iface is a reference / an easy place to start, but not required
     - You just need to implement communication with the control board as described in comm protocol and messages pages

@@ -1,16 +1,18 @@
 # Using SimCB and Simulator
 
+TODO: Details and improvements in various sections.
+
+TODO: Add port number info.
+
 ## SimCB
 
 SimCB is a version of the control board firmware which is built as a binary that runs on Windows, macOS, or Linux. By running this binary, you can run the control board firmware on your computer without having a physical control board.
 
+SimCB only supports simulator hijack mode (meaning only the sim IMU and depth sensors will work and thruster speeds will be reported back over comms interface). Instead of communicating with a physical control board via UART, you communicate with SimCB via TCP (the exact same messages are sent, just treat what you send over UART and TCP as byte streams). SimCB is a TCP server so code connecting to SimCB must be a TCP client.
+
 TODO: How to use SimCB instead of real control board over uart (including instructions to run SimCB)
 
-TODO: Why want to?
-
-- Test comms w/o hardware
-- Develop unit tests for your code, which may require a control board to be able to run
-
+Using SimCB allows testing various aspects of communication with the control board and system behavior without having a physical control board.
 
 ## Simulator
 
@@ -42,7 +44,7 @@ There are four general ways to use the control board
 
 4. Using the simulator attached to SimCB (talking to the simulator over TCP)
 
-TODO: Diagrams
+![](./img/control_board_modes.jpg)
 
 TODO: Discussion of these methods and when they are useful
 
@@ -51,4 +53,5 @@ TODO: Discussion of these methods and when they are useful
 
 1. End users can implement functionality in their own simulators to "hijack" a control board for simulation (referred to as "simhijack") just as the provided simulator does. When a control board is simhijacked, it does not use real sensors or create PWM signals for real thrusters. Instead, it communicates with a simulator. The control board gives the simulator motor speeds and the simulator is expected to provide the control board with sensor data. The protocol for doing so is fairly simple (see [messages](./messages.md) documentation) allowing end users to incorporate a control board into their own vehicle simulations.
 
-2. TODO: Develop complex unit tests on motion by having your code simhijack SimCB and provide known sensor inputs and motion commands. It will then receive motor speeds back from SimCB and can validate those for testing.
+2. End users may want to design unit tests that require communicating with a control board and validating motion. Unit test code can simhijack either a physical board or SimCB (probably more useful to use SimCB) and provide specific sensor inputs and commands and validate the motor outputs are as expected.
+

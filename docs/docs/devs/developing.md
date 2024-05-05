@@ -51,7 +51,23 @@ Then, use VSCode to run the correct debug session for the hardware version and d
 
 ### Debugging SimCB
 
-TODO: Instructions for windows, Linux, macOS
+For windows, you can attach the windows debugger without any issues / modifications.
+
+For macos / linux (using FreeRTOS posix port) the debugger must have some additional configuration to avoid impacting signals used by the port to facilitate context switches.
+
+LLDB (macOS):
+
+```
+process handle SIGUSR1 --notify false --pass true --stop false
+process handle SIGALRM --notify false --pass true --stop false
+```
+
+GDB (Linux):
+
+```
+handle SIGUSR1 nostop noignore noprint
+handle SIGALRM nostop noignore noprint
+```
 
 
 ## Generator Projects
