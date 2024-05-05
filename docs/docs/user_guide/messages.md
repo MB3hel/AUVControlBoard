@@ -188,18 +188,18 @@ Used to feed the motor watchdog so it does not kill the motors. This command has
 ```
 This message will be acknowledged. The acknowledge message will contain no result data.
 
-**BNO055 Periodic Read**  
-Used to enable / disable periodic reading of BNO055 data. This will only impact data being sent from control board to the pc. The control board itself will continue to read and use IMU data.  
+**IMU Periodic Read**  
+Used to enable / disable periodic reading of IMU data. This will only impact data being sent from control board to the pc. The control board itself will continue to read and use IMU data.  
 ```none
-'B', 'N', 'O', '0', '5', '5', 'P', [enable]
+'I', 'M', 'U', 'P', [enable]
 ```  
 `[enable]` is an 8-bit integer with a value of either 1 or 0. If 1, reading data periodically is enabled. If 0, reading data periodically is disabled.  
 This message will be acknowledged. The acknowledge message will contain no result data.
 
-**MS5837 Periodic Read**  
+**Depth Periodic Read**  
 Used to enable / disable periodic reading of MS5837 data. This will only impact data being sent from control board to the pc. The control board itself will continue to read and use depth sensor data.  
 ```none
-'M', 'S', '5', '8', '3', '7', 'P', [enable]
+'D', 'E', 'P', 'T', 'G', 'P', [enable]
 ```  
 `[enable]` is an 8-bit integer with a value of either 1 or 0. If 1, reading data periodically is enabled. If 0, reading data periodically is disabled.  
 This message will be acknowledged. The acknowledge message will contain no result data.
@@ -280,21 +280,29 @@ Each value is an unsigned 8-bit integer. All are simply interpreted as numbers, 
 `fw_ver_build`: Build number for pre-release firmware. Should be ignored for fw_ver_type release (' ')
 
 **Sensor Status Query**  
-Gets the status of all sensors (BNO055 and MS5837).  
+Check which IMU and depth sensor is currently in use 
 ```none
 'S', 'S', 'T', 'A', 'T'
 ```
 This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format  
 ```none
-[status_byte]
+[which_imu], [which_depth]
 ```  
-`[status_byte]`: Single byte containing bits for the status of all sensors. Bit 0 (LSB) is BNO055 status. Bit 1 is MS5837 status. A status bit of 1 indicates the sensor is "ready" (connected and can be used). A status bit of 0 indicates the sensor is "not ready".
+`[which_imu]`: Single byte indicating which IMU is in use  
+- No IMU: 0  
+- Simulated IMU (under simulator hijack): 1  
+- BNO055 IMU: 2  
+
+`[which_depth]`: Single byte indicating which depth sensor is in use  
+- No Depth sensor: 0  
+- Simulated depth sensor (under simulator hijack): 1  
+- MS5837 Depth sensor: 2
 
 
-**BNO055 Read**  
-Reads BNO055 IMU data once.  
+**IMU Read**  
+Reads IMU data once.  
 ```none
-'B', 'N', 'O', '0', '5', '5', 'R'
+'I', 'M', 'U', 'R'
 ```  
 This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format. Note that this is the same format as the data contained within the BNO055 data status message.  
 ```none
@@ -302,11 +310,22 @@ This message will be acknowledged. If acknowledged with no error, the response w
 ```  
 Each value is a 32-bit float, little endian. `quat_` values are components of the orientation quaternion. `accum_` values are accumulated euler angles.
 
-
-**MS5837 Read**  
-Reads MS5837 data once.  
+**IMU Raw Read**  
+Reads raw IMU data once.  
 ```none
-'M', 'S', '5', '8', '3', '7', 'R'
+'I', 'M', 'U', 'W'
+```  
+This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format. Note that this is the same format as the data contained within the BNO055 data status message.  
+```none
+[accel_x], [accel_y], [accel_z], [gyro_x], [gyro_y], [gyro_z]
+```  
+Each value is a 32-bit float, little endian.
+
+
+**Depth Read**  
+Reads depth sensor data once.  
+```none
+'D', 'E', 'P', 'T', 'H', 'R'
 ```  
 This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format. Note that this is the same format as the data contained within the MS5837 data status message.  
 ```none
@@ -402,17 +421,17 @@ Motor watch status message is used by the control board to notify the PC about c
 ```
 `[status]` is a single byte. A value of 1 indicates the motors are enabled. A value of zero indicates the motors are currently killed by the watchdog.
 
-**BNO055 Data Status**  
-Used by the control board to periodically send IMU data to the PC. Only sent when BNO055 periodic reads are enabled via the BNO055 periodic read command. The message has the following format  
+**IMU Data Status**  
+Used by the control board to periodically send IMU data to the PC. Only sent when IMU periodic reads are enabled via the IMU periodic read command. The message has the following format  
 ```none
-'B', 'N', 'O', '0', '5', '5', 'D', [quat_w], [quat_x], [quat_y], [quat_z], [accum_pitch], [accum_roll], [accum_yaw]
+'I', 'M', 'U', 'D', [quat_w], [quat_x], [quat_y], [quat_z], [accum_pitch], [accum_roll], [accum_yaw]
 ```  
 Each value is a 32-bit float, little endian. `quat_` values are components of the orientation quaternion. `accum_` values are accumulated euler angles.
 
-**MS5837 Data Status**  
+**Depth Data Status**  
 Used by the control board to periodically send IMU data to the PC. Only sent when BNO055 periodic reads are enabled via the BNO055 periodic read command. The message has the following format  
 ```none
-'M', 'S', '5', '8', '3', '7', 'D', [depth_m], [pressure_pa], [temp_c]
+'D', 'E', 'P', 'T', 'H', 'D', [depth_m], [pressure_pa], [temp_c]
 ```  
 `depth_m` is a 32-bit float, little endian (meters below surface). `pressure_pa` is a 32-bit float, little endian (measured pressure in Pa). `temp_c` is a 32-bit float, little endian (temperature of air / water).
 
