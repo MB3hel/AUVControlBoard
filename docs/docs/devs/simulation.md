@@ -19,7 +19,7 @@ TODO: By combining with SimCB (which can also be simhijacked), motion can be tes
 
 ## Simulator Implementation & Development
 
-The simulator is implemented using the Godot game engine (3.2). This provides a 3D rendering and physics engine.
+The simulator is implemented using the Godot game engine (3.5). This provides a 3D rendering and physics engine.
 
 [GodotAUVSim on GitHub](https://github.com/MB3hel/GodotAUVSim)
 
