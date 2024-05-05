@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://mb3hel.github.io/AUVControlBoard/devs/developing/" />
+      <link rel="shortcut icon" href="../../img/favicon.ico" />
+    <title>Development Workflows - AUV Control Board</title>
+    <link rel="stylesheet" href="../../css/theme.css" />
+    <link rel="stylesheet" href="../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Development Workflows";
+        var mkdocs_page_input_path = "devs/developing.md";
+        var mkdocs_page_url = "/AUVControlBoard/devs/developing/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../.." class="icon icon-home"> AUV Control Board
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../..">Home</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/preparing_board/">Preparing a Control Board</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/general_use/">Using Control Board</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/pythoniface/">Using the Python Interface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/simcb_simulator/">Using SimCB and Simulator</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/calibration/">Sensor Calibration</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/comm_protocol/">Communication Protocol</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/messages/">Messages</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Hardware</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hardware/v1/">Version 1</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hardware/v2/">Version 2</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../hardware/sensors/">Off-Board Sensors</a>
+                  </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Developers</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" href="../overview/">Firmware Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../details/">Firmware Details</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../simulation/">Simulation Support</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../build/">Build and Flash Firmware</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../buildsimcb/">Build and Run SimCB</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../pythoniface/">Interface Scripts</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Development Workflows</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#vscode-setup">VSCode Setup</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#debugging-firmware">Debugging Firmware</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#debugging-on-physical-system">Debugging on Physical System</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#debugging-simcb">Debugging SimCB</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#generator-projects">Generator Projects</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#running-the-generators">Running the Generator(s)</a>
+        <ul>
+    <li class="toctree-l4"><a class="reference internal" href="#control-board-v1">Control Board v1</a>
+    </li>
+    <li class="toctree-l4"><a class="reference internal" href="#control-board-v2">Control Board v2</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#importing-from-generators">Importing from Generators</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#firmware-development-using-the-simulator">Firmware Development using the Simulator</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#developing-python-interface-scripts">Developing Python Interface Scripts</a>
+    </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../math/">Math</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../..">AUV Control Board</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Developers</li>
+      <li class="breadcrumb-item active">Development Workflows</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/devs/developing.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="firmware-development">Firmware Development</h1>
+<h2 id="vscode-setup">VSCode Setup</h2>
+<p>Often, it is useful to have some sort of code editor / IDE setup. The project is already setup to work easily with <a href="https://code.visualstudio.com/">Visual Studio Code</a> (VSCode), provided a few extensions are installed.</p>
+<p>After installing VSCode</p>
+<ul>
+<li>Install the <code>C/C++</code> and <code>CMake Tools</code>, and <code>Cortex-Debug</code> extensions for working with the firmware (<code>firmware/</code> subfolder)</li>
+<li>Install the <code>Python</code> extension for working with the interface scripts (<code>iface/</code> subfolder)</li>
+</ul>
+<p>To use, just open one of the folders (eg <code>firmware/</code> or <code>iface/</code>) in VSCode. The useful extensions should automatically load when you open the folders (you may have to open a source code file in some cases).</p>
+<p>For debugging, a <code>launch.json</code> file is included in the <code>firmware/</code> project (in <code>.vscode</code> subfolder). This defines debug configurations both for firmware running on physical hardware and for the supported SimCB configurations.</p>
+<p><em>Note: Launching a debug session from VSCode will not build the firmware. Make sure to build the "Debug" configuration before launching!</em></p>
+<h2 id="debugging-firmware">Debugging Firmware</h2>
+<h3 id="debugging-on-physical-system">Debugging on Physical System</h3>
+<p>This section discusses debugging of the firmware running on actual hardware (Control Board v1 or v2). Debugging firmware running on a microcontroller requires a "debug probe". The supported probes for each version of the control board are listed in the table below.</p>
+<table>
+<thead>
+<tr>
+<th>ControlBoard Version</th>
+<th>Debugger / Debug Probe</th>
+<th>Config Name in <code>tools/debug</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v1</td>
+<td>CMSIS-DAP&ast;</td>
+<td><code>cb_v1_via_cmsisdap.cfg</code></td>
+</tr>
+<tr>
+<td>v2</td>
+<td>ST-LINK v2</td>
+<td><code>cb_v2_via_stlink2.cfg</code></td>
+</tr>
+</tbody>
+</table>
+<p>&ast;The PicoProbe firmware can be used to turn a low cost Raspberry Pi Pico board into a CMSIS-DAP compliant debug probe.</p>
+<p>You must wire the debug probe to the microcontroller on the control board correctly. Both v1 and v2 use a SWD debug interface. Examples of wiring the debug probes to each are shown below.</p>
+<p>TODO: Wiring diagrams for v1 and v2</p>
+<p><strong><em>Note: NEVER power the system from both the debug probe and USB at the same time. Generally, power the system over USB and do not connect the power (3.3V) from the debug probe. Signals and GND must be connected from the debug probe.</em></strong></p>
+<p>Make sure that <a href="https://openocd.org/">OpenOCD</a> must be installed and in the <code>PATH</code>. </p>
+<p>On Linux systems, you will likely also need to install <code>gdb-multiarch</code> and symlink it to <code>arm-none-eabi-gdb</code>. On ubuntu, this is done with the following commands</p>
+<pre><code class="language-sh">sudo apt install gdb-multiarch
+sudo ln -s `which gdb-multiarch` /usr/local/bin/arm-none-eabi-gdb
+</code></pre>
+<p>Then, use VSCode to run the correct debug session for the hardware version and debug probe you are using. Alternatively, you may use openocd and gdb directly if you are not using vscode. The config files listed in the table above are just OpenOCD configs.</p>
+<h3 id="debugging-simcb">Debugging SimCB</h3>
+<p>For windows, you can attach the windows debugger without any issues / modifications.</p>
+<p>For macos / linux (using FreeRTOS posix port) the debugger must have some additional configuration to avoid impacting signals used by the port to facilitate context switches.</p>
+<p>LLDB (macOS):</p>
+<pre><code>process handle SIGUSR1 --notify false --pass true --stop false
+process handle SIGALRM --notify false --pass true --stop false
+</code></pre>
+<p>GDB (Linux):</p>
+<pre><code>handle SIGUSR1 nostop noignore noprint
+handle SIGALRM nostop noignore noprint
+</code></pre>
+<h2 id="generator-projects">Generator Projects</h2>
+<p><em>Note: All paths in this section are relative to the <code>firmware/</code> subdirectory.</em></p>
+<p>Each version of ControlBoard has an associated "Generator" project. These are projects used with the chip manufacturer's tools to generate startup / configuration / library code for the chip.</p>
+<p>You will only need to modify the generator projects to alter configuration of the chip / components of included libraries from these tools. The firmware copies code generated from these tools into the <code>thridparty</code> folder, thus you don't need the generators to modify the firmware, unless you are modifying generated components.</p>
+<h3 id="running-the-generators">Running the Generator(s)</h3>
+<h4 id="control-board-v1">Control Board v1</h4>
+<p>Control Board v1 uses an Adafruit ItsyBitsy M4 board (Microchip ATSAMD51G19A chip). The generator used for this project is <a href="https://www.microchip.com/en-us/tools-resources/configure/mplab-code-configurator">MCC Standalone</a>. This tool is available for download on Windows, macOS, and Linux. Tested with v5.2.1 of MCC Standalone.</p>
+<p>Once installed</p>
+<ul>
+<li>Launch the application</li>
+<li>Make sure the Harmony Content Path is set in <code>Tools</code> &gt; <code>Options</code>. This should only need to be done once per computer. Recommended path is <code>~/.mcc/harmony/v3</code>. On windows, use <code>C:\Users\[YOUR_USERNAME]\.mcc\harmony\v3</code> (replace <code>[YOUR_USERNAME]</code>).</li>
+<li><code>File</code> &gt; <code>Load Configuration</code></li>
+<li>Choose <code>generator_projects/ControlBoard_v1/firmware/ControlBoard_v1/ControlBoard_v1.mc3</code></li>
+<li>You will likely be prompted to install MPLAB Harmony content. Install it.</li>
+<li>Click "Generate" in the top left.</li>
+</ul>
+<h4 id="control-board-v2">Control Board v2</h4>
+<p>Control Board v2 uses a WeAct Studio Black Pill board (STMicro STM32F411CEU chip). The generator used for this project is <a href="https://www.st.com/en/development-tools/stm32cubemx.html">STM32CubeMX</a>. This tool is available for download on Windows, macOS, and Linux. Tested with v6.6.1 of STM32CubeMX.</p>
+<p>Once installed</p>
+<ul>
+<li>Launch the application</li>
+<li><code>File</code> &gt; <code>Load Project</code></li>
+<li>Choose <code>generator_projects/ControlBoard_v2/ControlBoard_v2.ioc</code></li>
+<li>Install any required packs (as prompted)</li>
+<li>Click "Generate Code" in the top right.</li>
+</ul>
+<h3 id="importing-from-generators">Importing from Generators</h3>
+<p>After running the generator (as described above) the generated code must be imported to the project. The import process is mostly just copying generated files, however some files are modified slightly. The import process is handled by the <code>import_from_generator.py</code> script. If additional components are added in the generator projects, this script may need to be modified to import additional components. When this script is run, it will prompt a version of control board to import generated code for. This script must be run after each time the generator project is modified and code is re-generated.</p>
+<p>To run the importer, run <code>python3 import_from_generator.py</code> then choose which project your are importing.</p>
+<h2 id="firmware-development-using-the-simulator">Firmware Development using the Simulator</h2>
+<p>The <a href="https://github.com/MB3hel/GodotAUVSim">simulator</a> can be very helpful for developing or debugging firmware. The simulator is capable of connecting to a real control board or SimCB binaries. Thus the firmware can be tested in a simulation environment to validate math or behavior of a vehicle. Testing with the simulator can also be done while the control board firmware is running with a debugger attached (true for both a real control board and SimCB).</p>
+<p>Testing firmware on a physical control board (v1, v2) with the simulator is fairly simple. It is assumed that you will want the debugger running too:</p>
+<ul>
+<li>Connect the control board to your PC via USB</li>
+<li>Connect a debug probe to the control board (do <strong>NOT</strong> connect power)</li>
+<li>Build and run the firmware under debugger</li>
+<li>In the simulator, choose the UART port for the control board</li>
+<li>Interface scripts can be run as usual using <code>launch.py</code>, but add the <code>-s</code> flag so it will connect to the simulator instead of the physical control board.</li>
+</ul>
+<p>If you want to debug SimCB using the simulated environment</p>
+<ul>
+<li>TODO: Requires more work on simulator UI! NYI!</li>
+</ul>
+<p>There are a few things to know about running under simulation (these are true when the firmware is hijacked by simulator)</p>
+<ul>
+<li>Sensor drivers are disabled while under simulator control. Additionally, the active sensors will always be reported as the "SIM" sensors. This is true even if a real sensor is connected to a physical control board under simulation.</li>
+<li>When controlled by the simulator, the control board will not generate PWM signals on thruster pins. The thruster pins will maintain a pulse corresponding to no motion (or no pulse at all if no thruster pwm parameters have been applied).</li>
+</ul>
+<h2 id="developing-python-interface-scripts">Developing Python Interface Scripts</h2>
+<p>TODO</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../pythoniface/" class="btn btn-neutral float-left" title="Interface Scripts"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../math/" class="btn btn-neutral float-right" title="Math">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/MB3hel/AUVControlBoard" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../pythoniface/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../math/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../js/mathjax.js"></script>
+      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

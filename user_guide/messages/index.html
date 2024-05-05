@@ -8,21 +8,20 @@
     <title>Messages - AUV Control Board</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
         var mkdocs_page_name = "Messages";
-        var mkdocs_page_input_path = "user_guide\\messages.md";
+        var mkdocs_page_input_path = "user_guide/messages.md";
         var mkdocs_page_url = "/AUVControlBoard/user_guide/messages/";
       </script>
     
-    <script src="../../js/jquery-3.6.0.min.js" defer></script>
     <!--[if lt IE 9]>
       <script src="../../js/html5shiv.min.js"></script>
     <![endif]-->
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
-      <script>hljs.initHighlightingOnLoad();</script> 
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
 </head>
 
 <body class="wy-body-for-nav" role="document">
@@ -34,7 +33,7 @@
           <a href="../.." class="icon icon-home"> AUV Control Board
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
-      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
   </form>
 </div>
       </div>
@@ -48,31 +47,37 @@
               <ul class="current">
                   <li class="toctree-l1"><a class="reference internal" href="../preparing_board/">Preparing a Control Board</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../general_use/">Using Control board</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../general_use/">Using Control Board</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../simulator/">Using the Simulator</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../pythoniface/">Using the Python Interface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../simcb_simulator/">Using SimCB and Simulator</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../calibration/">Sensor Calibration</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../comm_protocol/">Communication Protocol</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="./">Messages</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Messages</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#types-of-messages">Types of Messages</a>
-    </li>
     <li class="toctree-l2"><a class="reference internal" href="#message-definition-conventions">Message Definition Conventions</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#commands">Commands</a>
+    <li class="toctree-l2"><a class="reference internal" href="#types-of-messages">Types of Messages</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#commands-and-queries">Commands and Queries</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#configuration-commands">Configuration Commands</a>
+    <li class="toctree-l3"><a class="reference internal" href="#motor-motion-commands">Motor motion commands</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#motor-control-commands">Motor Control Commands</a>
+    <li class="toctree-l3"><a class="reference internal" href="#vehicle-configuration-commands">Vehicle Configuration Commands</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#other-commands">Other Commands</a>
+    <li class="toctree-l3"><a class="reference internal" href="#sensor-commands-and-queries">Sensor Commands and Queries</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#bno055-imu-configuration">BNO055 IMU Configuration</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#ms5837-depth-sensor-configuration">MS5837 Depth Sensor Configuration</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#misc-commands-and-queries">Misc Commands and Queries</a>
     </li>
         </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#queries">Queries</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#acknowledgements">Acknowledgements</a>
     </li>
@@ -92,17 +97,21 @@
               </ul>
               <p class="caption"><span class="caption-text">Developers</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/overview/">Overview</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../devs/overview/">Firmware Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/details/">Implementation Details</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../devs/details/">Firmware Details</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/build/">Build and Flash</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../devs/simulation/">Simulation Support</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/math/">Math</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../devs/build/">Build and Flash Firmware</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/developing/">Firmware Development</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../devs/buildsimcb/">Build and Run SimCB</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/simhijack/">Simulation Support</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../devs/pythoniface/">Interface Scripts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../devs/developing/">Development Workflows</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../devs/math/">Math</a>
                   </li>
               </ul>
       </div>
@@ -118,29 +127,21 @@
       <div class="wy-nav-content">
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
-    <li><a href="../.." class="icon icon-home" alt="Docs"></a> &raquo;</li>
-          <li>User Guide &raquo;</li><li>Messages</li>
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">User Guide</li>
+      <li class="breadcrumb-item active">Messages</li>
     <li class="wy-breadcrumbs-aside">
-        <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/user_guide/messages.md"
-          class="icon icon-github"> Edit on GitHub</a>
+          <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/user_guide/messages.md" class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
 </div>
-
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
                 <h1 id="messages">Messages</h1>
 <p>This section describes what specific messages are sent to / received from the control board and what they do / mean. This does not address how messages are constructed or sent. For such information, see <a href="../comm_protocol/">Communication Protocol</a>.</p>
 <p><em>Note: The Communication Protocol page uses the term "payload" for the data being transferred and "message" for the formatted / fully constructed set of data. Here, what we refer to as "messages" are actually the "payload" data, not the constructed data.</em></p>
-<h2 id="types-of-messages">Types of Messages</h2>
-<ul>
-<li><strong>Commands</strong>: Messages instructing an action be taken. These messages must be acknowledged upon receipt. The acknowledgement typically contains no data. Sent from PC to control board.</li>
-<li><strong>Queries</strong>: Messages requesting information. These messages must be acknowledged upon receipt. The acknowledgement will contain the requested information. Sent from PC to control board.</li>
-<li><strong>Acknowledgements</strong>: A very specific type of message acknowledging receipt of another message (with an error code and optional data). Sent from control board to PC.</li>
-<li><strong>Status Messages</strong>: Unprompted messages containing information about state / data changes. Sent from control board to PC.</li>
-</ul>
 <h2 id="message-definition-conventions">Message Definition Conventions</h2>
 <p>In the following sections, the following standard is used to describe message contents:</p>
 <ul>
@@ -151,47 +152,15 @@
 </ul>
 <hr />
 
-<h2 id="commands">Commands</h2>
-<h3 id="configuration-commands">Configuration Commands</h3>
-<p><strong>Motor Matrix Set</strong><br />
-Motor matrix set command is used to set a single row of the motor matrix. It has the following format  </p>
-<pre><code class="language-none">'M', 'M', 'A', 'T', 'S', [thruster_num], [x], [y], [z], [pitch], [roll], [yaw]
-</code></pre>
-<p><code>[thruster_num]</code>: A single byte who'se unsigned value is the thruster number the row data should be set for (1-8).<br />
-<code>[x]</code>, <code>[y]</code>, <code>[z]</code>, <code>[pitch]</code>, <code>[roll]</code>, <code>[yaw]</code>: Columns of the motor matrix row being set. Each is a 32-bit float (little endian).<br />
-This message will be acknowledged. The acknowledge message will contain no result data.</p>
-<p><strong>Motor Matrix Update</strong><br />
-Motor matrix update command is used to inform the control board the motor matrix has changed. Causes the control board to perform some calculations with the new motor matrix. This should be sent after writing all rows of the motor matrix that should change using the motor matrix set command. The motor matrix update command has the following format  </p>
-<pre><code class="language-none">'M', 'M', 'A', 'T', 'U'
-</code></pre>
-<p>This message will be acknowledged. The acknowledge message will contain no result data.</p>
-<p><strong>Thruster Inversion Set</strong><br />
-Thruster inversion set command is used to invert the positive and negative direction of thrusters. It has the following format  </p>
-<pre><code class="language-none">'T', 'I', 'N', 'V', [inv]
-</code></pre>
-<p><code>[inv]</code>: A single byte where each bit represents the inversion status of a thruster. The MSB (bit 7) corresponds to thruster 8 and the LSB corresponds to thruster 1 (bit + 1 = thruster). A bit value of 1 means the thruster is inverted. A bit value of 0 means the thruster is not inverted.<br />
-This message will be acknowledged. The acknowledge message will contain no result data.</p>
-<p><strong>Relative DoF Speed Set</strong><br />
-Used to set relative speeds of motion in each DoF. There are two groups: linear (x, y, z) and angular (xrot, yrot, zrot). Within each group, use 1.0 for the fastest DoF. Other DoFs in the group are percentages of the fastest speed (from -1.0 to 1.0). This message has the following format  </p>
-<pre><code class="language-none">'R', 'E', 'L', 'D', 'O', 'F', [x], [y], [z], [xrot], [yrot], [zrot]
-</code></pre>
-<p><code>[x]</code>, <code>[y]</code>, <code>[z]</code>, <code>[xrot]</code>, <code>[yrot]</code>, <code>[zrot]</code>: 32-bit little endian floats.<br />
-This message will be acknowledged. The acknowledge message will contain no result data.</p>
-<p><strong>BNO055 IMU Axis Configure Command</strong><br />
-Used to configure the BNO055 IMU's axis orientation. <em>Note: This will also reset the accumulated euler angles to zero</em>.  </p>
-<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'A', [config]
-</code></pre>
-<p><code>[config]</code>: A single byte. The value of this byte is between 0 and 7 (inclusive) representing on of the BNO055 axis configs (P0 to P7) as described in the BNO055 datasheet. <em>Note: Changing the axis config changes IMU mode. Thus, there will be a brief time afterwards where the IMU may report zeros for all data.</em><br />
-This message will be acknowledged. The acknowledge message will contain no result data.</p>
-<p><strong>Stability Assist Mode PID Tune Command</strong><br />
-Used to tune stability assist mode PID controllers. Note that the rotation PIDs (xrot, yrot, and zrot) are also used in OHOLD mode. Likewise, the depth PID is also used in DHOLD mode. The command has the following format  </p>
-<pre><code class="language-none">'S', 'A', 'S', 'S', 'I', 'S', 'T', 'T', 'N', [which], [kp], [ki], [kd], [limit], [invert]
-</code></pre>
-<p><code>[which]</code> indicates which PID to tune ('X' = xrot, 'Y' = yrot, 'Z' = zrot, 'D' = depth hold).<br />
-<code>[kp]</code>, <code>[ki]</code>, <code>[kd]</code> are proportional, integral, derivative, and feed-forward gains (32-bit float little endian).<br />
-<code>[limit]</code> Is the PID controller's max output (limits max speed in the controlled DoF). Must be between 0.0 and 1.0. 32-bit float little endian.<br />
-<code>[invert]</code> Set to one to invert PID output. Zero otherwise.</p>
-<h3 id="motor-control-commands">Motor Control Commands</h3>
+<h2 id="types-of-messages">Types of Messages</h2>
+<ul>
+<li><strong>Commands</strong>: Messages instructing an action be taken. These messages must be acknowledged upon receipt. The acknowledgement typically contains no data. Sent from PC to control board.</li>
+<li><strong>Queries</strong>: Messages requesting information. These messages must be acknowledged upon receipt. The acknowledgement will contain the requested information. Sent from PC to control board.</li>
+<li><strong>Acknowledgements</strong>: A very specific type of message acknowledging receipt of another message (with an error code and optional data). Sent from control board to PC.</li>
+<li><strong>Status Messages</strong>: Unprompted messages containing information about state / data changes. Sent from control board to PC.</li>
+</ul>
+<h2 id="commands-and-queries">Commands and Queries</h2>
+<h3 id="motor-motion-commands">Motor motion commands</h3>
 <p><strong>Raw Speed Set</strong><br />
 Used to set motor speeds in <code>RAW</code> mode. This command has the following format.  </p>
 <pre><code class="language-none">'R', 'A', 'W', [speed_1], [speed_2], [speed_3], [speed_4], [speed_5], [speed_6], [speed_7], [speed_8]
@@ -245,111 +214,125 @@ Used to set motor speeds in <code>STABILITY_ASSIST</code> mode using a PID to ma
 <p>Depth is in meters where negative numbers are below the surface.</p>
 <p>x and y are speeds in the x and y DoFs the same as in <code>GLOBAL</code> mode.</p>
 <p>This message will be acknowledged with no data. Note that if the IMU or depth sensor is not working properly, this command will be acknowledged with the "Invalid Command" error code. <em>This can occur if the axis config of the IMU is changed immediately before issuing this command.</em></p>
-<p><strong>Depth Hold Speed Set</strong><br />
-Used to set motor speeds in <code>DEPTH_HOLD</code> mode. This command has the following format  </p>
-<pre><code class="language-none">'D', 'H', 'O', 'L', 'D', [x], [y], [pitch_spd], [roll_spd], [yaw_spd], [target_depth]
-</code></pre>
-<p>Each value is a 32-bit float. Everything except <code>[target_depth]</code> is a speed (same as GLOBAL mode speeds). Target depth is in meters (negative for below surface).</p>
-<h3 id="other-commands">Other Commands</h3>
 <p><strong>Feed Motor Watchdog</strong><br />
 Used to feed the motor watchdog so it does not kill the motors. This command has the following format  </p>
 <pre><code class="language-none">'W', 'D', 'G', 'F'
 </code></pre>
 <p>This message will be acknowledged. The acknowledge message will contain no result data.</p>
-<p><strong>BNO055 Periodic Read</strong><br />
-Used to enable / disable periodic reading of BNO055 data. This will only impact data being sent from control board to the pc. The control board itself will continue to read and use IMU data.  </p>
-<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'P', [enable]
+<h3 id="vehicle-configuration-commands">Vehicle Configuration Commands</h3>
+<p><strong>Motor Matrix Set</strong><br />
+Motor matrix set command is used to set a single row of the motor matrix. It has the following format  </p>
+<pre><code class="language-none">'M', 'M', 'A', 'T', 'S', [thruster_num], [x], [y], [z], [pitch], [roll], [yaw]
 </code></pre>
-<p><code>[enable]</code> is an 8-bit integer with a value of either 1 or 0. If 1, reading data periodically is enabled. If 0, reading data periodically is disabled.<br />
+<p><code>[thruster_num]</code>: A single byte who'se unsigned value is the thruster number the row data should be set for (1-8).<br />
+<code>[x]</code>, <code>[y]</code>, <code>[z]</code>, <code>[pitch]</code>, <code>[roll]</code>, <code>[yaw]</code>: Columns of the motor matrix row being set. Each is a 32-bit float (little endian).<br />
 This message will be acknowledged. The acknowledge message will contain no result data.</p>
-<p><strong>MS5837 Periodic Read</strong><br />
-Used to enable / disable periodic reading of MS5837 data. This will only impact data being sent from control board to the pc. The control board itself will continue to read and use depth sensor data.  </p>
-<pre><code class="language-none">'M', 'S', '5', '8', '3', '7', 'P', [enable]
-</code></pre>
-<p><code>[enable]</code> is an 8-bit integer with a value of either 1 or 0. If 1, reading data periodically is enabled. If 0, reading data periodically is disabled.<br />
-This message will be acknowledged. The acknowledge message will contain no result data.</p>
-<p><strong>Reset Command</strong><br />
-This command is used to rest the control board itself. This will reset the microcontroller on the control board, thus the USB device will disconnect and reconnect (note that if your program still holds the port when this happens, the USB device will likely be assigned a different port number).</p>
-<pre><code class="language-none">'R', 'E', 'S', 'E', 'T', 0x0D, 0x1E
-</code></pre>
-<p>This message is <strong>not</strong> acknowledged.</p>
-<p><strong>Simulator Hijack Command</strong><br />
-This command is used by the simulator to hijack a real control board. This allows the simulator to pass certain information to and receive certain information from the control board. This enables testing of the actual firmware and reproducing bugs under simulation. The command has the following format.  </p>
-<pre><code class="language-none">'S', 'I', 'M', 'H', 'I', 'J', 'A', 'C', 'K', [hijack]
-</code></pre>
-<p><code>[hijack]</code> is an 8-bit integer (unsigned) with a value of 1 or 0. If 1, the control board is put into simulator hijack mode. If 0, it is removed from simulator hijack mode.<br />
-This message will be acknowledged. The acknowledge message will contain no result data.</p>
-<p><strong>Save BNO055 Stored Calibration Command</strong><br />
-This command is used to store a set of calibration constants for the BNO055 to the control board. This will write the "stored calibration constants". This command will also cause the IMU to be reconfigured (this can take some time, so acknowledgements for this command may take longer than most). The command has the following format  </p>
-<pre><code class="language-none">'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'S', [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
-</code></pre>
-<p>Each value is a signed 16-bit integer. The meaning of each value is described in the BNO055 datasheet.<br />
-This message will be acknowledged. The acknowledge message will contain no result data.</p>
-<p><strong>Erase BNO055 Stored Calibration Command</strong><br />
-This command is used to erase calibration constants for the BNO055 from the control board. This will erase the "stored calibration constants". This command will also cause the IMU to be reconfigured (this can take some time, so acknowledgements for this command may take longer than most). The command has the following format  </p>
-<pre><code class="language-none">'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'E'
+<p><strong>Motor Matrix Update</strong><br />
+Motor matrix update command is used to inform the control board the motor matrix has changed. Causes the control board to perform some calculations with the new motor matrix. This should be sent after writing all rows of the motor matrix that should change using the motor matrix set command. The motor matrix update command has the following format  </p>
+<pre><code class="language-none">'M', 'M', 'A', 'T', 'U'
 </code></pre>
 <p>This message will be acknowledged. The acknowledge message will contain no result data.</p>
-<p><strong>Write MS5837 Calibration Command</strong><br />
-This command is used to write the values of the MS5837 calibration constants. The command has the following format  </p>
-<pre><code class="language-none">'M', 'S', '5', '8', '3', '7', 'C', 'A', 'L', 'S', [atm_pressure], [fluid_density]
+<p><strong>Thruster PWM Parameter Config</strong><br />
+Configure PWM settings for thrusters.  </p>
+<pre><code class="language-none">'T', 'P', 'W', 'M', [pwm_period], [pwm_zero], [pwm_range]
 </code></pre>
-<p>Both values are 32-bit little endian floats.<br />
+<p>Each value is an unsigned 16-bit integer (little endian). <code>pwm_period</code> is the PWM signal period in microseconds (determines PWM frequency / update rate for ESCs). <code>pwm_zero</code> is the pulse width for zero speed in microseconds (typically 1500). <code>pwm_range</code> is the deviation from zero to achieve max speed (when added) or min speed (when subtracted) such that the pulse width <code>pwm_zero + pwm_range</code> microseconds is full forward speed and the pulse width <code>pwm_zero - pwm_range</code> microseconds is full reverse speed.<br />
 This message will be acknowledged. The acknowledge message will contain no result data.</p>
-<p><strong>Reset BNO055 Command</strong><br />
-This command is used to reset / reconfigure the BNO055. This is typically used to clear any auto generated calibration constants. The command has the following format  </p>
-<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'R', 'S', 'T'
+<p><strong>Thruster Inversion Set</strong><br />
+Thruster inversion set command is used to invert the positive and negative direction of thrusters. It has the following format  </p>
+<pre><code class="language-none">'T', 'I', 'N', 'V', [inv]
 </code></pre>
-<p>This message will be acknowledged. The acknowledge message will contain no result data.</p>
-<hr />
-
-<h2 id="queries">Queries</h2>
-<p><strong>Version Info Query</strong><br />
-Get the version info from the control board.  </p>
-<pre><code class="language-none">'C', 'B', 'V', 'E', 'R'
+<p><code>[inv]</code>: A single byte where each bit represents the inversion status of a thruster. The MSB (bit 7) corresponds to thruster 8 and the LSB corresponds to thruster 1 (bit + 1 = thruster). A bit value of 1 means the thruster is inverted. A bit value of 0 means the thruster is not inverted.<br />
+This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<p><strong>Relative DoF Speed Set</strong><br />
+Used to set relative speeds of motion in each DoF. There are two groups: linear (x, y, z) and angular (xrot, yrot, zrot). Within each group, use 1.0 for the fastest DoF. Other DoFs in the group are percentages of the fastest speed (from 0.0 to 1.0). This message has the following format  </p>
+<pre><code class="language-none">'R', 'E', 'L', 'D', 'O', 'F', [x], [y], [z], [xrot], [yrot], [zrot]
 </code></pre>
-<p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format  </p>
-<pre><code class="language-none">[cb_ver],[fw_ver_major],[fw_ver_minor],[fw_ver_revision],[fw_ver_type],[fw_ver_build]
+<p><code>[x]</code>, <code>[y]</code>, <code>[z]</code>, <code>[xrot]</code>, <code>[yrot]</code>, <code>[zrot]</code>: 32-bit little endian floats.<br />
+This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<p><strong>PID Tune Command</strong><br />
+Used to tune PID controllers. The command has the following format  </p>
+<pre><code class="language-none">'P', 'I', 'D', 'T', 'N', [which], [kp], [ki], [kd], [limit], [invert]
 </code></pre>
-<p>Each value is an unsigned 8-bit integer. All are simply interpreted as numbers, except for <code>fw_ver_type</code>, which is an ASCII character.<br />
-<code>cb_ver</code>: Version of the control board hardware (CBv1 or CBv2 = 1 or 2; 0 = SimCB in simulator)<br />
-<code>fw_ver_major</code>: Major version of firmware running on the control board<br />
-<code>fw_ver_minor</code>: Minor version of firmware running on the control board<br />
-<code>fw_ver_revision</code>: Revision version of firmware running on the control board<br />
-<code>fw_ver_type</code>: Type of firmware release. 'a' = alpha, 'b' = beta, 'c' = release candidate (rc), ' ' (space) = full release<br />
-<code>fw_ver_build</code>: Build number for pre-release firmware. Should be ignored for fw_ver_type release (' ')</p>
+<p><code>[which]</code> indicates which PID to tune ('X' = xrot, 'Y' = yrot, 'Z' = zrot, 'D' = depth hold).<br />
+<code>[kp]</code>, <code>[ki]</code>, <code>[kd]</code> are proportional, integral, derivative, and feed-forward gains (32-bit float little endian).<br />
+<code>[limit]</code> Is the PID controller's max output (limits max speed in the controlled DoF). Must be between 0.0 and 1.0. 32-bit float little endian.<br />
+<code>[invert]</code> Set to one to invert PID output. Zero otherwise.</p>
+<h3 id="sensor-commands-and-queries">Sensor Commands and Queries</h3>
 <p><strong>Sensor Status Query</strong><br />
-Gets the status of all sensors (BNO055 and MS5837).  </p>
+Check which IMU and depth sensor is currently in use </p>
 <pre><code class="language-none">'S', 'S', 'T', 'A', 'T'
 </code></pre>
 <p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format  </p>
-<pre><code class="language-none">[status_byte]
+<pre><code class="language-none">[which_imu], [which_depth]
 </code></pre>
-<p><code>[status_byte]</code>: Single byte containing bits for the status of all sensors. Bit 0 (LSB) is BNO055 status. Bit 1 is MS5837 status. A status bit of 1 indicates the sensor is "ready" (connected and can be used). A status bit of 0 indicates the sensor is "not ready".</p>
-<p><strong>BNO055 Read</strong><br />
-Reads BNO055 IMU data once.  </p>
-<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'R'
+<p><code>[which_imu]</code>: Single byte indicating which IMU is in use<br />
+- No IMU: 0<br />
+- Simulated IMU (under simulator hijack): 1<br />
+- BNO055 IMU: 2  </p>
+<p><code>[which_depth]</code>: Single byte indicating which depth sensor is in use<br />
+- No Depth sensor: 0<br />
+- Simulated depth sensor (under simulator hijack): 1<br />
+- MS5837 Depth sensor: 2</p>
+<p><strong>IMU Read</strong><br />
+Reads IMU data once.  </p>
+<pre><code class="language-none">'I', 'M', 'U', 'R'
 </code></pre>
 <p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format. Note that this is the same format as the data contained within the BNO055 data status message.  </p>
 <pre><code class="language-none">[quat_w], [quat_x], [quat_y], [quat_z], [accum_pitch], [accum_roll], [accum_yaw]
 </code></pre>
 <p>Each value is a 32-bit float, little endian. <code>quat_</code> values are components of the orientation quaternion. <code>accum_</code> values are accumulated euler angles.</p>
-<p><strong>MS5837 Read</strong><br />
-Reads MS5837 data once.  </p>
-<pre><code class="language-none">'M', 'S', '5', '8', '3', '7', 'R'
+<p><strong>IMU Raw Read</strong><br />
+Reads raw IMU data once.  </p>
+<pre><code class="language-none">'I', 'M', 'U', 'W'
+</code></pre>
+<p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format. Note that this is the same format as the data contained within the BNO055 data status message.  </p>
+<pre><code class="language-none">[accel_x], [accel_y], [accel_z], [gyro_x], [gyro_y], [gyro_z]
+</code></pre>
+<p>Each value is a 32-bit float, little endian.</p>
+<p><strong>IMU Periodic Read</strong><br />
+Used to enable / disable periodic reading of IMU data. This will only impact data being sent from control board to the pc. The control board itself will continue to read and use IMU data.  </p>
+<pre><code class="language-none">'I', 'M', 'U', 'P', [enable]
+</code></pre>
+<p><code>[enable]</code> is an 8-bit integer with a value of either 1 or 0. If 1, reading data periodically is enabled. If 0, reading data periodically is disabled.<br />
+This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<p><strong>Depth Read</strong><br />
+Reads depth sensor data once.  </p>
+<pre><code class="language-none">'D', 'E', 'P', 'T', 'H', 'R'
 </code></pre>
 <p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format. Note that this is the same format as the data contained within the MS5837 data status message.  </p>
 <pre><code class="language-none">[depth_m], [pressure_pa], [temp_c]
 </code></pre>
 <p><code>depth_m</code> is a 32-bit float, little endian (meters below surface). <code>pressure_pa</code> is a 32-bit float, little endian (measured pressure in Pa). <code>temp_c</code> is a 32-bit float, little endian (temperature of air / water).</p>
-<p><strong>Last Reset Cause Query</strong><br />
-Get error code for last system reset cause of the control board. Generally not useful for end users, except for reporting errors. Mainly a debug / development tool. See error codes in firmware source <code>debug.h</code>.</p>
-<pre><code class="language-none">'R', 'S', 'T', 'W', 'H', 'Y'
+<p><strong>Depth Periodic Read</strong><br />
+Used to enable / disable periodic reading of MS5837 data. This will only impact data being sent from control board to the pc. The control board itself will continue to read and use depth sensor data.  </p>
+<pre><code class="language-none">'D', 'E', 'P', 'T', 'G', 'P', [enable]
 </code></pre>
-<p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format.</p>
-<pre><code class="language-none">[error_code]
+<p><code>[enable]</code> is an 8-bit integer with a value of either 1 or 0. If 1, reading data periodically is enabled. If 0, reading data periodically is disabled.<br />
+This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<h3 id="bno055-imu-configuration">BNO055 IMU Configuration</h3>
+<p><strong>BNO055 IMU Axis Configure Command</strong><br />
+Used to configure the BNO055 IMU's axis orientation. <em>Note: This will also reset the accumulated euler angles to zero</em>.  </p>
+<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'A', [config]
 </code></pre>
-<p><code>error_code</code> is a 32-bit integer (signed), little endian.</p>
+<p><code>[config]</code>: A single byte. The value of this byte is between 0 and 7 (inclusive) representing on of the BNO055 axis configs (P0 to P7) as described in the BNO055 datasheet. <em>Note: Changing the axis config changes IMU mode. Thus, there will be a brief time afterwards where the IMU may report zeros for all data.</em><br />
+This message will be acknowledged. The acknowledge message will contain no result data. Note that if the BNO055 is not the active IMU (see sensor status query), this will be acknowledged using the INVALID_CMD error code.</p>
+<p><strong>Save BNO055 Stored Calibration Command</strong><br />
+This command is used to store a set of calibration constants for the BNO055 to the control board. This will write the "stored calibration constants". This command will also cause the IMU to be reconfigured (this can take some time, so acknowledgements for this command may take longer than most). The command has the following format  </p>
+<pre><code class="language-none">'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'S', [accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
+</code></pre>
+<p>Each value is a signed 16-bit integer. The meaning of each value is described in the BNO055 datasheet.<br />
+This message will be acknowledged. The acknowledge message will contain no result data. Note that if the BNO055 is not the active IMU (see sensor status query), this will be acknowledged using the INVALID_CMD error code.</p>
+<p><strong>Erase BNO055 Stored Calibration Command</strong><br />
+This command is used to erase calibration constants for the BNO055 from the control board. This will erase the "stored calibration constants". This command will also cause the IMU to be reconfigured (this can take some time, so acknowledgements for this command may take longer than most). The command has the following format  </p>
+<pre><code class="language-none">'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'E'
+</code></pre>
+<p>This message will be acknowledged. The acknowledge message will contain no result data. Note that if the BNO055 is not the active IMU (see sensor status query), this will be acknowledged using the INVALID_CMD error code.</p>
+<p><strong>Reset BNO055 Command</strong><br />
+This command is used to reset / reconfigure the BNO055. This is typically used to clear any auto generated calibration constants. The command has the following format  </p>
+<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'R', 'S', 'T'
+</code></pre>
+<p>This message will be acknowledged. The acknowledge message will contain no result data. Note that if the BNO055 is not the active IMU (see sensor status query), this will be acknowledged using the INVALID_CMD error code.</p>
 <p><strong>Read BNO055 Stored Calibration Query</strong><br />
 This command is used to read a set of calibration constants for the BNO055 from the control board. This will read the "stored calibration constants". The command has the following format  </p>
 <pre><code class="language-none">'S', 'C', 'B', 'N', 'O', '0', '5', '5', 'R'
@@ -366,7 +349,7 @@ This command is used to read the status of the BNO055's calibration routine. Not
 <p>This message will be acknowledged. Note that if the IMU is not working properly, this command will be acknowledged with the "Invalid Command" error code. If acknowledged with no error, the response will contain data in the following format.  </p>
 <pre><code class="language-none">[status]
 </code></pre>
-<p><code>status</code> is an 8-bit integer. The value of <code>status</code> is the value of the BNO055's <code>CALIB_STAT</code> register. The meaning of this number is described in the BNO055 datasheet.</p>
+<p><code>status</code> is an 8-bit integer. The value of <code>status</code> is the value of the BNO055's <code>CALIB_STAT</code> register. The meaning of this number is described in the BNO055 datasheet. Note that if the BNO055 is not the active IMU (see sensor status query), this will be acknowledged using the INVALID_CMD error code.</p>
 <p><strong>Read BNO055 Live Calibration Values Query</strong><br />
 This command is used to read a set of calibration constants from the BNO055. This will read the "live calibration constants" directly from the BNO055. Note that the calibration constants are only valid if the calibration status from the BNO055 is 3 for the accelerometer and gyroscope. The command has the following format  </p>
 <pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'C', 'V'
@@ -374,7 +357,8 @@ This command is used to read a set of calibration constants from the BNO055. Thi
 <p>This message will be acknowledged. Note that if the IMU is not working properly, this command will be acknowledged with the "Invalid Command" error code. If acknowledged with no error, the response will contain data in the following format.  </p>
 <pre><code class="language-none">[accel_offset_x], [accel_offset_y], [accel_offset_z], [accel_radius], [gyro_offset_x], [gyro_offset_y], [gyro_offset_z]
 </code></pre>
-<p>All  values in the acknowledge data are signed 16-bit integers. The meaning of these integers is described in the BNO055 datasheet.</p>
+<p>All  values in the acknowledge data are signed 16-bit integers. The meaning of these integers is described in the BNO055 datasheet. Note that if the BNO055 is not the active IMU (see sensor status query), this will be acknowledged using the INVALID_CMD error code.</p>
+<h3 id="ms5837-depth-sensor-configuration">MS5837 Depth Sensor Configuration</h3>
 <p><strong>Read MS5837 Calibration Query</strong><br />
 This command is used to read the values of the MS5837 calibration constants. The command has the following format  </p>
 <pre><code class="language-none">'M', 'S', '5', '8', '3', '7', 'C', 'A', 'L', 'G'
@@ -383,8 +367,51 @@ This command is used to read the values of the MS5837 calibration constants. The
 <pre><code class="language-none">[atm_pressure], [fluid_density]
 </code></pre>
 <p>Both values are 32-bit little endian floats.</p>
-<hr />
-
+<p><strong>Write MS5837 Calibration Command</strong><br />
+This command is used to write the values of the MS5837 calibration constants. The command has the following format  </p>
+<pre><code class="language-none">'M', 'S', '5', '8', '3', '7', 'C', 'A', 'L', 'S', [atm_pressure], [fluid_density]
+</code></pre>
+<p>Both values are 32-bit little endian floats.<br />
+This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<h3 id="misc-commands-and-queries">Misc Commands and Queries</h3>
+<p><strong>Reset Command</strong><br />
+This command is used to rest the control board itself. This will reset the microcontroller on the control board, thus the USB device will disconnect and reconnect (note that if your program still holds the port when this happens, the USB device will likely be assigned a different port number).</p>
+<pre><code class="language-none">'R', 'E', 'S', 'E', 'T', 0x0D, 0x1E
+</code></pre>
+<p>This message is <strong>not</strong> acknowledged.</p>
+<p><strong>Last Reset Cause Query</strong><br />
+Get error code for last system reset cause of the control board. Generally not useful for end users, except for reporting errors. Mainly a debug / development tool. See error codes in firmware source <code>debug.h</code>.</p>
+<pre><code class="language-none">'R', 'S', 'T', 'W', 'H', 'Y'
+</code></pre>
+<p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format.</p>
+<pre><code class="language-none">[error_code]
+</code></pre>
+<p><code>error_code</code> is a 32-bit integer (signed), little endian.</p>
+<p><strong>Simulator Hijack Command</strong><br />
+This command is used by the simulator to hijack a real control board. This allows the simulator to pass certain information to and receive certain information from the control board. This enables testing of the actual firmware and reproducing bugs under simulation. The command has the following format.  </p>
+<pre><code class="language-none">'S', 'I', 'M', 'H', 'I', 'J', 'A', 'C', 'K', [hijack]
+</code></pre>
+<p><code>[hijack]</code> is an 8-bit integer (unsigned) with a value of 1 or 0. If 1, the control board is put into simulator hijack mode. If 0, it is removed from simulator hijack mode.<br />
+This message will be acknowledged. The acknowledge message will contain no result data.</p>
+<p><strong>Simulator Data Command</strong><br />
+This command is used by the simulator to send simulated sensor data to a hijacked control board.  </p>
+<pre><code class="language-none">'S', 'I', 'M', 'D', 'A', 'T', [w], [x], [y], [z], [depth]
+</code></pre>
+<p>All values are little endian floats (32-bit). <code>x</code>, <code>y</code>, <code>z</code>, <code>w</code> are current quaternion (IMU data) <code>depth</code> is current depth (depth sensor data).</p>
+<p><strong>Version Info Query</strong><br />
+Get the version info from the control board.  </p>
+<pre><code class="language-none">'C', 'B', 'V', 'E', 'R'
+</code></pre>
+<p>This message will be acknowledged. If acknowledged with no error, the response will contain data in the following format  </p>
+<pre><code class="language-none">[cb_ver],[fw_ver_major],[fw_ver_minor],[fw_ver_revision],[fw_ver_type],[fw_ver_build]
+</code></pre>
+<p>Each value is an unsigned 8-bit integer. All are simply interpreted as numbers, except for <code>fw_ver_type</code>, which is an ASCII character.<br />
+<code>cb_ver</code>: Version of the control board hardware (CBv1 or CBv2 = 1 or 2; 0 = SimCB in simulator)<br />
+<code>fw_ver_major</code>: Major version of firmware running on the control board<br />
+<code>fw_ver_minor</code>: Minor version of firmware running on the control board<br />
+<code>fw_ver_revision</code>: Revision version of firmware running on the control board<br />
+<code>fw_ver_type</code>: Type of firmware release. 'a' = alpha, 'b' = beta, 'c' = release candidate (rc), ' ' (space) = full release<br />
+<code>fw_ver_build</code>: Build number for pre-release firmware. Should be ignored for fw_ver_type release (' ')</p>
 <h2 id="acknowledgements">Acknowledgements</h2>
 <p>An acknowledgement message has the following format  </p>
 <pre><code class="language-none">'A', 'C', 'K', [ack_id], [error_code], [result]
@@ -397,22 +424,20 @@ This command is used to read the values of the MS5837 calibration constants. The
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3 = Invalid Command: Command is known, but is not valid at this time.<br />
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;255 = Reserved: Control board will not use this code. Typically used as timeout.<br />
 <code>[result]</code>: Optional data of variable size attached to the acknowledge message. Its size, format, and meaning depends on the message being acknowledged.</p>
-<hr />
-
 <h2 id="status-messages">Status Messages</h2>
 <p><strong>Motor Watchdog Status</strong><br />
 Motor watch status message is used by the control board to notify the PC about changes to motor (watchdog) state. It has the following format  </p>
 <pre><code class="language-none">'W', 'D', 'G', 'S', [status]
 </code></pre>
 <p><code>[status]</code> is a single byte. A value of 1 indicates the motors are enabled. A value of zero indicates the motors are currently killed by the watchdog.</p>
-<p><strong>BNO055 Data Status</strong><br />
-Used by the control board to periodically send IMU data to the PC. Only sent when BNO055 periodic reads are enabled via the BNO055 periodic read command. The message has the following format  </p>
-<pre><code class="language-none">'B', 'N', 'O', '0', '5', '5', 'D', [quat_w], [quat_x], [quat_y], [quat_z], [accum_pitch], [accum_roll], [accum_yaw]
+<p><strong>IMU Data Status</strong><br />
+Used by the control board to periodically send IMU data to the PC. Only sent when IMU periodic reads are enabled via the IMU periodic read command. The message has the following format  </p>
+<pre><code class="language-none">'I', 'M', 'U', 'D', [quat_w], [quat_x], [quat_y], [quat_z], [accum_pitch], [accum_roll], [accum_yaw]
 </code></pre>
 <p>Each value is a 32-bit float, little endian. <code>quat_</code> values are components of the orientation quaternion. <code>accum_</code> values are accumulated euler angles.</p>
-<p><strong>MS5837 Data Status</strong><br />
+<p><strong>Depth Data Status</strong><br />
 Used by the control board to periodically send IMU data to the PC. Only sent when BNO055 periodic reads are enabled via the BNO055 periodic read command. The message has the following format  </p>
-<pre><code class="language-none">'M', 'S', '5', '8', '3', '7', 'D', [depth_m], [pressure_pa], [temp_c]
+<pre><code class="language-none">'D', 'E', 'P', 'T', 'H', 'D', [depth_m], [pressure_pa], [temp_c]
 </code></pre>
 <p><code>depth_m</code> is a 32-bit float, little endian (meters below surface). <code>pressure_pa</code> is a 32-bit float, little endian (measured pressure in Pa). <code>temp_c</code> is a 32-bit float, little endian (temperature of air / water).</p>
 <p><strong>Debug Status Messages</strong><br />
@@ -425,6 +450,24 @@ Used only during development. These will not occur on release builds of the firm
 <pre><code class="language-none">'D', 'B', 'G', 'D', 'A', 'T', [msg]
 </code></pre>
 <p><code>msg</code> is arbitrary data.</p>
+<p><strong>Heartbeat Status Messages</strong><br />
+Sent from control board periodically to indicate that it still exists and is operating as expected. This is generally ignored by end users. It is mostly intended to ensure communication occurs periodically in SimCB so connection drops are detectable.  </p>
+<pre><code class="language-none">'H', 'E', 'A', 'R', 'T', 'B', 'E', 'A', 'T'
+</code></pre>
+<p><strong>Simulator Status Message</strong><br />
+Sent from a simulator hijacked control board periodically to provide simulator with state and motor speed information.  </p>
+<pre><code class="language-none">'S', 'I', 'M', 'S', 'T', 'A', 'T', [t1], [t2], [t3], [t4], [t5], [t6], [t7], [t8], [mode], [wdog_killed]
+</code></pre>
+<p>Each value <code>t1</code> to <code>t8</code> is a 32-bit little endian float representing thruster speeds 1 - 8 respectively.<br />
+<code>mode</code> is an unsigned 8-bit integer indicating the control board's current operating mode from one of the following</p>
+<ul>
+<li>Raw = 0</li>
+<li>Local = 1</li>
+<li>Global = 2</li>
+<li>Sassist = 3</li>
+<li>Ohold = 5</li>
+</ul>
+<p><code>wdog_killed</code> is an unsigned 8-bit integer indicating if the control board's motors are killed due to motor watchdog timeout. 1 indicates that motors are killed. 0 indicates not killed.</p>
               
             </div>
           </div><footer>
@@ -464,17 +507,18 @@ Used only during development. These will not occur on release builds of the firm
     
   </span>
 </div>
-    <script>var base_url = '../..';</script>
-    <script src="../../js/theme_extra.js" defer></script>
-    <script src="../../js/theme.js" defer></script>
-      <script src="../../js/mathjax.js" defer></script>
-      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6" defer></script>
-      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
-      <script src="../../search/main.js" defer></script>
-    <script defer>
-        window.onload = function () {
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../js/mathjax.js"></script>
+      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
             SphinxRtdTheme.Navigation.enable(true);
-        };
+        });
     </script>
 
 </body>

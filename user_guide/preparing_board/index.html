@@ -8,21 +8,20 @@
     <title>Preparing a Control Board - AUV Control Board</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
         var mkdocs_page_name = "Preparing a Control Board";
-        var mkdocs_page_input_path = "user_guide\\preparing_board.md";
+        var mkdocs_page_input_path = "user_guide/preparing_board.md";
         var mkdocs_page_url = "/AUVControlBoard/user_guide/preparing_board/";
       </script>
     
-    <script src="../../js/jquery-3.6.0.min.js" defer></script>
     <!--[if lt IE 9]>
       <script src="../../js/html5shiv.min.js"></script>
     <![endif]-->
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
-      <script>hljs.initHighlightingOnLoad();</script> 
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
 </head>
 
 <body class="wy-body-for-nav" role="document">
@@ -34,7 +33,7 @@
           <a href="../.." class="icon icon-home"> AUV Control Board
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
-      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
   </form>
 </div>
       </div>
@@ -46,13 +45,15 @@
               </ul>
               <p class="caption"><span class="caption-text">User Guide</span></p>
               <ul class="current">
-                  <li class="toctree-l1 current"><a class="reference internal current" href="./">Preparing a Control Board</a>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Preparing a Control Board</a>
     <ul class="current">
     </ul>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../general_use/">Using Control board</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../general_use/">Using Control Board</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../simulator/">Using the Simulator</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../pythoniface/">Using the Python Interface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../simcb_simulator/">Using SimCB and Simulator</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../calibration/">Sensor Calibration</a>
                   </li>
@@ -72,17 +73,21 @@
               </ul>
               <p class="caption"><span class="caption-text">Developers</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/overview/">Overview</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../devs/overview/">Firmware Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/details/">Implementation Details</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../devs/details/">Firmware Details</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/build/">Build and Flash</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../devs/simulation/">Simulation Support</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/math/">Math</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../devs/build/">Build and Flash Firmware</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/developing/">Firmware Development</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../devs/buildsimcb/">Build and Run SimCB</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../firmware/simhijack/">Simulation Support</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../devs/pythoniface/">Interface Scripts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../devs/developing/">Development Workflows</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../devs/math/">Math</a>
                   </li>
               </ul>
       </div>
@@ -98,32 +103,44 @@
       <div class="wy-nav-content">
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
-    <li><a href="../.." class="icon icon-home" alt="Docs"></a> &raquo;</li>
-          <li>User Guide &raquo;</li><li>Preparing a Control Board</li>
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">User Guide</li>
+      <li class="breadcrumb-item active">Preparing a Control Board</li>
     <li class="wy-breadcrumbs-aside">
-        <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/user_guide/preparing_board.md"
-          class="icon icon-github"> Edit on GitHub</a>
+          <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/user_guide/preparing_board.md" class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
 </div>
-
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
                 <h1 id="preparing-a-control-board">Preparing a Control Board</h1>
-<p>TODO:</p>
+<p>TODO: Improve this with step by step instructions and screenshots</p>
 <ul>
-<li>Flashing firmware</li>
-<li>Wiring</li>
-<li>Testing USB</li>
+<li>Assemble a control board (see <a href="../../hardware/v1/">v1 hardware</a> or <a href="../../hardware/v2/">v2 hardware</a>)</li>
+<li>Flash the firmware<ul>
+<li>See <a href="../../devs/build/">Building &amp; Flashing</a> for details</li>
+<li>Install bossa cli or dfu-util and make sure the binaries (bossac or dfu-util) are in your path</li>
+<li>Install python</li>
+<li>Download and extract release package from <a href="https://github.com/MB3hel/AUVControlBoard/releases">GitHub</a></li>
+<li>Put the board into bootloader mode<ul>
+<li>v1: Double press reset button quickly</li>
+<li>v2: Hold boot button, press and release reset, release boot button</li>
+</ul>
+</li>
+<li>In <code>firmware</code> folder from release package run <code>./flash.py [v1/v2] Release</code></li>
+<li>This will run the flash tool</li>
+</ul>
+</li>
+<li>Connect <a href="../../hardware/sensors/">external sensors</a></li>
 </ul>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href="../.." class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../general_use/" class="btn btn-neutral float-right" title="Using Control board">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../general_use/" class="btn btn-neutral float-right" title="Using Control Board">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -157,17 +174,18 @@
     
   </span>
 </div>
-    <script>var base_url = '../..';</script>
-    <script src="../../js/theme_extra.js" defer></script>
-    <script src="../../js/theme.js" defer></script>
-      <script src="../../js/mathjax.js" defer></script>
-      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6" defer></script>
-      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
-      <script src="../../search/main.js" defer></script>
-    <script defer>
-        window.onload = function () {
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../js/mathjax.js"></script>
+      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
             SphinxRtdTheme.Navigation.enable(true);
-        };
+        });
     </script>
 
 </body>

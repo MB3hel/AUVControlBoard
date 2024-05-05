@@ -8,14 +8,13 @@
     <title>AUV Control Board</title>
     <link rel="stylesheet" href="./css/theme.css" />
     <link rel="stylesheet" href="./css/theme_extra.css" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
-    <script src="./js/jquery-3.6.0.min.js" defer></script>
     <!--[if lt IE 9]>
       <script src="./js/html5shiv.min.js"></script>
     <![endif]-->
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
-      <script>hljs.initHighlightingOnLoad();</script> 
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
 </head>
 
 <body class="wy-body-for-nav" role="document">
@@ -27,7 +26,7 @@
           <a href="./." class="icon icon-home"> AUV Control Board
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
-      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
   </form>
 </div>
       </div>
@@ -41,9 +40,11 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="./user_guide/preparing_board/">Preparing a Control Board</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="./user_guide/general_use/">Using Control board</a>
+                  <li class="toctree-l1"><a class="reference internal" href="./user_guide/general_use/">Using Control Board</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="./user_guide/simulator/">Using the Simulator</a>
+                  <li class="toctree-l1"><a class="reference internal" href="./user_guide/pythoniface/">Using the Python Interface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="./user_guide/simcb_simulator/">Using SimCB and Simulator</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="./user_guide/calibration/">Sensor Calibration</a>
                   </li>
@@ -63,17 +64,21 @@
               </ul>
               <p class="caption"><span class="caption-text">Developers</span></p>
               <ul>
-                  <li class="toctree-l1"><a class="reference internal" href="./firmware/overview/">Overview</a>
+                  <li class="toctree-l1"><a class="reference internal" href="./devs/overview/">Firmware Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="./firmware/details/">Implementation Details</a>
+                  <li class="toctree-l1"><a class="reference internal" href="./devs/details/">Firmware Details</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="./firmware/build/">Build and Flash</a>
+                  <li class="toctree-l1"><a class="reference internal" href="./devs/simulation/">Simulation Support</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="./firmware/math/">Math</a>
+                  <li class="toctree-l1"><a class="reference internal" href="./devs/build/">Build and Flash Firmware</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="./firmware/developing/">Firmware Development</a>
+                  <li class="toctree-l1"><a class="reference internal" href="./devs/buildsimcb/">Build and Run SimCB</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="./firmware/simhijack/">Simulation Support</a>
+                  <li class="toctree-l1"><a class="reference internal" href="./devs/pythoniface/">Interface Scripts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="./devs/developing/">Development Workflows</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="./devs/math/">Math</a>
                   </li>
               </ul>
       </div>
@@ -89,13 +94,12 @@
       <div class="wy-nav-content">
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
-    <li><a href="./." class="icon icon-home" alt="Docs"></a> &raquo;</li>
+    <li><a href="./." class="icon icon-home" aria-label="Docs"></a></li>
     <li class="wy-breadcrumbs-aside">
     </li>
   </ul>
   <hr/>
 </div>
-
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
@@ -104,7 +108,7 @@
 
   <form id="content_search" action="search.html">
     <span role="status" aria-live="polite" class="ui-helper-hidden-accessible"></span>
-    <input name="q" id="mkdocs-search-query" type="text" class="search_input search-query ui-autocomplete-input" placeholder="Search the Docs" autocomplete="off" autofocus title="Type search term here">
+    <input name="q" id="mkdocs-search-query" type="text" class="search_input search-query ui-autocomplete-input" placeholder="Search the Docs" aria-label="Search the Docs" autocomplete="off" autofocus title="Type search term here">
   </form>
 
   <div id="mkdocs-search-results" class="search-results" data-no-results-text="No results found">
@@ -142,17 +146,18 @@
     
   </span>
 </div>
-    <script>var base_url = '.';</script>
-    <script src="./js/theme_extra.js" defer></script>
-    <script src="./js/theme.js" defer></script>
-      <script src="./js/mathjax.js" defer></script>
-      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6" defer></script>
-      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
-      <script src="./search/main.js" defer></script>
-    <script defer>
-        window.onload = function () {
+    <script src="./js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = ".";</script>
+    <script src="./js/theme_extra.js"></script>
+    <script src="./js/theme.js"></script>
+      <script src="./js/mathjax.js"></script>
+      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="./search/main.js"></script>
+    <script>
+        jQuery(function () {
             SphinxRtdTheme.Navigation.enable(true);
-        };
+        });
     </script>
 
 </body>

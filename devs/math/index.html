@@ -3,26 +3,25 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://mb3hel.github.io/AUVControlBoard/firmware/math/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://mb3hel.github.io/AUVControlBoard/devs/math/" />
       <link rel="shortcut icon" href="../../img/favicon.ico" />
     <title>Math - AUV Control Board</title>
     <link rel="stylesheet" href="../../css/theme.css" />
     <link rel="stylesheet" href="../../css/theme_extra.css" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
     
       <script>
         // Current page data
         var mkdocs_page_name = "Math";
-        var mkdocs_page_input_path = "firmware\\math.md";
-        var mkdocs_page_url = "/AUVControlBoard/firmware/math/";
+        var mkdocs_page_input_path = "devs/math.md";
+        var mkdocs_page_url = "/AUVControlBoard/devs/math/";
       </script>
     
-    <script src="../../js/jquery-3.6.0.min.js" defer></script>
     <!--[if lt IE 9]>
       <script src="../../js/html5shiv.min.js"></script>
     <![endif]-->
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
-      <script>hljs.initHighlightingOnLoad();</script> 
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
 </head>
 
 <body class="wy-body-for-nav" role="document">
@@ -34,7 +33,7 @@
           <a href="../.." class="icon icon-home"> AUV Control Board
         </a><div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
-      <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
   </form>
 </div>
       </div>
@@ -48,9 +47,11 @@
               <ul>
                   <li class="toctree-l1"><a class="reference internal" href="../../user_guide/preparing_board/">Preparing a Control Board</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/general_use/">Using Control board</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/general_use/">Using Control Board</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/simulator/">Using the Simulator</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/pythoniface/">Using the Python Interface</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../../user_guide/simcb_simulator/">Using SimCB and Simulator</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../../user_guide/calibration/">Sensor Calibration</a>
                   </li>
@@ -70,19 +71,27 @@
               </ul>
               <p class="caption"><span class="caption-text">Developers</span></p>
               <ul class="current">
-                  <li class="toctree-l1"><a class="reference internal" href="../overview/">Overview</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../overview/">Firmware Overview</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../details/">Implementation Details</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../details/">Firmware Details</a>
                   </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../build/">Build and Flash</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../simulation/">Simulation Support</a>
                   </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="./">Math</a>
+                  <li class="toctree-l1"><a class="reference internal" href="../build/">Build and Flash Firmware</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../buildsimcb/">Build and Run SimCB</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../pythoniface/">Interface Scripts</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../developing/">Development Workflows</a>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" href="#">Math</a>
     <ul class="current">
     <li class="toctree-l2"><a class="reference internal" href="#coordinate-system-definition">Coordinate System Definition</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#6-degree-of-freedom-motion-control">6 Degree of Freedom Motion Control</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#nomenclature-convention-notes">Nomenclature &amp; Convention Notes</a>
+    <li class="toctree-l3"><a class="reference internal" href="#nomenclature-notation-and-convention-notes">Nomenclature, Notation, and Convention Notes</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#system-assumptions">System Assumptions</a>
     </li>
@@ -112,19 +121,19 @@
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#stability-assist-sassist-mode">Stability Assist (SASSIST) Mode</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#depth-hold-dhold-mode-motion">Depth Hold (DHOLD) Mode Motion</a>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#accumulated-euler-angles">Accumulated Euler Angles</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#other-derivations">Other Derivations</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#euler-to-quaternion-conversion">Euler to Quaternion Conversion</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#quaternion-to-euler-conversion">Quaternion to Euler Conversion</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#sensor-processing">Sensor Processing</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#other-derivations">Other Derivations</a>
-    </li>
     </ul>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../developing/">Firmware Development</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../simhijack/">Simulation Support</a>
                   </li>
               </ul>
       </div>
@@ -140,16 +149,15 @@
       <div class="wy-nav-content">
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
-    <li><a href="../.." class="icon icon-home" alt="Docs"></a> &raquo;</li>
-          <li>Developers &raquo;</li><li>Math</li>
+    <li><a href="../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Developers</li>
+      <li class="breadcrumb-item active">Math</li>
     <li class="wy-breadcrumbs-aside">
-        <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/firmware/math.md"
-          class="icon icon-github"> Edit on GitHub</a>
+          <a href="https://github.com/MB3hel/AUVControlBoard/blob/main/docs/docs/devs/math.md" class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
 </div>
-
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
@@ -166,15 +174,18 @@
 <img alt="" src="../math_res/coord_system_2.png" style="height:250px;" />
 <img alt="" src="../math_res/coord_system_rotations.png" style="height:250px;" />
 </center></p>
-<p>While this coordinate system may seem strange to some (especially anyone who has worked with planes), the name of axes doesn't really matter.</p>
+<p>While this coordinate system may seem strange to some (especially those who have worked with aircraft), the name of axes doesn't really matter. The definition of pitch, roll, and yaw relative to the front / top of the vehicle remain standard.</p>
 <h2 id="6-degree-of-freedom-motion-control">6 Degree of Freedom Motion Control</h2>
-<h3 id="nomenclature-convention-notes">Nomenclature &amp; Convention Notes</h3>
+<h3 id="nomenclature-notation-and-convention-notes">Nomenclature, Notation, and Convention Notes</h3>
 <ol>
 <li>Matrices are assumed to be zero indexed (not 1 indexed). This means the first element of a matrix <span class="arithmatex">\(M\)</span> is <span class="arithmatex">\(m_{00}\)</span> not <span class="arithmatex">\(m_{11}\)</span>. This is because the math will be implemented in C (which uses zero indexed arrays).</li>
-<li>Thruster numbers (1-8) are used by the control board's user facing components. However, this math will use thruster indices (0-7) where <code>index = number - 1</code>. This is b</li>
-<li>Rotations about axis (angular velocities / DoFs) are referred to as "xrot" (about x), "yrot" (about y), and "zrot" (about z).</li>
-<li>The terms "pitch", "roll", and "yaw" are used to describe the vehicle's orientation in space. "Pitch" is angular velocity about the x-axis, "roll" is angular rotation about the y-axis, and "yaw" is angular velocity about the z-axis.</li>
+<li>Thruster numbers (1-8) are used by the control board's user facing components. However, this math will use thruster indices (0-7) where <code>index = number - 1</code>. This is again because arrays in C are zero indexed.</li>
+<li>Rotations about axes (angular velocities / DoFs) are referred to as "xrot" (about x), "yrot" (about y), and "zrot" (about z).</li>
+<li>The terms "pitch", "roll", and "yaw" are used to describe the vehicle's orientation in space. These are a set of intrinsic Euler angles (Tait-Bryan angles to be precise) composed in the order yaw then pitch then roll (z-x'-y'' in the control board's coordinate system). Note that while these do follow the standard meanings of pitch, roll, and yaw relative to the vehicle, the axes have non-standard names. Thus, you cannot simply use standard formulas for converting between quaternions and pitch, roll, yaw.</li>
 <li>Velocities in DoFs are normalized (meaning -1.0 to 1.0).</li>
+<li>Euler angles are represented as a set of three values <span class="arithmatex">\(\begin{pmatrix} pitch &amp; roll &amp; yaw\end{pmatrix}\)</span></li>
+<li>Quaternions are represented either as a combination of a scalar component, <span class="arithmatex">\(s\)</span>, and a vector component, <span class="arithmatex">\(v\)</span> as <span class="arithmatex">\(\{s,v\}\)</span> or they may be represented using the names <span class="arithmatex">\(w\)</span>, <span class="arithmatex">\(x\)</span>, <span class="arithmatex">\(y\)</span>, and <span class="arithmatex">\(z\)</span>. In such a case this is equivelent to <span class="arithmatex">\(\{w, (x, y, z)\}\)</span>. In other words, <span class="arithmatex">\(x\)</span>, <span class="arithmatex">\(y\)</span>, and <span class="arithmatex">\(z\)</span> are the components of the vector <span class="arithmatex">\(v\)</span> and <span class="arithmatex">\(w=s\)</span>.</li>
+<li>The conjugate of a quaternion, <span class="arithmatex">\(q\)</span> is denoted <span class="arithmatex">\(q^*\)</span></li>
 </ol>
 <h3 id="system-assumptions">System Assumptions</h3>
 <ul>
@@ -187,14 +198,14 @@
 <li>System does <strong>not</strong> have translational position information</li>
 </ul>
 <h3 id="example-vehicle">Example Vehicle</h3>
-<p>The examples on this page will use AquaPack robotics's SeaWolf VIII robot. This robot's thruster configuration is as shown below. The arrows indicate the direction a thruster moves water (meaning the arrows are opposite the direction the thruster excerpts force on the vehicle).</p>
+<p>The examples on this page will use AquaPack robotics's <a href="https://ncsurobotics.github.io/SW8-Documentation/">SeaWolf VIII robot</a>. This robot's thruster configuration is as shown below.</p>
 <p><center>
 <img alt="" src="../math_res/thruster_config.png" style="height:400px;" />
 </center></p>
 <p>The arrows indicate the direction the thruster moves water when powered in the positive direction. These arrows are opposite the direction force is excerpted on the vehicle. Note that the diagram above uses thruster numbers, not indices.</p>
 <h3 id="dof-matrix">DoF Matrix</h3>
-<p>The <em>DoF Matrix</em>, <span class="arithmatex">\(D\)</span>, is constructed based on the vehicle's thruster configuration. Rows of the matrix correspond to thrusters (by index). And columns of the matrix correspond to vehicle relative DoFs. Thus, this is an 8x6 matrix. Columns correspond to DoFs in the following order (0-5): x, y, z, pitch, roll, yaw. Note that pitch, roll, and yaw are written using the single variable notation p, r, h (h = heading = yaw).</p>
-<p><span class="arithmatex">\(D = \left(\begin{array}{c|c|c|c|c|c} d_0 &amp; d_1 &amp; d_2  &amp; d_3 &amp; d_4 &amp; d_5 \end{array}\right) = \left(\begin{array}{c|c|c|c|c|c} d_x &amp; d_y &amp; d_z  &amp; d_p &amp; d_r &amp; d_h \end{array}\right)\)</span></p>
+<p>The <em>DoF Matrix</em>, <span class="arithmatex">\(D\)</span>, is constructed based on the vehicle's thruster configuration. Rows of the matrix correspond to thrusters (by index). And columns of the matrix correspond to vehicle-relative DoFs. Thus, this is an 8x6 matrix (8 thrusters, 6 DoFs). Columns correspond to DoFs in the following order (0-5): x, y, z, xrot, yrot, zrot.</p>
+<p><span class="arithmatex">\(D = \left(\begin{array}{c|c|c|c|c|c} d_0 &amp; d_1 &amp; d_2  &amp; d_3 &amp; d_4 &amp; d_5 \end{array}\right) = \left(\begin{array}{c|c|c|c|c|c} d_x &amp; d_y &amp; d_z  &amp; d_{xr} &amp; d_{yr} &amp; d_{zr} \end{array}\right)\)</span></p>
 <p>Each column of the DoF matrix, <span class="arithmatex">\(d_i\)</span> is a set of thruster speeds that result in motion <em>exclusively</em> in the column's DoF. Additionally, the resultant motion should be the maximum possible speed, and in the positive direction. Each <span class="arithmatex">\(d_i\)</span> is an 8 element column vector, with elements corresponding to thrusters (by index). All speeds should be normalized (between -1.0 and 1.0)</p>
 <p>For the example vehicle shown above, the following is the DoF matrix</p>
 <p><span class="arithmatex">\(D = 
@@ -210,16 +221,16 @@
 \end{pmatrix}\)</span></p>
 <p>Consider the first column: <span class="arithmatex">\(d_0 = d_x\)</span>. This column's thruster speeds should result in the vehicle moving as fast as possible in the +x direction (only). This is achieved by setting T2, T4 (index 1, 3) to the positive direction and T1, T3 (index 0, 2) to the negative direction at full speed (recall that the arrows are opposite the direction the thruster excerpts force on the vehicle). Thus</p>
 <p><span class="arithmatex">\(d_x = \begin{pmatrix}-1 &amp; +1 &amp; -1 &amp; +1 &amp; 0 &amp; 0 &amp; 0 &amp; 0\end{pmatrix}^T\)</span></p>
-<p>Note that when constructing the DoF matrix for your vehicle, you should assume an ideal system and environment.</p>
+<p>Note that when constructing the DoF matrix for your vehicle, you should assume an ideal system and environment (ignore variation between thrusters, environmental factors that create motion, etc).</p>
 <h3 id="local-mode-motion">LOCAL Mode Motion</h3>
-<p>In LOCAL mode, motion is specified as a set of speeds in vehicle relative DoFs. The user provides the control board with a <em>local target motion vector</em> (<span class="arithmatex">\(t_l\)</span>) where each element corresponds to a DoF.</p>
+<p>In LOCAL mode, motion is specified as a set of speeds in vehicle-relative DoFs. The user provides the control board with a <em>local target motion vector</em> (<span class="arithmatex">\(t_l\)</span>) where each element corresponds to a DoF.</p>
 <p><span class="arithmatex">\(t_l = \begin{pmatrix} x &amp; y &amp; z &amp; r_x &amp; r_y &amp; r_z \end{pmatrix}^T\)</span></p>
 <p><span class="arithmatex">\(x\)</span> is normalized velocity in +x direction<br />
 <span class="arithmatex">\(y\)</span> is normalized velocity in +y direction<br />
 <span class="arithmatex">\(z\)</span> is normalized velocity in +y direction<br />
-<span class="arithmatex">\(r_x\)</span> is normalized velocity in +pitch direction (xrot)
-<span class="arithmatex">\(r_y\)</span> is normalized velocity in +roll direction (yrot)
-<span class="arithmatex">\(r_z\)</span> is normalized velocity in +yaw direction (zrot)</p>
+<span class="arithmatex">\(r_x\)</span> is normalized angular velocity about the +x axis direction (xrot)<br />
+<span class="arithmatex">\(r_y\)</span> is normalized angular velocity about the +y axis (yrot)<br />
+<span class="arithmatex">\(r_z\)</span> is normalized angular velocity about the +z axis (zrot)</p>
 <p>By multiplying this target motion by the DoF matrix, <span class="arithmatex">\(D\)</span>, a <em>speed vector</em> <span class="arithmatex">\(s\)</span> is obtained where each element of <span class="arithmatex">\(s\)</span> corresponds to a specific thruster (by index).</p>
 <p><span class="arithmatex">\(s = D t_l\)</span></p>
 <p>Consider the example where <span class="arithmatex">\(t_l = \begin{pmatrix}0 &amp; 1 &amp; 0 &amp; 0 &amp; 0 &amp; 0\end{pmatrix}^T\)</span>. This should cause the vehicle to move at full possible speed forward (relative to the vehicle's orientation).</p>
@@ -237,7 +248,7 @@
 \begin{pmatrix}0 \\ 1 \\ 0 \\ 0 \\ 0 \\ 0\end{pmatrix}
 =
 \begin{pmatrix}-1 \\ -1 \\ +1 \\ +1 \\ 0 \\ 0 \\ 0 \\ 0\end{pmatrix}\)</span></p>
-<p>In the above example, it is trivial to see that this is the desired motion. However for a more complex example, a problem appears. Consider <span class="arithmatex">\(t_l = \begin{pmatrix}0 &amp; 1 &amp; 0 &amp; 0 &amp; 0 &amp; 1\end{pmatrix}^T\)</span>. This describes the vehicle both moving forward and yawing at full possible speed.</p>
+<p>In the above example, it is trivial to see that this is the desired motion. However for a more complex example, a problem appears. Consider <span class="arithmatex">\(t_l = \begin{pmatrix}0 &amp; 1 &amp; 0 &amp; 0 &amp; 0 &amp; 1\end{pmatrix}^T\)</span>. This describes the vehicle both moving forward and about the z-axis at full possible speed.</p>
 <p><span class="arithmatex">\(s = D t_l = 
 \begin{pmatrix}
 -1 &amp; -1 &amp; 0 &amp; 0 &amp; 0 &amp; +1 \\
@@ -252,9 +263,10 @@
 \begin{pmatrix}0 \\ 1 \\ 0 \\ 0 \\ 0 \\ 1\end{pmatrix}
 =
 \begin{pmatrix}0 \\ -2 \\ 0 \\ +2 \\ 0 \\ 0 \\ 0 \\ 0\end{pmatrix}\)</span></p>
-<p>Notice that the resultant speed vector has motors moving in excess of 100% speed (elements with magnitude greater than 1.0). This is not possible. While a simple solution may seem to be dividing all elements of the vector by the one with the largest magnitude. This results in a scaled speed vector <span class="arithmatex">\(\hat{s}\)</span></p>
+<p>Notice that the resultant speed vector has motors moving in excess of 100% speed (elements with magnitude greater than 1.0). This is not possible. </p>
+<p>The simple solution would seem to be dividing all elements of the vector by the one with the largest magnitude. This results in a scaled speed vector <span class="arithmatex">\(\hat{s}\)</span></p>
 <p><span class="arithmatex">\(\hat{s} = s \div \text{absmax}(s)\)</span></p>
-<p>this will not work well in all cases. Consider <span class="arithmatex">\(t_l = \begin{pmatrix}0 &amp; 1 &amp; 1 &amp; 1 &amp; 1 &amp; 1\end{pmatrix}^T\)</span>.</p>
+<p>However, this method will not work well in all cases. Consider <span class="arithmatex">\(t_l = \begin{pmatrix}0 &amp; 1 &amp; 1 &amp; 1 &amp; 1 &amp; 1\end{pmatrix}^T\)</span>.</p>
 <p><span class="arithmatex">\(s = D t_l = 
 \begin{pmatrix}
 -1 &amp; -1 &amp; 0 &amp; 0 &amp; 0 &amp; +1 \\
@@ -299,7 +311,7 @@
 \end{pmatrix}\)</span></p>
 <p>Then for each thruster <span class="arithmatex">\(i\)</span> an overlap vector <span class="arithmatex">\(o_i\)</span> can be constructed as follows</p>
 <p><span class="arithmatex">\(o_i = C (c^i)^T\)</span></p>
-<p>where <span class="arithmatex">\(c^i\)</span> is the <span class="arithmatex">\(i\)</span>th row of <span class="arithmatex">\(C\)</span>. Thus, <span class="arithmatex">\(o_i\)</span> is an 8 element vector where each element corresponds to a thruster (by index). Element <span class="arithmatex">\(j\)</span> of <span class="arithmatex">\(o_i\)</span> can either be <span class="arithmatex">\(1\)</span> or a <span class="arithmatex">\(0\)</span>. <span class="arithmatex">\(1\)</span> indicates that thrusters <span class="arithmatex">\(i\)</span> and <span class="arithmatex">\(j\)</span> overlap.</p>
+<p>where <span class="arithmatex">\(c^i\)</span> is the <span class="arithmatex">\(i\)</span>th row of <span class="arithmatex">\(C\)</span>. Thus, <span class="arithmatex">\(o_i\)</span> is an 8 element vector where each element corresponds to a thruster (by index). Element <span class="arithmatex">\(j\)</span> of <span class="arithmatex">\(o_i\)</span> can either be <span class="arithmatex">\(1\)</span> or a <span class="arithmatex">\(0\)</span>. A <span class="arithmatex">\(1\)</span> indicates that thrusters <span class="arithmatex">\(i\)</span> and <span class="arithmatex">\(j\)</span> overlap.</p>
 <p>For example, </p>
 <p><span class="arithmatex">\(o_0 = C (c^0)^T = \begin{pmatrix} 1 &amp; 1 &amp; 1 &amp; 1 &amp; 0 &amp; 0 &amp; 0 &amp; 0 \end{pmatrix}^T\)</span></p>
 <p>This shows that thruster index 0 (T1) overlaps with indices 0, 1, 2, and 3 (T1, T2, T3, T4).</p>
@@ -308,7 +320,7 @@
 <ul>
 <li>Find the thruster (<code>i</code>) with the largest magnitude speed</li>
 <li>Iterate over thruster <code>i</code>'s overlap vector</li>
-<li>For any thruster <code>i</code> overlaps with (<code>j</code>), divide thruster <code>j</code>'s speed by the magnitude of thruster <code>i</code>'s speed</li>
+<li>For any thruster, <code>j</code>, with which thruster <code>i</code> overlaps, divide thruster <code>j</code>'s speed by the magnitude of thruster <code>i</code>'s speed</li>
 <li>Repeat until the largest magnitude does not exceed 1.0</li>
 </ul>
 <pre><code>while true
@@ -346,14 +358,14 @@ endwhile
 </ul>
 <p><span class="arithmatex">\(t_g = \begin{pmatrix} x &amp; y &amp; z &amp; p &amp; r &amp; h \end{pmatrix}\)</span></p>
 <p>It is necessary to transform each DoF's motion into motions in the vehicle's DoFs. These speeds can then be passed to LOCAL mode.</p>
-<p><strong><em>WARNING:</em></strong> <em>GLOBAL mode is impacted by gimbal lock issues with euler angles. This occurs when the vehicle's pitch is +/- 90 degrees. In this scenario the meaning of "increase / decrease pitch" is ambiguous. The vehicle will take the zero-roll route in this scenario. Thus, GLOBAL mode may produce undesirable motion if the roll is non-zero and you pitch through +/- 90. A potential solution for this could be some form of motion hysteresis to handle moving through gimbal lock orientations, however this is </em><em>not</em><em> implemented as of now.</em></p>
+<p><strong><em>WARNING:</em></strong> <em>GLOBAL mode is impacted by gimbal lock issues with euler angles. This occurs when the vehicle's pitch is +/- 90 degrees. In this scenario the meaning of "increase / decrease pitch" is ambiguous. The vehicle will take the zero-roll route in this scenario (an arbitrary choice based on how euler angle conversion is implemented in the firmware). Thus, GLOBAL mode may produce undesirable motion if the roll is non-zero and you pitch through +/- 90. A potential solution for this could be some form of motion hysteresis to handle moving through gimbal lock orientations, however this is </em><em>not</em><em> implemented as of now.</em></p>
 <h4 id="translation-dofs">Translation DoFs</h4>
 <p>The translation DoFs are easily transformed using gravity vectors. By applying a quaternion based rotation matrix to the base gravity vector, <span class="arithmatex">\(g_b = \begin{pmatrix}0 &amp; 0 &amp; -1\end{pmatrix}\)</span>, the following solution is determined for the current gravity vector, <span class="arithmatex">\(g_c\)</span> given the vehicle's orientation quaternion, <span class="arithmatex">\(q\)</span>.</p>
 <p><span class="arithmatex">\(\begin{pmatrix} 2*(q.x*q.z+q.w*q.y) \\  2*(q.w*q.x-q.y*q.z) \\ -(q.w)^2+(q.x)^2+(q.y)^2-(q.z)^2\end{pmatrix}^T\)</span></p>
 <p>The minimal rotation from <span class="arithmatex">\(g_b\)</span> to <span class="arithmatex">\(g_c\)</span> is then calculated. Let this rotation be called <span class="arithmatex">\(q_{rot}\)</span>. <em>This rotation will generally include no yaw component, unless the vehicle is upside down and facing backwards (eg pitch of 180 degrees) in which case it will contain a yaw component of 180 degrees. This is desirable as it ensures a continuous definition of what <code>gy</code> is even while the vehicle is flipping via pitch.</em></p>
 <p>This quaternion can then be applied to speeds in the <code>gx</code>, <code>gy</code>, <code>gz</code> basis (<code>x</code>, <code>y</code>, and <code>z</code> here) to rotate them onto the vehicle basis. Thus, this "converts" translation speeds from GLOBAL to LOCAL mode DoFs.</p>
 <p>However, it is not ideal to transform the translation vector all at once. It is best to do it in three stages to allow proper upscaling as needed (explained below).</p>
-<p>Thus for each global mode translation vector <span class="arithmatex">\(\begin{pmatrix} 0 &amp; y &amp; 0 \end{pmatrix}\)</span>, <span class="arithmatex">\(\begin{pmatrix} 0 &amp; 0 &amp; z \end{pmatrix}\)</span>, and <span class="arithmatex">\(\begin{pmatrix} x &amp; 0 &amp; 0 \end{pmatrix}\)</span> rotate it by <span class="arithmatex">\(q_{rot}\)</span> to obtain <span class="arithmatex">\(t_x\)</span>, <span class="arithmatex">\(t_y\)</span>, and <span class="arithmatex">\(t_z\)</span> respectively (note that <span class="arithmatex">\(\left\{s, v\right\}\)</span> is a quaternion with scalar s and vector v).</p>
+<p>Thus for each global mode translation vector <span class="arithmatex">\(\begin{pmatrix} x &amp; 0 &amp; 0 \end{pmatrix}\)</span>, <span class="arithmatex">\(\begin{pmatrix} 0 &amp; y &amp; 0 \end{pmatrix}\)</span>, and <span class="arithmatex">\(\begin{pmatrix} 0 &amp; 0 &amp; z \end{pmatrix}\)</span> rotate it by <span class="arithmatex">\(q_{rot}\)</span> to obtain <span class="arithmatex">\(t_x\)</span>, <span class="arithmatex">\(t_y\)</span>, and <span class="arithmatex">\(t_z\)</span> respectively (note that <span class="arithmatex">\(\left\{s, v\right\}\)</span> is a quaternion with scalar s and vector v).</p>
 <p><span class="arithmatex">\(\left\{0, t_x\right\} = q_{rot} \left\{0, \begin{pmatrix} x &amp; 0 &amp; 0 \end{pmatrix} \right\} q_{rot}^*\)</span></p>
 <p><span class="arithmatex">\(\left\{0, t_y\right\} = q_{rot} \left\{0, \begin{pmatrix} 0 &amp; y &amp; 0 \end{pmatrix} \right\} q_{rot}^*\)</span></p>
 <p><span class="arithmatex">\(\left\{0, t_z\right\} = q_{rot} \left\{0, \begin{pmatrix} 0 &amp; 0 &amp; z \end{pmatrix} \right\} q_{rot}^*\)</span></p>
@@ -372,9 +384,13 @@ endwhile
 <li><span class="arithmatex">\(l\)</span> is a sum of three vectors (each with elements no larger than a magnitude of 1), thus it may have elements with a magnitude greater than 1.</li>
 </ol>
 <p>Issue 1 should be handled first as correcting it may "fix" issue 2. Handling issue 2 first could result in downscaling speeds more than necessary.</p>
-<p>Handling issue 1 requires the user to provide a little more information about the vehicle: relative speeds in each DoF. These can be used to calculate downscaling factors to slow down the faster directions (note: speeding up the slower directions would result in impossible speeds, but would be handled by solving issue 2; regardless it is less ideal).</p>
-<p>These downscaling factors are calculated from "RELDOF" information provided by the user (see messages page of user guide). Here we will referr to the scale factors as <span class="arithmatex">\(m_x\)</span>, <span class="arithmatex">\(m_y\)</span>, <span class="arithmatex">\(m_z\)</span>, <span class="arithmatex">\(m_{rx}\)</span>, <span class="arithmatex">\(m_{ry}\)</span>, and <span class="arithmatex">\(m_{rz}\)</span> for the x, y, z, xrot, yrot, and zrot DoFs respectively (note that these are vehicle DoFs).</p>
-<p>Thus, the simplest option would be to let <span class="arithmatex">\(l = \begin{pmatrix}l.x * m_x &amp; l.y * m_y &amp; l.z * m_z\end{pmatrix}\)</span>. However, this may downscale more than necessary. Consider the slowest direction to have a speed of 0 in l. In this case, since the slowest direction is unused, we are downscaling too much. Thus, the following algorithm is used to select the ideal downscaling factors by "ignoring" the downscaling required for unused DoFs (DoFs with a speed of 0).</p>
+<p>Handling issue 1 requires the user to provide a little more information about the vehicle: relative speeds in each DoF. These can be used to calculate downscaling factors to slow down the faster directions (note: speeding up the slower directions could result in impossible speeds, but would be handled by solving issue 2; regardless it is less ideal).</p>
+<p>These downscaling factors are calculated from "RELDOF" information provided by the user (see messages page of user guide). This information is a set of constants, which will be referred to the as the scale factors as <span class="arithmatex">\(m_x\)</span>, <span class="arithmatex">\(m_y\)</span>, <span class="arithmatex">\(m_z\)</span>, <span class="arithmatex">\(m_{rx}\)</span>, <span class="arithmatex">\(m_{ry}\)</span>, and <span class="arithmatex">\(m_{rz}\)</span> for the x, y, z, xrot, yrot, and zrot DoFs respectively (note that these are vehicle DoFs).</p>
+<p>These scale factors makeup two groups: translational (<span class="arithmatex">\(m_x\)</span>, <span class="arithmatex">\(m_y\)</span>, and <span class="arithmatex">\(m_z\)</span>) and rotational (<span class="arithmatex">\(m_{rx}\)</span>, <span class="arithmatex">\(m_{ry}\)</span>, and <span class="arithmatex">\(m_{rz}\)</span>). Within each group, the fastest DoF's scale factor is set to 1. The other scale factors are a percentage of the fastest DoF in the group.</p>
+<p>For example, if the vehicle can move at 2m/s along z, 1m/s along y, and 0.5m/s along x then <span class="arithmatex">\(m_x = 0.25\)</span>, <span class="arithmatex">\(m_y = 0.5\)</span>, and <span class="arithmatex">\(m_z = 1.0\)</span>.</p>
+<p>Given these scale factors, the simplest option would be to let <span class="arithmatex">\(l = \begin{pmatrix}l.x * m_x &amp; l.y * m_y &amp; l.z * m_z\end{pmatrix}\)</span>. However, this may downscale more than necessary. </p>
+<p>Consider a scenario where the speed vector <span class="arithmatex">\(l\)</span> has a <span class="arithmatex">\(0\)</span> in the position of the slowest DoF of the vehicle (eg if the vehicle is slowest in the x direction, the <span class="arithmatex">\(l\)</span> vector would have a zero in the x position).</p>
+<p>In this case, since the slowest direction is unused, we are downscaling too much. Thus, the following algorithm is used to select the ideal downscaling factors by "ignoring" the downscaling required for unused DoFs (DoFs with a speed of 0).</p>
 <pre><code>// Zero downscale factors for unused DoFs
 if abs(l.x) == 0
     m_x = 0
@@ -403,16 +419,17 @@ m_z = m_z / m_max;
 <h4 id="rotation-dofs">Rotation DoFs:</h4>
 <p>Converting the GLOBAL mode rotations (increase/decrease pitch, roll, yaw) to motions about DoFs is a little harder. It requires decomposing the quaternion into euler angles, then calculating three quaternions describing one euler rotation each. In other words, given the vehicle's current rotation <span class="arithmatex">\(q\)</span> we need to find <span class="arithmatex">\(q_{pitch}\)</span>, <span class="arithmatex">\(q_{roll}\)</span> and <span class="arithmatex">\(q_{yaw}\)</span> such that (based on the euler angle convention used by the control board)</p>
 <p><span class="arithmatex">\(q = q_{yaw} q_{pitch} q_{roll}\)</span></p>
-<p>This can be done by converting <span class="arithmatex">\(q\)</span> to a set of euler angles <span class="arithmatex">\(e = \begin{pmatrix}pitch &amp; roll &amp; yaw\end{pmatrix}\)</span> then constructing the following and converting each to a quaternion</p>
+<p><em>Note: recall that when composing quaternions to be applied to a body, left-multiplied quaternions are applied in the extrinsic coordinate system (world-basis) whereas right-multiplied quaternions are applied in the intrinsic coordinate system (rotating body's basis). Thus, yaw is about the world-z axis (z), then pitch is about the vehicle's x-axis after yawing (x') and roll is about the vehicle's y-axis after both yawing then pitching (y''). This is consistent with the definitions of the coordinate system and pitch, roll, yaw for the control board.</em></p>
+<p>Decomposing the quaternion can be done by converting <span class="arithmatex">\(q\)</span> to a set of euler angles <span class="arithmatex">\(e = \begin{pmatrix}pitch &amp; roll &amp; yaw\end{pmatrix}\)</span> then constructing the following and converting each to a quaternion</p>
 <p><span class="arithmatex">\(e_{pitch} = \begin{pmatrix}pitch &amp; 0 &amp; 0\end{pmatrix} \rightarrow q_{pitch}\)</span></p>
 <p><span class="arithmatex">\(e_{roll} = \begin{pmatrix}0 &amp; roll &amp; 0\end{pmatrix} \rightarrow q_{roll}\)</span></p>
 <p><span class="arithmatex">\(e_{yaw} = \begin{pmatrix}0 &amp; 0 &amp; yaw\end{pmatrix} \rightarrow q_{yaw}\)</span></p>
-<p>However, the euler angles obtained from <span class="arithmatex">\(q\)</span> may not be correct for this use case. An equivalent angle go <span class="arithmatex">\(e\)</span> (although improper) is <span class="arithmatex">\(e_{alt} = \begin{pmatrix} \pi - pitch &amp; roll - \pi &amp; yaw - \pi \end{pmatrix}\)</span>. We need to compensate for first roll then pitch. Thus, we need the euler angle with minimal roll component. This will be referred to here as <span class="arithmatex">\(e_b\)</span> (which is either <span class="arithmatex">\(e\)</span> or <span class="arithmatex">\(_{alt}\)</span>).</p>
+<p>However, the euler angles obtained from <span class="arithmatex">\(q\)</span> may not be correct for this use case. An equivalent angle go <span class="arithmatex">\(e\)</span> (although improper) is <span class="arithmatex">\(e_{alt} = \begin{pmatrix} \pi - pitch &amp; roll - \pi &amp; yaw - \pi \end{pmatrix}\)</span>. We need to compensate for first roll then pitch. Thus, we need the euler angle with minimal roll component. This will be referred to here as <span class="arithmatex">\(e_b\)</span>, equal to either <span class="arithmatex">\(e\)</span> or <span class="arithmatex">\(_{alt}\)</span>, whichever has the smaller magnitude roll component.</p>
 <p>Then, given <span class="arithmatex">\(s\)</span> vectors describing motion to change the vehicle's pitch, roll, or yaw</p>
 <p><span class="arithmatex">\(s_{pitch} = \begin{pmatrix}p &amp; 0 &amp; 0\end{pmatrix}\)</span></p>
 <p><span class="arithmatex">\(s_{roll} = \begin{pmatrix}0 &amp; r &amp; 0\end{pmatrix}\)</span></p>
 <p><span class="arithmatex">\(s_{yaw} = \begin{pmatrix}0 &amp; 0 &amp; h\end{pmatrix}\)</span></p>
-<p>We need to transform these onto the robot's axes as <span class="arithmatex">\(w\)</span> vectors. For roll this is trivial as roll is about the vehicle's y axis. For pitch, this requires undoing roll first (rotate by <span class="arithmatex">\(q_{roll}*\)</span>) and for yaw this requires undoing roll then pitch. Thus</p>
+<p>We need to transform these onto the robot's axes as <span class="arithmatex">\(w\)</span> vectors. For roll this is trivial as roll is about the vehicle's y axis. For pitch, this requires undoing roll first (rotate by <span class="arithmatex">\(q_{roll}^*\)</span>) and for yaw this requires undoing roll then pitch. Thus</p>
 <p><span class="arithmatex">\(w_{roll} = s_{roll}\)</span></p>
 <p><span class="arithmatex">\(\left\{0, w_{pitch}\right\} = q_{roll}^* \left\{0, s_{pitch}\right\} q_{roll}\)</span></p>
 <p><span class="arithmatex">\(\left\{0, w_{yaw}\right\}  = q_{pitch}^* q_{roll}^* \left\{0, s_{yaw}\right\} q_{roll} q_{pitch}\)</span></p>
@@ -431,7 +448,6 @@ m_z = m_z / m_max;
 <li>yrot PID: Controls rotation about vehicle y-axis</li>
 <li>zrot PID: Controls rotation about vehicle z-axis</li>
 </ul>
-<p><em>Note that in some code, these PIDs are referred to as "SASSIST" PIDs. However, they are used for OHOLD too!</em></p>
 <p>The inputs to OHOLD mode are as follows</p>
 <ul>
 <li><code>x</code>: Translation along gx-axis (same as in GLOBAL mode)</li>
@@ -444,15 +460,15 @@ m_z = m_z / m_max;
 <p>There are two variants of OHOLD mode</p>
 <ul>
 <li>Variant 1 (OHOLD1): Speed for yaw (<code>h</code>) is used instead of PID control</li>
-<li>Variant 2 (OHOLD2): PID is used for yaw (yaw speed / <code>h</code> is ignored)</li>
+<li>Variant 2 (OHOLD2): PID is used for yaw (yaw speed <code>h</code> is ignored)</li>
 </ul>
-<p>Variant 2 is actually then simpler variant. Variant 2 adds some additional complexity for orientation control.</p>
+<p>Variant 2 is mathematically then simpler variant. Variant 1 adds some additional complexity for orientation control.</p>
 <h4 id="translation-dofs_1">Translation DoFs</h4>
-<p>The user provided <code>x</code> and <code>y</code> along with the <code>z</code> from the depth PID are handled the same way by SASSIST mode as they are in GLOBAL mode to obtain the final LOCAL mode translation vector <span class="arithmatex">\(l\)</span>.</p>
+<p>The user provided <code>x</code>, <code>y</code>, and <code>z</code> translation speeds are handled the same way by OHOLD mode as they are in GLOBAL mode to obtain the final LOCAL mode translation vector <span class="arithmatex">\(l\)</span>.</p>
 <h4 id="ohold2-orientation-control">OHOLD2 Orientation Control</h4>
 <p>While translation for OHOLD is nearly identical to GLOBAL mode, rotation DoFs are very different. Orientation is controlled with a set of 3 PID controllers that work in LOCAL DoFs. Thus it is necessary to determine the rotations necessary about the vehicle's axes to achieve the desired orientation.</p>
 <p>We are given a target orientation as euler angles, <span class="arithmatex">\(e_t\)</span>. This can be converted to a target orientation quaternion, <span class="arithmatex">\(q_t\)</span> using the formulas derived in later sections. </p>
-<p><em>Note: For OHOLD1 things after this point are the same (see section below for details on how to get <span class="arithmatex">\(q_t\)</span> for OHOLD1).</em></p>
+<p><em>Note: For OHOLD1 obtaining <span class="arithmatex">\(q_t\)</span> is more complex. See the OHOLD1 section for details. However, what is done with <span class="arithmatex">\(q_t\)</span> from here on, is the same in OHOLD1 as it is in OHOLD2.</em></p>
 <p>The vehicle's current orientation (as a quaternion) is also available from the IMU as <span class="arithmatex">\(q_c\)</span>. We need to calculate a quaternion <span class="arithmatex">\(q_d\)</span> that represents the minimal rotation from <span class="arithmatex">\(q_c\)</span> to <span class="arithmatex">\(q_t\)</span>. However, importantly we want <span class="arithmatex">\(q_d\)</span> to be a rotation in the vehicle's basis. Recall that right multiplication of quaternions are applied in the vehicle's basis. Thus, to describe the target orientation as the current orientation plus a rotation in the vehicle's basis</p>
 <p><span class="arithmatex">\(q_t = q_c q_d\)</span></p>
 <p>Therefore</p>
@@ -468,12 +484,13 @@ m_z = m_z / m_max;
 <ul>
 <li>let <span class="arithmatex">\(q_d = \left\{s, v\right\}\)</span></li>
 <li><span class="arithmatex">\(\theta = 2 atan2(|v|, s)\)</span></li>
-<li><span class="arithmatex">\(n = v / |v|\)</span> if <span class="arithmatex">\(|v| &gt; 0\)</span> else <span class="arithmatex">\(n = v = 0\)</span></li>
+<li><span class="arithmatex">\(n = v / |v|\)</span> if <span class="arithmatex">\(|v| &gt; 0\)</span> else <span class="arithmatex">\(n = v = (0, 0, 0)\)</span></li>
 </ul>
-<p>This axis (<span class="arithmatex">\(n\)</span>) will be a unit vector. Thus it represents proportions of the rotation about each of the vehicle's axes. The angle (<span class="arithmatex">\(\theta\)</span>) is the magnitude of the rotation that must be taken.</p>
+<p>This axis (<span class="arithmatex">\(n\)</span>) will be a unit vector. Thus it represents proportions of the rotation about each of the vehicle's axes (this is about vehicle's axes because <span class="arithmatex">\(q_d\)</span> is in the vehicle basis). The angle (<span class="arithmatex">\(\theta\)</span>) is the magnitude of the rotation that must be taken.</p>
 <p>Thus, the product of <span class="arithmatex">\(n\)</span> and <span class="arithmatex">\(\theta\)</span> is proportional to the error in angle about each of the vehicle's axes.</p>
 <p><span class="arithmatex">\(e = \theta n\)</span></p>
-<p>This error vector, <span class="arithmatex">\(e\)</span>, contains the errors to be provided to each orientation PID (xrot, yrot, zrot). The output of these PIDs are angular velocity percentages (-1.0 to 1.0) about each of the vehicle's axes: <span class="arithmatex">\(w = \begin{pmatrix} w_x &amp; w_y &amp; w_z \end{pmatrix}\)</span></p>
+<p>This error vector, <span class="arithmatex">\(e\)</span>, contains the errors to be provided to each orientation PID (xrot, yrot, zrot). The output of these PIDs are angular velocity percentages (-1.0 to 1.0) about each of the vehicle's axes (<span class="arithmatex">\(w_i\)</span> denotes the output of the <span class="arithmatex">\(i\)</span>rot PID)</p>
+<p><span class="arithmatex">\(w = \begin{pmatrix} w_x &amp; w_y &amp; w_z \end{pmatrix}\)</span></p>
 <p><em>Note: for OHOLD 1 there is an extra step here to calculate the correct w (see section below).</em></p>
 <p>Finally, it is necessary to downscale the <span class="arithmatex">\(w\)</span> vectors just as in GLOBAL mode</p>
 <ul>
@@ -492,31 +509,99 @@ m_z = m_z / m_max;
 <p><span class="arithmatex">\(w_{yaw}\)</span> will then be upscaled just as in GLOBAL mode.</p>
 <p>Then <span class="arithmatex">\(w = w + w_{yaw}\)</span>. This is then downscaled as described for OHOLD2.</p>
 <h3 id="stability-assist-sassist-mode">Stability Assist (SASSIST) Mode</h3>
-<p>Stability assist mode (SASSIST) is simply OHOLD mode, with the addition of closed-loop control for vehicle depth. Thus, instead of providing a <code>z</code> speed (for motion along the gz-axis), a PID controller is used to acheive the target depth.</p>
+<p>Stability assist mode (SASSIST) is simply OHOLD mode, with the addition of closed-loop control for vehicle depth. Thus, instead of providing a <code>z</code> speed (for motion along the gz-axis), a PID controller is used to achieve the target depth.</p>
 <p>Inputs to this mode are the same as OHOLD mode, however instead of <code>z</code>, <code>d_t</code> is provided.</p>
 <ul>
 <li><code>d_t</code>: Target depth (meters; negative for below the surface)</li>
 </ul>
 <p>The PID used to maintain vehicle depth is referred to as the Depth PID. This PID uses the current vehicle depth (provided by a depth sensor) to calculate a z speed in the gz-axis, then provides it as an input to OHOLD mode. </p>
 <p>All other inputs from SASSIST are passed through to OHOLD mode as provided. Thus, there are two variants of SASSIST mode (variant 1 and variant 2) built ontop of the corresponding variants of OHOLD mode.</p>
-<h3 id="depth-hold-dhold-mode-motion">Depth Hold (DHOLD) Mode Motion</h3>
-<p>Depth hold (DHOLD) mode is GLOBAL mode but using a PID to control the vehicle's depth. The same depth PID used for SASSIST mode is used for DHOLD mode.</p>
-<p>This mode uses the vehicle's current depth and a user provided target depth to calculate the depth PIDs error. The depth PID provides the gz-axis speed. Other speeds (<code>x</code>, <code>y</code>, <code>p</code>, <code>r</code>, and <code>h</code>) are provided by the user and mean the same thing as in GLOBAL mode. </p>
-<p>The calculated <code>z</code> along with user-provided speeds are passed directly to GLOBAL mode after calculating <code>z</code> using the depth PID.</p>
-<p><em>Note that this mode does not maintain vehicle orientation. In practice, this control mode is rarely useful.</em></p>
-<h2 id="sensor-processing">Sensor Processing</h2>
-<p>TODO: Euler angle accumulation</p>
+<h2 id="accumulated-euler-angles">Accumulated Euler Angles</h2>
+<p><strong><em>WARNING:</em></strong> <em>Make sure you understand what these are and are</em> <strong><em>not</em></strong> <em>before using them. These are</em> <strong><em>not</em></strong> <em>normal euler angles. They are intended to allow high level software using the control board to a measurement of orientation about an individual axis that accumulates similar to a gyroscope. Generally, use of these is discouraged. They are provided as a "compatibility bridge" for code developed for a gyroscope system.</em></p>
+<p><strong><em>WARNING:</em></strong> <em>Accumulated euler angles are</em> <strong><em>not</em></strong> <em>the current orientation of the vehicle as an euler angle!</em></p>
+<p>The euler and quaternion values provided by the IMU are not directly useful for tracking multiple rotations of the vehicle. Unlike simply integrating gyroscope data, euler angles (pitch, roll, yaw) and quaternions do not track the number of times the vehicle has rotated about a particular axis. They only track the vehicle's orientation in space.</p>
+<p>While integrating raw gyro data would provide an accumulating measurement, such a solution would be rotations about the robot's axes. Generally, it is more useful to track the number of times the vehicle has "pitched", "rolled" or "yawed".</p>
+<p>Note that an accumulated gyro z angle of 500 does not necessarily mean the robot has yawed 500 degrees; the robot could have been oriented at a pitch of 90. Instead, we want to measure how many degrees the vehicle has rotated through.</p>
+<p>This can be done by tracking changes between subsequent quaternions from the IMU. The idea is to compare each quaternion read from the IMU with the previous quaternion received from the IMU (note that quaternions of all zeros are ignored to avoid issues with invalid IMU data samples after first configuring the sensor).</p>
+<p>For each quaternion read from the IMU:</p>
+<ul>
+<li>Calculate the shortest set of rotations from the previous to the current quaternion</li>
+<li>Convert the shortest angle to euler angles</li>
+<li>Add the pitch, roll, and yaw from the shortest euler angles to accumulated pitch, roll, and yaw variables</li>
+<li>Note that if the IMU axis config changes, the accumulated data should be zeroed and the previously read quaternion discarded.</li>
+</ul>
+<p>This makes the assumption that the smallest rotation between two quaternions is the most probable path the robot took to change its orientation. This is an approximation, however it is a fairly good one as long as sample rate of data is sufficiently high. The specifics of the path are lost, however, if the sample rate is high enough, the length of the path is sufficiently small that and this is a good approximation.</p>
+<p>The second issue with this approximation has to do with rotations exceeding 180 degrees. The method for determining shortest path between two quaternions will be incorrect if the vehicle rotates more than 180 degrees in any axis (because the shortest path would have involved rotating the other direction). To guarantee rotations between two samples never exceed 180 degrees, the max measured rotation rate of the IMU is considered. For the BNO055 this is 2000 degrees per second. Thus, with a sample period of <span class="arithmatex">\(l\)</span> milliseconds, the largest angle change between samples is</p>
+<p><span class="arithmatex">\(\frac{2000 \textrm{ deg}}{1 \textrm{ sec}} \cdot \frac{1 \textrm{ sec}}{1000 \textrm{ ms}} \cdot \frac{l \textrm{ ms}}{1 \textrm{ sample}} = 2l \textrm{ deg / sample}\)</span>  </p>
+<p>To ensure that changes of more than 180 degrees do not occur, the following must be satisfied</p>
+<p><span class="arithmatex">\(2l &lt; 180 \rightarrow l &lt; 90 \textrm{ milliseconds}\)</span></p>
+<p>However, it is possible for some samples from the IMU to be delayed (ie I2C bus busy with another sensor) or lost (I2C failure). Thus, it is necessary to choose a value for <span class="arithmatex">\(l\)</span> that allows for at least one sample to be lost. When a sample is lost, this doubles the effective time between samples. Thus, it is necessary to half <span class="arithmatex">\(l\)</span></p>
+<p><span class="arithmatex">\(l &lt; 45 \textrm{ milliseconds}\)</span></p>
+<p>By further reducing <span class="arithmatex">\(l\)</span> it is possible to allow for larger delays or more lost samples. The current firmware samples IMU data every 15ms (the max rate supported by the BNO055 in fusion mode is 100Hz = 10ms period). Using <span class="arithmatex">\(l=15 \textrm{ ms}\)</span> it is possible for 5 consecutive samples to be lost while still guaranteeing that no more than 90ms passes between valid samples (thus still ensuring no more than 180 degree change between samples).</p>
 <h2 id="other-derivations">Other Derivations</h2>
-<p>TODO: Euler / Quaternion conversion</p>
-<p>TODO: Gravity vector calculation</p>
-<p>TODO: Angle between vectors</p>
-<p>TODO: Min diff quat between two quats</p>
+<h3 id="euler-to-quaternion-conversion">Euler to Quaternion Conversion</h3>
+<p>The euler angle convention used for the control board is an intrinsic set <code>z-x'-y''</code> (rotate about z, then about new x, then about new y to compose an angle). Using the definitions of front/right/top for this coordinate system, this means that roll is about y, pitch is about x, and yaw is  about z.</p>
+<p>A rotation quaternion, <span class="arithmatex">\(Q\)</span>, can be composed using three rotations, each being one of the rotations used to construct the euler angle representation (in order).</p>
+<p><span class="arithmatex">\(Q = Q_z Q_x Q_y\)</span></p>
+<p>Quaternion multiplication is associative.</p>
+<p>Recall that right-multiplied quaternions are applied in the vehicle frame during composition. Thus, when viewed left to right: </p>
+<ul>
+<li>First, apply <span class="arithmatex">\(Q_z\)</span> in vehicle frame (also equal to world frame since this is the first rotation)</li>
+<li>Then, apply <span class="arithmatex">\(Q_x\)</span> in the vehicle frame</li>
+<li>Finally, apply <span class="arithmatex">\(Q_y\)</span> in the vehicle frame</li>
+</ul>
+<p>However, recall that left-multiplied quaternions are applied in the world frame during composition. Thus, when viewed right to left</p>
+<ul>
+<li>First, apply <span class="arithmatex">\(Q_y\)</span> in the world frame</li>
+<li>Then, apply <span class="arithmatex">\(Q_x\)</span> in the world frame</li>
+<li>Finally, apply <span class="arithmatex">\(Q_z\)</span> in the world frame</li>
+</ul>
+<p>In other words, the following are equivalent</p>
+<ul>
+<li>Yaw about <code>z</code>, then pitch about <code>x'</code>, then roll about <code>y''</code></li>
+<li>Roll about <code>y</code>, then pitch about <code>x</code>, the yaw about <code>z</code></li>
+</ul>
+<p>These use the <strong>same pitch, roll, and yaw angles</strong>, but the latter applies them about <strong>world axes</strong>, which have known and trivial direction vectors. Thus, each of pitch, roll, and yaw are a rotation about a known axis (x, y, or z respectively). Converting these from axis-angle from, the quaternions are represented as follows</p>
+<p><span class="arithmatex">\(Q_y = \left\{ cos(\frac{roll}{2}), sin(\frac{roll}{2}) \begin{pmatrix} 0 \\ 1 \\ 0 \end{pmatrix} \right\}\)</span></p>
+<p><span class="arithmatex">\(Q_x = \left\{ cos(\frac{pitch}{2}), sin(\frac{pitch}{2}) \begin{pmatrix} 1 \\ 0 \\ 0 \end{pmatrix} \right\}\)</span></p>
+<p><span class="arithmatex">\(Q_z = \left\{ cos(\frac{yaw}{2}), sin(\frac{yaw}{2}) \begin{pmatrix} 0 \\ 0 \\ 1 \end{pmatrix} \right\}\)</span></p>
+<p>By multiplying these, Q can be obtained. This is relatively simple to do because each of the vectors defining the quaternion is a trivial vector (this is because of using world axes!)</p>
+<p><span class="arithmatex">\(Q = \left\{w, \begin{pmatrix}x \\ y \\ z\end{pmatrix}\right\} = Q_z Q_x Q_y\)</span></p>
+<p>let <span class="arithmatex">\(cp = cos(\frac{pitch}{2})\)</span>, <span class="arithmatex">\(sp = sin(\frac{pitch}{2})\)</span></p>
+<p>let <span class="arithmatex">\(cr = cos(\frac{roll}{2})\)</span>, <span class="arithmatex">\(sr = sin(\frac{roll}{2})\)</span></p>
+<p>let <span class="arithmatex">\(cy = cos(\frac{yaw}{2})\)</span>, <span class="arithmatex">\(sr = sin(\frac{yaw}{2})\)</span></p>
+<p><span class="arithmatex">\(w = cy \cdot cp \cdot cr - sy \cdot sp \cdot sr\)</span></p>
+<p><span class="arithmatex">\(x = cy \cdot sp \cdot cr - sy \cdot cp \cdot sr\)</span></p>
+<p><span class="arithmatex">\(y = sy \cdot sp \cdot cr + cy \cdot cp \cdot sr\)</span></p>
+<p><span class="arithmatex">\(z = sy \cdot cp \cdot cr + cy \cdot sp \cdot sr\)</span></p>
+<p>This provides a set of equations which can be used to convert from an euler angle representation to a quaternion.</p>
+<h3 id="quaternion-to-euler-conversion">Quaternion to Euler Conversion</h3>
+<p>Converting from quaternion to euler uses the rotation matrix representation as a go-between.</p>
+<p>For the intrinsic set of euler angles <code>z-x'-y''</code>, a rotation matrix can be composed as follows (recall that right multiply applies about vehicle axis).</p>
+<p><span class="arithmatex">\(R = R_z(yaw) R_x(pitch) R_y(roll)\)</span></p>
+<p>Similar to the quaternion case described above, note that matrix multiplication is associative. Thus, this can instead be interpreted as rotations about world axes in the opposite order. Thus, each of <span class="arithmatex">\(R_x\)</span>, <span class="arithmatex">\(R_y\)</span>, and <span class="arithmatex">\(R_z\)</span> are rotations about world x, y, and z axes. Such matrices have known forms. When  multiplied out, the following representation of R is obtained.</p>
+<p>let <span class="arithmatex">\(cp = cos(pitch)\)</span>, <span class="arithmatex">\(sp = sin(pitch)\)</span></p>
+<p>let <span class="arithmatex">\(cr = cos(roll)\)</span>, <span class="arithmatex">\(sr = sin(roll)\)</span></p>
+<p>let <span class="arithmatex">\(cy = cos(yaw)\)</span>, <span class="arithmatex">\(sy = sin(yaw)\)</span></p>
+<p><span class="arithmatex">\(R = \begin{pmatrix}
+    cy \cdot cr - sr \cdot sy \cdot sp &amp; -sy \cdot cp &amp; cy \cdot sr + sy \cdot sp \cdot cr \\
+    sy \cdot cr + sr \cdot sp \cdot cy &amp; cy \cdot cp &amp; sy \cdot sr - cr \cdot sp \cdot cy \\
+    -cp \cdot sr &amp; sp &amp; cp \cdot cr
+\end{pmatrix}\)</span></p>
+<p>Using entries of this matrix, the following relations can be constructed</p>
+<p><span class="arithmatex">\(R_{32} = sin(pitch) \rightarrow pitch = sin^{-1}(R_{32})\)</span></p>
+<p><span class="arithmatex">\(\frac{R_{31}}{R_{33}} = \frac{-sin(roll)cos(pitch)}{cos(roll)cos(pitch)} = tan(roll) \rightarrow roll = tan^{-1}(\frac{-R_{31}}{R_{33}})\)</span></p>
+<p><span class="arithmatex">\(\frac{R_{12}}{R_{22}} = \frac{sin(yaw)cos(pitch)}{cos(yaw)cos(pitch)} = tan(yaw) \rightarrow yaw = tan^{-1}(\frac{R_{12}}{R_{22}})\)</span></p>
+<p>A quaternion can also be converted to a rotation matrix with a known form. Using cells from this quaternion-backed rotation matrix yields the following relations</p>
+<p><span class="arithmatex">\(pitch = sin^{-1}(2(yz+wx))\)</span></p>
+<p><span class="arithmatex">\(roll = tan^{-1}(\frac{2(wy-xz)}{1-2(x^2+y^2)})\)</span></p>
+<p><span class="arithmatex">\(yaw = tan^{-1}(\frac{2(xy-wz)}{1-2(x^2 + z^2)})\)</span></p>
+<p><em>Note that arctangent should be implemented in code using the quadrant aware <code>atan2</code> to account for quadrants properly and avoid divide by zero issues.</em></p>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../build/" class="btn btn-neutral float-left" title="Build and Flash"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../developing/" class="btn btn-neutral float-right" title="Firmware Development">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../developing/" class="btn btn-neutral float-left" title="Development Workflows"><span class="icon icon-circle-arrow-left"></span> Previous</a>
     </div>
 
   <hr/>
@@ -543,24 +628,23 @@ m_z = m_z / m_max;
         </span>
     
     
-      <span><a href="../build/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../developing/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
-    
-      <span><a href="../developing/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
-    <script>var base_url = '../..';</script>
-    <script src="../../js/theme_extra.js" defer></script>
-    <script src="../../js/theme.js" defer></script>
-      <script src="../../js/mathjax.js" defer></script>
-      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6" defer></script>
-      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
-      <script src="../../search/main.js" defer></script>
-    <script defer>
-        window.onload = function () {
+    <script src="../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../..";</script>
+    <script src="../../js/theme_extra.js"></script>
+    <script src="../../js/theme.js"></script>
+      <script src="../../js/mathjax.js"></script>
+      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../search/main.js"></script>
+    <script>
+        jQuery(function () {
             SphinxRtdTheme.Navigation.enable(true);
-        };
+        });
     </script>
 
 </body>
